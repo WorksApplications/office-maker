@@ -102,7 +102,7 @@ init =
     , selectedEquipments = []
     , copiedEquipments = []
     , editingEquipment = Nothing
-    , gridSize = 10
+    , gridSize = 8 -- 2^N
     , selectorRect = Nothing
     , ctrl = False
     , editMode = Selector
@@ -146,10 +146,10 @@ initFloor =
     , equipments = []
     , image = Nothing
     }
-    [ Desk "1" (50, 150, 70, 100) "#ed9" "John\nSmith"
-    , Desk "2" (120, 150, 70, 100) "#8bd" "John\nSmith"
-    , Desk "3" (50, 250, 70, 100) "#fa9" "John\nSmith"
-    , Desk "4" (120, 250, 70, 100) "#b8f" "John\nSmith"
+    [ Desk "1" (8*5, 8*20, 8*8, 8*12) "#ed9" "John\nSmith"
+    , Desk "2" (8*13, 8*20, 8*8, 8*12) "#8bd" "John\nSmith"
+    , Desk "3" (8*5, 8*32, 8*8, 8*12) "#fa9" "John\nSmith"
+    , Desk "4" (8*13, 8*32, 8*8, 8*12) "#b8f" "John\nSmith"
     ]
 
 update : Action -> Model -> (Model, Effects Action)
