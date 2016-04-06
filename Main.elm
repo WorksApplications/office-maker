@@ -14,6 +14,7 @@ import Char
 import Debug
 import Window
 
+import UndoRedo
 import HtmlUtil exposing (..)
 
 app = StartApp.start
@@ -69,16 +70,13 @@ type alias Model =
   , selectedEquipments : List Id
   , copiedEquipments : List Id
   , editingEquipment : Maybe (Id, String)
-  , floor : Floor
-  , original : Floor
-  , commits : List Commit
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
   , ctrl : Bool
   , editMode : EditMode
   , colorPalette : List String
   , contextMenu : ContextMenu
-  , commitCursor : Int
+  , floor : UndoRedo.Model Floor Commit
   , windowDimensions : (Int, Int)
   }
 
@@ -104,24 +102,13 @@ init =
     , selectedEquipments = []
     , copiedEquipments = []
     , editingEquipment = Nothing
-    , floor =
-      { name = ""
-      , equipments = []
-      , image = Nothing
-      }
-    , original =
-      { name = ""
-      , equipments = []
-      , image = Nothing
-      }
-    , commits = []
     , gridSize = 10
     , selectorRect = Nothing
     , ctrl = False
     , editMode = Selector
     , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
     , contextMenu = NoContextMenu
-    , commitCursor = -1
+    , floor = UndoRedo.init { data = initFloor, update = updateFloorByCommit }
     , windowDimensions = (50000, 50000) -- TODO
     }
   , Effects.task (Task.succeed Init)
@@ -152,28 +139,26 @@ type Action = NoOp
   | SelectIsland Id MouseEvent
   | WindowDimensions (Int, Int)
 
+initFloor : Floor
+initFloor =
+  setEquipments
+    { name = ""
+    , equipments = []
+    , image = Nothing
+    }
+    [ Desk "1" (50, 150, 70, 100) "#ed9" "John\nSmith"
+    , Desk "2" (120, 150, 70, 100) "#8bd" "John\nSmith"
+    , Desk "3" (50, 250, 70, 100) "#fa9" "John\nSmith"
+    , Desk "4" (120, 250, 70, 100) "#b8f" "John\nSmith"
+    ]
+
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case {--Debug.log "action"--} action of
     NoOp ->
       (model, Effects.none)
     Init ->
-      let
-        floor =
-          setEquipments
-            model.floor
-            [ Desk "1" (50, 150, 70, 100) "#ed9" "John\nSmith"
-            , Desk "2" (120, 150, 70, 100) "#8bd" "John\nSmith"
-            , Desk "3" (50, 250, 70, 100) "#fa9" "John\nSmith"
-            , Desk "4" (120, 250, 70, 100) "#b8f" "John\nSmith"
-            ]
-        newModel =
-          { model |
-            floor = floor
-          , original = floor
-          }
-      in
-        (newModel, Effects.none)
+      (model, Effects.none) -- TODO fetch from server
     MoveOnCanvas e ->
       let
         newModel =
@@ -214,7 +199,9 @@ update action model =
                 shift = (e.clientX - x, e.clientY - y)
               in
                 if shift /= (0, 0) then
-                  updateByCommit model (Move model.selectedEquipments model.gridSize shift)
+                  { model |
+                    floor = UndoRedo.commit model.floor (Move model.selectedEquipments model.gridSize shift)
+                  }
                 else
                   model
             _ -> model
@@ -240,7 +227,9 @@ update action model =
         model' =
           case model.editingEquipment of
             Just (id, name) ->
-              updateByCommit model (ChangeName id name)
+              { model |
+                floor = UndoRedo.commit model.floor (ChangeName id name)
+              }
             Nothing -> model
         newModel =
           { model' |
@@ -254,7 +243,7 @@ update action model =
       in
         (newModel, Effects.none)
     StartEditEquipment id e ->
-      case findEquipmentById model.floor.equipments id of
+      case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just (Desk id (x, y, w, h) color name) ->
           let
             newModel =
@@ -287,9 +276,11 @@ update action model =
                     (x, y)
                   Nothing -> (0, 0) --TODO
               newEquipments =
-                pasteEquipments base model.copiedEquipments model.floor.equipments
+                pasteEquipments base model.copiedEquipments (UndoRedo.data model.floor).equipments
               model' =
-                updateByCommit model (Paste model.copiedEquipments base)
+                { model |
+                  floor = UndoRedo.commit model.floor (Paste model.copiedEquipments base)
+                }
               selected = List.map idOf newEquipments
             in
               { model' |
@@ -307,31 +298,17 @@ update action model =
     KeyY ->
       let
         newModel =
-          if model.ctrl && (model.commitCursor > 0) then
-            -- REDO
-            case List.drop (model.commitCursor - 1) model.commits of
-              tail ->
-                { model |
-                  floor = replay model.original (List.reverse tail)
-                , commitCursor = model.commitCursor - 1
-                }
-
-          else model
+          { model |
+            floor = UndoRedo.redo model.floor
+          }
       in
         (newModel, Effects.none)
     KeyZ ->
       let
         newModel =
-          if model.ctrl && (model.commitCursor < List.length model.commits) then
-            -- UNDO
-            case List.drop (model.commitCursor + 1) model.commits of
-              tail ->
-                { model |
-                  floor = replay model.original (List.reverse tail)
-                , commitCursor = model.commitCursor + 1
-                }
-
-          else model
+          { model |
+            floor = UndoRedo.undo model.floor
+          }
       in
         (newModel, Effects.none)
     KeyCtrl bool ->
@@ -345,13 +322,17 @@ update action model =
     KeyDel bool ->
       let
         newModel =
-          updateByCommit model (Delete model.selectedEquipments)
+          { model |
+            floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
+          }
       in
         (newModel, Effects.none)
     SelectColor color e ->
       let
         newModel =
-          updateByCommit model (ChangeColor model.selectedEquipments color)
+          { model |
+            floor = UndoRedo.commit model.floor (ChangeColor model.selectedEquipments color)
+          }
       in
         (newModel, Effects.none)
     InputName id name ->
@@ -375,7 +356,9 @@ update action model =
                   Just (id, name) ->
                     let
                       model' =
-                        updateByCommit model (ChangeName id name) --TODO if name really changed
+                        { model |
+                          floor = UndoRedo.commit model.floor (ChangeName id name) --TODO if name really changed
+                        }
                     in
                       { model' |
                         editingEquipment = Nothing --TODO next cell
@@ -410,10 +393,10 @@ update action model =
     SelectIsland id e ->
       let
         newModel =
-          case findEquipmentById model.floor.equipments id of
+          case findEquipmentById (UndoRedo.data model.floor).equipments id of
             Just equipment ->
               let
-                island' = island [equipment] (List.filter (\e -> (idOf e) /= id) model.floor.equipments)
+                island' = island [equipment] (List.filter (\e -> (idOf e) /= id) (UndoRedo.data model.floor).equipments)
               in
                 { model |
                   selectedEquipments = List.map idOf island'
@@ -463,18 +446,6 @@ island current rest =
       current ++ newEquipments
     else
       island (current ++ newEquipments) rest'
-
-replay : Floor -> List Commit -> Floor
-replay floor commitsAsc =
-  List.foldl updateFloorByCommit floor commitsAsc
-
-updateByCommit : Model -> Commit -> Model
-updateByCommit model commit =
-    { model |
-      commits = commit :: (List.drop model.commitCursor model.commits)
-    , floor = updateFloorByCommit commit model.floor
-    , commitCursor = 0
-    }
 
 updateFloorByCommit : Commit -> Floor -> Floor
 updateFloorByCommit commit floor =
@@ -575,7 +546,9 @@ isSelected model equipment =
 
 selectedEquipments : Model -> List Equipment
 selectedEquipments model =
-  List.filter (\equipment -> List.member (idOf equipment) model.selectedEquipments) model.floor.equipments
+  List.filter
+    (\equipment -> List.member (idOf equipment) model.selectedEquipments)
+    (UndoRedo.data model.floor).equipments
 
 colorProperty : Model -> Maybe String
 colorProperty model =
@@ -664,7 +637,7 @@ nameInputView : Address Action -> Model -> Html
 nameInputView address model =
   case model.editingEquipment of
     Just (id, name) ->
-      case findEquipmentById model.floor.equipments id of
+      case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just (Desk id (x, y, w, h) color _) ->
           textarea
             [ Html.Attributes.id "name-input"
@@ -690,13 +663,13 @@ mainView address model =
     nonDraggingEquipments =
       List.map
         (\equipment -> equipmentView address model Nothing (isSelected' equipment) (isDragged equipment) equipment model.ctrl)
-        model.floor.equipments
+        (UndoRedo.data model.floor).equipments
 
     draggingEquipments =
       if toBool(model.dragging)
       then
         let
-          equipments = List.filter isDragged model.floor.equipments
+          equipments = List.filter isDragged (UndoRedo.data model.floor).equipments
           moving =
             case (model.dragging, model.pos) of
               (Just (_, (startX, startY)), Just (x, y)) -> Just ((startX, startY), (x, y))
@@ -728,7 +701,8 @@ mainView address model =
         , br [] []
         , text (toString model.ctrl)
         , br [] []
-        , div [] (List.map (\x -> div [] [text (toString x)]) model.commits)
+        -- , text (toString model.floor.cursor)
+        -- , br [] []
         , div [] equipments
         , nameInputView address model
         , selectorRect

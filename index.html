@@ -12484,6 +12484,86 @@ Elm.Styles.make = function (_elm) {
                                ,colorProperty: colorProperty
                                ,subMenu: subMenu
                                ,contextMenu: contextMenu};
+};Elm.UndoRedo = Elm.UndoRedo || {};
+Elm.UndoRedo.make = function (_elm) {
+   "use strict";
+   _elm.UndoRedo = _elm.UndoRedo || {};
+   if (_elm.UndoRedo.values) return _elm.UndoRedo.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var replay = F3(function (update,commitsAsc,original) {
+      return A3($List.foldl,update,original,commitsAsc);
+   });
+   var commitsUntil = F2(function (cursor,commits) {
+      return A2($List.drop,cursor,commits);
+   });
+   var canRedo = function (model) {
+      return _U.cmp(model.cursor,0) > 0;
+   };
+   var canUndo = function (model) {
+      return $Basics.not($List.isEmpty(A2(commitsUntil,
+      model.cursor,
+      model.commits)));
+   };
+   var dataAt = F2(function (cursor,model) {
+      return A3(replay,
+      model.update,
+      $List.reverse(A2(commitsUntil,cursor,model.commits)),
+      model.original);
+   });
+   var data = function (model) {    return model.cursorDataCache;};
+   var updateByCursorShift = F2(function (cursor,model) {
+      return _U.update(model,
+      {cursor: cursor,cursorDataCache: A2(dataAt,cursor,model)});
+   });
+   var commit = F2(function (model,commit) {
+      var model$ = _U.update(model,
+      {commits: A2($List._op["::"],
+      commit,
+      A2($List.drop,model.cursor,model.commits))});
+      return A2(updateByCursorShift,0,model$);
+   });
+   var redo = function (model) {
+      return canRedo(model) ? A2(updateByCursorShift,
+      model.cursor - 1,
+      model) : model;
+   };
+   var undo = function (model) {
+      return canUndo(model) ? A2(updateByCursorShift,
+      model.cursor + 1,
+      model) : model;
+   };
+   var init = function (_p0) {
+      var _p1 = _p0;
+      var _p2 = _p1.data;
+      return {cursor: 0
+             ,original: _p2
+             ,commits: _U.list([])
+             ,update: _p1.update
+             ,cursorDataCache: _p2};
+   };
+   var Model = F5(function (a,b,c,d,e) {
+      return {cursor: a
+             ,original: b
+             ,commits: c
+             ,update: d
+             ,cursorDataCache: e};
+   });
+   return _elm.UndoRedo.values = {_op: _op
+                                 ,init: init
+                                 ,undo: undo
+                                 ,redo: redo
+                                 ,commit: commit
+                                 ,canUndo: canUndo
+                                 ,canRedo: canRedo
+                                 ,data: data
+                                 ,Model: Model};
 };Elm.Main = Elm.Main || {};
 Elm.Main.make = function (_elm) {
    "use strict";
@@ -12505,6 +12585,7 @@ Elm.Main.make = function (_elm) {
    $StartApp = Elm.StartApp.make(_elm),
    $Styles = Elm.Styles.make(_elm),
    $Task = Elm.Task.make(_elm),
+   $UndoRedo = Elm.UndoRedo.make(_elm),
    $Window = Elm.Window.make(_elm);
    var _op = {};
    var toBool = function (maybe) {
@@ -12559,7 +12640,7 @@ Elm.Main.make = function (_elm) {
          idOf(equipment),
          model.selectedEquipments);
       },
-      model.floor.equipments);
+      $UndoRedo.data(model.floor).equipments);
    };
    var colorProperty = function (model) {
       var selected = selectedEquipments(model);
@@ -12815,7 +12896,7 @@ Elm.Main.make = function (_elm) {
       if (_p33.ctor === "Just") {
             var _p35 = _p33._0._1;
             var _p34 = A2(findEquipmentById,
-            model.floor.equipments,
+            $UndoRedo.data(model.floor).equipments,
             _p33._0._0);
             if (_p34.ctor === "Just") {
                   return A2($Html.textarea,
@@ -12875,7 +12956,7 @@ Elm.Main.make = function (_elm) {
          equipment,
          model.ctrl);
       },
-      model.floor.equipments);
+      $UndoRedo.data(model.floor).equipments);
       var draggingEquipments = function () {
          if (toBool(model.dragging)) {
                var moving = function () {
@@ -12893,7 +12974,7 @@ Elm.Main.make = function (_elm) {
                }();
                var equipments = A2($List.filter,
                isDragged,
-               model.floor.equipments);
+               $UndoRedo.data(model.floor).equipments);
                return A2($List.map,
                function (equipment) {
                   return A7(equipmentView,
@@ -12924,15 +13005,6 @@ Elm.Main.make = function (_elm) {
                       ,A2($Html.br,_U.list([]),_U.list([]))
                       ,$Html.text($Basics.toString(model.ctrl))
                       ,A2($Html.br,_U.list([]),_U.list([]))
-                      ,A2($Html.div,
-                      _U.list([]),
-                      A2($List.map,
-                      function (x) {
-                         return A2($Html.div,
-                         _U.list([]),
-                         _U.list([$Html.text($Basics.toString(x))]));
-                      },
-                      model.commits))
                       ,A2($Html.div,_U.list([]),equipments)
                       ,A2(nameInputView,address,model)
                       ,selectorRect]))
@@ -12972,32 +13044,6 @@ Elm.Main.make = function (_elm) {
       return {ctor: "Equipment",_0: a,_1: b};
    });
    var NoContextMenu = {ctor: "NoContextMenu"};
-   var init = {ctor: "_Tuple2"
-              ,_0: {idGen: 0
-                   ,pos: $Maybe.Nothing
-                   ,dragging: $Maybe.Nothing
-                   ,selectedEquipments: _U.list([])
-                   ,copiedEquipments: _U.list([])
-                   ,editingEquipment: $Maybe.Nothing
-                   ,floor: {name: "",equipments: _U.list([]),image: $Maybe.Nothing}
-                   ,original: {name: ""
-                              ,equipments: _U.list([])
-                              ,image: $Maybe.Nothing}
-                   ,commits: _U.list([])
-                   ,gridSize: 10
-                   ,selectorRect: $Maybe.Nothing
-                   ,ctrl: false
-                   ,editMode: Selector
-                   ,colorPalette: _U.list(["#ed9"
-                                          ,"#b8f"
-                                          ,"#fa9"
-                                          ,"#8bd"
-                                          ,"#af6"
-                                          ,"#6df"])
-                   ,contextMenu: NoContextMenu
-                   ,commitCursor: -1
-                   ,windowDimensions: {ctor: "_Tuple2",_0: 50000,_1: 50000}}
-              ,_1: $Effects.task($Task.succeed(Init))};
    var Model = function (a) {
       return function (b) {
          return function (c) {
@@ -13012,29 +13058,20 @@ Elm.Main.make = function (_elm) {
                                     return function (l) {
                                        return function (m) {
                                           return function (n) {
-                                             return function (o) {
-                                                return function (p) {
-                                                   return function (q) {
-                                                      return {idGen: a
-                                                             ,pos: b
-                                                             ,dragging: c
-                                                             ,selectedEquipments: d
-                                                             ,copiedEquipments: e
-                                                             ,editingEquipment: f
-                                                             ,floor: g
-                                                             ,original: h
-                                                             ,commits: i
-                                                             ,gridSize: j
-                                                             ,selectorRect: k
-                                                             ,ctrl: l
-                                                             ,editMode: m
-                                                             ,colorPalette: n
-                                                             ,contextMenu: o
-                                                             ,commitCursor: p
-                                                             ,windowDimensions: q};
-                                                   };
-                                                };
-                                             };
+                                             return {idGen: a
+                                                    ,pos: b
+                                                    ,dragging: c
+                                                    ,selectedEquipments: d
+                                                    ,copiedEquipments: e
+                                                    ,editingEquipment: f
+                                                    ,gridSize: g
+                                                    ,selectorRect: h
+                                                    ,ctrl: i
+                                                    ,editMode: j
+                                                    ,colorPalette: k
+                                                    ,contextMenu: l
+                                                    ,floor: m
+                                                    ,windowDimensions: n};
                                           };
                                        };
                                     };
@@ -13055,6 +13092,28 @@ Elm.Main.make = function (_elm) {
    var Desk = F4(function (a,b,c,d) {
       return {ctor: "Desk",_0: a,_1: b,_2: c,_3: d};
    });
+   var initFloor = A2(setEquipments,
+   {name: "",equipments: _U.list([]),image: $Maybe.Nothing},
+   _U.list([A4(Desk,
+           "1",
+           {ctor: "_Tuple4",_0: 50,_1: 150,_2: 70,_3: 100},
+           "#ed9",
+           "John\nSmith")
+           ,A4(Desk,
+           "2",
+           {ctor: "_Tuple4",_0: 120,_1: 150,_2: 70,_3: 100},
+           "#8bd",
+           "John\nSmith")
+           ,A4(Desk,
+           "3",
+           {ctor: "_Tuple4",_0: 50,_1: 250,_2: 70,_3: 100},
+           "#fa9",
+           "John\nSmith")
+           ,A4(Desk,
+           "4",
+           {ctor: "_Tuple4",_0: 120,_1: 250,_2: 70,_3: 100},
+           "#b8f",
+           "John\nSmith")]));
    var changeColor = F2(function (color,_p38) {
       var _p39 = _p38;
       return A4(Desk,_p39._0,_p39._1,color,_p39._3);
@@ -13110,116 +13169,20 @@ Elm.Main.make = function (_elm) {
       toBeCopied);
       return newEquipments;
    });
-   var moveEquipments = F4(function (gridSize,
-   _p53,
-   ids,
-   equipments) {
-      var _p54 = _p53;
-      return A3(partiallyChange,
-      function (_p55) {
-         var _p56 = _p55;
-         var _p57 = A2(fitToGrid,
-         gridSize,
-         {ctor: "_Tuple2"
-         ,_0: _p56._1._0 + _p54._0
-         ,_1: _p56._1._1 + _p54._1});
-         var newX = _p57._0;
-         var newY = _p57._1;
-         return A4(Desk,
-         _p56._0,
-         {ctor: "_Tuple4"
-         ,_0: newX
-         ,_1: newY
-         ,_2: _p56._1._2
-         ,_3: _p56._1._3},
-         _p56._2,
-         _p56._3);
-      },
-      ids,
-      equipments);
-   });
-   var updateFloorByCommit = F2(function (commit,floor) {
-      var _p58 = commit;
-      switch (_p58.ctor)
-      {case "Move": return A2(setEquipments,
-           floor,
-           A4(moveEquipments,
-           _p58._1,
-           {ctor: "_Tuple2",_0: _p58._2._0,_1: _p58._2._1},
-           _p58._0,
-           floor.equipments));
-         case "Paste": return A2(setEquipments,
-           floor,
-           A2($Basics._op["++"],
-           floor.equipments,
-           A3(pasteEquipments,
-           {ctor: "_Tuple2",_0: _p58._1._0,_1: _p58._1._1},
-           _p58._0,
-           floor.equipments)));
-         case "Delete": return A2(setEquipments,
-           floor,
-           A2($List.filter,
-           function (equipment) {
-              return $Basics.not(A2($List.member,idOf(equipment),_p58._0));
-           },
-           floor.equipments));
-         case "ChangeColor": var newEquipments = A3(partiallyChange,
-           changeColor(_p58._1),
-           _p58._0,
-           floor.equipments);
-           return A2(setEquipments,floor,newEquipments);
-         default: return A2(setEquipments,
-           floor,
-           A2(commitInputName,
-           {ctor: "_Tuple2",_0: _p58._0,_1: _p58._1},
-           floor.equipments));}
-   });
-   var replay = F2(function (floor,commitsAsc) {
-      return A3($List.foldl,updateFloorByCommit,floor,commitsAsc);
-   });
-   var updateByCommit = F2(function (model,commit) {
-      return _U.update(model,
-      {commits: A2($List._op["::"],
-      commit,
-      A2($List.drop,model.commitCursor,model.commits))
-      ,floor: A2(updateFloorByCommit,commit,model.floor)
-      ,commitCursor: 0});
-   });
    var update = F2(function (action,model) {
-      var _p59 = action;
-      switch (_p59.ctor)
+      var _p53 = action;
+      switch (_p53.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: model
                            ,_1: $Effects.none};
-         case "Init": var floor = A2(setEquipments,
-           model.floor,
-           _U.list([A4(Desk,
-                   "1",
-                   {ctor: "_Tuple4",_0: 50,_1: 150,_2: 70,_3: 100},
-                   "#ed9",
-                   "John\nSmith")
-                   ,A4(Desk,
-                   "2",
-                   {ctor: "_Tuple4",_0: 120,_1: 150,_2: 70,_3: 100},
-                   "#8bd",
-                   "John\nSmith")
-                   ,A4(Desk,
-                   "3",
-                   {ctor: "_Tuple4",_0: 50,_1: 250,_2: 70,_3: 100},
-                   "#fa9",
-                   "John\nSmith")
-                   ,A4(Desk,
-                   "4",
-                   {ctor: "_Tuple4",_0: 120,_1: 250,_2: 70,_3: 100},
-                   "#b8f",
-                   "John\nSmith")]));
-           var newModel = _U.update(model,{floor: floor,original: floor});
-           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "MoveOnCanvas": var _p60 = _p59._0;
+         case "Init": return {ctor: "_Tuple2"
+                             ,_0: model
+                             ,_1: $Effects.none};
+         case "MoveOnCanvas": var _p54 = _p53._0;
            var newModel = _U.update(model,
            {pos: $Maybe.Just({ctor: "_Tuple2"
-                             ,_0: _p60.clientX
-                             ,_1: _p60.clientY})});
+                             ,_0: _p54.clientX
+                             ,_1: _p54.clientY})});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
          case "EnterCanvas": return {ctor: "_Tuple2"
                                     ,_0: model
@@ -13227,35 +13190,39 @@ Elm.Main.make = function (_elm) {
          case "LeaveCanvas": return {ctor: "_Tuple2"
                                     ,_0: model
                                     ,_1: $Effects.none};
-         case "DragStart": var _p62 = _p59._0;
-           var _p61 = _p59._1;
+         case "DragStart": var _p56 = _p53._0;
+           var _p55 = _p53._1;
            var newModel = _U.update(model,
-           {selectedEquipments: _p61.ctrlKey ? A2($List.member,
-           _p62,
+           {selectedEquipments: _p55.ctrlKey ? A2($List.member,
+           _p56,
            model.selectedEquipments) ? A2($List.filter,
-           F2(function (x,y) {    return !_U.eq(x,y);})(_p62),
+           F2(function (x,y) {    return !_U.eq(x,y);})(_p56),
            model.selectedEquipments) : A2($List._op["::"],
-           _p62,
+           _p56,
            model.selectedEquipments) : A2($List.member,
-           _p62,
-           model.selectedEquipments) ? model.selectedEquipments : _U.list([_p62])
+           _p56,
+           model.selectedEquipments) ? model.selectedEquipments : _U.list([_p56])
            ,dragging: $Maybe.Just({ctor: "_Tuple2"
-                                  ,_0: _p62
-                                  ,_1: {ctor: "_Tuple2",_0: _p61.clientX,_1: _p61.clientY}})
+                                  ,_0: _p56
+                                  ,_1: {ctor: "_Tuple2",_0: _p55.clientX,_1: _p55.clientY}})
            ,selectorRect: $Maybe.Nothing});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "DragEnd": var _p65 = _p59._0;
+         case "DragEnd": var _p59 = _p53._0;
            var model$ = function () {
-              var _p63 = model.dragging;
-              if (_p63.ctor === "Just" && _p63._0.ctor === "_Tuple2" && _p63._0._1.ctor === "_Tuple2")
+              var _p57 = model.dragging;
+              if (_p57.ctor === "Just" && _p57._0.ctor === "_Tuple2" && _p57._0._1.ctor === "_Tuple2")
               {
                     var shift = {ctor: "_Tuple2"
-                                ,_0: _p65.clientX - _p63._0._1._0
-                                ,_1: _p65.clientY - _p63._0._1._1};
+                                ,_0: _p59.clientX - _p57._0._1._0
+                                ,_1: _p59.clientY - _p57._0._1._1};
                     return !_U.eq(shift,
-                    {ctor: "_Tuple2",_0: 0,_1: 0}) ? A2(updateByCommit,
-                    model,
-                    A3(Move,model.selectedEquipments,model.gridSize,shift)) : model;
+                    {ctor: "_Tuple2",_0: 0,_1: 0}) ? _U.update(model,
+                    {floor: A2($UndoRedo.commit,
+                    model.floor,
+                    A3(Move,
+                    model.selectedEquipments,
+                    model.gridSize,
+                    shift))}) : model;
                  } else {
                     return model;
                  }
@@ -13263,26 +13230,27 @@ Elm.Main.make = function (_elm) {
            var newModel = _U.update(model$,
            {dragging: $Maybe.Nothing
            ,selectedEquipments: function () {
-              if (_p65.ctrlKey) return model.selectedEquipments; else {
-                    var _p64 = model.dragging;
-                    if (_p64.ctor === "Just" && _p64._0.ctor === "_Tuple2" && _p64._0._1.ctor === "_Tuple2")
+              if (_p59.ctrlKey) return model.selectedEquipments; else {
+                    var _p58 = model.dragging;
+                    if (_p58.ctor === "Just" && _p58._0.ctor === "_Tuple2" && _p58._0._1.ctor === "_Tuple2")
                     {
-                          return _U.eq(_p65.clientX,
-                          _p64._0._1._0) && _U.eq(_p65.clientY,
-                          _p64._0._1._1) ? _U.list([_p64._0._0]) : model.selectedEquipments;
+                          return _U.eq(_p59.clientX,
+                          _p58._0._1._0) && _U.eq(_p59.clientY,
+                          _p58._0._1._1) ? _U.list([_p58._0._0]) : model.selectedEquipments;
                        } else {
                           return model.selectedEquipments;
                        }
                  }
            }()});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "MouseDownBackground": var _p68 = _p59._0;
+         case "MouseDownBackground": var _p62 = _p53._0;
            var model$ = function () {
-              var _p66 = model.editingEquipment;
-              if (_p66.ctor === "Just") {
-                    return A2(updateByCommit,
-                    model,
-                    A2(ChangeName,_p66._0._0,_p66._0._1));
+              var _p60 = model.editingEquipment;
+              if (_p60.ctor === "Just") {
+                    return _U.update(model,
+                    {floor: A2($UndoRedo.commit,
+                    model.floor,
+                    A2(ChangeName,_p60._0._0,_p60._0._1))});
                  } else {
                     return model;
                  }
@@ -13290,11 +13258,11 @@ Elm.Main.make = function (_elm) {
            var newModel = _U.update(model$,
            {selectedEquipments: _U.list([])
            ,selectorRect: function () {
-              var _p67 = A2(fitToGrid,
+              var _p61 = A2(fitToGrid,
               model.gridSize,
-              {ctor: "_Tuple2",_0: _p68.layerX,_1: _p68.layerY});
-              var x = _p67._0;
-              var y = _p67._1;
+              {ctor: "_Tuple2",_0: _p62.layerX,_1: _p62.layerY});
+              var x = _p61._0;
+              var y = _p61._1;
               return $Maybe.Just({ctor: "_Tuple4"
                                  ,_0: x
                                  ,_1: y
@@ -13304,14 +13272,14 @@ Elm.Main.make = function (_elm) {
            ,editingEquipment: $Maybe.Nothing
            ,contextMenu: NoContextMenu});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "StartEditEquipment": var _p69 = A2(findEquipmentById,
-           model.floor.equipments,
-           _p59._0);
-           if (_p69.ctor === "Just") {
+         case "StartEditEquipment": var _p63 = A2(findEquipmentById,
+           $UndoRedo.data(model.floor).equipments,
+           _p53._0);
+           if (_p63.ctor === "Just") {
                  var newModel = _U.update(model,
                  {editingEquipment: $Maybe.Just({ctor: "_Tuple2"
-                                                ,_0: _p69._0._0
-                                                ,_1: _p69._0._3})});
+                                                ,_0: _p63._0._0
+                                                ,_1: _p63._0._3})});
                  return {ctor: "_Tuple2"
                         ,_0: newModel
                         ,_1: focusEffect("name-input")};
@@ -13319,15 +13287,15 @@ Elm.Main.make = function (_elm) {
                  return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
               }
          case "KeyC":
-         var newModel = _p59._0 && model.ctrl ? _U.update(model,
+         var newModel = _p53._0 && model.ctrl ? _U.update(model,
            {copiedEquipments: model.selectedEquipments}) : model;
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
          case "KeyV": var newModel = function () {
-              if (_p59._0 && model.ctrl) {
+              if (_p53._0 && model.ctrl) {
                     var base = function () {
-                       var _p70 = model.selectorRect;
-                       if (_p70.ctor === "Just") {
-                             return {ctor: "_Tuple2",_0: _p70._0._0,_1: _p70._0._1};
+                       var _p64 = model.selectorRect;
+                       if (_p64.ctor === "Just") {
+                             return {ctor: "_Tuple2",_0: _p64._0._0,_1: _p64._0._1};
                           } else {
                              return {ctor: "_Tuple2",_0: 0,_1: 0};
                           }
@@ -13335,11 +13303,12 @@ Elm.Main.make = function (_elm) {
                     var newEquipments = A3(pasteEquipments,
                     base,
                     model.copiedEquipments,
-                    model.floor.equipments);
+                    $UndoRedo.data(model.floor).equipments);
                     var selected = A2($List.map,idOf,newEquipments);
-                    var model$ = A2(updateByCommit,
-                    model,
-                    A2(Paste,model.copiedEquipments,base));
+                    var model$ = _U.update(model,
+                    {floor: A2($UndoRedo.commit,
+                    model.floor,
+                    A2(Paste,model.copiedEquipments,base))});
                     return _U.update(model$,
                     {selectedEquipments: selected,selectorRect: $Maybe.Nothing});
                  } else return model;
@@ -13347,74 +13316,60 @@ Elm.Main.make = function (_elm) {
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
          case "KeyX": var newModel = model;
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "KeyY": var newModel = function () {
-              if (model.ctrl && _U.cmp(model.commitCursor,0) > 0) {
-                    var _p71 = A2($List.drop,
-                    model.commitCursor - 1,
-                    model.commits);
-                    return _U.update(model,
-                    {floor: A2(replay,model.original,$List.reverse(_p71))
-                    ,commitCursor: model.commitCursor - 1});
-                 } else return model;
-           }();
+         case "KeyY": var newModel = _U.update(model,
+           {floor: $UndoRedo.redo(model.floor)});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "KeyZ": var newModel = function () {
-              if (model.ctrl && _U.cmp(model.commitCursor,
-              $List.length(model.commits)) < 0) {
-                    var _p72 = A2($List.drop,
-                    model.commitCursor + 1,
-                    model.commits);
-                    return _U.update(model,
-                    {floor: A2(replay,model.original,$List.reverse(_p72))
-                    ,commitCursor: model.commitCursor + 1});
-                 } else return model;
-           }();
+         case "KeyZ": var newModel = _U.update(model,
+           {floor: $UndoRedo.undo(model.floor)});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "KeyCtrl": var newModel = _U.update(model,{ctrl: _p59._0});
+         case "KeyCtrl": var newModel = _U.update(model,{ctrl: _p53._0});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "KeyDel": var newModel = A2(updateByCommit,
-           model,
-           Delete(model.selectedEquipments));
+         case "KeyDel": var newModel = _U.update(model,
+           {floor: A2($UndoRedo.commit,
+           model.floor,
+           Delete(model.selectedEquipments))});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "SelectColor": var newModel = A2(updateByCommit,
-           model,
-           A2(ChangeColor,model.selectedEquipments,_p59._0));
+         case "SelectColor": var newModel = _U.update(model,
+           {floor: A2($UndoRedo.commit,
+           model.floor,
+           A2(ChangeColor,model.selectedEquipments,_p53._0))});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
          case "InputName": var newModel = _U.update(model,
            {editingEquipment: function () {
-              var _p73 = model.editingEquipment;
-              if (_p73.ctor === "Just") {
+              var _p65 = model.editingEquipment;
+              if (_p65.ctor === "Just") {
                     return $Maybe.Just({ctor: "_Tuple2"
-                                       ,_0: _p59._0
-                                       ,_1: _p59._1});
+                                       ,_0: _p53._0
+                                       ,_1: _p53._1});
                  } else {
                     return $Maybe.Nothing;
                  }
            }()});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "KeydownOnNameInput": var _p77 = _p59._0;
-           var _p74 = function () {
-              if (_U.eq(_p77.keyCode,13) && $Basics.not(_p77.ctrlKey)) {
+         case "KeydownOnNameInput": var _p69 = _p53._0;
+           var _p66 = function () {
+              if (_U.eq(_p69.keyCode,13) && $Basics.not(_p69.ctrlKey)) {
                     var newModel = function () {
-                       var _p75 = model.editingEquipment;
-                       if (_p75.ctor === "Just") {
-                             var model$ = A2(updateByCommit,
-                             model,
-                             A2(ChangeName,_p75._0._0,_p75._0._1));
+                       var _p67 = model.editingEquipment;
+                       if (_p67.ctor === "Just") {
+                             var model$ = _U.update(model,
+                             {floor: A2($UndoRedo.commit,
+                             model.floor,
+                             A2(ChangeName,_p67._0._0,_p67._0._1))});
                              return _U.update(model$,{editingEquipment: $Maybe.Nothing});
                           } else {
                              return model;
                           }
                     }();
                     return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-                 } else if (_U.eq(_p77.keyCode,13)) {
+                 } else if (_U.eq(_p69.keyCode,13)) {
                        var newModel = _U.update(model,
                        {editingEquipment: function () {
-                          var _p76 = model.editingEquipment;
-                          if (_p76.ctor === "Just") {
+                          var _p68 = model.editingEquipment;
+                          if (_p68.ctor === "Just") {
                                 return $Maybe.Just({ctor: "_Tuple2"
-                                                   ,_0: _p76._0._0
-                                                   ,_1: A2($Basics._op["++"],_p76._0._1,"\n")});
+                                                   ,_0: _p68._0._0
+                                                   ,_1: A2($Basics._op["++"],_p68._0._1,"\n")});
                              } else {
                                 return $Maybe.Nothing;
                              }
@@ -13422,26 +13377,28 @@ Elm.Main.make = function (_elm) {
                        return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
                     } else return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
            }();
-           var newModel = _p74._0;
-           var effects = _p74._1;
+           var newModel = _p66._0;
+           var effects = _p66._1;
            return {ctor: "_Tuple2",_0: newModel,_1: effects};
-         case "ShowContextMenuOnEquipment": var _p78 = _p59._1;
+         case "ShowContextMenuOnEquipment": var _p70 = _p53._1;
            var newModel = _U.update(model,
            {contextMenu: A2(Equipment,
-           {ctor: "_Tuple2",_0: _p78.clientX,_1: _p78.clientY},
-           _p59._0)});
+           {ctor: "_Tuple2",_0: _p70.clientX,_1: _p70.clientY},
+           _p53._0)});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
-         case "SelectIsland": var _p80 = _p59._0;
+         case "SelectIsland": var _p72 = _p53._0;
            var newModel = function () {
-              var _p79 = A2(findEquipmentById,model.floor.equipments,_p80);
-              if (_p79.ctor === "Just") {
+              var _p71 = A2(findEquipmentById,
+              $UndoRedo.data(model.floor).equipments,
+              _p72);
+              if (_p71.ctor === "Just") {
                     var island$ = A2(island,
-                    _U.list([_p79._0]),
+                    _U.list([_p71._0]),
                     A2($List.filter,
                     function (e) {
-                       return !_U.eq(idOf(e),_p80);
+                       return !_U.eq(idOf(e),_p72);
                     },
-                    model.floor.equipments));
+                    $UndoRedo.data(model.floor).equipments));
                     return _U.update(model,
                     {selectedEquipments: A2($List.map,idOf,island$)
                     ,contextMenu: NoContextMenu});
@@ -13452,10 +13409,96 @@ Elm.Main.make = function (_elm) {
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
          default: var newModel = _U.update(model,
            {windowDimensions: {ctor: "_Tuple2"
-                              ,_0: _p59._0._0
-                              ,_1: _p59._0._1}});
+                              ,_0: _p53._0._0
+                              ,_1: _p53._0._1}});
            return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};}
    });
+   var moveEquipments = F4(function (gridSize,
+   _p73,
+   ids,
+   equipments) {
+      var _p74 = _p73;
+      return A3(partiallyChange,
+      function (_p75) {
+         var _p76 = _p75;
+         var _p77 = A2(fitToGrid,
+         gridSize,
+         {ctor: "_Tuple2"
+         ,_0: _p76._1._0 + _p74._0
+         ,_1: _p76._1._1 + _p74._1});
+         var newX = _p77._0;
+         var newY = _p77._1;
+         return A4(Desk,
+         _p76._0,
+         {ctor: "_Tuple4"
+         ,_0: newX
+         ,_1: newY
+         ,_2: _p76._1._2
+         ,_3: _p76._1._3},
+         _p76._2,
+         _p76._3);
+      },
+      ids,
+      equipments);
+   });
+   var updateFloorByCommit = F2(function (commit,floor) {
+      var _p78 = commit;
+      switch (_p78.ctor)
+      {case "Move": return A2(setEquipments,
+           floor,
+           A4(moveEquipments,
+           _p78._1,
+           {ctor: "_Tuple2",_0: _p78._2._0,_1: _p78._2._1},
+           _p78._0,
+           floor.equipments));
+         case "Paste": return A2(setEquipments,
+           floor,
+           A2($Basics._op["++"],
+           floor.equipments,
+           A3(pasteEquipments,
+           {ctor: "_Tuple2",_0: _p78._1._0,_1: _p78._1._1},
+           _p78._0,
+           floor.equipments)));
+         case "Delete": return A2(setEquipments,
+           floor,
+           A2($List.filter,
+           function (equipment) {
+              return $Basics.not(A2($List.member,idOf(equipment),_p78._0));
+           },
+           floor.equipments));
+         case "ChangeColor": var newEquipments = A3(partiallyChange,
+           changeColor(_p78._1),
+           _p78._0,
+           floor.equipments);
+           return A2(setEquipments,floor,newEquipments);
+         default: return A2(setEquipments,
+           floor,
+           A2(commitInputName,
+           {ctor: "_Tuple2",_0: _p78._0,_1: _p78._1},
+           floor.equipments));}
+   });
+   var init = {ctor: "_Tuple2"
+              ,_0: {idGen: 0
+                   ,pos: $Maybe.Nothing
+                   ,dragging: $Maybe.Nothing
+                   ,selectedEquipments: _U.list([])
+                   ,copiedEquipments: _U.list([])
+                   ,editingEquipment: $Maybe.Nothing
+                   ,gridSize: 10
+                   ,selectorRect: $Maybe.Nothing
+                   ,ctrl: false
+                   ,editMode: Selector
+                   ,colorPalette: _U.list(["#ed9"
+                                          ,"#b8f"
+                                          ,"#fa9"
+                                          ,"#8bd"
+                                          ,"#af6"
+                                          ,"#6df"])
+                   ,contextMenu: NoContextMenu
+                   ,floor: $UndoRedo.init({data: initFloor
+                                          ,update: updateFloorByCommit})
+                   ,windowDimensions: {ctor: "_Tuple2",_0: 50000,_1: 50000}}
+              ,_1: $Effects.task($Task.succeed(Init))};
    var FloorImage = F3(function (a,b,c) {
       return {name: a,width: b,height: c};
    });
@@ -13523,12 +13566,11 @@ Elm.Main.make = function (_elm) {
                              ,ShowContextMenuOnEquipment: ShowContextMenuOnEquipment
                              ,SelectIsland: SelectIsland
                              ,WindowDimensions: WindowDimensions
+                             ,initFloor: initFloor
                              ,update: update
                              ,focusEffect: focusEffect
                              ,blurEffect: blurEffect
                              ,island: island
-                             ,replay: replay
-                             ,updateByCommit: updateByCommit
                              ,updateFloorByCommit: updateFloorByCommit
                              ,commitInputName: commitInputName
                              ,setEquipments: setEquipments
