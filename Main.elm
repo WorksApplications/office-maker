@@ -16,6 +16,8 @@ import Window
 
 import UndoRedo
 import HtmlUtil exposing (..)
+import Equipments exposing (..)
+import Position exposing (..)
 
 app = StartApp.start
   { init = init
@@ -32,6 +34,8 @@ app = StartApp.start
           KeyY
         else if e.keyCode == (Char.toCode 'Z') then
           KeyZ
+        else if e.keyCode == 40 then -- down
+          KeyDownArrow
         else
           NoOp
       ) HtmlUtil.downs
@@ -47,15 +51,11 @@ port tasks = app.tasks
 
 --
 
-type alias Id = String
 type alias FloorImage =
   { name: String
   , width: Int
   , height: Int
   }
-
-type Equipment =
-  Desk Id (Int, Int, Int, Int) String String -- id (x, y, width, height) color
 
 type alias Floor =
   { name : String
@@ -132,6 +132,7 @@ type Action = NoOp
   | KeyX Bool
   | KeyY
   | KeyZ
+  | KeyDownArrow
   | SelectColor String MouseEvent
   | InputName Id String
   | KeydownOnNameInput KeyboardEvent
@@ -311,6 +312,28 @@ update action model =
           }
       in
         (newModel, Effects.none)
+    KeyDownArrow ->
+      let
+        newModel =
+          case primarySelectedEquipment model of
+            Just equipment ->
+              -- let
+              --   island' =
+              --     island
+              --       [equipment]
+              --       (List.filter (\e -> (idOf e) /= (idOf equipment))
+              --       (UndoRedo.data model.floor).equipments)
+              -- in
+                case nearestBelow equipment (UndoRedo.data model.floor).equipments of
+                  Just e ->
+                    { model |
+                      selectedEquipments = [idOf e]
+                    }
+                  _ -> model
+            _ -> model
+      in
+        (newModel, Effects.none)
+
     KeyCtrl bool ->
       let
         newModel =
@@ -396,7 +419,11 @@ update action model =
           case findEquipmentById (UndoRedo.data model.floor).equipments id of
             Just equipment ->
               let
-                island' = island [equipment] (List.filter (\e -> (idOf e) /= id) (UndoRedo.data model.floor).equipments)
+                island' =
+                  island
+                    [equipment]
+                    (List.filter (\e -> (idOf e) /= id)
+                    (UndoRedo.data model.floor).equipments)
               in
                 { model |
                   selectedEquipments = List.map idOf island'
@@ -432,20 +459,6 @@ blurEffect id =
         `Task.onError` (\error -> Task.succeed NoOp)
   in
     Effects.task task
-
-island : List Equipment -> List Equipment -> List Equipment
-island current rest =
-  let
-    match (Desk id (x1, y1, w1, h1) _ _) =
-      List.any (\(Desk id (x2, y2, w2, h2) _ _) ->
-        (x1 <= x2+w2 && x2 <= x1+w1 && y1 <= y2+h2 && y2 <= y1+h1)
-      ) current
-    (newEquipments, rest') = List.partition match rest
-  in
-    if List.isEmpty newEquipments then
-      current ++ newEquipments
-    else
-      island (current ++ newEquipments) rest'
 
 updateFloorByCommit : Commit -> Floor -> Floor
 updateFloorByCommit commit floor =
@@ -543,6 +556,10 @@ findEquipmentById equipments id =
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
   List.member (idOf equipment) model.selectedEquipments
+
+primarySelectedEquipment : Model -> Maybe Equipment
+primarySelectedEquipment model =
+  List.head (selectedEquipments model)
 
 selectedEquipments : Model -> List Equipment
 selectedEquipments model =
