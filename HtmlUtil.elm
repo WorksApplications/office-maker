@@ -92,6 +92,10 @@ onInput' : Address String -> Attribute
 onInput' address =
   onWithOptions "input" { stopPropagation = True, preventDefault = True } Html.Events.targetValue (Signal.message address)
 
+onChange' : Address String -> Attribute
+onChange' address =
+  onWithOptions "change" { stopPropagation = True, preventDefault = True } Html.Events.targetValue (Signal.message address)
+
 -- onKeyUp' : Address KeyboardEvent -> Attribute
 -- onKeyUp' address =
 --   on "keyup" decodeKeyboardEvent (Signal.message address)

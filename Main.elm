@@ -374,9 +374,13 @@ update action model =
       let
         newModel =
           { model |
-            editingEquipment =
+            editingEquipment = Debug.log "InputName" <|
               case model.editingEquipment of
-                Just _ -> Just (id, name)
+                Just (id', name') ->
+                  if id == id' then
+                    Just (id, name)
+                  else
+                    Just (id', name')
                 Nothing -> Nothing
           }
       in
@@ -390,13 +394,24 @@ update action model =
                 case model.editingEquipment of
                   Just (id, name) ->
                     let
-                      model' =
-                        { model |
-                          floor = UndoRedo.commit model.floor (ChangeName id name) --TODO if name really changed
-                        }
+                      allEquipments = (UndoRedo.data model.floor).equipments
+                      editingEquipment =
+                        case findEquipmentById allEquipments id of
+                          Just equipment ->
+                            let
+                              island' = Debug.log "island'" <|
+                                island
+                                  [equipment]
+                                  (List.filter (\e -> (idOf e) /= id) allEquipments)
+                            in
+                              case Position.nearest Position.Down equipment island' of
+                                Just equipment -> Debug.log "next" <|Just (idOf equipment, nameOf equipment)
+                                Nothing -> Nothing
+                          Nothing -> Nothing
                     in
-                      { model' |
-                        editingEquipment = Nothing --TODO next cell
+                      { model |
+                        floor = UndoRedo.commit model.floor (ChangeName id name) --TODO if name really changed
+                      , editingEquipment = editingEquipment
                       }
                   Nothing ->
                     model
@@ -531,6 +546,9 @@ changeName name (Desk id rect color _) = Desk id rect color name
 
 idOf : Equipment -> Id
 idOf (Desk id _ _ _) = id
+
+nameOf : Equipment -> String
+nameOf (Desk _ _ _ name) = name
 
 pasteEquipments : (Int, Int) -> List Id -> List Equipment -> List Equipment
 pasteEquipments (baseX, baseY) copied allEquipments =
@@ -684,7 +702,7 @@ nameInputView address model =
           textarea
             [ Html.Attributes.id "name-input"
             , style (Styles.deskInput x y w h)
-            , onInput' (forwardTo address (InputName id))
+            , onInput' (forwardTo address (InputName id)) -- TODO cannot input japanese
             , onKeyDown' (forwardTo address (KeydownOnNameInput))
             , onMouseDown' (forwardTo address (always NoOp))
             , value name
@@ -743,8 +761,8 @@ mainView address model =
         , br [] []
         , text (toString model.ctrl)
         , br [] []
-        -- , text (toString model.floor.cursor)
-        -- , br [] []
+        , text (toString model.editingEquipment)
+        , br [] []
         , div [] equipments
         , nameInputView address model
         , selectorRect
