@@ -10,11 +10,11 @@ import Effects exposing (Effects)
 import Styles
 import Json.Decode exposing (Decoder, object2, object5, (:=), int, bool)
 import Keyboard
-import Char
 import Debug
 import Window
 
 import UndoRedo
+import Keys exposing (..)
 import HtmlUtil exposing (..)
 import Equipments exposing (..)
 import Position exposing (..)
@@ -24,29 +24,8 @@ app = StartApp.start
   , view = view
   , update = update
   , inputs =
-    [ Signal.map KeyCtrl Keyboard.ctrl
-    , Signal.map KeyDel (Keyboard.isDown 46)
-    , Signal.map KeyC (Keyboard.isDown (Char.toCode 'C'))
-    , Signal.map KeyV (Keyboard.isDown (Char.toCode 'V'))
-    , Signal.map KeyX (Keyboard.isDown (Char.toCode 'X'))
-    , Signal.map (\e ->
-        if e.keyCode == (Char.toCode 'Y') then
-          KeyY
-        else if e.keyCode == (Char.toCode 'Z') then
-          KeyZ
-        else if e.keyCode == 37 then
-          KeyLeftArrow
-        else if e.keyCode == 38 then
-          KeyUpArrow
-        else if e.keyCode == 39 then
-          KeyRightArrow
-        else if e.keyCode == 40 then
-          KeyDownArrow
-        else
-          NoOp
-      ) HtmlUtil.downs
-    , Signal.map WindowDimensions (Window.dimensions)
-    ]
+      (List.map (Signal.map KeysAction) Keys.inputs) ++
+      [Signal.map WindowDimensions (Window.dimensions)]
   }
 
 main : Signal Html
@@ -78,7 +57,7 @@ type alias Model =
   , editingEquipment : Maybe (Id, String)
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
-  , ctrl : Bool
+  , keys : Keys.Model
   , editMode : EditMode
   , colorPalette : List String
   , contextMenu : ContextMenu
@@ -110,7 +89,7 @@ init =
     , editingEquipment = Nothing
     , gridSize = 8 -- 2^N
     , selectorRect = Nothing
-    , ctrl = False
+    , keys = Keys.init
     , editMode = Selector
     , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
     , contextMenu = NoContextMenu
@@ -131,17 +110,7 @@ type Action = NoOp
   | DragEnd MouseEvent
   | MouseDownBackground MouseEvent
   | StartEditEquipment Id MouseEvent
-  | KeyCtrl Bool
-  | KeyDel Bool
-  | KeyC Bool
-  | KeyV Bool
-  | KeyX Bool
-  | KeyY
-  | KeyZ
-  | KeyLeftArrow
-  | KeyUpArrow
-  | KeyRightArrow
-  | KeyDownArrow
+  | KeysAction Keys.Action
   | SelectColor String MouseEvent
   | InputName Id String
   | KeydownOnNameInput KeyboardEvent
@@ -264,104 +233,6 @@ update action model =
             (newModel, focusEffect "name-input")
         Nothing ->
           (model, Effects.none)
-
-    KeyC down ->
-      let
-        newModel =
-          if down && model.ctrl then
-            { model |
-              copiedEquipments = model.selectedEquipments
-            }
-          else model
-      in
-        (newModel, Effects.none)
-    KeyV down ->
-      let
-        newModel =
-          if down && model.ctrl then
-            let
-              base =
-                case model.selectorRect of
-                  Just (x, y, w, h) ->
-                    (x, y)
-                  Nothing -> (0, 0) --TODO
-              newEquipments =
-                pasteEquipments base model.copiedEquipments (UndoRedo.data model.floor).equipments
-              model' =
-                { model |
-                  floor = UndoRedo.commit model.floor (Paste model.copiedEquipments base)
-                }
-              selected = List.map idOf newEquipments
-            in
-              { model' |
-                selectedEquipments = selected
-              , selectorRect = Nothing
-              }
-          else model
-      in
-        (newModel, Effects.none)
-    KeyX down ->
-      let
-        newModel = model --TODO
-      in
-        (newModel, Effects.none)
-    KeyY ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.redo model.floor
-          }
-      in
-        (newModel, Effects.none)
-    KeyZ ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.undo model.floor
-          }
-      in
-        (newModel, Effects.none)
-    KeyUpArrow ->
-      let
-        newModel =
-          shiftSelectionToward Position.Up model
-      in
-        (newModel, Effects.none)
-    KeyDownArrow ->
-      let
-        newModel =
-          shiftSelectionToward Position.Down model
-      in
-        (newModel, Effects.none)
-    KeyLeftArrow ->
-      let
-        newModel =
-          shiftSelectionToward Position.Left model
-      in
-        (newModel, Effects.none)
-    KeyRightArrow ->
-      let
-        newModel =
-          shiftSelectionToward Position.Right model
-      in
-        (newModel, Effects.none)
-
-    KeyCtrl bool ->
-      let
-        newModel =
-          { model |
-            ctrl = bool
-          }
-      in
-        (newModel, Effects.none)
-    KeyDel bool ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
-          }
-      in
-        (newModel, Effects.none)
     SelectColor color e ->
       let
         newModel =
@@ -460,12 +331,114 @@ update action model =
               model
       in
         (newModel, Effects.none)
+    KeysAction action ->
+      let
+        model' =
+          { model | keys = Keys.update action model.keys }
+      in
+        updateByKeyAction action model'
     WindowDimensions (w, h) ->
       let
         newModel =
           { model | windowDimensions = (w, h) }
       in
         (newModel, Effects.none)
+
+
+updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
+updateByKeyAction action model =
+  case action of
+    KeyC down ->
+      let
+        newModel =
+          if down && model.keys.ctrl then
+            { model |
+              copiedEquipments = model.selectedEquipments
+            }
+          else model
+      in
+        (newModel, Effects.none)
+    KeyV down ->
+      let
+        newModel =
+          if down && model.keys.ctrl then
+            let
+              base =
+                case model.selectorRect of
+                  Just (x, y, w, h) ->
+                    (x, y)
+                  Nothing -> (0, 0) --TODO
+              newEquipments =
+                pasteEquipments base model.copiedEquipments (UndoRedo.data model.floor).equipments
+              model' =
+                { model |
+                  floor = UndoRedo.commit model.floor (Paste model.copiedEquipments base)
+                }
+              selected = List.map idOf newEquipments
+            in
+              { model' |
+                selectedEquipments = selected
+              , selectorRect = Nothing
+              }
+          else model
+      in
+        (newModel, Effects.none)
+    KeyX down ->
+      let
+        newModel = model --TODO
+      in
+        (newModel, Effects.none)
+    KeyY ->
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.redo model.floor
+          }
+      in
+        (newModel, Effects.none)
+    KeyZ ->
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.undo model.floor
+          }
+      in
+        (newModel, Effects.none)
+    KeyUpArrow ->
+      let
+        newModel =
+          shiftSelectionToward Position.Up model
+      in
+        (newModel, Effects.none)
+    KeyDownArrow ->
+      let
+        newModel =
+          shiftSelectionToward Position.Down model
+      in
+        (newModel, Effects.none)
+    KeyLeftArrow ->
+      let
+        newModel =
+          shiftSelectionToward Position.Left model
+      in
+        (newModel, Effects.none)
+    KeyRightArrow ->
+      let
+        newModel =
+          shiftSelectionToward Position.Right model
+      in
+        (newModel, Effects.none)
+    KeyDel bool ->
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
+          }
+      in
+        (newModel, Effects.none)
+    _ ->
+      (model, Effects.none)
+
 
 shiftSelectionToward : Position.Direction -> Model -> Model
 shiftSelectionToward direction model =
@@ -658,7 +631,7 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
   case equipment of
     Desk id (left, top, width, height) color name ->
       let
-        moovingBool = toBool moving
+        moovingBool = moving /= Nothing
         (x, y) =
           case moving of
             Just ((startX, startY), (x, y)) ->
@@ -718,15 +691,15 @@ mainView address model =
     isSelected' = isSelected model
 
     isDragged equipment =
-      toBool(model.dragging) && List.member (idOf equipment) model.selectedEquipments
+      model.dragging /= Nothing && List.member (idOf equipment) model.selectedEquipments
 
     nonDraggingEquipments =
       List.map
-        (\equipment -> equipmentView address model Nothing (isSelected' equipment) (isDragged equipment) equipment model.ctrl)
+        (\equipment -> equipmentView address model Nothing (isSelected' equipment) (isDragged equipment) equipment model.keys.ctrl)
         (UndoRedo.data model.floor).equipments
 
     draggingEquipments =
-      if toBool(model.dragging)
+      if model.dragging /= Nothing
       then
         let
           equipments = List.filter isDragged (UndoRedo.data model.floor).equipments
@@ -736,7 +709,7 @@ mainView address model =
               _ -> Nothing
         in
           List.map
-            (\equipment -> equipmentView address model moving (isSelected' equipment) False equipment model.ctrl)
+            (\equipment -> equipmentView address model moving (isSelected' equipment) False equipment model.keys.ctrl)
             equipments
       else []
 
@@ -759,7 +732,7 @@ mainView address model =
         ]
         [ text (toString model.copiedEquipments)
         , br [] []
-        , text (toString model.ctrl)
+        , text (toString model.keys.ctrl)
         , br [] []
         , text (toString model.editingEquipment)
         , br [] []
@@ -802,9 +775,3 @@ view address model =
     ]
 
 --
-
-toBool : Maybe a -> Bool
-toBool maybe =
-  case maybe of
-    Just _ -> True
-    Nothing -> False
