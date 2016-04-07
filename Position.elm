@@ -2,18 +2,18 @@ module Position where
 
 import Equipments exposing (..)
 
-x : Equipment -> Int
-x (Desk id (x, _, _, _) _ _) = x
+rect : Equipment -> (Int, Int, Int, Int)
+rect (Desk _ rect _ _) = rect
 
-y : Equipment -> Int
-y (Desk id (_, y, _, _) _ _) = y
+rectFloat : Equipment -> (Float, Float, Float, Float)
+rectFloat e =
+  let
+    (x, y, w, h) = rect e
+  in
+    (toFloat x, toFloat y, toFloat w, toFloat h)
 
-w : Equipment -> Int
-w (Desk id (_, _, w, _) _ _) = w
-
-h : Equipment -> Int
-h (Desk id (_, _, _, h) _ _) = h
-
+center : (Float, Float, Float, Float) -> (Float, Float)
+center (x, y, w, h) = ((x + w / 2), (y + h / 2))
 
 island : List Equipment -> List Equipment -> List Equipment
 island current rest =
@@ -29,22 +29,40 @@ island current rest =
     else
       island (current ++ newEquipments) rest'
 
+type Direction = Up | Left | Right | Down
 
-topLeft : List Equipment -> Maybe Equipment
-topLeft list =
+{-| Returns if new position is more likely the next position to loop back to.
+For example, if given direction is Down which indicates the direction the selection is moving toward,
+next position is expected to be closer to top-left corner.
+-}
+closerToCorner : Direction -> (Float, Float) -> (Float, Float) -> Bool
+closerToCorner direction (centerX, centerY) (newCenterX, newCenterY) =
+  case direction of
+    Up ->
+      (newCenterX > centerX) || (newCenterX == centerX && newCenterY > centerY)
+    Down ->
+      (newCenterX < centerX) || (newCenterX == centerX && newCenterY < centerY)
+    Left ->
+      (newCenterY > centerY) || (newCenterY == centerY && newCenterX > centerX)
+    Right ->
+      (newCenterY < centerY) || (newCenterY == centerY && newCenterX < centerX)
+
+
+{-| Returns the next equipment to loop back to.
+For example, if given direction is Down which indicates the direction the selection is moving toward,
+next position is expected to be closer to top-left corner.
+-}
+corner : Direction -> List Equipment -> Maybe Equipment
+corner direction list =
   let
-    f e1 current =
+    f e1 memo =
       let
-        x1 = toFloat (x e1)
-        y1 = toFloat (y e1)
-        w1 = toFloat (w e1)
-        h1 = toFloat (h e1)
-        centerX1 = (x1 + w1 / 2)
-        centerY1 = (y1 + h1 / 2)
+        (x1, y1, w1, h1) = rectFloat e1
+        (centerX1, centerY1) = center (x1, y1, w1, h1)
       in
-        case current of
+        case memo of
           Just (centerX, centerY, e) ->
-            if (centerX1 < centerX) || (centerX1 == centerX && centerY1 < centerY) then
+            if closerToCorner direction (centerX, centerY) (centerX1, centerY1) then
               Just (centerX1, centerY1, e1)
             else
               Just (centerX, centerY, e)
@@ -53,33 +71,41 @@ topLeft list =
     result =
       List.foldl f Nothing list
   in
-    case result of
-      Just (_, _, e) -> Just e
-      Nothing -> Nothing
+    Maybe.map (\(_, _, e) -> e) result
 
-nearestBelow : Equipment -> List Equipment -> Maybe Equipment
-nearestBelow from list =
+{-| Defines if given equipment can be selected next.
+-}
+filterCandidate : Direction -> (Float, Float) -> Equipment -> Bool
+filterCandidate direction (centerX, centerY) e =
+  let
+    (x1, y1, w1, h1) = rectFloat e
+    (centerX1, centerY1) = center (x1, y1, w1, h1)
+    cond1 =
+      case direction of
+        Up ->
+          centerX1 < centerX || (centerX1 == centerX && centerY1 < centerY)
+        Down ->
+          centerX1 > centerX || (centerX1 == centerX && centerY1 > centerY)
+        Left ->
+          centerY1 < centerY || (centerY1 == centerY && centerX1 < centerX)
+        Right ->
+          centerY1 > centerY || (centerY1 == centerY && centerX1 > centerX)
+    cond2 = (centerX, centerY) /= (centerX1, centerY1)
+  in
+    cond1 && cond2
+
+{-| Returns the next equipment toward given direction.
+-}
+nearest : Direction -> Equipment -> List Equipment -> Maybe Equipment
+nearest direction from list =
   let
     (Desk id (x0, y0, w0, h0) _ _) = from
     centerX = toFloat x0 + toFloat w0 / 2
     centerY = toFloat y0 + toFloat h0 / 2
-    filter e =
-      let
-        x1 = toFloat (x e)
-        y1 = toFloat (y e)
-        w1 = toFloat (w e)
-        h1 = toFloat (h e)
-        centerX1 = (x1 + w1 / 2)
-        centerY1 = (y1 + h1 / 2)
-        dx1 = (x1 + w1 / 2) - centerX
-        dy1 = (y1 + h1 / 2) - centerX
-        cond1 = centerX1 > centerX || (centerX1 == centerX && centerY1 > centerY)
-        cond2 = (centerX, centerY) /= (centerX1, centerY1)
-      in
-        cond1 && cond2
+    filter = filterCandidate direction (centerX, centerY)
     filtered = List.filter filter list
   in
     if List.isEmpty filtered then
-      topLeft list
+      corner direction list
     else
-      topLeft filtered
+      corner direction filtered

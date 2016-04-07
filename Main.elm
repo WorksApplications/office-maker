@@ -34,7 +34,13 @@ app = StartApp.start
           KeyY
         else if e.keyCode == (Char.toCode 'Z') then
           KeyZ
-        else if e.keyCode == 40 then -- down
+        else if e.keyCode == 37 then
+          KeyLeftArrow
+        else if e.keyCode == 38 then
+          KeyUpArrow
+        else if e.keyCode == 39 then
+          KeyRightArrow
+        else if e.keyCode == 40 then
           KeyDownArrow
         else
           NoOp
@@ -132,6 +138,9 @@ type Action = NoOp
   | KeyX Bool
   | KeyY
   | KeyZ
+  | KeyLeftArrow
+  | KeyUpArrow
+  | KeyRightArrow
   | KeyDownArrow
   | SelectColor String MouseEvent
   | InputName Id String
@@ -312,25 +321,28 @@ update action model =
           }
       in
         (newModel, Effects.none)
+    KeyUpArrow ->
+      let
+        newModel =
+          shiftSelectionToward Position.Up model
+      in
+        (newModel, Effects.none)
     KeyDownArrow ->
       let
         newModel =
-          case primarySelectedEquipment model of
-            Just equipment ->
-              -- let
-              --   island' =
-              --     island
-              --       [equipment]
-              --       (List.filter (\e -> (idOf e) /= (idOf equipment))
-              --       (UndoRedo.data model.floor).equipments)
-              -- in
-                case nearestBelow equipment (UndoRedo.data model.floor).equipments of
-                  Just e ->
-                    { model |
-                      selectedEquipments = [idOf e]
-                    }
-                  _ -> model
-            _ -> model
+          shiftSelectionToward Position.Down model
+      in
+        (newModel, Effects.none)
+    KeyLeftArrow ->
+      let
+        newModel =
+          shiftSelectionToward Position.Left model
+      in
+        (newModel, Effects.none)
+    KeyRightArrow ->
+      let
+        newModel =
+          shiftSelectionToward Position.Right model
       in
         (newModel, Effects.none)
 
@@ -439,6 +451,19 @@ update action model =
           { model | windowDimensions = (w, h) }
       in
         (newModel, Effects.none)
+
+shiftSelectionToward : Position.Direction -> Model -> Model
+shiftSelectionToward direction model =
+  case primarySelectedEquipment model of
+    Just equipment ->
+      case nearest direction equipment (UndoRedo.data model.floor).equipments of
+        Just e ->
+          { model |
+            selectedEquipments = [idOf e]
+          }
+        _ -> model
+    _ -> model
+
 
 focusEffect : String -> Effects Action
 focusEffect id =
