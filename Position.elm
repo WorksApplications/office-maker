@@ -19,14 +19,21 @@ center e =
   in
     ((x + w / 2), (y + h / 2))
 
+linked : (number, number, number, number) -> (number, number, number, number) -> Bool
+linked (x1, y1, w1, h1) (x2, y2, w2, h2) =
+  x1 <= x2+w2 && x2 <= x1+w1 && y1 <= y2+h2 && y2 <= y1+h1
+
+linkedByAnyOf : List Equipment -> Equipment -> Bool
+linkedByAnyOf list newEquipment =
+  List.any (\e ->
+    linked (rect e) (rect newEquipment)
+  ) list
+
 island : List Equipment -> List Equipment -> List Equipment
 island current rest =
   let
-    match (Desk id (x1, y1, w1, h1) _ _) =
-      List.any (\(Desk id (x2, y2, w2, h2) _ _) ->
-        (x1 <= x2+w2 && x2 <= x1+w1 && y1 <= y2+h2 && y2 <= y1+h1)
-      ) current
-    (newEquipments, rest') = List.partition match rest
+    (newEquipments, rest') =
+      List.partition (linkedByAnyOf current) rest
   in
     if List.isEmpty newEquipments then
       current ++ newEquipments
@@ -34,7 +41,6 @@ island current rest =
       island (current ++ newEquipments) rest'
 
 type Direction = Up | Left | Right | Down
-type Order = Greater | Equal | Less
 
 compareBy : Direction -> Equipment -> Equipment -> Order
 compareBy direction from new =
@@ -43,7 +49,7 @@ compareBy direction from new =
     (newCenterX, newCenterY) = center new
   in
     if (centerX, centerY) == (newCenterX, newCenterY) then
-      Equal
+      EQ
     else
       let
         greater =
@@ -57,15 +63,15 @@ compareBy direction from new =
             Right ->
               (newCenterY > centerY) || (newCenterY == centerY && newCenterX > centerX)
       in
-        if greater then Greater else Less
+        if greater then GT else LT
 
 lessBy : Direction -> Equipment -> Equipment -> Bool
 lessBy direction from new =
-  compareBy direction from new == Less
+  compareBy direction from new == LT
 
 greaterBy : Direction -> Equipment -> Equipment -> Bool
 greaterBy direction from new =
-  compareBy direction from new == Greater
+  compareBy direction from new == GT
 
 minimumBy : Direction -> List Equipment -> Maybe Equipment
 minimumBy direction list =
