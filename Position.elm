@@ -105,3 +105,33 @@ nearest direction from list =
       minimumBy direction list
     else
       minimumBy direction filtered
+
+withinRange : (Equipment, Equipment) -> List Equipment -> List Equipment
+withinRange range list =
+  let
+    (start, end) = range
+    (startX, startY) = center start
+    (endX, endY) = center end
+    left = min startX endX
+    right = max startX endX
+    top = min startY endY
+    bottom = max startY endY
+    isContained e =
+      let
+        -- (x, y, w, h) = rectFloat e
+        (centerX, centerY) = center e
+      in
+        centerX >= left &&
+        centerX <= right &&
+        centerY >= top &&
+        centerY <= bottom
+  in
+    List.filter isContained list
+
+
+
+
+
+
+
+--

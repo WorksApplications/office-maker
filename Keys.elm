@@ -65,7 +65,7 @@ update action model =
     KeyCtrl down ->
       { model | ctrl = down }
     KeyShift down ->
-      { model | ctrl = down }
+      { model | shift = down }
     _ -> model
 
 ----

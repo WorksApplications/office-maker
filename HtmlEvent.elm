@@ -8,6 +8,7 @@ type alias MouseEvent =
   , layerX : Int
   , layerY : Int
   , ctrlKey : Bool
+  , shiftKey : Bool
   }
 
 type alias KeyboardEvent =
@@ -18,18 +19,22 @@ type alias KeyboardEvent =
 
 decodeMousePosition : Decoder MouseEvent
 decodeMousePosition =
-  object5
-    (\clientX clientY layerX layerY ctrl ->
+  object6
+    (\clientX clientY layerX layerY ctrl shift ->
       { clientX = clientX
       , clientY = clientY
       , layerX = layerX
       , layerY = layerY
-      , ctrlKey = ctrl })
+      , ctrlKey = ctrl
+      , shiftKey = shift
+      }
+    )
     ("clientX" := int)
     ("clientY" := int)
     ("layerX" := int)
     ("layerY" := int)
     ("ctrlKey" := bool)
+    ("shiftKey" := bool)
 
 decodeKeyboardEvent : Decoder KeyboardEvent
 decodeKeyboardEvent =

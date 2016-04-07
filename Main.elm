@@ -106,8 +106,8 @@ type Action = NoOp
   | MoveOnCanvas MouseEvent
   | EnterCanvas
   | LeaveCanvas
-  | DragStart Id MouseEvent
-  | DragEnd MouseEvent
+  | MouseDownOnEquipment Id MouseEvent
+  | MouseUpBackground MouseEvent
   | MouseDownBackground MouseEvent
   | StartEditEquipment Id MouseEvent
   | KeysAction Keys.Action
@@ -129,11 +129,25 @@ initFloor =
     , Desk "2" (8*13, 8*20, 8*8, 8*12) "#8bd" "John\nSmith"
     , Desk "3" (8*5, 8*32, 8*8, 8*12) "#fa9" "John\nSmith"
     , Desk "4" (8*13, 8*32, 8*8, 8*12) "#b8f" "John\nSmith"
+    , Desk "5" (8*5, 8*44, 8*8, 8*12) "#fa9" "John\nSmith"
+    , Desk "6" (8*13, 8*44, 8*8, 8*12) "#b8f" "John\nSmith"
     ]
+
+
+debug = False
+
+debugAction : Action -> Action
+debugAction action =
+  if debug then
+    case action of
+      MoveOnCanvas _ -> action
+      _ -> Debug.log "action" action
+  else
+    action
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-  case {--Debug.log "action"--} action of
+  case debugAction action of
     NoOp ->
       (model, Effects.none)
     Init ->
@@ -150,16 +164,27 @@ update action model =
       (model, Effects.none)
     LeaveCanvas ->
       (model, Effects.none)
-    DragStart lastTouchedId e ->
+    MouseDownOnEquipment lastTouchedId e ->
       let
         newModel =
           { model |
             selectedEquipments =
-              if e.ctrlKey
-              then
+              if e.ctrlKey then
                 if List.member lastTouchedId model.selectedEquipments
                 then List.filter ((/=) lastTouchedId) model.selectedEquipments
                 else lastTouchedId :: model.selectedEquipments
+              else if e.shiftKey then
+                let
+                  allEquipments =
+                    (UndoRedo.data model.floor).equipments
+                  equipmentsExcept target =
+                    List.filter (\e -> idOf e /= idOf target) allEquipments
+                in
+                  case (findEquipmentById allEquipments lastTouchedId, primarySelectedEquipment model) of
+                    (Just e, Just primary) ->
+                      List.map idOf <|
+                        primary :: (withinRange (primary, e) (equipmentsExcept primary)) --keep primary
+                    _ -> [lastTouchedId]
               else
                 if List.member lastTouchedId model.selectedEquipments
                 then model.selectedEquipments
@@ -169,7 +194,7 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    DragEnd e ->
+    MouseUpBackground e ->
       let
         model' =
           case model.dragging of
@@ -195,7 +220,7 @@ update action model =
                 case model.dragging of
                   Just (id, (startX, startY)) ->
                     if e.clientX == startX && e.clientY == startY
-                    then [id]
+                    then (if e.shiftKey then model.selectedEquipments else [id])
                     else model.selectedEquipments
                   _ -> model.selectedEquipments
           }
@@ -442,15 +467,23 @@ updateByKeyAction action model =
 
 shiftSelectionToward : Position.Direction -> Model -> Model
 shiftSelectionToward direction model =
-  case primarySelectedEquipment model of
-    Just equipment ->
-      case nearest direction equipment (UndoRedo.data model.floor).equipments of
-        Just e ->
-          { model |
-            selectedEquipments = [idOf e]
-          }
-        _ -> model
-    _ -> model
+  let
+    floor = UndoRedo.data model.floor
+    selected = selectedEquipments model
+  in
+    case selected of
+      primary :: tail ->
+        case nearest direction primary floor.equipments of
+          Just e ->
+            let
+              newEquipments = [e]
+            in
+              { model |
+                selectedEquipments =
+                  List.map idOf newEquipments
+              }
+          _ -> model
+      _ -> model
 
 
 focusEffect : String -> Effects Action
@@ -575,7 +608,9 @@ isSelected model equipment =
 
 primarySelectedEquipment : Model -> Maybe Equipment
 primarySelectedEquipment model =
-  List.head (selectedEquipments model)
+  case model.selectedEquipments of
+    head :: _ -> findEquipmentById (UndoRedo.data model.floor).equipments head
+    _ -> Nothing
 
 selectedEquipments : Model -> List Equipment
 selectedEquipments model =
@@ -652,7 +687,7 @@ equipmentView' address id (x, y, w, h) color name selected moving alpha contextM
     div
       (contextMenu ++ [ key (id ++ toString moving)
       , style (Styles.desk x y w h color selected alpha ++ [("display", "table")])
-      , onMouseDown' (forwardTo address (DragStart id))
+      , onMouseDown' (forwardTo address (MouseDownOnEquipment id))
       , onDblClick' (forwardTo address (StartEditEquipment id))
       ])
       [ pre
@@ -765,7 +800,7 @@ colorPropertyView address model =
 view : Address Action -> Model -> Html
 view address model =
   div
-    [ onMouseUp' (forwardTo address (DragEnd))
+    [ onMouseUp' (forwardTo address (MouseUpBackground))
     , onMouseDown' (forwardTo address (MouseDownBackground))
     -- , onKeyPress' (forwardTo address (KeyPress))
     ]
