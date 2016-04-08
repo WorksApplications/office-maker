@@ -42,6 +42,14 @@ island current rest =
 
 type Direction = Up | Left | Right | Down
 
+opposite : Direction -> Direction
+opposite direction =
+  case direction of
+    Left -> Right
+    Right -> Left
+    Up -> Down
+    Down -> Up
+
 compareBy : Direction -> Equipment -> Equipment -> Order
 compareBy direction from new =
   let
@@ -88,6 +96,7 @@ minimumBy direction list =
   in
     List.foldl f Nothing list
 
+
 {-| Defines if given equipment can be selected next.
 -}
 filterCandidate : Direction -> Equipment -> Equipment -> Bool
@@ -127,6 +136,133 @@ withinRange range list =
         centerY <= bottom
   in
     List.filter isContained list
+
+bounds : List Equipment -> Maybe (Int, Int, Int, Int)
+bounds list =
+  let
+    f e1 memo =
+      let
+        (x1, y1, w1, h1) = rect e1
+        right1 = x1 + w1
+        bottom1 = y1 + h1
+      in
+        case memo of
+          Just (x, y, right, bottom) ->
+            Just (min x x1, min y y1, max right right1, max bottom bottom1)
+          Nothing ->
+            Just (x1, y1, right1, bottom1)
+  in
+    List.foldl f Nothing list
+
+
+
+bound : Direction -> Equipment -> Int
+bound direction equipment =
+  let
+    (left, top, w, h) = rect equipment
+    right = left + w
+    bottom = top + h
+  in
+    case direction of
+      Up -> top
+      Down -> bottom
+      Left -> left
+      Right -> right
+
+compareBoundBy : Direction -> Equipment -> Equipment -> Order
+compareBoundBy direction e1 e2 =
+  let
+    (left1, top1, w1, h1) = rect e1
+    right1 = left1 + w1
+    bottom1 = top1 + h1
+    (left2, top2, w2, h2) = rect e2
+    right2 = left2 + w2
+    bottom2 = top2 + h2
+  in
+    case direction of
+      Up -> if top1 == top2 then EQ else if top1 < top2 then GT else LT
+      Down -> if bottom1 == bottom2 then EQ else if bottom1 > bottom2 then GT else LT
+      Left -> if left1 == left2 then EQ else if left1 < left2 then GT else LT
+      Right -> if right1 == right2 then EQ else if right1 > right2 then GT else LT
+
+minimumPartsOf : Direction -> List Equipment -> List Equipment
+minimumPartsOf direction list =
+  let
+    f e memo =
+      case memo of
+        head :: _ ->
+          case compareBoundBy direction e head of
+            LT -> [e]
+            EQ -> e :: memo
+            GT -> memo
+        _ -> [e]
+  in
+    List.foldl f [] list
+
+maximumPartsOf : Direction -> List Equipment -> List Equipment
+maximumPartsOf direction list =
+  let
+    f e memo =
+      case memo of
+        head :: _ ->
+          case compareBoundBy direction e head of
+            LT -> memo
+            EQ -> e :: memo
+            GT -> [e]
+        _ -> [e]
+  in
+    List.foldl f [] list
+
+restOfMinimumPartsOf : Direction -> List Equipment -> List Equipment
+restOfMinimumPartsOf direction list =
+  let
+    minimumParts = minimumPartsOf direction list
+  in
+    List.filter (\e -> not (List.member e minimumParts)) list
+
+restOfMaximumPartsOf : Direction -> List Equipment -> List Equipment
+restOfMaximumPartsOf direction list =
+  let
+    maximumParts = maximumPartsOf direction list
+  in
+    List.filter (\e -> not (List.member e maximumParts)) list
+
+
+expandOrShrink : Direction -> Equipment -> List Equipment -> List Equipment -> List Equipment
+expandOrShrink direction primary current all =
+  let
+    (left0, top0, w0, h0) = rect primary
+    right0 = left0 + w0
+    bottom0 = top0 + h0
+    (left, top, right, bottom) =
+      Maybe.withDefault
+        (left0, top0, right0, bottom0)
+        (bounds current)
+    isExpand =
+      case direction of
+        Up -> bottom == bottom0 && top <= top0
+        Down -> top == top0 && bottom >= bottom0
+        Left -> right == right0 && left <= left0
+        Right -> left == left0 && right >= right0
+  in
+    if isExpand then
+      let
+        filter e1 =
+          let
+            (left1, top1, w1, h1) = rect e1
+            right1 = left1 + w1
+            bottom1 = top1 + h1
+          in
+            case direction of
+              Up -> left1 >= left && right1 <= right && top1 < top
+              Down -> left1 >= left && right1 <= right && bottom1 > bottom
+              Left -> top1 >= top && bottom1 <= bottom && left1 < left
+              Right -> top1 >= top && bottom1 <= bottom && right1 > right
+        filtered = List.filter filter all
+      in
+        current ++ (minimumPartsOf direction filtered)
+    else
+      restOfMaximumPartsOf (opposite direction) current
 
 
 

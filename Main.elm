@@ -270,7 +270,7 @@ update action model =
       let
         newModel =
           { model |
-            editingEquipment = Debug.log "InputName" <|
+            editingEquipment =
               case model.editingEquipment of
                 Just (id', name') ->
                   if id == id' then
@@ -295,13 +295,13 @@ update action model =
                         case findEquipmentById allEquipments id of
                           Just equipment ->
                             let
-                              island' = Debug.log "island'" <|
+                              island' =
                                 island
                                   [equipment]
                                   (List.filter (\e -> (idOf e) /= id) allEquipments)
                             in
                               case Position.nearest Position.Down equipment island' of
-                                Just equipment -> Debug.log "next" <|Just (idOf equipment, nameOf equipment)
+                                Just equipment -> Just (idOf equipment, nameOf equipment)
                                 Nothing -> Nothing
                           Nothing -> Nothing
                     in
@@ -473,16 +473,23 @@ shiftSelectionToward direction model =
   in
     case selected of
       primary :: tail ->
-        case nearest direction primary floor.equipments of
-          Just e ->
-            let
-              newEquipments = [e]
-            in
-              { model |
-                selectedEquipments =
-                  List.map idOf newEquipments
-              }
-          _ -> model
+        let
+          toBeSelected =
+            if model.keys.shift then
+              List.map idOf <|
+                expandOrShrink direction primary selected floor.equipments
+            else
+              case nearest direction primary floor.equipments of
+                Just e ->
+                  let
+                    newEquipments = [e]
+                  in
+                    List.map idOf newEquipments
+                _ -> model.selectedEquipments
+        in
+          { model |
+            selectedEquipments = toBeSelected
+          }
       _ -> model
 
 
@@ -609,14 +616,15 @@ isSelected model equipment =
 primarySelectedEquipment : Model -> Maybe Equipment
 primarySelectedEquipment model =
   case model.selectedEquipments of
-    head :: _ -> findEquipmentById (UndoRedo.data model.floor).equipments head
+    head :: _ ->
+      findEquipmentById (UndoRedo.data model.floor).equipments head
     _ -> Nothing
 
 selectedEquipments : Model -> List Equipment
 selectedEquipments model =
-  List.filter
-    (\equipment -> List.member (idOf equipment) model.selectedEquipments)
-    (UndoRedo.data model.floor).equipments
+  List.filterMap (\id ->
+    findEquipmentById (UndoRedo.data model.floor).equipments id
+  ) model.selectedEquipments
 
 colorProperty : Model -> Maybe String
 colorProperty model =
@@ -699,7 +707,7 @@ equipmentView' address id (x, y, w, h) color name selected moving alpha contextM
            -- TODO vertical align
           ]
         ]
-        [ text (toString (x, y) ++ "\n" ++ name)]]
+        [ text ({-toString (x, y) ++ "\n" ++ -}name)]]
 
 nameInputView : Address Action -> Model -> Html
 nameInputView address model =
