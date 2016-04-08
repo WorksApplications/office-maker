@@ -18,6 +18,7 @@ import Keys exposing (..)
 import HtmlUtil exposing (..)
 import Equipments exposing (..)
 import Position exposing (..)
+import IdGenerator exposing (Seed)
 
 app = StartApp.start
   { init = init
@@ -49,7 +50,7 @@ type alias Floor =
   }
 
 type alias Model =
-  { idGen : Int
+  { seed : Seed
   , pos : Maybe (Int, Int)
   , dragging : Maybe (Id, (Int, Int))
   , selectedEquipments : List Id
@@ -81,7 +82,7 @@ type Commit =
 init : (Model, Effects Action)
 init =
   (
-    { idGen = 0
+    { seed = IdGenerator.init
     , pos = Nothing
     , dragging = Nothing
     , selectedEquipments = []
@@ -98,7 +99,6 @@ init =
     }
   , Effects.task (Task.succeed Init)
   )
-
 --
 
 type Action = NoOp
