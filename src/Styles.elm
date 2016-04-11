@@ -99,16 +99,23 @@ contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
 contextMenu (x, y) (windowWidth, windowHeight) rows =
   let
     width = 200
-    height = rows * 20
+    height = rows * 20 --TODO
     x' = min x (windowWidth - width)
     y' = min y (windowHeight - height)
   in
-    (rect x' y' width height) ++
-      [ ("position", "fixed")
-      , ("z-index", zIndex.contextMenu)
-      , ("background-color", "#fff")
-      , ("box-sizing", "border-box")
-      , ("border-style", "solid")
-      , ("border-width", "1px")
-      , ("border-color", "#eee")
-      ]
+    [ ("width", toString width ++ "px")
+    , ("left", toString x' ++ "px")
+    , ("top", toString y' ++ "px")
+    , ("position", "fixed")
+    , ("z-index", zIndex.contextMenu)
+    , ("background-color", "#fff")
+    , ("box-sizing", "border-box")
+    , ("border-style", "solid")
+    , ("border-width", "1px")
+    , ("border-color", "#eee")
+    ]
+
+contextMenuItem : S
+contextMenuItem =
+  [ ("padding", "5px")
+  ]

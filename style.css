@@ -1,0 +1,9 @@
+body {
+  margin : 0;
+  overflow-y: hidden;
+}
+
+.hovarable:hover {
+  background-color: #9ce;
+  cursor: pointer;
+}

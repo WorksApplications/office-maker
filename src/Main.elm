@@ -35,6 +35,8 @@ main = app.html
 port tasks : Signal (Task.Task Effects.Never ())
 port tasks = app.tasks
 
+port initialSize : (Int, Int)
+
 --
 
 type alias FloorImage =
@@ -54,7 +56,7 @@ type alias Model =
   , pos : Maybe (Int, Int)
   , dragging : Maybe (Id, (Int, Int))
   , selectedEquipments : List Id
-  , copiedEquipments : List Id
+  , copiedEquipments : List Equipment
   , editingEquipment : Maybe (Id, String)
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
@@ -74,7 +76,7 @@ type EditMode = Selector | Pen
 
 type Commit =
     Move (List Id) Int (Int, Int)
-  | Paste (List (Id, Id)) (Int, Int)
+  | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
   | ChangeColor (List Id) String
   | ChangeName Id String
@@ -95,7 +97,7 @@ init =
     , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
     , contextMenu = NoContextMenu
     , floor = UndoRedo.init { data = initFloor, update = updateFloorByCommit }
-    , windowDimensions = (50000, 50000) -- TODO
+    , windowDimensions = initialSize
     }
   , Effects.task (Task.succeed Init)
   )
@@ -378,7 +380,7 @@ updateByKeyAction action model =
         newModel =
           if down && model.keys.ctrl then
             { model |
-              copiedEquipments = model.selectedEquipments
+              copiedEquipments = selectedEquipments model
             }
           else model
       in
@@ -393,7 +395,7 @@ updateByKeyAction action model =
                   Just (x, y, w, h) ->
                     (x, y)
                   Nothing -> (0, 0) --TODO
-              (copiedIdsWithNewIds, newSeed) = Debug.log "seed" <|
+              (copiedIdsWithNewIds, newSeed) =
                 IdGenerator.zipWithNewIds model.seed model.copiedEquipments
               model' =
                 { model |
@@ -411,7 +413,14 @@ updateByKeyAction action model =
         (newModel, Effects.none)
     KeyX down ->
       let
-        newModel = model --TODO
+        newModel =
+          if down && model.keys.ctrl then
+            { model |
+              floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
+            , copiedEquipments = selectedEquipments model
+            , selectedEquipments = []
+            }
+          else model
       in
         (newModel, Effects.none)
     KeyY ->
@@ -521,10 +530,10 @@ updateFloorByCommit commit floor =
       setEquipments
         floor
         (moveEquipments gridSize (dx, dy) ids floor.equipments)
-    Paste idsWithNewIds (baseX, baseY) ->
+    Paste copiedWithNewIds (baseX, baseY) ->
       setEquipments
         floor
-        (floor.equipments ++ (pasteEquipments (baseX, baseY) idsWithNewIds floor.equipments))
+        (floor.equipments ++ (pasteEquipments (baseX, baseY) copiedWithNewIds floor.equipments))
     Delete ids ->
       setEquipments
         floor
@@ -564,29 +573,24 @@ idOf (Desk id _ _ _) = id
 nameOf : Equipment -> String
 nameOf (Desk _ _ _ name) = name
 
-pasteEquipments : (Int, Int) -> List (Id, Id) -> List Equipment -> List Equipment
-pasteEquipments (baseX, baseY) copiedIdsWithNewIds allEquipments =
+pasteEquipments : (Int, Int) -> List (Equipment, Id) -> List Equipment -> List Equipment
+pasteEquipments (baseX, baseY) copiedWithNewIds allEquipments =
   let
-    toBeCopied =
-      List.filterMap (\(id, newId) ->
-        Maybe.map ((,) newId) (findEquipmentById allEquipments id)
-      ) copiedIdsWithNewIds
-
     (minX, minY) =
-      List.foldl (\(newId, equipment) (minX, minY) ->
+      List.foldl (\(equipment, newId) (minX, minY) ->
         let
           (x, y) = Equipments.position equipment
         in
           (Basics.min minX x, Basics.min minY y)
-    ) (99999, 99999) toBeCopied
+    ) (99999, 99999) copiedWithNewIds
 
     newEquipments =
-      List.map (\(newId, equipment) ->
+      List.map (\(equipment, newId) ->
         let
           (x, y) = Equipments.position equipment
         in
           Equipments.copy newId (baseX + (x - minX), baseY + (y - minY)) equipment
-    ) toBeCopied
+    ) copiedWithNewIds
   in
     newEquipments
 
@@ -670,10 +674,19 @@ contextMenuView address model =
       div
         [ style (Styles.contextMenu (x, y) (fst model.windowDimensions, snd model.windowDimensions) 2)
         ] -- TODO
-        [ div
-            [ onMouseDown' (forwardTo address (SelectIsland id)) ]
-            [ text "Select Island" ]
-        , div [] [ text "" ] ]
+        [ contextMenuItemView address (SelectIsland id) "Select Island"
+        , contextMenuItemView address (always NoOp) "Other"
+        ]
+
+contextMenuItemView : Address Action -> (MouseEvent -> Action) -> String -> Html
+contextMenuItemView address action text' =
+  div
+    [ class "hovarable"
+    , style Styles.contextMenuItem
+    , onMouseDown' (forwardTo address action)
+    ]
+    [ text text' ]
+
 
 equipmentView : Address Action -> Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Html
 equipmentView address model moving selected alpha equipment contextMenuDisabled =
@@ -771,15 +784,17 @@ mainView address model =
           div [style (Styles.selectorRect x y w h)] []
         Nothing -> text ""
 
+    (windowWidth, windowHeight) = model.windowDimensions
+    height = windowHeight - 33
   in
-    main' [ style Styles.flex ]
+    main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
       [ div
-        [ style (Styles.flexMain ++ [("position", "relative")])
+        [ style (Styles.flexMain  ++ [("position", "relative")])
         , onMouseMove' (forwardTo address MoveOnCanvas)
         -- , onMouseEnter (forwardTo address (always EnterCanvas)) address
         -- , onMouseLeave (forwardTo address (always LeaveCanvas)) address
         ]
-        [ text (toString model.copiedEquipments)
+        [ text (toString <| List.map idOf <| model.copiedEquipments)
         , br [] []
         , text (toString model.keys.ctrl)
         , br [] []
