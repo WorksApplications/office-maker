@@ -66,3 +66,18 @@ onKeyDown' address =
 onContextMenu' : Address MouseEvent -> Attribute
 onContextMenu' address =
   onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+
+onMouseWheel : Address a -> (Float -> a) -> Attribute
+onMouseWheel address toAction =
+  let
+    handler v = Signal.message address (toAction v)
+  in
+    onWithOptions "wheel" { stopPropagation = True, preventDefault = True } decodeWheelEvent handler
+
+decodeWheelEvent : Json.Decode.Decoder Float
+decodeWheelEvent =
+  oneOf
+    [ at [ "deltaY" ] float
+    , at [ "wheelDelta" ] float |> map (\v -> -v)
+    ]
+    `andThen` (\v -> if v /= 0 then succeed v else fail "Wheel of 0")

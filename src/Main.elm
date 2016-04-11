@@ -39,16 +39,11 @@ port initialSize : (Int, Int)
 
 --
 
-type alias FloorImage =
-  { name: String
-  , width: Int
-  , height: Int
-  }
-
 type alias Floor =
   { name : String
   , equipments: List Equipment
-  , image : Maybe FloorImage
+  , width : Int
+  , height : Int
   }
 
 type alias Model =
@@ -66,6 +61,7 @@ type alias Model =
   , contextMenu : ContextMenu
   , floor : UndoRedo.Model Floor Commit
   , windowDimensions : (Int, Int)
+  , scaleDown : Int
   }
 
 type ContextMenu =
@@ -98,6 +94,7 @@ init =
     , contextMenu = NoContextMenu
     , floor = UndoRedo.init { data = initFloor, update = updateFloorByCommit }
     , windowDimensions = initialSize
+    , scaleDown = 1
     }
   , Effects.task (Task.succeed Init)
   )
@@ -119,22 +116,23 @@ type Action = NoOp
   | ShowContextMenuOnEquipment Id MouseEvent
   | SelectIsland Id MouseEvent
   | WindowDimensions (Int, Int)
+  | MouseWheel Float
 
 initFloor : Floor
 initFloor =
   setEquipments
     { name = ""
     , equipments = []
-    , image = Nothing
+    , width = 1610
+    , height = 810
     }
-    [ Desk "1" (8*5, 8*20, 8*8, 8*12) "#ed9" "John\nSmith"
-    , Desk "2" (8*13, 8*20, 8*8, 8*12) "#8bd" "John\nSmith"
-    , Desk "3" (8*5, 8*32, 8*8, 8*12) "#fa9" "John\nSmith"
-    , Desk "4" (8*13, 8*32, 8*8, 8*12) "#b8f" "John\nSmith"
-    , Desk "5" (8*5, 8*44, 8*8, 8*12) "#fa9" "John\nSmith"
-    , Desk "6" (8*13, 8*44, 8*8, 8*12) "#b8f" "John\nSmith"
+    [ Desk "1" (8*5, 8*20, 8*6, 8*10) "#ed9" "John\nSmith"
+    , Desk "2" (8*11, 8*20, 8*6, 8*10) "#8bd" "John\nSmith"
+    , Desk "3" (8*5, 8*30, 8*6, 8*10) "#fa9" "John\nSmith"
+    , Desk "4" (8*11, 8*30, 8*6, 8*10) "#b8f" "John\nSmith"
+    , Desk "5" (8*5, 8*40, 8*6, 8*10) "#fa9" "John\nSmith"
+    , Desk "6" (8*11, 8*40, 8*6, 8*10) "#b8f" "John\nSmith"
     ]
-
 
 debug = False
 
@@ -158,7 +156,9 @@ update action model =
       let
         newModel =
           { model |
-            pos = Just (e.clientX, e.clientY)
+            pos =
+              Just (e.clientX, e.clientY)
+              -- Just (recoverPosition model.scaleDown (e.clientX, e.clientY))
           }
       in
         (newModel, Effects.none)
@@ -202,7 +202,7 @@ update action model =
           case model.dragging of
             Just (_, (x, y)) ->
               let
-                shift = (e.clientX - x, e.clientY - y)
+                shift = recoverPosition model.scaleDown (e.clientX - x, e.clientY - y)
               in
                 if shift /= (0, 0) then
                   { model |
@@ -241,8 +241,10 @@ update action model =
           { model' |
             selectedEquipments = []
           , selectorRect =
-              let (x,y) = fitToGrid model.gridSize (e.layerX, e.layerY)
-              in Just (x, y, model.gridSize, model.gridSize)
+              let
+                (x,y) = recoverPosition model.scaleDown <| fitToGrid model.gridSize model.scaleDown (e.layerX, e.layerY)
+              in
+                Just (x, y, model.gridSize, model.gridSize)
           , editingEquipment = Nothing
           , contextMenu = NoContextMenu
           }
@@ -364,6 +366,20 @@ update action model =
           { model | keys = Keys.update action model.keys }
       in
         updateByKeyAction action model'
+    MouseWheel value ->
+      let
+        newScaleDown =
+          if model.keys.ctrl then
+            if value < 0 then
+              Basics.max 0 (model.scaleDown - 1)
+            else
+              Basics.min 2 (model.scaleDown + 1)
+          else
+            model.scaleDown
+        newModel =
+          { model | scaleDown = newScaleDown }
+      in
+        (newModel, Effects.none)
     WindowDimensions (w, h) ->
       let
         newModel =
@@ -607,7 +623,7 @@ partiallyChange f ids equipments =
 moveEquipments : Int -> (Int, Int) -> List Id -> List Equipment -> List Equipment
 moveEquipments gridSize (dx, dy) ids equipments =
   partiallyChange (\(Desk id (x, y, width, height) color name) ->
-    let (newX, newY) = fitToGrid gridSize (x + dx, y + dy)
+    let (newX, newY) = fitToGrid gridSize 0 (x + dx, y + dy)
     in Desk id (newX, newY, width, height) color name
   ) ids equipments
 
@@ -652,9 +668,12 @@ colorProperty model =
       Nothing -> Nothing
 
 
-fitToGrid : Int -> (Int, Int) -> (Int, Int)
-fitToGrid gridSize (x, y) =
-  (x // gridSize * gridSize, y // gridSize * gridSize)
+fitToGrid : Int -> Int -> (Int, Int) -> (Int, Int)
+fitToGrid gridSize scaleDown (x, y) =
+  let
+    px = gridSize // (2 ^ scaleDown)
+  in
+    (x // px * px, y // px * px)
 
 
 --
@@ -697,13 +716,16 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
         (x, y) =
           case moving of
             Just ((startX, startY), (x, y)) ->
-              fitToGrid model.gridSize (left + (x - startX), top + (y - startY))
+              let
+                (dx, dy) = recoverPosition model.scaleDown ((x - startX), (y - startY))
+              in
+                fitToGrid model.gridSize model.scaleDown (left + dx, top + dy)
             _ -> (left, top)
       in
-        equipmentView' address id (x, y, width, height) color name selected moovingBool alpha contextMenuDisabled
+        equipmentView' address id (x, y, width, height) color name selected moovingBool alpha contextMenuDisabled model.scaleDown
 
-equipmentView' : Address Action -> Id -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> Html
-equipmentView' address id (x, y, w, h) color name selected moving alpha contextMenuDisabled =
+equipmentView' : Address Action -> Id -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> Int -> Html
+equipmentView' address id rect color name selected moving alpha contextMenuDisabled scaleDown =
   let
     contextMenu =
       if contextMenuDisabled then
@@ -713,18 +735,12 @@ equipmentView' address id (x, y, w, h) color name selected moving alpha contextM
   in
     div
       (contextMenu ++ [ key (id ++ toString moving)
-      , style (Styles.desk x y w h color selected alpha ++ [("display", "table")])
+      , style (Styles.desk (scaleDownRect scaleDown rect) color selected alpha ++ [("display", "table")])
       , onMouseDown' (forwardTo address (MouseDownOnEquipment id))
       , onDblClick' (forwardTo address (StartEditEquipment id))
       ])
       [ pre
-        [ style
-          [ ("display", "table-cell")
-          , ("vertical-align", "middle")
-          , ("text-align", "center")
-          , ("position", "absolute")
-           -- TODO vertical align
-          ]
+        [ style (Styles.nameLabel scaleDown)
         ]
         [ text ({-toString (x, y) ++ "\n" ++ -}name)]]
 
@@ -733,10 +749,10 @@ nameInputView address model =
   case model.editingEquipment of
     Just (id, name) ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
-        Just (Desk id (x, y, w, h) color _) ->
+        Just (Desk id rect color _) ->
           textarea
             [ Html.Attributes.id "name-input"
-            , style (Styles.deskInput x y w h)
+            , style (Styles.deskInput rect)
             , onInput' (forwardTo address (InputName id)) -- TODO cannot input japanese
             , onKeyDown' (forwardTo address (KeydownOnNameInput))
             , onMouseDown' (forwardTo address (always NoOp))
@@ -749,6 +765,39 @@ nameInputView address model =
 
 mainView : Address Action -> Model -> Html
 mainView address model =
+  let
+    (windowWidth, windowHeight) = model.windowDimensions
+    height = windowHeight - 33
+  in
+    main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
+      [ div
+        [ style (Styles.flexMain  ++ [("position", "relative"), ("overflow-x", "scroll")])
+        , onMouseMove' (forwardTo address MoveOnCanvas)
+        -- , onMouseEnter (forwardTo address (always EnterCanvas)) address
+        -- , onMouseLeave (forwardTo address (always LeaveCanvas)) address
+        , onMouseWheel address MouseWheel
+        ]
+        [ text (toString <| List.map idOf <| model.copiedEquipments)
+        , br [] []
+        , text (toString model.keys.ctrl)
+        , br [] []
+        , text (toString model.editingEquipment)
+        , br [] []
+        , canvasView address model
+        , nameInputView address model
+        ]
+      , propertyView address model
+      ]
+
+propertyView : Address Action -> Model -> Html
+propertyView address model =
+  div
+    [ style (Styles.subMenu) ]
+    [ text "Color"
+    , colorPropertyView address model]
+
+canvasView : Address Action -> Model -> Html
+canvasView address model =
   let
     isSelected' = isSelected model
 
@@ -780,35 +829,18 @@ mainView address model =
 
     selectorRect =
       case model.selectorRect of
-        Just (x, y, w, h) ->
-          div [style (Styles.selectorRect x y w h)] []
+        Just rect ->
+          div [style (Styles.selectorRect (scaleDownRect model.scaleDown rect) )] []
         Nothing -> text ""
-
-    (windowWidth, windowHeight) = model.windowDimensions
-    height = windowHeight - 33
+    rect =
+      scaleDownRect
+        model.scaleDown
+        (20, 20, (UndoRedo.data model.floor).width, (UndoRedo.data model.floor).height)
   in
-    main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
-      [ div
-        [ style (Styles.flexMain  ++ [("position", "relative")])
-        , onMouseMove' (forwardTo address MoveOnCanvas)
-        -- , onMouseEnter (forwardTo address (always EnterCanvas)) address
-        -- , onMouseLeave (forwardTo address (always LeaveCanvas)) address
-        ]
-        [ text (toString <| List.map idOf <| model.copiedEquipments)
-        , br [] []
-        , text (toString model.keys.ctrl)
-        , br [] []
-        , text (toString model.editingEquipment)
-        , br [] []
-        , div [] equipments
-        , nameInputView address model
-        , selectorRect
-        ]
-      , div
-          [ style (Styles.subMenu) ]
-          [ text "Color"
-          , colorPropertyView address model]
-      ]
+    div
+      [ style (Styles.canvasView rect) ]
+      (selectorRect :: equipments)
+
 
 colorPropertyView : Address Action -> Model -> Html
 colorPropertyView address model =
@@ -838,4 +870,11 @@ view address model =
     , contextMenuView address model
     ]
 
+scaleDownRect : Int -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
+scaleDownRect scaleDown (x, y, w, h) =
+  (x // (2^scaleDown), y // (2^scaleDown), w // (2^scaleDown), h // (2^scaleDown))
+
+recoverPosition : Int -> (Int, Int) -> (Int, Int)
+recoverPosition scaleDown (screenX, screenY) =
+  (screenX * (2^scaleDown), screenY * (2^scaleDown))
 --

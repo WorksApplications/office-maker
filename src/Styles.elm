@@ -26,7 +26,7 @@ flex =
 
 flexMain : S
 flexMain =
-  [ ( "flex", "2"), ("height", "600px") ]
+  [ ( "flex", "2"), ("background", "#000") ]
 
 flexSub : S
 flexSub =
@@ -43,27 +43,27 @@ header : S
 header =
   noMargin ++ [ ( "background", "#555"), ("color", "#eee") ]
 
-rect : Int -> Int -> Int -> Int -> S
-rect x y w h =
+rect : (Int, Int, Int, Int) -> S
+rect (x, y, w, h) =
   [ ("top", toString y ++ "px")
   , ("left", toString x ++ "px")
   , ("width", toString w ++ "px")
   , ("height", toString h ++ "px")
   ]
 
-absoluteRect : Int -> Int -> Int -> Int -> S
-absoluteRect x y w h =
-  ("position", "absolute") :: (rect x y w h)
+absoluteRect : (Int, Int, Int, Int) -> S
+absoluteRect rect' =
+  ("position", "absolute") :: (rect rect')
 
-deskInput : Int -> Int -> Int -> Int -> S
-deskInput x y w h =
-  (absoluteRect x y w h) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
+deskInput : (Int, Int, Int, Int) -> S
+deskInput rect =
+  (absoluteRect rect) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
   , ("box-sizing", "border-box")
   ]
 
-desk : Int -> Int -> Int -> Int -> String -> Bool -> Bool -> S
-desk x y w h color selected alpha =
-  (absoluteRect x y w h) ++ [ ("opacity", if alpha then "0.5" else "1.0")
+desk : (Int, Int, Int, Int) -> String -> Bool -> Bool -> S
+desk rect color selected alpha =
+  (absoluteRect rect) ++ [ ("opacity", if alpha then "0.5" else "1.0")
   , ("background-color", color)
   , ("box-sizing", "border-box")
   , ("z-index", if selected then zIndex.selectedDesk else "")
@@ -72,9 +72,9 @@ desk x y w h color selected alpha =
   , ("border-color", if selected  then "#69e" else "#666")
   ]
 
-selectorRect : Int -> Int -> Int -> Int -> S
-selectorRect x y w h =
-  (absoluteRect x y w h) ++ [("z-index", zIndex.selectorRect)
+selectorRect : (Int, Int, Int, Int) -> S
+selectorRect rect =
+  (absoluteRect rect) ++ [("z-index", zIndex.selectorRect)
   , ("border-style", "solid")
   , ("border-width", "2px")
   , ("border-color", "#69e")
@@ -118,4 +118,23 @@ contextMenu (x, y) (windowWidth, windowHeight) rows =
 contextMenuItem : S
 contextMenuItem =
   [ ("padding", "5px")
+  ]
+
+canvasView : (Int, Int, Int, Int) -> S
+canvasView rect =
+  (absoluteRect rect) ++
+    [ ("background-color", "#fff")
+    , ("overflow", "hidden")
+    ]
+
+
+nameLabel : Int -> S
+nameLabel scaleDown =
+  [ ("display", "table-cell")
+  , ("vertical-align", "middle")
+  , ("text-align", "center")
+  , ("position", "absolute")
+  , ("cursor", "default")
+  , ("font-size", (toString (1 / toFloat (2 ^ scaleDown))) ++ "em") --TODO
+   -- TODO vertical align
   ]
