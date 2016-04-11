@@ -213,10 +213,10 @@ canvasView address model =
       draggingEquipments ++ nonDraggingEquipments
 
     selectorRect =
-      case model.selectorRect of
-        Just rect ->
+      case (model.editMode, model.selectorRect) of
+        (Select, Just (rect, _)) ->
           div [style (Styles.selectorRect (scaleDownRect model.scaleDown rect) )] []
-        Nothing -> text ""
+        _ -> text ""
     rect =
       scaleDownRect
         model.scaleDown

@@ -30,7 +30,7 @@ type alias Model =
   , copiedEquipments : List Equipment
   , editingEquipment : Maybe (Id, String)
   , gridSize : Int
-  , selectorRect : Maybe (Int, Int, Int, Int)
+  , selectorRect : Maybe ((Int, Int, Int, Int), Bool) -- rect, dragging
   , keys : Keys.Model
   , editMode : EditMode
   , colorPalette : List String
@@ -142,7 +142,24 @@ update action model =
           { model |
             pos =
               Just (e.clientX, e.clientY)
-              -- Just (recoverPosition model.scaleDown (e.clientX, e.clientY))
+          -- , selectorRect = -- TODO has bug
+          --     case model.selectorRect of
+          --       Just (rect, False) ->
+          --         Just (rect, False)
+          --       Just ((left', top', w, h), True) ->
+          --         let
+          --           (x, y) =
+          --             fitToGrid model.gridSize 0 <|
+          --               recoverPosition model.scaleDown (e.clientX, e.clientY)
+          --           (left, top) = Debug.log "(left, top)" <|
+          --             (min x left', min y top')
+          --           (right, bottom) = Debug.log "(right, bottom)" <|
+          --             (max x left', max y top')
+          --           (width, height) = Debug.log "(width, height)" <|
+          --             (right - left, bottom - top)
+          --         in
+          --           Just ((left, top, width, height), True)
+          --       Nothing -> Nothing
           }
       in
         (newModel, Effects.none)
@@ -209,6 +226,10 @@ update action model =
                     then (if e.shiftKey then model.selectedEquipments else [id])
                     else model.selectedEquipments
                   _ -> model.selectedEquipments
+          , selectorRect =
+              case model.selectorRect of
+                Just (rect, _) -> Just (rect, False)
+                Nothing -> Nothing
           }
       in
         (newModel, Effects.none)
@@ -228,7 +249,7 @@ update action model =
               let
                 (x,y) = recoverPosition model.scaleDown <| fitToGrid model.gridSize model.scaleDown (e.layerX, e.layerY)
               in
-                Just (x, y, model.gridSize, model.gridSize)
+                Just ((x, y, model.gridSize, model.gridSize), True)
           , editingEquipment = Nothing
           , contextMenu = NoContextMenu
           }
@@ -398,7 +419,7 @@ updateByKeyAction action model =
             let
               base =
                 case model.selectorRect of
-                  Just (x, y, w, h) ->
+                  Just ((x, y, w, h), _) ->
                     (x, y)
                   Nothing -> (0, 0) --TODO
               (copiedIdsWithNewIds, newSeed) =
