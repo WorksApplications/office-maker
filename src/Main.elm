@@ -74,7 +74,7 @@ type EditMode = Selector | Pen
 
 type Commit =
     Move (List Id) Int (Int, Int)
-  | Paste (List Id) (Int, Int)
+  | Paste (List (Id, Id)) (Int, Int)
   | Delete (List Id)
   | ChangeColor (List Id) String
   | ChangeName Id String
@@ -393,13 +393,14 @@ updateByKeyAction action model =
                   Just (x, y, w, h) ->
                     (x, y)
                   Nothing -> (0, 0) --TODO
-              newEquipments =
-                pasteEquipments base model.copiedEquipments (UndoRedo.data model.floor).equipments
+              (copiedIdsWithNewIds, newSeed) = Debug.log "seed" <|
+                IdGenerator.zipWithNewIds model.seed model.copiedEquipments
               model' =
                 { model |
-                  floor = UndoRedo.commit model.floor (Paste model.copiedEquipments base)
+                  floor = UndoRedo.commit model.floor (Paste copiedIdsWithNewIds base)
+                , seed = newSeed
                 }
-              selected = List.map idOf newEquipments
+              selected = List.map snd copiedIdsWithNewIds
             in
               { model' |
                 selectedEquipments = selected
@@ -520,10 +521,10 @@ updateFloorByCommit commit floor =
       setEquipments
         floor
         (moveEquipments gridSize (dx, dy) ids floor.equipments)
-    Paste ids (baseX, baseY) ->
+    Paste idsWithNewIds (baseX, baseY) ->
       setEquipments
         floor
-        (floor.equipments ++ (pasteEquipments (baseX, baseY) ids floor.equipments))
+        (floor.equipments ++ (pasteEquipments (baseX, baseY) idsWithNewIds floor.equipments))
     Delete ids ->
       setEquipments
         floor
@@ -563,24 +564,29 @@ idOf (Desk id _ _ _) = id
 nameOf : Equipment -> String
 nameOf (Desk _ _ _ name) = name
 
-pasteEquipments : (Int, Int) -> List Id -> List Equipment -> List Equipment
-pasteEquipments (baseX, baseY) copied allEquipments =
+pasteEquipments : (Int, Int) -> List (Id, Id) -> List Equipment -> List Equipment
+pasteEquipments (baseX, baseY) copiedIdsWithNewIds allEquipments =
   let
     toBeCopied =
-        List.filter (\equipment ->
-          List.member (idOf equipment) copied
-        ) allEquipments
+      List.filterMap (\(id, newId) ->
+        Maybe.map ((,) newId) (findEquipmentById allEquipments id)
+      ) copiedIdsWithNewIds
 
     (minX, minY) =
-      List.foldl (\(Desk _ (x, y, w, h) color _) (minX, minY) -> (Basics.min minX x, Basics.min minY y)) (99999, 99999) toBeCopied
+      List.foldl (\(newId, equipment) (minX, minY) ->
+        let
+          (x, y) = Equipments.position equipment
+        in
+          (Basics.min minX x, Basics.min minY y)
+    ) (99999, 99999) toBeCopied
 
     newEquipments =
-      List.map (\equipment ->
-        case equipment of
-          Desk id (x, y, width, height) color name ->
-            let (newX, newY) = (baseX + (x - minX), baseY + (y - minY))
-            in Desk (id ++ "x") (newX, newY, width, height) color name --TODO
-      ) toBeCopied
+      List.map (\(newId, equipment) ->
+        let
+          (x, y) = Equipments.position equipment
+        in
+          Equipments.copy newId (baseX + (x - minX), baseY + (y - minY)) equipment
+    ) toBeCopied
   in
     newEquipments
 

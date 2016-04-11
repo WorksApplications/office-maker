@@ -4,7 +4,7 @@ type Seed = Seed Int
 type alias Id = String
 
 init : Seed
-init = Seed 0
+init = Seed 100 -- TODO
 
 new : Seed -> (Id, Seed)
 new (Seed i) = (toString i, Seed (i + 1))
