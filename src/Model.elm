@@ -44,7 +44,7 @@ type ContextMenu =
     NoContextMenu
   | Equipment (Int, Int) Id
 
-type EditMode = Selector | Pen
+type EditMode = Select | Pen | Stamp
 
 type Commit =
     Move (List Id) Int (Int, Int)
@@ -71,7 +71,7 @@ init initialSize =
     , gridSize = 8 -- 2^N
     , selectorRect = Nothing
     , keys = Keys.init
-    , editMode = Selector
+    , editMode = Select
     , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
     , contextMenu = NoContextMenu
     , floor = UndoRedo.init { data = initFloor, update = updateFloorByCommit }
@@ -99,6 +99,7 @@ type Action = NoOp
   | SelectIsland Id MouseEvent
   | WindowDimensions (Int, Int)
   | MouseWheel Float
+  | ChangeMode EditMode
 
 initFloor : Floor
 initFloor =
@@ -367,6 +368,12 @@ update action model =
       let
         newModel =
           { model | windowDimensions = (w, h) }
+      in
+        (newModel, Effects.none)
+    ChangeMode mode ->
+      let
+        newModel =
+          { model | editMode = mode }
       in
         (newModel, Effects.none)
 

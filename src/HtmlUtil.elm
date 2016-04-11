@@ -61,6 +61,10 @@ onChange' address =
 
 onKeyDown' : Address KeyboardEvent -> Attribute
 onKeyDown' address =
+  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyboardEvent (Signal.message address)
+
+onKeyDown'' : Address KeyboardEvent -> Attribute
+onKeyDown'' address =
   on "keydown" decodeKeyboardEvent (Signal.message address)
 
 onContextMenu' : Address MouseEvent -> Attribute
@@ -73,6 +77,10 @@ onMouseWheel address toAction =
     handler v = Signal.message address (toAction v)
   in
     onWithOptions "wheel" { stopPropagation = True, preventDefault = True } decodeWheelEvent handler
+
+mouseDownDefence : Address a -> a -> Attribute
+mouseDownDefence address noOp =
+  onMouseDown' (Signal.forwardTo address (always noOp))
 
 decodeWheelEvent : Json.Decode.Decoder Float
 decodeWheelEvent =

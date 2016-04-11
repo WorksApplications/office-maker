@@ -15,7 +15,9 @@ import Model exposing (..)
 
 headerView : Address Action -> Model -> Html
 headerView address model =
-  header [ style Styles.header ]
+  header
+    [ style Styles.header
+    , mouseDownDefence address NoOp ]
     [ h1 [ style Styles.h1 ] [text "Office Maker"]
     ]
 
@@ -89,7 +91,7 @@ nameInputView address model =
             [ Html.Attributes.id "name-input"
             , style (Styles.deskInput rect)
             , onInput' (forwardTo address (InputName id)) -- TODO cannot input japanese
-            , onKeyDown' (forwardTo address (KeydownOnNameInput))
+            , onKeyDown'' (forwardTo address (KeydownOnNameInput))
             , onMouseDown' (forwardTo address (always NoOp))
             , value name
             ]
@@ -121,7 +123,9 @@ mainView address model =
 subView : Address Action -> Model -> Html
 subView address model =
   div
-    [ style (Styles.subMenu) ]
+    [ style (Styles.subMenu)
+    , mouseDownDefence address NoOp
+    ]
     [ card <| penView address model
     , card <| propertyView address model
     , card <| debugView address model
@@ -136,7 +140,29 @@ card children =
 
 penView : Address Action -> Model -> List Html
 penView address model =
+  let
+    widthStyle = [("width", "80px")]
+    selection =
+      div
+        [ style (Styles.selection (model.editMode == Select) ++ widthStyle)
+        , onClick' (forwardTo address (always <| ChangeMode Select))
+        ]
+        [ text "Select" ]
+    pen =
+      div
+        [ style (Styles.selection (model.editMode == Pen) ++ widthStyle)
+        , onClick' (forwardTo address (always <| ChangeMode Pen))
+        ]
+        [ text "Pen" ]
+    stamp =
+      div
+        [ style (Styles.selection (model.editMode == Stamp) ++ widthStyle)
+        , onClick' (forwardTo address (always <| ChangeMode Stamp))
+        ]
+        [ text "Stamp" ]
+  in
     [ text "PenView"
+    , div [ style Styles.flex ] [selection, pen, stamp]
     ]
 
 propertyView : Address Action -> Model -> List Html
@@ -211,7 +237,8 @@ colorPropertyView address model =
     viewForEach color =
       li
         [ style (Styles.colorProperty color (match color))
-        , onMouseDown' (forwardTo address (SelectColor color)) ]
+        , onMouseDown' (forwardTo address (SelectColor color))
+        ]
         []
   in
     ul [ style (Styles.ul ++ [("display", "flex")]) ]

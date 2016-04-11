@@ -44,7 +44,7 @@ h1 =
   noMargin ++
     [ ( "font-size", "1.4em")
     , ("font-weight", "normal")
-    , ("font-family", "'Roboto'") ]
+    ]
 
 ul : S
 ul =
@@ -99,10 +99,12 @@ selectorRect rect =
 colorProperty : String -> Bool -> S
 colorProperty color selected =
   [ ("background-color", color)
+  , ("cursor", "pointer")
   , ("width", "30px")
   , ("height", "30px")
   , ("box-sizing", "border-box")
   , ("border-style", "solid")
+  , ("margin-right", "2px")
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then "#69e" else "#666")
   ]
@@ -141,6 +143,7 @@ canvasView rect =
   (absoluteRect rect) ++
     [ ("background-color", "#fff")
     , ("overflow", "hidden")
+    , ("font-family", "default")
     ]
 
 
@@ -155,9 +158,25 @@ nameLabel scaleDown =
    -- TODO vertical align
   ]
 
+shadow : S
+shadow =
+  [ ("box-shadow", "0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)") ]
+
 card : S
 card =
   [ ("margin", "5px")
   , ("padding", "5px")
-  , ("box-shadow", "0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)")
+  ] ++ shadow
+
+selection : Bool -> S
+selection selected =
+  [ ("cursor", "pointer")
+  , ("padding", "10px")
+  , ("text-align", "center")
+  , ("box-sizing", "border-box")
+  , ("margin-right", "-1px")
+  , ("border", "solid 1px #666")
+  , ("background-color", if selected then "#69e" else "inherit")
+  , ("color", if selected then "#fff" else "inherit")
+  -- , ("font-weight", if selected then "bold" else "inherit")
   ]
