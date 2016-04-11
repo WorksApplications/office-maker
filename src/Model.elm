@@ -4,9 +4,6 @@ import Maybe
 import Signal exposing (Signal, Address, forwardTo)
 import Task
 import Effects exposing (Effects)
-import Styles
-import Json.Decode exposing (Decoder, object2, object5, (:=), int, bool)
-import Keyboard
 import Debug
 import Window
 

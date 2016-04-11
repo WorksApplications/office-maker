@@ -2,20 +2,15 @@ module View(view) where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
-import Html.Lazy exposing (..)
+-- import Html.Lazy exposing (..)
 import Maybe
 import Signal exposing (Address, forwardTo)
 import Styles
-import Debug
-import Window
+-- import Debug
 
 import UndoRedo
--- import Keys exposing (..)
 import HtmlUtil exposing (..)
 import Equipments exposing (..)
-import Position exposing (..)
-import IdGenerator exposing (Seed)
 import Model exposing (..)
 
 headerView : Address Action -> Model -> Html
