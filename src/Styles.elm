@@ -4,6 +4,13 @@ module Styles where
 
 type alias S = List (String, String)
 
+zIndex :
+  { selectedDesk : String
+  , deskInput : String
+  , selectorRect : String
+  , subMenu : String
+  , contextMenu : String
+  }
 zIndex =
   { selectedDesk = "100"
   , deskInput = "200"
@@ -33,15 +40,24 @@ flexSub =
   [ ( "flex", "1"), ("background", "#eee") ]
 
 h1 : S
-h1 = noMargin
+h1 =
+  noMargin ++
+    [ ( "font-size", "1.4em")
+    , ("font-weight", "normal")
+    , ("font-family", "'Roboto'") ]
 
 ul : S
-ul = [ ("list-style-type", "none"), ("padding-left", "0") ]
-
+ul =
+  [ ("list-style-type", "none")
+  , ("padding-left", "0") ]
 
 header : S
 header =
-  noMargin ++ [ ( "background", "#555"), ("color", "#eee") ]
+  noMargin ++
+    [ ( "background", "rgb(100, 180, 85)")
+    , ("color", "#eee")
+    , ("padding", "5px 10px")
+    ]
 
 rect : (Int, Int, Int, Int) -> S
 rect (x, y, w, h) =
@@ -137,4 +153,11 @@ nameLabel scaleDown =
   , ("cursor", "default")
   , ("font-size", (toString (1 / toFloat (2 ^ scaleDown))) ++ "em") --TODO
    -- TODO vertical align
+  ]
+
+card : S
+card =
+  [ ("margin", "5px")
+  , ("padding", "5px")
+  , ("box-shadow", "0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)")
   ]

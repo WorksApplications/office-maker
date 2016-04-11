@@ -112,24 +112,48 @@ mainView address model =
         -- , onMouseLeave (forwardTo address (always LeaveCanvas)) address
         , onMouseWheel address MouseWheel
         ]
-        [ text (toString <| List.map idOf <| model.copiedEquipments)
-        , br [] []
-        , text (toString model.keys.ctrl)
-        , br [] []
-        , text (toString model.editingEquipment)
-        , br [] []
-        , canvasView address model
+        [ canvasView address model
         , nameInputView address model
         ]
-      , propertyView address model
+      , subView address model
       ]
 
-propertyView : Address Action -> Model -> Html
-propertyView address model =
+subView : Address Action -> Model -> Html
+subView address model =
   div
     [ style (Styles.subMenu) ]
-    [ text "Color"
-    , colorPropertyView address model]
+    [ card <| penView address model
+    , card <| propertyView address model
+    , card <| debugView address model
+    ]
+
+card : List Html -> Html
+card children =
+  div
+    [ {-style Styles.card-}
+    style [("margin-bottom", "20px"), ("padding", "10px")]
+    ] children
+
+penView : Address Action -> Model -> List Html
+penView address model =
+    [ text "PenView"
+    ]
+
+propertyView : Address Action -> Model -> List Html
+propertyView address model =
+    [ text "Properties"
+    , colorPropertyView address model
+    ]
+
+debugView : Address Action -> Model -> List Html
+debugView address model =
+    [ text (toString <| List.map idOf <| model.copiedEquipments)
+    , br [] []
+    , text (toString model.keys.ctrl)
+    , br [] []
+    , text (toString model.editingEquipment)
+    , br [] []
+    ]
 
 canvasView : Address Action -> Model -> Html
 canvasView address model =
