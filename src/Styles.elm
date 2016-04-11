@@ -51,11 +51,15 @@ ul =
   [ ("list-style-type", "none")
   , ("padding-left", "0") ]
 
+headerHeight : Int
+headerHeight = 27
+
 header : S
 header =
   noMargin ++
     [ ( "background", "rgb(100, 180, 85)")
     , ("color", "#eee")
+    , ("height", toString headerHeight ++ "px")
     , ("padding", "5px 10px")
     ]
 

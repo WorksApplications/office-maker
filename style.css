@@ -1,7 +1,12 @@
+@font-face {
+   font-family: Roboto;
+   src: url('Roboto-Light.ttf') format("truetype");
+}
+
 body {
   margin : 0;
   overflow-y: hidden;
-  font-family: 'Roboto';
+  font-family: 'Roboto', sans-serif;
 }
 
 .hovarable:hover {

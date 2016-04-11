@@ -104,7 +104,7 @@ mainView : Address Action -> Model -> Html
 mainView address model =
   let
     (windowWidth, windowHeight) = model.windowDimensions
-    height = windowHeight - 33
+    height = windowHeight - Styles.headerHeight
   in
     main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
       [ div
