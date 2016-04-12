@@ -3,10 +3,13 @@ module HtmlUtil where
 import HtmlEvent exposing (..)
 import Native.HtmlUtil
 import Signal exposing (Address)
-import Html exposing (Attribute)
+import Html exposing (Html, Attribute)
+import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode exposing (..)
+-- import Json.Encode
 import Task exposing (Task)
+
 
 type HtmlUtilError =
   IdNotFound String
@@ -147,3 +150,28 @@ decodeWheelEvent =
       , at [ "wheelDelta" ] float |> map (\v -> -v)
       ]))
     `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
+
+
+
+type FileList = FileList Json.Decode.Value
+
+readFirstAsDataURL : FileList -> Task () String
+readFirstAsDataURL = Native.HtmlUtil.readAsDataURL
+
+getWidthAndHeightOfImage : String -> (Int, Int)
+getWidthAndHeightOfImage = Native.HtmlUtil.getWidthAndHeightOfImage
+
+fileLoadButton : Address FileList -> Html
+fileLoadButton address =
+  Html.input
+    [ Html.Attributes.type' "file"
+    , on
+        "change"
+        decodeFile
+        (Signal.message address)
+    ]
+    []
+
+decodeFile : Decoder FileList
+decodeFile =
+  Json.Decode.map FileList (at ["target", "files"] (value))

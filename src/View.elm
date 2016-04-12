@@ -168,6 +168,7 @@ penView address model =
   in
     [ text "PenView"
     , div [ style Styles.flex ] [selection, pen, stamp]
+    , fileLoadButton (forwardTo address LoadFile)
     ]
 
 propertyView : Address Action -> Model -> List Html
@@ -258,5 +259,9 @@ view address model =
     , mainView address model
     , contextMenuView address model
     ]
+
+-- view : Address Action -> Model -> Html
+-- view address model =
+--   fileLoadButton (forwardTo address LoadFile)
 
 --

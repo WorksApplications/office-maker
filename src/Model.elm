@@ -20,6 +20,7 @@ type alias Floor =
   , equipments: List Equipment
   , width : Int
   , height : Int
+  , dataURL : Maybe String
   }
 
 type alias Model =
@@ -54,6 +55,7 @@ type Commit =
   | Delete (List Id)
   | ChangeColor (List Id) String
   | ChangeName Id String
+  | ChangeImage String
 
 
 inputs : List (Signal Action)
@@ -104,6 +106,8 @@ type Action = NoOp
   | WindowDimensions (Int, Int)
   | MouseWheel MouseWheelEvent
   | ChangeMode EditMode
+  | LoadFile FileList
+  | GotDataURL String
 
 initFloor : Floor
 initFloor =
@@ -112,6 +116,7 @@ initFloor =
     , equipments = []
     , width = 1610
     , height = 810
+    , dataURL = Nothing
     }
     [ Desk "1" (8*5, 8*20, 8*6, 8*10) "#ed9" "John\nSmith"
     , Desk "2" (8*11, 8*20, 8*6, 8*10) "#8bd" "John\nSmith"
@@ -129,6 +134,7 @@ debugAction action =
   if debug then
     case action of
       MoveOnCanvas _ -> action
+      GotDataURL _ -> action
       _ -> Debug.log "action" action
   else
     action
@@ -420,6 +426,21 @@ update action model =
           { model | editMode = mode }
       in
         (newModel, Effects.none)
+    LoadFile fileList ->
+      let
+        task =
+          (readFirstAsDataURL fileList)
+          `Task.andThen` (\dataURL -> Task.succeed (GotDataURL dataURL))
+          `Task.onError` (\error -> Task.succeed NoOp)
+        effects = Effects.task task
+      in
+        (model, effects)
+    GotDataURL dataURL ->
+      let
+        newModel =
+          { model | floor = UndoRedo.commit model.floor (ChangeImage dataURL) }
+      in
+        (newModel, Effects.none)
 
 
 updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
@@ -589,6 +610,8 @@ updateFloorByCommit commit floor =
       setEquipments
         floor
         (commitInputName (id, name) floor.equipments)
+    ChangeImage dataURL ->
+      setImage dataURL floor
 
 
 setEquipments : Floor -> List Equipment -> Floor
@@ -597,6 +620,16 @@ setEquipments floor equipments =
     equipments = equipments
   }
 
+setImage : String -> Floor -> Floor
+setImage dataURL floor =
+  let
+    (width, height) = getWidthAndHeightOfImage dataURL
+  in
+    { floor |
+      width = width
+    , height = height
+    , dataURL = Just dataURL
+    }
 
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
