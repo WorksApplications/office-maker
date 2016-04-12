@@ -31,14 +31,6 @@ flex : S
 flex =
   [ ( "display", "flex") ]
 
-flexMain : S
-flexMain =
-  [ ( "flex", "2"), ("background", "#000") ]
-
-flexSub : S
-flexSub =
-  [ ( "flex", "1"), ("background", "#eee") ]
-
 h1 : S
 h1 =
   noMargin ++
@@ -116,7 +108,11 @@ colorProperty color selected =
 
 subMenu : S
 subMenu =
-  flexSub ++ [("z-index", zIndex.subMenu)]
+    [ ("z-index", zIndex.subMenu)
+    , ("width", "300px")
+    , ("overflow", "hidden")
+    , ("background", "#eee")
+    ]
 
 contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
 contextMenu (x, y) (windowWidth, windowHeight) rows =
@@ -151,6 +147,13 @@ canvasView rect =
     , ("font-family", "default")
     ]
 
+canvasContainer : S
+canvasContainer =
+  [ ("position", "relative")
+  , ("overflow", "hidden")
+  , ("background", "#000")
+  , ("flex", "1")
+  ]
 
 nameLabel : Int -> S
 nameLabel scaleDown =

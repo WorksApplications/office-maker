@@ -111,7 +111,7 @@ mainView address model =
   in
     main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
       [ div
-        [ style (Styles.flexMain  ++ [("position", "relative"), ("overflow", "hidden")])
+        [ style Styles.canvasContainer
         , onMouseMove' (forwardTo address MoveOnCanvas)
         , onMouseDown' (forwardTo address (MouseDownOnCanvas))
         , onMouseUp' (forwardTo address (MouseUpOnCanvas))
