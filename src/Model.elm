@@ -98,7 +98,7 @@ type Action = NoOp
   | ShowContextMenuOnEquipment Id MouseEvent
   | SelectIsland Id MouseEvent
   | WindowDimensions (Int, Int)
-  | MouseWheel Float
+  | MouseWheel MouseWheelEvent
   | ChangeMode EditMode
 
 initFloor : Floor
@@ -372,11 +372,11 @@ update action model =
           { model | keys = Keys.update action model.keys }
       in
         updateByKeyAction action model'
-    MouseWheel value ->
+    MouseWheel e ->
       let
         newScale =
           if model.keys.ctrl then
-            if value < 0 then
+            if e.value < 0 then
               Scale.update Scale.ScaleUp model.scale
             else
               Scale.update Scale.ScaleDown model.scale

@@ -71,7 +71,7 @@ onContextMenu' : Address MouseEvent -> Attribute
 onContextMenu' address =
   onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
 
-onMouseWheel : Address a -> (Float -> a) -> Attribute
+onMouseWheel : Address a -> (MouseWheelEvent -> a) -> Attribute
 onMouseWheel address toAction =
   let
     handler v = Signal.message address (toAction v)
@@ -82,10 +82,58 @@ mouseDownDefence : Address a -> a -> Attribute
 mouseDownDefence address noOp =
   onMouseDown' (Signal.forwardTo address (always noOp))
 
-decodeWheelEvent : Json.Decode.Decoder Float
+
+decodeMousePosition : Decoder MouseEvent
+decodeMousePosition =
+  object6
+    (\clientX clientY layerX layerY ctrl shift ->
+      { clientX = clientX
+      , clientY = clientY
+      , layerX = layerX
+      , layerY = layerY
+      , ctrlKey = ctrl
+      , shiftKey = shift
+      }
+    )
+    ("clientX" := int)
+    ("clientY" := int)
+    ("layerX" := int)
+    ("layerY" := int)
+    ("ctrlKey" := bool)
+    ("shiftKey" := bool)
+
+
+type alias MouseWheelEvent =
+  { clientX : Int
+  , clientY : Int
+  , layerX : Int
+  , layerY : Int
+  , ctrlKey : Bool
+  , shiftKey : Bool
+  , value : Float
+  }
+
+decodeWheelEvent : Json.Decode.Decoder MouseWheelEvent
 decodeWheelEvent =
-  oneOf
-    [ at [ "deltaY" ] float
-    , at [ "wheelDelta" ] float |> map (\v -> -v)
-    ]
-    `andThen` (\v -> if v /= 0 then succeed v else fail "Wheel of 0")
+  (object7
+    (\clientX clientY layerX layerY ctrl shift value ->
+      { clientX = clientX
+      , clientY = clientY
+      , layerX = layerX
+      , layerY = layerY
+      , ctrlKey = ctrl
+      , shiftKey = shift
+      , value = value
+      }
+    )
+    ("clientX" := int)
+    ("clientY" := int)
+    ("layerX" := int)
+    ("layerY" := int)
+    ("ctrlKey" := bool)
+    ("shiftKey" := bool)
+    (oneOf
+      [ at [ "deltaY" ] float
+      , at [ "wheelDelta" ] float |> map (\v -> -v)
+      ]))
+    `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
