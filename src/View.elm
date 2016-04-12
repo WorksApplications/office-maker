@@ -12,6 +12,8 @@ import UndoRedo
 import HtmlUtil exposing (..)
 import Equipments exposing (..)
 import Model exposing (..)
+import Scale
+import EquipmentsOperation exposing (..)
 
 headerView : Address Action -> Model -> Html
 headerView address model =
@@ -54,16 +56,17 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
           case moving of
             Just ((startX, startY), (x, y)) ->
               let
-                (dx, dy) = recoverPosition model.scaleDown ((x - startX), (y - startY))
+                (dx, dy) = Scale.screenToImageForPosition model.scale ((x - startX), (y - startY))
               in
-                fitToGrid model.gridSize model.scaleDown (left + dx, top + dy)
+                fitToGrid model.gridSize (left + dx, top + dy)
             _ -> (left, top)
       in
-        equipmentView' address id (x, y, width, height) color name selected moovingBool alpha contextMenuDisabled model.scaleDown
+        equipmentView' address id (x, y, width, height) color name selected moovingBool alpha contextMenuDisabled model.scale
 
-equipmentView' : Address Action -> Id -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> Int -> Html
-equipmentView' address id rect color name selected moving alpha contextMenuDisabled scaleDown =
+equipmentView' : Address Action -> Id -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> Scale.Model -> Html
+equipmentView' address id rect color name selected moving alpha contextMenuDisabled scale =
   let
+    screenRect = Scale.imageToScreenForRect scale rect
     contextMenu =
       if contextMenuDisabled then
         []
@@ -72,12 +75,12 @@ equipmentView' address id rect color name selected moving alpha contextMenuDisab
   in
     div
       (contextMenu ++ [ key (id ++ toString moving)
-      , style (Styles.desk (scaleDownRect scaleDown rect) color selected alpha ++ [("display", "table")])
+      , style (Styles.desk screenRect color selected alpha ++ [("display", "table")])
       , onMouseDown' (forwardTo address (MouseDownOnEquipment id))
       , onDblClick' (forwardTo address (StartEditEquipment id))
       ])
       [ pre
-        [ style (Styles.nameLabel scaleDown)
+        [ style (Styles.nameLabel (Scale.imageToScreen scale 1))
         ]
         [ text ({-toString (x, y) ++ "\n" ++ -}name)]]
 
@@ -215,11 +218,12 @@ canvasView address model =
     selectorRect =
       case (model.editMode, model.selectorRect) of
         (Select, Just (rect, _)) ->
-          div [style (Styles.selectorRect (scaleDownRect model.scaleDown rect) )] []
+          div [style (Styles.selectorRect (Scale.imageToScreenForRect model.scale rect) )] []
         _ -> text ""
+
     rect =
-      scaleDownRect
-        model.scaleDown
+      Scale.imageToScreenForRect
+        model.scale
         (20, 20, (UndoRedo.data model.floor).width, (UndoRedo.data model.floor).height)
   in
     div

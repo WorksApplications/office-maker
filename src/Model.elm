@@ -11,9 +11,9 @@ import UndoRedo
 import Keys exposing (..)
 import HtmlUtil exposing (..)
 import Equipments exposing (..)
-import Position exposing (..)
+import EquipmentsOperation exposing (..)
 import IdGenerator exposing (Seed)
-
+import Scale
 
 type alias Floor =
   { name : String
@@ -37,7 +37,7 @@ type alias Model =
   , contextMenu : ContextMenu
   , floor : UndoRedo.Model Floor Commit
   , windowDimensions : (Int, Int)
-  , scaleDown : Int
+  , scale : Scale.Model
   }
 
 type ContextMenu =
@@ -76,7 +76,7 @@ init initialSize =
     , contextMenu = NoContextMenu
     , floor = UndoRedo.init { data = initFloor, update = updateFloorByCommit }
     , windowDimensions = initialSize
-    , scaleDown = 1
+    , scale = Scale.init
     }
   , Effects.task (Task.succeed Init)
   )
@@ -203,7 +203,7 @@ update action model =
           case model.dragging of
             Just (_, (x, y)) ->
               let
-                shift = recoverPosition model.scaleDown (e.clientX - x, e.clientY - y)
+                shift = Scale.screenToImageForPosition model.scale (e.clientX - x, e.clientY - y)
               in
                 if shift /= (0, 0) then
                   { model |
@@ -247,7 +247,8 @@ update action model =
             selectedEquipments = []
           , selectorRect =
               let
-                (x,y) = recoverPosition model.scaleDown <| fitToGrid model.gridSize model.scaleDown (e.layerX, e.layerY)
+                (x,y) = fitToGrid model.gridSize <|
+                  Scale.screenToImageForPosition model.scale (e.layerX, e.layerY)
               in
                 Just ((x, y, model.gridSize, model.gridSize), True)
           , editingEquipment = Nothing
@@ -309,7 +310,7 @@ update action model =
                                   [equipment]
                                   (List.filter (\e -> (idOf e) /= id) allEquipments)
                             in
-                              case Position.nearest Position.Down equipment island' of
+                              case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
                                 Just equipment -> Just (idOf equipment, nameOf equipment)
                                 Nothing -> Nothing
                           Nothing -> Nothing
@@ -373,16 +374,16 @@ update action model =
         updateByKeyAction action model'
     MouseWheel value ->
       let
-        newScaleDown =
+        newScale =
           if model.keys.ctrl then
             if value < 0 then
-              Basics.max 0 (model.scaleDown - 1)
+              Scale.update Scale.ScaleUp model.scale
             else
-              Basics.min 2 (model.scaleDown + 1)
+              Scale.update Scale.ScaleDown model.scale
           else
-            model.scaleDown
+            model.scale
         newModel =
-          { model | scaleDown = newScaleDown }
+          { model | scale = newScale }
       in
         (newModel, Effects.none)
     WindowDimensions (w, h) ->
@@ -401,56 +402,48 @@ update action model =
 
 updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
 updateByKeyAction action model =
-  case action of
-    KeyC down ->
+  case (model.keys.ctrl, action) of
+    (True, KeyC True) ->
       let
         newModel =
-          if down && model.keys.ctrl then
-            { model |
-              copiedEquipments = selectedEquipments model
-            }
-          else model
+          { model |
+            copiedEquipments = selectedEquipments model
+          }
       in
         (newModel, Effects.none)
-    KeyV down ->
+    (True, KeyV True) ->
+      let
+        base =
+          case model.selectorRect of
+            Just ((x, y, w, h), _) ->
+              (x, y)
+            Nothing -> (0, 0) --TODO
+        (copiedIdsWithNewIds, newSeed) =
+          IdGenerator.zipWithNewIds model.seed model.copiedEquipments
+        model' =
+          { model |
+            floor = UndoRedo.commit model.floor (Paste copiedIdsWithNewIds base)
+          , seed = newSeed
+          }
+        selected = List.map snd copiedIdsWithNewIds
+        newModel =
+          { model' |
+            selectedEquipments = selected
+          , selectorRect = Nothing
+          }
+      in
+        (newModel, Effects.none)
+    (True, KeyX True) ->
       let
         newModel =
-          if down && model.keys.ctrl then
-            let
-              base =
-                case model.selectorRect of
-                  Just ((x, y, w, h), _) ->
-                    (x, y)
-                  Nothing -> (0, 0) --TODO
-              (copiedIdsWithNewIds, newSeed) =
-                IdGenerator.zipWithNewIds model.seed model.copiedEquipments
-              model' =
-                { model |
-                  floor = UndoRedo.commit model.floor (Paste copiedIdsWithNewIds base)
-                , seed = newSeed
-                }
-              selected = List.map snd copiedIdsWithNewIds
-            in
-              { model' |
-                selectedEquipments = selected
-              , selectorRect = Nothing
-              }
-          else model
+          { model |
+            floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
+          , copiedEquipments = selectedEquipments model
+          , selectedEquipments = []
+          }
       in
         (newModel, Effects.none)
-    KeyX down ->
-      let
-        newModel =
-          if down && model.keys.ctrl then
-            { model |
-              floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
-            , copiedEquipments = selectedEquipments model
-            , selectedEquipments = []
-            }
-          else model
-      in
-        (newModel, Effects.none)
-    KeyY ->
+    (True, KeyY) ->
       let
         newModel =
           { model |
@@ -458,7 +451,7 @@ updateByKeyAction action model =
           }
       in
         (newModel, Effects.none)
-    KeyZ ->
+    (True, KeyZ) ->
       let
         newModel =
           { model |
@@ -466,31 +459,31 @@ updateByKeyAction action model =
           }
       in
         (newModel, Effects.none)
-    KeyUpArrow ->
+    (_, KeyUpArrow) ->
       let
         newModel =
-          shiftSelectionToward Position.Up model
+          shiftSelectionToward EquipmentsOperation.Up model
       in
         (newModel, Effects.none)
-    KeyDownArrow ->
+    (_, KeyDownArrow) ->
       let
         newModel =
-          shiftSelectionToward Position.Down model
+          shiftSelectionToward EquipmentsOperation.Down model
       in
         (newModel, Effects.none)
-    KeyLeftArrow ->
+    (_, KeyLeftArrow) ->
       let
         newModel =
-          shiftSelectionToward Position.Left model
+          shiftSelectionToward EquipmentsOperation.Left model
       in
         (newModel, Effects.none)
-    KeyRightArrow ->
+    (_, KeyRightArrow) ->
       let
         newModel =
-          shiftSelectionToward Position.Right model
+          shiftSelectionToward EquipmentsOperation.Right model
       in
         (newModel, Effects.none)
-    KeyDel bool ->
+    (_, KeyDel True) ->
       let
         newModel =
           { model |
@@ -501,7 +494,7 @@ updateByKeyAction action model =
     _ ->
       (model, Effects.none)
 
-shiftSelectionToward : Position.Direction -> Model -> Model
+shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =
   let
     floor = UndoRedo.data model.floor
@@ -587,63 +580,6 @@ setEquipments floor equipments =
     equipments = equipments
   }
 
-changeColor : String -> Equipment -> Equipment
-changeColor color (Desk id rect _ name) = Desk id rect color name
-
-changeName : String -> Equipment -> Equipment
-changeName name (Desk id rect color _) = Desk id rect color name
-
-idOf : Equipment -> Id
-idOf (Desk id _ _ _) = id
-
-nameOf : Equipment -> String
-nameOf (Desk _ _ _ name) = name
-
-pasteEquipments : (Int, Int) -> List (Equipment, Id) -> List Equipment -> List Equipment
-pasteEquipments (baseX, baseY) copiedWithNewIds allEquipments =
-  let
-    (minX, minY) =
-      List.foldl (\(equipment, newId) (minX, minY) ->
-        let
-          (x, y) = Equipments.position equipment
-        in
-          (Basics.min minX x, Basics.min minY y)
-    ) (99999, 99999) copiedWithNewIds
-
-    newEquipments =
-      List.map (\(equipment, newId) ->
-        let
-          (x, y) = Equipments.position equipment
-        in
-          Equipments.copy newId (baseX + (x - minX), baseY + (y - minY)) equipment
-    ) copiedWithNewIds
-  in
-    newEquipments
-
-partiallyChange : (Equipment -> Equipment) -> List Id -> List Equipment -> List Equipment
-partiallyChange f ids equipments =
-  List.map (\equipment ->
-    case equipment of
-      Desk id _ _ _ ->
-        if List.member id ids
-        then f equipment
-        else equipment
-  ) equipments
-
-moveEquipments : Int -> (Int, Int) -> List Id -> List Equipment -> List Equipment
-moveEquipments gridSize (dx, dy) ids equipments =
-  partiallyChange (\(Desk id (x, y, width, height) color name) ->
-    let (newX, newY) = fitToGrid gridSize 0 (x + dx, y + dy)
-    in Desk id (newX, newY, width, height) color name
-  ) ids equipments
-
-findBy : (a -> Bool) -> List a -> Maybe a
-findBy f list =
-  List.head (List.filter f list)
-
-findEquipmentById : List Equipment -> Id -> Maybe Equipment
-findEquipmentById equipments id =
-  findBy (\equipment -> id == (idOf equipment)) equipments
 
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
@@ -678,18 +614,4 @@ colorProperty model =
       Nothing -> Nothing
 
 
-fitToGrid : Int -> Int -> (Int, Int) -> (Int, Int)
-fitToGrid gridSize scaleDown (x, y) =
-  let
-    px = gridSize // (2 ^ scaleDown)
-  in
-    (x // px * px, y // px * px)
-
-scaleDownRect : Int -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
-scaleDownRect scaleDown (x, y, w, h) =
-  (x // (2^scaleDown), y // (2^scaleDown), w // (2^scaleDown), h // (2^scaleDown))
-
-recoverPosition : Int -> (Int, Int) -> (Int, Int)
-recoverPosition scaleDown (screenX, screenY) =
-  (screenX * (2^scaleDown), screenY * (2^scaleDown))
 --

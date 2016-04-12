@@ -1,4 +1,6 @@
-module Position where
+module EquipmentsOperation where
+
+{- this module does not know Model or Floor -}
 
 import Equipments exposing (..)
 
@@ -265,9 +267,66 @@ expandOrShrink direction primary current all =
       restOfMaximumPartsOf (opposite direction) current
 
 
+pasteEquipments : (Int, Int) -> List (Equipment, Id) -> List Equipment -> List Equipment
+pasteEquipments (baseX, baseY) copiedWithNewIds allEquipments =
+  let
+    (minX, minY) =
+      List.foldl (\(equipment, newId) (minX, minY) ->
+        let
+          (x, y) = Equipments.position equipment
+        in
+          (Basics.min minX x, Basics.min minY y)
+    ) (99999, 99999) copiedWithNewIds
 
+    newEquipments =
+      List.map (\(equipment, newId) ->
+        let
+          (x, y) = Equipments.position equipment
+        in
+          Equipments.copy newId (baseX + (x - minX), baseY + (y - minY)) equipment
+    ) copiedWithNewIds
+  in
+    newEquipments
 
+partiallyChange : (Equipment -> Equipment) -> List Id -> List Equipment -> List Equipment
+partiallyChange f ids equipments =
+  List.map (\equipment ->
+    case equipment of
+      Desk id _ _ _ ->
+        if List.member id ids
+        then f equipment
+        else equipment
+  ) equipments
 
+moveEquipments : Int -> (Int, Int) -> List Id -> List Equipment -> List Equipment
+moveEquipments gridSize (dx, dy) ids equipments =
+  partiallyChange (\(Desk id (x, y, width, height) color name) ->
+    let (newX, newY) = fitToGrid gridSize (x + dx, y + dy)
+    in Desk id (newX, newY, width, height) color name
+  ) ids equipments
 
+findBy : (a -> Bool) -> List a -> Maybe a
+findBy f list =
+  List.head (List.filter f list)
+
+findEquipmentById : List Equipment -> Id -> Maybe Equipment
+findEquipmentById equipments id =
+  findBy (\equipment -> id == (idOf equipment)) equipments
+
+fitToGrid : Int -> (Int, Int) -> (Int, Int)
+fitToGrid gridSize (x, y) =
+  (x // gridSize * gridSize, y // gridSize * gridSize)
+
+changeColor : String -> Equipment -> Equipment
+changeColor color (Desk id rect _ name) = Desk id rect color name
+
+changeName : String -> Equipment -> Equipment
+changeName name (Desk id rect color _) = Desk id rect color name
+
+idOf : Equipment -> Id
+idOf (Desk id _ _ _) = id
+
+nameOf : Equipment -> String
+nameOf (Desk _ _ _ name) = name
 
 --
