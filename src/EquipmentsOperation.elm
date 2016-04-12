@@ -329,4 +329,8 @@ idOf (Desk id _ _ _) = id
 nameOf : Equipment -> String
 nameOf (Desk _ _ _ name) = name
 
+commitInputName : (Id, String) -> List Equipment -> List Equipment
+commitInputName (id, name) equipments =
+  partiallyChange (changeName name) [id] equipments
+
 --

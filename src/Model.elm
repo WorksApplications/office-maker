@@ -569,11 +569,6 @@ updateFloorByCommit commit floor =
         (commitInputName (id, name) floor.equipments)
 
 
-commitInputName : (Id, String) -> List Equipment -> List Equipment
-commitInputName (id, name) equipments =
-  partiallyChange (changeName name) [id] equipments
-
-
 setEquipments : Floor -> List Equipment -> Floor
 setEquipments floor equipments =
   { floor |
