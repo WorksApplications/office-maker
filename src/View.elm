@@ -111,10 +111,12 @@ mainView address model =
   in
     main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
       [ div
-        [ style (Styles.flexMain  ++ [("position", "relative"), ("overflow-x", "scroll")])
+        [ style (Styles.flexMain  ++ [("position", "relative"), ("overflow", "hidden")])
         , onMouseMove' (forwardTo address MoveOnCanvas)
-        -- , onMouseEnter (forwardTo address (always EnterCanvas)) address
-        -- , onMouseLeave (forwardTo address (always LeaveCanvas)) address
+        , onMouseDown' (forwardTo address (MouseDownOnCanvas))
+        , onMouseUp' (forwardTo address (MouseUpOnCanvas))
+        , onMouseEnter' (forwardTo address (always EnterCanvas))
+        , onMouseLeave' (forwardTo address (always LeaveCanvas))
         , onMouseWheel address MouseWheel
         ]
         [ canvasView address model
@@ -187,14 +189,12 @@ debugView address model =
 canvasView : Address Action -> Model -> Html
 canvasView address model =
   let
-    isSelected' = isSelected model
-
     isDragged equipment =
       model.dragging /= Nothing && List.member (idOf equipment) model.selectedEquipments
 
     nonDraggingEquipments =
       List.map
-        (\equipment -> equipmentView address model Nothing (isSelected' equipment) (isDragged equipment) equipment model.keys.ctrl)
+        (\equipment -> equipmentView address model Nothing (isSelected model equipment) (isDragged equipment) equipment model.keys.ctrl)
         (UndoRedo.data model.floor).equipments
 
     draggingEquipments =
@@ -208,7 +208,7 @@ canvasView address model =
               _ -> Nothing
         in
           List.map
-            (\equipment -> equipmentView address model moving (isSelected' equipment) False equipment model.keys.ctrl)
+            (\equipment -> equipmentView address model moving (isSelected model equipment) False equipment model.keys.ctrl)
             equipments
       else []
 
@@ -221,10 +221,12 @@ canvasView address model =
           div [style (Styles.selectorRect (Scale.imageToScreenForRect model.scale rect) )] []
         _ -> text ""
 
+    (offsetX, offsetY) = model.offset
+
     rect =
       Scale.imageToScreenForRect
         model.scale
-        (20, 20, (UndoRedo.data model.floor).width, (UndoRedo.data model.floor).height)
+        (offsetX, offsetY, (UndoRedo.data model.floor).width, (UndoRedo.data model.floor).height)
   in
     div
       [ style (Styles.canvasView rect) ]
@@ -251,10 +253,7 @@ colorPropertyView address model =
 view : Address Action -> Model -> Html
 view address model =
   div
-    [ onMouseUp' (forwardTo address (MouseUpBackground))
-    , onMouseDown' (forwardTo address (MouseDownBackground))
-    -- , onKeyPress' (forwardTo address (KeyPress))
-    ]
+    []
     [ headerView address model
     , mainView address model
     , contextMenuView address model

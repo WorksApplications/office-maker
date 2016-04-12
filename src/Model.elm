@@ -38,6 +38,8 @@ type alias Model =
   , floor : UndoRedo.Model Floor Commit
   , windowDimensions : (Int, Int)
   , scale : Scale.Model
+  , offset : (Int, Int)
+  , shiftOffsetPrevScreenPos : Maybe (Int, Int)
   }
 
 type ContextMenu =
@@ -77,6 +79,8 @@ init initialSize =
     , floor = UndoRedo.init { data = initFloor, update = updateFloorByCommit }
     , windowDimensions = initialSize
     , scale = Scale.init
+    , offset = (35, 35)
+    , shiftOffsetPrevScreenPos = Nothing
     }
   , Effects.task (Task.succeed Init)
   )
@@ -87,9 +91,9 @@ type Action = NoOp
   | MoveOnCanvas MouseEvent
   | EnterCanvas
   | LeaveCanvas
+  | MouseUpOnCanvas MouseEvent
+  | MouseDownOnCanvas MouseEvent
   | MouseDownOnEquipment Id MouseEvent
-  | MouseUpBackground MouseEvent
-  | MouseDownBackground MouseEvent
   | StartEditEquipment Id MouseEvent
   | KeysAction Keys.Action
   | SelectColor String MouseEvent
@@ -142,31 +146,35 @@ update action model =
           { model |
             pos =
               Just (e.clientX, e.clientY)
-          -- , selectorRect = -- TODO has bug
-          --     case model.selectorRect of
-          --       Just (rect, False) ->
-          --         Just (rect, False)
-          --       Just ((left', top', w, h), True) ->
-          --         let
-          --           (x, y) =
-          --             fitToGrid model.gridSize 0 <|
-          --               recoverPosition model.scaleDown (e.clientX, e.clientY)
-          --           (left, top) = Debug.log "(left, top)" <|
-          --             (min x left', min y top')
-          --           (right, bottom) = Debug.log "(right, bottom)" <|
-          --             (max x left', max y top')
-          --           (width, height) = Debug.log "(width, height)" <|
-          --             (right - left, bottom - top)
-          --         in
-          --           Just ((left, top, width, height), True)
-          --       Nothing -> Nothing
+          , shiftOffsetPrevScreenPos =
+              case model.shiftOffsetPrevScreenPos of
+                Just (prevX, prevY) -> Just (e.clientX, e.clientY)
+                Nothing -> Nothing
+          , offset =
+              case model.shiftOffsetPrevScreenPos of
+                Just (prevX, prevY) ->
+                  let
+                    (offsetX, offsetY) = model.offset
+                    (dx, dy) =
+                      ((e.clientX - prevX), (e.clientY - prevY))
+                  in
+                    ( offsetX + Scale.screenToImage model.scale dx
+                    , offsetY + Scale.screenToImage model.scale dy
+                    )
+                Nothing -> model.offset
           }
       in
         (newModel, Effects.none)
     EnterCanvas ->
       (model, Effects.none)
     LeaveCanvas ->
-      (model, Effects.none)
+      let
+        newModel =
+          { model |
+              shiftOffsetPrevScreenPos = Nothing
+          }
+      in
+        (newModel, Effects.none)
     MouseDownOnEquipment lastTouchedId e ->
       let
         newModel =
@@ -197,7 +205,7 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    MouseUpBackground e ->
+    MouseUpOnCanvas e ->
       let
         model' =
           case model.dragging of
@@ -230,10 +238,11 @@ update action model =
               case model.selectorRect of
                 Just (rect, _) -> Just (rect, False)
                 Nothing -> Nothing
+          , shiftOffsetPrevScreenPos = Nothing
           }
       in
         (newModel, Effects.none)
-    MouseDownBackground e ->
+    MouseDownOnCanvas e ->
       let
         model' =
           case model.editingEquipment of
@@ -253,6 +262,7 @@ update action model =
                 Just ((x, y, model.gridSize, model.gridSize), True)
           , editingEquipment = Nothing
           , contextMenu = NoContextMenu
+          , shiftOffsetPrevScreenPos = Just (e.clientX, e.clientY)
           }
       in
         (newModel, Effects.none)
@@ -375,15 +385,27 @@ update action model =
     MouseWheel e ->
       let
         newScale =
-          if model.keys.ctrl then
             if e.value < 0 then
               Scale.update Scale.ScaleUp model.scale
             else
               Scale.update Scale.ScaleDown model.scale
-          else
-            model.scale
+        ratio =
+          Scale.ratio model.scale newScale
+        (offsetX, offsetY) =
+          model.offset
+        newOffset =
+          let
+            x = Scale.screenToImage model.scale e.clientX
+            y = Scale.screenToImage model.scale (e.clientY - 37) --TODO header hight
+          in
+          ( floor (toFloat (x - floor (ratio * (toFloat (x - offsetX)))) / ratio)
+          , floor (toFloat (y - floor (ratio * (toFloat (y - offsetY)))) / ratio)
+          )
         newModel =
-          { model | scale = newScale }
+          { model |
+            scale = newScale
+          , offset = newOffset
+          }
       in
         (newModel, Effects.none)
     WindowDimensions (w, h) ->

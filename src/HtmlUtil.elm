@@ -31,6 +31,16 @@ onMouseMove' address =
   onWithOptions
     "mousemove" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
 
+onMouseEnter' : Address MouseEvent -> Attribute
+onMouseEnter' address =
+  onWithOptions
+    "mouseenter" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+
+onMouseLeave' : Address MouseEvent -> Attribute
+onMouseLeave' address =
+  onWithOptions
+    "mouseleave" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+
 onMouseUp' : Address MouseEvent -> Attribute
 onMouseUp' address =
   on "mouseup" decodeMousePosition (Signal.message address)

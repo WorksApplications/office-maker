@@ -44,6 +44,7 @@ h1 =
   noMargin ++
     [ ( "font-size", "1.4em")
     , ("font-weight", "normal")
+    , ("line-height", toString headerHeight ++ "px")
     ]
 
 ul : S
@@ -52,7 +53,7 @@ ul =
   , ("padding-left", "0") ]
 
 headerHeight : Int
-headerHeight = 27
+headerHeight = 37
 
 header : S
 header =
@@ -60,7 +61,7 @@ header =
     [ ( "background", "rgb(100, 180, 85)")
     , ("color", "#eee")
     , ("height", toString headerHeight ++ "px")
-    , ("padding", "5px 10px")
+    , ("padding-left", "10px")
     ]
 
 rect : (Int, Int, Int, Int) -> S
