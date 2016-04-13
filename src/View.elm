@@ -88,6 +88,13 @@ equipmentView' address id rect color name selected moving alpha contextMenuDisab
         ]
         [ text ({-toString (x, y) ++ "\n" ++ -}name)]]
 
+transitionDisabled : Model -> Bool
+transitionDisabled model =
+  case model.draggingContext of
+    MoveEquipment _ _ -> True
+    ShiftOffsetPrevScreenPos _ -> True
+    _ -> False
+
 nameInputView : Address Action -> Model -> Html
 nameInputView address model =
   case model.editingEquipment of
@@ -97,7 +104,7 @@ nameInputView address model =
           let
             styles =
               Styles.deskInput (Scale.imageToScreenForRect model.scale rect) ++
-              Styles.transition (model.dragging /= Nothing)
+              Styles.transition (transitionDisabled model)
           in
             textarea
               [ Html.Attributes.id "name-input"
@@ -203,25 +210,50 @@ canvasView address model =
     disableTransition = not model.scaling
 
     isDragged equipment =
-      model.dragging /= Nothing && List.member (idOf equipment) model.selectedEquipments
+      (case model.draggingContext of
+        MoveEquipment _ _ -> True
+        _ -> False
+      ) && List.member (idOf equipment) model.selectedEquipments
 
     nonDraggingEquipments =
       List.map
-        (\equipment -> equipmentView address model Nothing (isSelected model equipment) (isDragged equipment) equipment model.keys.ctrl disableTransition)
+        (\equipment ->
+          equipmentView
+            address
+            model
+            Nothing
+            (isSelected model equipment)
+            (isDragged equipment)
+            equipment
+            model.keys.ctrl
+            disableTransition)
         floor.equipments
 
     draggingEquipments =
-      if model.dragging /= Nothing
+      if (case model.draggingContext of
+          MoveEquipment _ _ -> True
+          _ -> False
+        )
       then
         let
           equipments = List.filter isDragged floor.equipments
           moving =
-            case (model.dragging, model.pos) of
-              (Just (_, (startX, startY)), Just (x, y)) -> Just ((startX, startY), (x, y))
+            case (model.draggingContext, model.pos) of
+              (MoveEquipment _ (startX, startY), Just (x, y)) -> Just ((startX, startY), (x, y))
               _ -> Nothing
         in
           List.map
-            (\equipment -> equipmentView address model moving (isSelected model equipment) False equipment model.keys.ctrl disableTransition)
+            (\equipment ->
+              equipmentView
+                address
+                model
+                moving
+                (isSelected model equipment)
+                False
+                equipment
+                model.keys.ctrl
+                disableTransition
+            )
             equipments
       else []
 
@@ -230,7 +262,7 @@ canvasView address model =
 
     selectorRect =
       case (model.editMode, model.selectorRect) of
-        (Select, Just (rect, _)) ->
+        (Select, Just rect) ->
           div [style (Styles.selectorRect (Scale.imageToScreenForRect model.scale rect) ++ Styles.transition disableTransition )] []
         _ -> text ""
 

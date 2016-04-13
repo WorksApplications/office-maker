@@ -26,12 +26,12 @@ type alias Floor =
 type alias Model =
   { seed : Seed
   , pos : Maybe (Int, Int)
-  , dragging : Maybe (Id, (Int, Int))
+  , draggingContext : DraggingContext
   , selectedEquipments : List Id
   , copiedEquipments : List Equipment
   , editingEquipment : Maybe (Id, String)
   , gridSize : Int
-  , selectorRect : Maybe ((Int, Int, Int, Int), Bool) -- rect, dragging
+  , selectorRect : Maybe (Int, Int, Int, Int)
   , keys : Keys.Model
   , editMode : EditMode
   , colorPalette : List String
@@ -40,7 +40,6 @@ type alias Model =
   , windowDimensions : (Int, Int)
   , scale : Scale.Model
   , offset : (Int, Int)
-  , shiftOffsetPrevScreenPos : Maybe (Int, Int)
   , scaling : Bool
   }
 
@@ -58,6 +57,15 @@ type Commit =
   | ChangeName Id String
   | ChangeImage String
 
+type DraggingContext =
+    None
+  | MoveEquipment Id (Int, Int)
+  | Selector
+  | ShiftOffsetPrevScreenPos (Int, Int)
+  | StampFromImagePos (Int, Int)
+
+
+
 
 inputs : List (Signal Action)
 inputs =
@@ -69,7 +77,7 @@ init initialSize =
   (
     { seed = IdGenerator.init
     , pos = Nothing
-    , dragging = Nothing
+    , draggingContext = None
     , selectedEquipments = []
     , copiedEquipments = []
     , editingEquipment = Nothing
@@ -83,7 +91,6 @@ init initialSize =
     , windowDimensions = initialSize
     , scale = Scale.init
     , offset = (35, 35)
-    , shiftOffsetPrevScreenPos = Nothing
     , scaling = False
     }
   , Effects.task (Task.succeed Init)
@@ -151,17 +158,17 @@ update action model =
       (model, Effects.none) -- TODO fetch from server
     MoveOnCanvas e ->
       let
-        newModel =
+        model' =
           { model |
-            pos =
-              Just (e.clientX, e.clientY)
-          , shiftOffsetPrevScreenPos =
-              case model.shiftOffsetPrevScreenPos of
-                Just (prevX, prevY) -> Just (e.clientX, e.clientY)
-                Nothing -> Nothing
-          , offset =
-              case model.shiftOffsetPrevScreenPos of
-                Just (prevX, prevY) ->
+            pos = Just (e.clientX, e.clientY)
+          }
+        newModel =
+          case model.draggingContext of
+            ShiftOffsetPrevScreenPos (prevX, prevY) ->
+              { model' |
+                draggingContext =
+                  ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
+              , offset =
                   let
                     (offsetX, offsetY) = model.offset
                     (dx, dy) =
@@ -170,8 +177,8 @@ update action model =
                     ( offsetX + Scale.screenToImage model.scale dx
                     , offsetY + Scale.screenToImage model.scale dy
                     )
-                Nothing -> model.offset
-          }
+              }
+            _ -> model'
       in
         (newModel, Effects.none)
     EnterCanvas ->
@@ -180,7 +187,10 @@ update action model =
       let
         newModel =
           { model |
-              shiftOffsetPrevScreenPos = Nothing
+              draggingContext =
+                case model.draggingContext of
+                  ShiftOffsetPrevScreenPos _ -> None
+                  _ -> model.draggingContext
           }
       in
         (newModel, Effects.none)
@@ -209,7 +219,7 @@ update action model =
                 if List.member lastTouchedId model.selectedEquipments
                 then model.selectedEquipments
                 else [lastTouchedId]
-          , dragging = Just (lastTouchedId, (e.clientX, e.clientY))
+          , draggingContext = MoveEquipment lastTouchedId (e.clientX, e.clientY)
           , selectorRect = Nothing
           }
       in
@@ -217,8 +227,8 @@ update action model =
     MouseUpOnCanvas e ->
       let
         model' =
-          case model.dragging of
-            Just (_, (x, y)) ->
+          case model.draggingContext of
+            MoveEquipment _ (x, y) ->
               let
                 shift = Scale.screenToImageForPosition model.scale (e.clientX - x, e.clientY - y)
               in
@@ -231,23 +241,18 @@ update action model =
             _ -> model
         newModel =
           { model' |
-            dragging = Nothing
-          , selectedEquipments =
+            selectedEquipments =
               if e.ctrlKey
               then
                 model.selectedEquipments
               else
-                case model.dragging of
-                  Just (id, (startX, startY)) ->
+                case model.draggingContext of
+                  MoveEquipment id (startX, startY) ->
                     if e.clientX == startX && e.clientY == startY
                     then (if e.shiftKey then model.selectedEquipments else [id])
                     else model.selectedEquipments
                   _ -> model.selectedEquipments
-          , selectorRect =
-              case model.selectorRect of
-                Just (rect, _) -> Just (rect, False)
-                Nothing -> Nothing
-          , shiftOffsetPrevScreenPos = Nothing
+          , draggingContext = None
           }
       in
         (newModel, Effects.none)
@@ -264,14 +269,18 @@ update action model =
           { model' |
             selectedEquipments = []
           , selectorRect =
-              let
-                (x,y) = fitToGrid model.gridSize <|
-                  Scale.screenToImageForPosition model.scale (e.layerX, e.layerY)
-              in
-                Just ((x, y, model.gridSize, model.gridSize), True)
+              case model.draggingContext of
+                Selector ->
+                  let
+                    (x,y) = fitToGrid model.gridSize <|
+                      Scale.screenToImageForPosition model.scale (e.layerX, e.layerY)
+                  in
+                    Just (x, y, model.gridSize, model.gridSize)
+                _ ->
+                  model.selectorRect
           , editingEquipment = Nothing
           , contextMenu = NoContextMenu
-          , shiftOffsetPrevScreenPos = Just (e.clientX, e.clientY)
+          , draggingContext = ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
           }
       in
         (newModel, Effects.none)
@@ -470,7 +479,7 @@ updateByKeyAction action model =
       let
         base =
           case model.selectorRect of
-            Just ((x, y, w, h), _) ->
+            Just (x, y, w, h) ->
               (x, y)
             Nothing -> (0, 0) --TODO
         (copiedIdsWithNewIds, newSeed) =
