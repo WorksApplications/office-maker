@@ -29,10 +29,6 @@ blur id =
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
 
-setTimeout : Int -> Task a ()
-setTimeout time =
-  Native.HtmlUtil.setTimeout time
-
 onMouseMove' : Address MouseEvent -> Attribute
 onMouseMove' address =
   onWithOptions

@@ -417,7 +417,7 @@ update action model =
           , scaling = True
           }
         effects =
-          setTimeout 200 ScaleEnd
+          setTimeout 200.0 ScaleEnd
       in
         (newModel, effects)
     ScaleEnd ->
@@ -549,10 +549,10 @@ updateByKeyAction action model =
     _ ->
       (model, Effects.none)
 
-setTimeout : Int -> Action -> Effects Action
+setTimeout : Int -> Float -> Effects Action
 setTimeout time action =
   Effects.task <|
-    (Task.map (always action) (HtmlUtil.setTimeout time))
+    (Task.map (always action) (Task.sleep time))
 
 shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =
