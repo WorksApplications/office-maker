@@ -549,7 +549,7 @@ updateByKeyAction action model =
     _ ->
       (model, Effects.none)
 
-setTimeout : Int -> Float -> Effects Action
+setTimeout : Float -> Action -> Effects Action
 setTimeout time action =
   Effects.task <|
     (Task.map (always action) (Task.sleep time))

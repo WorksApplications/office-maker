@@ -198,6 +198,7 @@ debugView address model =
 canvasView : Address Action -> Model -> Html
 canvasView address model =
   let
+    floor = UndoRedo.data model.floor
     -- disableTransition = model.shiftOffsetPrevScreenPos /= Nothing || model.dragging /= Nothing
     disableTransition = not model.scaling
 
@@ -207,13 +208,13 @@ canvasView address model =
     nonDraggingEquipments =
       List.map
         (\equipment -> equipmentView address model Nothing (isSelected model equipment) (isDragged equipment) equipment model.keys.ctrl disableTransition)
-        (UndoRedo.data model.floor).equipments
+        floor.equipments
 
     draggingEquipments =
       if model.dragging /= Nothing
       then
         let
-          equipments = List.filter isDragged (UndoRedo.data model.floor).equipments
+          equipments = List.filter isDragged floor.equipments
           moving =
             case (model.dragging, model.pos) of
               (Just (_, (startX, startY)), Just (x, y)) -> Just ((startX, startY), (x, y))
@@ -238,12 +239,18 @@ canvasView address model =
     rect =
       Scale.imageToScreenForRect
         model.scale
-        (offsetX, offsetY, (UndoRedo.data model.floor).width, (UndoRedo.data model.floor).height)
+        (offsetX, offsetY, floor.width, floor.height)
+
+    image =
+      img
+        [ style [("width", "100%"), ("height", "100%")]
+        , src (Maybe.withDefault "" floor.dataURL)
+        ] []
   in
     div
       [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
       ]
-      ((nameInputView address model) :: (selectorRect :: equipments))
+      (image :: (nameInputView address model) :: (selectorRect :: equipments))
 
 
 colorPropertyView : Address Action -> Model -> Html
