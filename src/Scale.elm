@@ -32,6 +32,14 @@ imageToScreenForRect model (x, y, w, h) =
   , imageToScreen model h
   )
 
+screenToImageForRect : Model -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
+screenToImageForRect model (x, y, w, h) =
+  ( screenToImage model x
+  , screenToImage model y
+  , screenToImage model w
+  , screenToImage model h
+  )
+
 screenToImage : Model -> Int -> Int
 screenToImage model imageLength =
   imageLength * (2 ^ model.scaleDown)

@@ -92,7 +92,7 @@ nameInputView address model =
         Just (Desk id rect color _) ->
           textarea
             [ Html.Attributes.id "name-input"
-            , style (Styles.deskInput rect)
+            , style (Styles.deskInput (Scale.imageToScreenForRect model.scale rect))
             , onInput' (forwardTo address (InputName id)) -- TODO cannot input japanese
             , onKeyDown'' (forwardTo address (KeydownOnNameInput))
             , onMouseDown' (forwardTo address (always NoOp))
