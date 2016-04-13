@@ -62,15 +62,15 @@ type DraggingContext =
   | MoveEquipment Id (Int, Int)
   | Selector
   | ShiftOffsetPrevScreenPos (Int, Int)
-  | StampFromImagePos (Int, Int)
-
-
-
+  | StampScreenPos (Int, Int) (Int, Int)
 
 inputs : List (Signal Action)
 inputs =
   (List.map (Signal.map KeysAction) Keys.inputs) ++
   [Signal.map WindowDimensions (Window.dimensions)]
+
+gridSize : Int
+gridSize = 8 -- 2^N
 
 init : (Int, Int) -> (Model, Effects Action)
 init initialSize =
@@ -81,7 +81,7 @@ init initialSize =
     , selectedEquipments = []
     , copiedEquipments = []
     , editingEquipment = Nothing
-    , gridSize = 8 -- 2^N
+    , gridSize = gridSize
     , selectorRect = Nothing
     , keys = Keys.init
     , editMode = Select
@@ -128,12 +128,12 @@ initFloor =
     , height = 810
     , dataURL = Nothing
     }
-    [ Desk "1" (8*5, 8*20, 8*6, 8*10) "#ed9" "John\nSmith"
-    , Desk "2" (8*11, 8*20, 8*6, 8*10) "#8bd" "John\nSmith"
-    , Desk "3" (8*5, 8*30, 8*6, 8*10) "#fa9" "John\nSmith"
-    , Desk "4" (8*11, 8*30, 8*6, 8*10) "#b8f" "John\nSmith"
-    , Desk "5" (8*5, 8*40, 8*6, 8*10) "#fa9" "John\nSmith"
-    , Desk "6" (8*11, 8*40, 8*6, 8*10) "#b8f" "John\nSmith"
+    [ Desk "1" (gridSize*5, gridSize*20, gridSize*6, gridSize*10) "#ed9" "John\nSmith"
+    , Desk "2" (gridSize*11, gridSize*20, gridSize*6, gridSize*10) "#8bd" "John\nSmith"
+    , Desk "3" (gridSize*5, gridSize*30, gridSize*6, gridSize*10) "#fa9" "John\nSmith"
+    , Desk "4" (gridSize*11, gridSize*30, gridSize*6, gridSize*10) "#b8f" "John\nSmith"
+    , Desk "5" (gridSize*5, gridSize*40, gridSize*6, gridSize*10) "#fa9" "John\nSmith"
+    , Desk "6" (gridSize*11, gridSize*40, gridSize*6, gridSize*10) "#b8f" "John\nSmith"
     ]
 
 debug : Bool
@@ -177,6 +177,11 @@ update action model =
                     ( offsetX + Scale.screenToImage model.scale dx
                     , offsetY + Scale.screenToImage model.scale dy
                     )
+              }
+            StampScreenPos (x, y) _ ->
+              { model' |
+                draggingContext =
+                  StampScreenPos (x, y) (e.clientX, e.clientY)
               }
             _ -> model'
       in
@@ -238,6 +243,20 @@ update action model =
                   }
                 else
                   model
+            Selector ->
+              { model |
+                selectorRect =
+                  case model.selectorRect of
+                    Just (x, y, _, _) ->
+                      let
+                        (w, h) =
+                          ( Scale.screenToImage model.scale e.clientX - x
+                          , Scale.screenToImage model.scale e.clientY - y
+                          )
+                      in
+                        Just (x, y, w, h)
+                    _ -> model.selectorRect
+              }
             _ -> model
         newModel =
           { model' |
@@ -265,22 +284,31 @@ update action model =
                 floor = UndoRedo.commit model.floor (ChangeName id name)
               }
             Nothing -> model
+
+        selectorRect =
+          case model.editMode of
+            Select ->
+              let
+                (x, y) = fitToGrid model.gridSize <|
+                  Scale.screenToImageForPosition model.scale (e.layerX, e.layerY)
+              in
+                Just (x, y, model.gridSize, model.gridSize)
+            _ -> model.selectorRect
+
+        draggingContext =
+          case model.editMode of
+            Stamp ->
+              StampScreenPos (e.clientX, e.clientY) (e.clientX, e.clientY)
+            Pen -> None -- TODO
+            Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
+
         newModel =
           { model' |
             selectedEquipments = []
-          , selectorRect =
-              case model.draggingContext of
-                Selector ->
-                  let
-                    (x,y) = fitToGrid model.gridSize <|
-                      Scale.screenToImageForPosition model.scale (e.layerX, e.layerY)
-                  in
-                    Just (x, y, model.gridSize, model.gridSize)
-                _ ->
-                  model.selectorRect
+          , selectorRect = selectorRect
           , editingEquipment = Nothing
           , contextMenu = NoContextMenu
-          , draggingContext = ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
+          , draggingContext = draggingContext
           }
       in
         (newModel, Effects.none)

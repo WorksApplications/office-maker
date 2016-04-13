@@ -51,7 +51,7 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
   case equipment of
     Desk id (left, top, width, height) color name ->
       let
-        moovingBool = moving /= Nothing
+        movingBool = moving /= Nothing
         (x, y) =
           case moving of
             Just ((startX, startY), (x, y)) ->
@@ -60,33 +60,54 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
               in
                 fitToGrid model.gridSize (left + dx, top + dy)
             _ -> (left, top)
+        contextMenu =
+          if contextMenuDisabled then
+            []
+          else
+            [ onContextMenu' (forwardTo address (ShowContextMenuOnEquipment id)) ]
+        eventHandlers =
+          contextMenu ++
+            [ onMouseDown' (forwardTo address (MouseDownOnEquipment id))
+            , onDblClick' (forwardTo address (StartEditEquipment id))
+            ]
       in
-        equipmentView' address id (x, y, width, height) color name selected moovingBool alpha contextMenuDisabled model.scale disableTransition
+        equipmentView'
+          (id ++ toString movingBool)
+          (x, y, width, height)
+          color
+          name
+          selected
+          alpha
+          eventHandlers
+          model.scale
+          disableTransition
 
-equipmentView' : Address Action -> Id -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> Scale.Model -> Bool -> Html
-equipmentView' address id rect color name selected moving alpha contextMenuDisabled scale disableTransition =
+equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List Html.Attribute -> Scale.Model -> Bool -> Html
+equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition =
   let
     screenRect = Scale.imageToScreenForRect scale rect
-    contextMenu =
-      if contextMenuDisabled then
-        []
-      else
-        [ onContextMenu' (forwardTo address (ShowContextMenuOnEquipment id)) ]
     styles =
       Styles.desk screenRect color selected alpha ++
         [("display", "table")] ++
         Styles.transition disableTransition
   in
     div
-      (contextMenu ++ [ key (id ++ toString moving)
-      , style styles
-      , onMouseDown' (forwardTo address (MouseDownOnEquipment id))
-      , onDblClick' (forwardTo address (StartEditEquipment id))
-      ])
-      [ pre
-        [ style (Styles.nameLabel (1.0 / (toFloat <| Scale.screenToImage scale 1)) ++ Styles.transition disableTransition) --TODO
-        ]
-        [ text ({-toString (x, y) ++ "\n" ++ -}name)]]
+      ( eventHandlers ++ [ key key', style styles ] )
+      [ equipmentLabelView scale disableTransition name
+      ]
+
+equipmentLabelView : Scale.Model -> Bool -> String -> Html
+equipmentLabelView scale disableTransition name =
+  let
+    styles =
+      Styles.nameLabel (1.0 / (toFloat <| Scale.screenToImage scale 1)) ++  --TODO
+        Styles.transition disableTransition
+  in
+    pre
+      [ style styles ]
+      [ text name ]
+
+
 
 transitionDisabled : Model -> Bool
 transitionDisabled model =
@@ -262,6 +283,8 @@ canvasView address model =
           div [style (Styles.selectorRect (Scale.imageToScreenForRect model.scale rect) ++ Styles.transition disableTransition )] []
         _ -> text ""
 
+    temporalStamps' = temporalStamps model
+
     (offsetX, offsetY) = model.offset
 
     rect =
@@ -278,7 +301,62 @@ canvasView address model =
     div
       [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
       ]
-      (image :: (nameInputView address model) :: (selectorRect :: equipments))
+      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporalStamps')
+
+temporalStamps : Model -> List Html
+temporalStamps model =
+  case model.draggingContext of
+    StampScreenPos (x1, y1) (x2, y2) ->
+      let
+        (offsetX, offsetY) = model.offset
+        (x1', y1') =
+          ( Scale.screenToImage model.scale x1 - offsetX
+          , Scale.screenToImage model.scale y1 - offsetY
+          )
+        (x2', y2') =
+          ( Scale.screenToImage model.scale x2 - offsetX
+          , Scale.screenToImage model.scale y2 - offsetY
+          )
+        deskSize = (gridSize*6, gridSize*10)
+        flip (w, h) = (h, w)
+        horizontal = abs (x2 - x1) > abs (y2 - y1)
+        (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
+        (stampAmountX, stampAmountY) =
+          if horizontal then
+            let
+              amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
+              amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
+            in
+             (amountX, amountY)
+          else
+            let
+              amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
+              amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
+            in
+              (amountX, amountY)
+        (centerLeft, centerTop) =
+          fitToGrid model.gridSize (x1' - deskWidth // 2, y1' - deskHeight // 2)
+
+        lefts =
+          List.map (\index -> centerLeft + deskWidth * index * (if x2 > x1 then 1 else -1)) [0..stampAmountX]
+        tops =
+          List.map (\index -> centerTop + deskHeight * index * (if y2 > y1 then 1 else -1)) [0..stampAmountY]
+        all =
+          List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
+      in
+        List.map (\(left, top) ->
+          equipmentView'
+            ("temporary_" ++ toString left ++ "_" ++ toString top)
+            (left, top, deskWidth, deskHeight)
+            "#fae" --TODO
+            "" --name
+            False -- selected
+            False -- alpha
+            [] -- eventHandlers
+            model.scale
+            True -- disableTransition
+        ) all
+    _ -> []
 
 
 colorPropertyView : Address Action -> Model -> Html
@@ -306,9 +384,5 @@ view address model =
     , mainView address model
     , contextMenuView address model
     ]
-
--- view : Address Action -> Model -> Html
--- view address model =
---   fileLoadButton (forwardTo address LoadFile)
 
 --
