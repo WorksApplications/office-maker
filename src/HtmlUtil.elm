@@ -23,11 +23,15 @@ focus id =
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
 
-blur  : String -> Task HtmlUtilError ()
+blur : String -> Task HtmlUtilError ()
 blur id =
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
+
+setTimeout : Int -> Task a ()
+setTimeout time =
+  Native.HtmlUtil.setTimeout time
 
 onMouseMove' : Address MouseEvent -> Attribute
 onMouseMove' address =

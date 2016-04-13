@@ -46,8 +46,8 @@ contextMenuItemView address action text' =
     [ text text' ]
 
 
-equipmentView : Address Action -> Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Html
-equipmentView address model moving selected alpha equipment contextMenuDisabled =
+equipmentView : Address Action -> Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html
+equipmentView address model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
     Desk id (left, top, width, height) color name ->
       let
@@ -61,10 +61,10 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
                 fitToGrid model.gridSize (left + dx, top + dy)
             _ -> (left, top)
       in
-        equipmentView' address id (x, y, width, height) color name selected moovingBool alpha contextMenuDisabled model.scale
+        equipmentView' address id (x, y, width, height) color name selected moovingBool alpha contextMenuDisabled model.scale disableTransition
 
-equipmentView' : Address Action -> Id -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> Scale.Model -> Html
-equipmentView' address id rect color name selected moving alpha contextMenuDisabled scale =
+equipmentView' : Address Action -> Id -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> Scale.Model -> Bool -> Html
+equipmentView' address id rect color name selected moving alpha contextMenuDisabled scale disableTransition =
   let
     screenRect = Scale.imageToScreenForRect scale rect
     contextMenu =
@@ -72,15 +72,19 @@ equipmentView' address id rect color name selected moving alpha contextMenuDisab
         []
       else
         [ onContextMenu' (forwardTo address (ShowContextMenuOnEquipment id)) ]
+    styles =
+      Styles.desk screenRect color selected alpha ++
+        [("display", "table")] ++
+        Styles.transition disableTransition
   in
     div
       (contextMenu ++ [ key (id ++ toString moving)
-      , style (Styles.desk screenRect color selected alpha ++ [("display", "table")])
+      , style styles
       , onMouseDown' (forwardTo address (MouseDownOnEquipment id))
       , onDblClick' (forwardTo address (StartEditEquipment id))
       ])
       [ pre
-        [ style (Styles.nameLabel (Scale.imageToScreen scale 1))
+        [ style (Styles.nameLabel (Scale.imageToScreen scale 1) ++ Styles.transition disableTransition)
         ]
         [ text ({-toString (x, y) ++ "\n" ++ -}name)]]
 
@@ -90,15 +94,20 @@ nameInputView address model =
     Just (id, name) ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just (Desk id rect color _) ->
-          textarea
-            [ Html.Attributes.id "name-input"
-            , style (Styles.deskInput (Scale.imageToScreenForRect model.scale rect))
-            , onInput' (forwardTo address (InputName id)) -- TODO cannot input japanese
-            , onKeyDown'' (forwardTo address (KeydownOnNameInput))
-            , onMouseDown' (forwardTo address (always NoOp))
-            , value name
-            ]
-            [text name]
+          let
+            styles =
+              Styles.deskInput (Scale.imageToScreenForRect model.scale rect) ++
+              Styles.transition (model.dragging /= Nothing)
+          in
+            textarea
+              [ Html.Attributes.id "name-input"
+              , style styles
+              , onInput' (forwardTo address (InputName id)) -- TODO cannot input japanese
+              , onKeyDown'' (forwardTo address (KeydownOnNameInput))
+              , onMouseDown' (forwardTo address (always NoOp))
+              , value name
+              ]
+              [text name]
         Nothing -> text ""
     Nothing ->
       text ""
@@ -189,12 +198,15 @@ debugView address model =
 canvasView : Address Action -> Model -> Html
 canvasView address model =
   let
+    -- disableTransition = model.shiftOffsetPrevScreenPos /= Nothing || model.dragging /= Nothing
+    disableTransition = not model.scaling
+
     isDragged equipment =
       model.dragging /= Nothing && List.member (idOf equipment) model.selectedEquipments
 
     nonDraggingEquipments =
       List.map
-        (\equipment -> equipmentView address model Nothing (isSelected model equipment) (isDragged equipment) equipment model.keys.ctrl)
+        (\equipment -> equipmentView address model Nothing (isSelected model equipment) (isDragged equipment) equipment model.keys.ctrl disableTransition)
         (UndoRedo.data model.floor).equipments
 
     draggingEquipments =
@@ -208,7 +220,7 @@ canvasView address model =
               _ -> Nothing
         in
           List.map
-            (\equipment -> equipmentView address model moving (isSelected model equipment) False equipment model.keys.ctrl)
+            (\equipment -> equipmentView address model moving (isSelected model equipment) False equipment model.keys.ctrl disableTransition)
             equipments
       else []
 
@@ -218,7 +230,7 @@ canvasView address model =
     selectorRect =
       case (model.editMode, model.selectorRect) of
         (Select, Just (rect, _)) ->
-          div [style (Styles.selectorRect (Scale.imageToScreenForRect model.scale rect) )] []
+          div [style (Styles.selectorRect (Scale.imageToScreenForRect model.scale rect) ++ Styles.transition disableTransition )] []
         _ -> text ""
 
     (offsetX, offsetY) = model.offset
@@ -229,7 +241,8 @@ canvasView address model =
         (offsetX, offsetY, (UndoRedo.data model.floor).width, (UndoRedo.data model.floor).height)
   in
     div
-      [ style (Styles.canvasView rect) ]
+      [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
+      ]
       ((nameInputView address model) :: (selectorRect :: equipments))
 
 

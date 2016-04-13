@@ -188,3 +188,10 @@ selection selected =
   , ("color", if selected then "#fff" else "inherit")
   -- , ("font-weight", if selected then "bold" else "inherit")
   ]
+
+transition : Bool -> S
+transition disabled =
+  if disabled then [] else
+    [ ("transition-property", "width, height, top, left")
+    , ("transition-duration", "0.2s")
+    ]

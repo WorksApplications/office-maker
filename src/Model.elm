@@ -41,6 +41,7 @@ type alias Model =
   , scale : Scale.Model
   , offset : (Int, Int)
   , shiftOffsetPrevScreenPos : Maybe (Int, Int)
+  , scaling : Bool
   }
 
 type ContextMenu =
@@ -83,6 +84,7 @@ init initialSize =
     , scale = Scale.init
     , offset = (35, 35)
     , shiftOffsetPrevScreenPos = Nothing
+    , scaling = False
     }
   , Effects.task (Task.succeed Init)
   )
@@ -108,6 +110,7 @@ type Action = NoOp
   | ChangeMode EditMode
   | LoadFile FileList
   | GotDataURL String
+  | ScaleEnd
 
 initFloor : Floor
 initFloor =
@@ -411,7 +414,16 @@ update action model =
           { model |
             scale = newScale
           , offset = newOffset
+          , scaling = True
           }
+        effects =
+          setTimeout 200 ScaleEnd
+      in
+        (newModel, effects)
+    ScaleEnd ->
+      let
+        newModel =
+          { model | scaling = False }
       in
         (newModel, Effects.none)
     WindowDimensions (w, h) ->
@@ -536,6 +548,11 @@ updateByKeyAction action model =
         (newModel, Effects.none)
     _ ->
       (model, Effects.none)
+
+setTimeout : Int -> Action -> Effects Action
+setTimeout time action =
+  Effects.task <|
+    (Task.map (always action) (HtmlUtil.setTimeout time))
 
 shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =

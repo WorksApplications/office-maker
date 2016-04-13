@@ -52,11 +52,19 @@ Elm.Native.HtmlUtil.make = function(localRuntime) {
       image.src = dataUrl;
       return Utils.Tuple2(image.width, image.height);
     }
+    function _setTimeout(time) {
+      return Task.asyncFunction(function(callback) {
+        setTimeout(function() {
+          callback(Task.succeed(Utils.Tuple0))
+        }, time);
+      });
+    }
 
     return localRuntime.Native.HtmlUtil.values = {
         focus: focus,
         blur: blur,
         readAsDataURL : readAsDataURL,
-        getWidthAndHeightOfImage: getWidthAndHeightOfImage
+        getWidthAndHeightOfImage: getWidthAndHeightOfImage,
+        setTimeout : _setTimeout
     };
 };
