@@ -90,10 +90,7 @@ equipmentView' address id rect color name selected moving alpha contextMenuDisab
 
 transitionDisabled : Model -> Bool
 transitionDisabled model =
-  case model.draggingContext of
-    MoveEquipment _ _ -> True
-    ShiftOffsetPrevScreenPos _ -> True
-    _ -> False
+  not model.scaling
 
 nameInputView : Address Action -> Model -> Html
 nameInputView address model =
@@ -206,8 +203,7 @@ canvasView : Address Action -> Model -> Html
 canvasView address model =
   let
     floor = UndoRedo.data model.floor
-    -- disableTransition = model.shiftOffsetPrevScreenPos /= Nothing || model.dragging /= Nothing
-    disableTransition = not model.scaling
+    disableTransition = transitionDisabled model
 
     isDragged equipment =
       (case model.draggingContext of
