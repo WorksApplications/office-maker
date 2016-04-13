@@ -120,7 +120,6 @@ mainView address model =
         , onMouseWheel address MouseWheel
         ]
         [ canvasView address model
-        , nameInputView address model
         ]
       , subView address model
       ]
@@ -231,7 +230,7 @@ canvasView address model =
   in
     div
       [ style (Styles.canvasView rect) ]
-      (selectorRect :: equipments)
+      ((nameInputView address model) :: (selectorRect :: equipments))
 
 
 colorPropertyView : Address Action -> Model -> Html
