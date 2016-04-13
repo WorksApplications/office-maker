@@ -155,14 +155,14 @@ canvasContainer =
   , ("flex", "1")
   ]
 
-nameLabel : Int -> S
-nameLabel scaleDown =
+nameLabel : Float -> S
+nameLabel ratio =
   [ ("display", "table-cell")
   , ("vertical-align", "middle")
   , ("text-align", "center")
   , ("position", "absolute")
   , ("cursor", "default")
-  , ("font-size", (toString (1 / toFloat (2 ^ scaleDown))) ++ "em") --TODO
+  , ("font-size", toString ratio ++ "em") --TODO
    -- TODO vertical align
   ]
 

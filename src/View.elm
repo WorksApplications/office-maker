@@ -84,7 +84,7 @@ equipmentView' address id rect color name selected moving alpha contextMenuDisab
       , onDblClick' (forwardTo address (StartEditEquipment id))
       ])
       [ pre
-        [ style (Styles.nameLabel (Scale.imageToScreen scale 1) ++ Styles.transition disableTransition)
+        [ style (Styles.nameLabel (1.0 / (toFloat <| Scale.screenToImage scale 1)) ++ Styles.transition disableTransition) --TODO
         ]
         [ text ({-toString (x, y) ++ "\n" ++ -}name)]]
 
