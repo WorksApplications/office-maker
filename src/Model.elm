@@ -15,14 +15,9 @@ import EquipmentsOperation exposing (..)
 import IdGenerator exposing (Seed)
 import Scale
 import ListUtil exposing (..)
+import API
 
-type alias Floor =
-  { name : String
-  , equipments: List Equipment
-  , width : Int
-  , height : Int
-  , dataURL : Maybe String
-  }
+type alias Floor = API.Floor
 
 type alias Model =
   { seed : Seed
@@ -130,7 +125,8 @@ type Action = NoOp
 initFloor : Floor
 initFloor =
   setEquipments
-    { name = ""
+    { id = "1"
+    , name = "1F"
     , equipments = []
     , width = 1610
     , height = 810
