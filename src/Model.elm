@@ -41,13 +41,15 @@ type alias Model =
   , scale : Scale.Model
   , offset : (Int, Int)
   , scaling : Bool
+  , selectedPrototype : Prototype
   }
 
 type ContextMenu =
     NoContextMenu
   | Equipment (Int, Int) Id
 
-type EditMode = Select | Pen | Stamp
+type alias Prototype = (String, (Int, Int))
+type EditMode = Select | Pen | Stamp Prototype
 
 type Commit =
     Move (List Id) Int (Int, Int)
@@ -92,6 +94,7 @@ init initialSize =
     , scale = Scale.init
     , offset = (35, 35)
     , scaling = False
+    , selectedPrototype = ("#ed9", (gridSize*6, gridSize*10))
     }
   , Effects.task (Task.succeed Init)
   )
@@ -178,11 +181,6 @@ update action model =
                     , offsetY + Scale.screenToImage model.scale dy
                     )
               }
-            -- StampScreenPos (x, y) _ ->
-            --   { model' |
-            --     draggingContext =
-            --       StampScreenPos (x, y) (e.clientX, e.clientY)
-            --   }
             _ -> model'
       in
         (newModel, Effects.none)
@@ -297,7 +295,7 @@ update action model =
 
         draggingContext =
           case model.editMode of
-            Stamp ->
+            Stamp _ ->
               StampScreenPos (e.clientX, e.clientY)
             Pen -> None -- TODO
             Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY)

@@ -184,8 +184,12 @@ penView address model =
         [ text "Pen" ]
     stamp =
       div
-        [ style (Styles.selection (model.editMode == Stamp) ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode Stamp))
+        [ style (Styles.selection (
+            case model.editMode of
+              Stamp _ -> True
+              _ -> False
+            ) ++ widthStyle)
+        , onClick' (forwardTo address (always <| ChangeMode <| Stamp model.selectedPrototype))
         ]
         [ text "Stamp" ]
   in
@@ -214,7 +218,7 @@ canvasContainerView : Address Action -> Model -> Html
 canvasContainerView address model =
   div
     [ style (Styles.canvasContainer ++ (case model.editMode of
-        Stamp -> [("cursor", "none")]
+        Stamp _ -> [("cursor", "none")]
         _ -> []
       ))
     , onMouseMove' (forwardTo address MoveOnCanvas)
@@ -290,7 +294,7 @@ canvasView address model =
           div [style (Styles.selectorRect (Scale.imageToScreenForRect model.scale rect) ++ Styles.transition disableTransition )] []
         _ -> text ""
 
-    temporalStamps' = temporalStamps model
+    temporaryStamps' = temporaryStampsView model
 
     (offsetX, offsetY) = model.offset
 
@@ -308,86 +312,93 @@ canvasView address model =
     div
       [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
       ]
-      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporalStamps')
+      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
 
-temporalStamps : Model -> List Html
-temporalStamps model =
+stampAmount : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
+stampAmount horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
+  if horizontal then
+    let
+      amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
+      amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
+    in
+     (amountX, amountY)
+  else
+    let
+      amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
+      amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
+    in
+      (amountX, amountY)
+
+temporaryStampView : Scale.Model -> String -> (Int, Int) -> (Int, Int) -> Html
+temporaryStampView scale color (deskWidth, deskHeight) (left, top) =
+  equipmentView'
+      ("temporary_" ++ toString left ++ "_" ++ toString top)
+      (left, top, deskWidth, deskHeight)
+      color
+      "" --name
+      False -- selected
+      False -- alpha
+      [] -- eventHandlers
+      scale
+      True -- disableTransition
+
+generateAllCandidatePosition : (Int, Int) -> (Int, Int) -> (List Int, List Int) -> List (Int, Int)
+generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (indicesX, indicesY) =
   let
-    (offsetX, offsetY) = model.offset
-    (x2, y2) = Maybe.withDefault (0, 0) model.pos
-    (x2', y2') =
-      ( Scale.screenToImage model.scale x2 - offsetX
-      , Scale.screenToImage model.scale y2 - offsetY
-      )
-    deskSize = (gridSize*6, gridSize*10)
-    color = "#fae" --TODO
+    lefts =
+      List.map (\index -> centerLeft + deskWidth * index) indicesX
+    tops =
+      List.map (\index -> centerTop + deskHeight * index) indicesY
   in
-    case (model.editMode, model.draggingContext) of
-      (Stamp, StampScreenPos (x1, y1)) ->
-        let
-          (x1', y1') =
-            ( Scale.screenToImage model.scale x1 - offsetX
-            , Scale.screenToImage model.scale y1 - offsetY
-            )
+    List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
 
-          flip (w, h) = (h, w)
-          horizontal = abs (x2 - x1) > abs (y2 - y1)
-          (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
-          (stampAmountX, stampAmountY) =
-            if horizontal then
-              let
-                amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
-                amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
-              in
-               (amountX, amountY)
-            else
-              let
-                amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
-                amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
-              in
-                (amountX, amountY)
-          (centerLeft, centerTop) =
-            -- fitToGrid model.gridSize (x1' - deskWidth // 2, y1' - deskHeight // 2)
-            fitToGrid model.gridSize (x1' - fst deskSize // 2, y1' - snd deskSize // 2)
-
-          lefts =
-            List.map (\index -> centerLeft + deskWidth * index * (if x2 > x1 then 1 else -1)) [0..stampAmountX]
-          tops =
-            List.map (\index -> centerTop + deskHeight * index * (if y2 > y1 then 1 else -1)) [0..stampAmountY]
-          all =
-            List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
-        in
-          List.map (\(left, top) ->
-            equipmentView'
-              ("temporary_" ++ toString left ++ "_" ++ toString top)
-              (left, top, deskWidth, deskHeight)
-              color
-              "" --name
-              False -- selected
-              False -- alpha
-              [] -- eventHandlers
-              model.scale
-              True -- disableTransition
-          ) all
-      (Stamp, _) ->
-        let
-          (deskWidth, deskHeight) = deskSize
-          (left, top) =
-            fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
-        in
-          [ equipmentView'
-              ("temporary_" ++ toString left ++ "_" ++ toString top)
-              (left, top, deskWidth, deskHeight)
-              color
-              "" --name
-              False -- selected
-              False -- alpha
-              [] -- eventHandlers
-              model.scale
-              True -- disableTransition
-          ]
-      _ -> []
-
+temporaryStampsView : Model -> List Html
+temporaryStampsView model =
+  case model.editMode of
+    Stamp (color, deskSize) ->
+      let
+        (offsetX, offsetY) = model.offset
+        (x2, y2) = Debug.log "x2y2" <|
+          Maybe.withDefault (0, 0) model.pos
+        (x2', y2') =
+          ( Scale.screenToImage model.scale x2 - offsetX
+          , Scale.screenToImage model.scale y2 - offsetY
+          )
+      in
+        case model.draggingContext of
+          StampScreenPos (x1, y1) ->
+            let
+              (x1', y1') =
+                ( Scale.screenToImage model.scale x1 - offsetX
+                , Scale.screenToImage model.scale y1 - offsetY
+                )
+              flip (w, h) = (h, w)
+              horizontal = abs (x2 - x1) > abs (y2 - y1)
+              (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
+              (stampAmountX, stampAmountY) =
+                stampAmount horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2')
+              (centerLeft, centerTop) =
+                -- fitToGrid model.gridSize (x1' - deskWidth // 2, y1' - deskHeight // 2)
+                fitToGrid model.gridSize (x1' - fst deskSize // 2, y1' - snd deskSize // 2)
+              all =
+                generateAllCandidatePosition
+                  (deskWidth, deskHeight)
+                  (centerLeft, centerTop)
+                  ( List.map (\i -> if x2 > x1 then i else -i) [0..stampAmountX]
+                  , List.map (\i -> if y2 > y1 then i else -i) [0..stampAmountY] )
+            in
+              List.map (\(left, top) ->
+                temporaryStampView model.scale color (deskWidth, deskHeight) (left, top)
+              ) all
+          _ ->
+            let
+              (deskWidth, deskHeight) = deskSize
+              (left, top) =
+                fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+            in
+              [ temporaryStampView model.scale color (deskWidth, deskHeight) (left, top)
+              ]
+    _ -> []
 
 colorPropertyView : Address Action -> Model -> Html
 colorPropertyView address model =
