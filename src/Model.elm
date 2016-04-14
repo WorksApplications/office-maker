@@ -62,7 +62,7 @@ type DraggingContext =
   | MoveEquipment Id (Int, Int)
   | Selector
   | ShiftOffsetPrevScreenPos (Int, Int)
-  | StampScreenPos (Int, Int) (Int, Int)
+  | StampScreenPos (Int, Int)
 
 inputs : List (Signal Action)
 inputs =
@@ -178,11 +178,11 @@ update action model =
                     , offsetY + Scale.screenToImage model.scale dy
                     )
               }
-            StampScreenPos (x, y) _ ->
-              { model' |
-                draggingContext =
-                  StampScreenPos (x, y) (e.clientX, e.clientY)
-              }
+            -- StampScreenPos (x, y) _ ->
+            --   { model' |
+            --     draggingContext =
+            --       StampScreenPos (x, y) (e.clientX, e.clientY)
+            --   }
             _ -> model'
       in
         (newModel, Effects.none)
@@ -298,7 +298,7 @@ update action model =
         draggingContext =
           case model.editMode of
             Stamp ->
-              StampScreenPos (e.clientX, e.clientY) (e.clientX, e.clientY)
+              StampScreenPos (e.clientX, e.clientY)
             Pen -> None -- TODO
             Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
 
