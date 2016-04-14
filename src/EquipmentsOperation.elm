@@ -3,6 +3,7 @@ module EquipmentsOperation where
 {- this module does not know Model or Floor -}
 
 import Equipments exposing (..)
+import ListUtil exposing (..)
 
 rect : Equipment -> (Int, Int, Int, Int)
 rect (Desk _ rect _ _) = rect
@@ -305,10 +306,6 @@ moveEquipments gridSize (dx, dy) ids equipments =
     in Desk id (newX, newY, width, height) color name
   ) ids equipments
 
-findBy : (a -> Bool) -> List a -> Maybe a
-findBy f list =
-  List.head (List.filter f list)
-
 findEquipmentById : List Equipment -> Id -> Maybe Equipment
 findEquipmentById equipments id =
   findBy (\equipment -> id == (idOf equipment)) equipments
@@ -328,6 +325,9 @@ idOf (Desk id _ _ _) = id
 
 nameOf : Equipment -> String
 nameOf (Desk _ _ _ name) = name
+
+colorOf : Equipment -> String
+colorOf (Desk _ _ color _) = color
 
 commitInputName : (Id, String) -> List Equipment -> List Equipment
 commitInputName (id, name) equipments =

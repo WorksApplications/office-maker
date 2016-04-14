@@ -85,7 +85,8 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
 equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List Html.Attribute -> Scale.Model -> Bool -> Html
 equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition =
   let
-    screenRect = Scale.imageToScreenForRect scale rect
+    screenRect =
+      Scale.imageToScreenForRect scale rect
     styles =
       Styles.desk screenRect color selected alpha ++
         [("display", "table")] ++
@@ -174,9 +175,15 @@ isStampMode editMode =
 
 penView : Address Action -> Model -> List Html
 penView address model =
+  let
+    prototypes =
+      List.map (\(id, color, name, pos) ->
+          ((id, color, name, pos), model.selectedPrototype == id)
+        ) model.prototypes
+  in
     [ fileLoadButton (forwardTo address LoadFile)
     , modeSelectionView address model
-    , prototypePreviewView model.selectedPrototype (isStampMode model.editMode)
+    , prototypePreviewView prototypes (isStampMode model.editMode)
     ]
 
 modeSelectionView : Address Action -> Model -> Html
@@ -324,20 +331,24 @@ canvasView address model =
       ]
       ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
 
-prototypePreviewView : Prototype -> Bool -> Html
-prototypePreviewView (color, name, (width, height)) stampMode =
-  div
-    [ style (Styles.prototypePreviewView stampMode) ]
-    [ temporaryStampView Scale.init ((color, name, (width, height)), (40, 40)) ]
+prototypePreviewView : List (Prototype, Bool) -> Bool -> Html
+prototypePreviewView prototypes stampMode =
+  let
+    each index (prototype, selected) =
+      temporaryStampView Scale.init selected (prototype, (40, 10 + index * 90))
+  in
+    div
+      [ style (Styles.prototypePreviewView stampMode) ]
+      (List.indexedMap each prototypes)
 
-temporaryStampView : Scale.Model -> StampCandidate -> Html
-temporaryStampView scale ((color, name, (deskWidth, deskHeight)), (left, top)) =
-  equipmentView'
-      ("temporary_" ++ toString left ++ "_" ++ toString top)
+temporaryStampView : Scale.Model -> Bool -> StampCandidate -> Html
+temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
+    equipmentView'
+      ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight)
       (left, top, deskWidth, deskHeight)
       color
       name --name
-      False -- selected
+      selected
       False -- alpha
       [] -- eventHandlers
       scale
@@ -346,7 +357,7 @@ temporaryStampView scale ((color, name, (deskWidth, deskHeight)), (left, top)) =
 temporaryStampsView : Model -> List Html
 temporaryStampsView model =
   List.map
-    (temporaryStampView model.scale)
+    (temporaryStampView model.scale False)
     (stampCandidates model)
 
 colorPropertyView : Address Action -> Model -> Html

@@ -14,6 +14,7 @@ import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
 import IdGenerator exposing (Seed)
 import Scale
+import ListUtil exposing (..)
 
 type alias Floor =
   { name : String
@@ -41,17 +42,17 @@ type alias Model =
   , scale : Scale.Model
   , offset : (Int, Int)
   , scaling : Bool
-  , selectedPrototype : Prototype
+  , prototypes : List Prototype
+  , selectedPrototype : Id
   }
 
 type ContextMenu =
     NoContextMenu
   | Equipment (Int, Int) Id
 
-type alias Prototype = (String, String, (Int, Int))
 type alias StampCandidate = (Prototype, (Int, Int))
 
-type EditMode = Select | Pen | Stamp Prototype
+type EditMode = Select | Pen | Stamp Id
 
 type Commit =
     Create (List (StampCandidate, Id))
@@ -97,7 +98,8 @@ init initialSize =
     , scale = Scale.init
     , offset = (35, 35)
     , scaling = False
-    , selectedPrototype = ("#ed9", "", (gridSize*6, gridSize*10))
+    , prototypes = [("1", "#ed9", "", (gridSize*6, gridSize*10)), ("2", "#ed9", "", (gridSize*10, gridSize*6))]
+    , selectedPrototype = "1"
     }
   , Effects.task (Task.succeed Init)
   )
@@ -134,13 +136,7 @@ initFloor =
     , height = 810
     , dataURL = Nothing
     }
-    [ Desk "1" (gridSize*5, gridSize*20, gridSize*6, gridSize*10) "#ed9" "John\nSmith"
-    , Desk "2" (gridSize*11, gridSize*20, gridSize*6, gridSize*10) "#8bd" "John\nSmith"
-    , Desk "3" (gridSize*5, gridSize*30, gridSize*6, gridSize*10) "#fa9" "John\nSmith"
-    , Desk "4" (gridSize*11, gridSize*30, gridSize*6, gridSize*10) "#b8f" "John\nSmith"
-    , Desk "5" (gridSize*5, gridSize*40, gridSize*6, gridSize*10) "#fa9" "John\nSmith"
-    , Desk "6" (gridSize*11, gridSize*40, gridSize*6, gridSize*10) "#b8f" "John\nSmith"
-    ]
+    []
 
 debug : Bool
 debug = False
@@ -324,11 +320,11 @@ update action model =
         (newModel, Effects.none)
     StartEditEquipment id e ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
-        Just (Desk id (x, y, w, h) color name) ->
+        Just e ->
           let
             newModel =
               { model |
-                editingEquipment = Just (id, name)
+                editingEquipment = Just (idOf e, nameOf e)
               }
           in
             (newModel, focusEffect "name-input")
@@ -653,9 +649,13 @@ updateFloorByCommit : Commit -> Floor -> Floor
 updateFloorByCommit commit floor =
   case commit of
     Create candidateWithNewIds ->
-      setEquipments
-        floor
-        (floor.equipments ++ List.map (\(((color, name, (w, h)), (x, y)), newId) -> Desk newId (x, y, w, h) color name) candidateWithNewIds)
+      let
+        create (((_, color, name, (w, h)), (x, y)), newId) =
+          Equipments.init newId (x, y, w, h) color name
+      in
+        setEquipments
+          floor
+          (floor.equipments ++ List.map create candidateWithNewIds)
     Move ids gridSize (dx, dy) ->
       setEquipments
         floor
@@ -722,13 +722,19 @@ colorProperty model =
     selected = selectedEquipments model
   in
     case List.head selected of
-      Just (Desk _ _ firstColor _) ->
-        List.foldl (\(Desk _ _ color _) maybeColor ->
-          case maybeColor of
-            Just color_ ->
-              if color == color_ then Just color else Nothing
-            Nothing -> Nothing
-        ) (Just firstColor) selected
+      Just e ->
+        let
+          firstColor = colorOf e
+        in
+          List.foldl (\e maybeColor ->
+            let
+              color = colorOf e
+            in
+              case maybeColor of
+                Just color_ ->
+                  if color == color_ then Just color else Nothing
+                Nothing -> Nothing
+          ) (Just firstColor) selected
       Nothing -> Nothing
 
 stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
@@ -762,11 +768,23 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
   in
     List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
 
+findPrototypeById : Id -> List Prototype -> Prototype
+findPrototypeById id list =
+  case findBy (\(id_, _, _, _) -> id == id) list of
+    Just prototype -> prototype
+    Nothing ->
+      case List.head list of
+        Just prototype -> prototype
+        Nothing -> Debug.crash "no prototypes found"
+
+
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
   case model.editMode of
-    Stamp (color, name, deskSize) ->
+    Stamp prototypeId ->
       let
+        (prototypeId, color, name, deskSize) =
+          findPrototypeById prototypeId model.prototypes
         (offsetX, offsetY) = model.offset
         (x2, y2) =
           Maybe.withDefault (0, 0) model.pos
@@ -798,7 +816,7 @@ stampCandidates model =
 
             in
               List.map (\(left, top) ->
-                 ((color, name, (deskWidth, deskHeight)), (left, top))
+                 ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
               ) all
           _ ->
             let
@@ -806,7 +824,7 @@ stampCandidates model =
               (left, top) =
                 fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
             in
-              [ ((color, name, (deskWidth, deskHeight)), (left, top))
+              [ ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
               ]
     _ -> []
 --
