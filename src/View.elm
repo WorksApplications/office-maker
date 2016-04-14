@@ -164,7 +164,7 @@ card : List Html -> Html
 card children =
   div
     [ {-style Styles.card-}
-    style [("margin-bottom", "20px"), ("padding", "10px")]
+    style [("margin-bottom", "20px"), ("padding", "20px")]
     ] children
 
 isStampMode : EditMode -> Bool
