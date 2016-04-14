@@ -316,99 +316,22 @@ canvasView address model =
       ]
       ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
 
-stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
-stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
-  let
-    (amountX, amountY) =
-      if horizontal then
-        let
-          amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
-          amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
-        in
-         (amountX, amountY)
-      else
-        let
-          amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
-          amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
-        in
-          (amountX, amountY)
-  in
-    ( List.map (\i -> if x2' > x1' then i else -i) [0..amountX]
-    , List.map (\i -> if y2' > y1' then i else -i) [0..amountY] )
-
-temporaryStampView : Scale.Model -> String -> (Int, Int) -> (Int, Int) -> Html
-temporaryStampView scale color (deskWidth, deskHeight) (left, top) =
+temporaryStampView : StampCandidate -> Html
+temporaryStampView (scale, color, name, (left, top, deskWidth, deskHeight)) =
   equipmentView'
       ("temporary_" ++ toString left ++ "_" ++ toString top)
       (left, top, deskWidth, deskHeight)
       color
-      "" --name
+      name --name
       False -- selected
       False -- alpha
       [] -- eventHandlers
       scale
       True -- disableTransition
 
-generateAllCandidatePosition : (Int, Int) -> (Int, Int) -> (List Int, List Int) -> List (Int, Int)
-generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (indicesX, indicesY) =
-  let
-    lefts =
-      List.map (\index -> centerLeft + deskWidth * index) indicesX
-    tops =
-      List.map (\index -> centerTop + deskHeight * index) indicesY
-  in
-    List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
-
 temporaryStampsView : Model -> List Html
 temporaryStampsView model =
-  case model.editMode of
-    Stamp (color, deskSize) ->
-      let
-        (offsetX, offsetY) = model.offset
-        (x2, y2) =
-          -- Debug.log "x2y2" <|
-          Maybe.withDefault (0, 0) model.pos
-        (x2', y2') =
-          ( Scale.screenToImage model.scale x2 - offsetX
-          , Scale.screenToImage model.scale y2 - offsetY
-          )
-      in
-        case model.draggingContext of
-          StampScreenPos (x1, y1) ->
-            let
-              (x1', y1') =
-                ( Scale.screenToImage model.scale x1 - offsetX
-                , Scale.screenToImage model.scale y1 - offsetY
-                )
-              flip (w, h) = (h, w)
-              horizontal = abs (x2 - x1) > abs (y2 - y1)
-              (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
-              (indicesX, indicesY) =
-                stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2')
-              (centerLeft, centerTop) =
-                -- fitToGrid model.gridSize (x1' - deskWidth // 2, y1' - deskHeight // 2)
-                fitToGrid model.gridSize (x1' - fst deskSize // 2, y1' - snd deskSize // 2)
-              all =
-                generateAllCandidatePosition
-                  (deskWidth, deskHeight)
-                  (centerLeft, centerTop)
-                  (indicesX, indicesY)
-
-            in
-              List.map (\(left, top) ->
-                temporaryStampView model.scale color (deskWidth, deskHeight) (left, top)
-              ) all
-          _ ->
-            let
-              (deskWidth, deskHeight) = deskSize
-              (left, top) =
-                fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2) --TODO
-              _ = Debug.log "XXX" <|
-                ((x2', y2'), (left, top))
-            in
-              [ temporaryStampView model.scale color (deskWidth, deskHeight) (left, top)
-              ]
-    _ -> []
+  List.map temporaryStampView (stampCandidates model)
 
 colorPropertyView : Address Action -> Model -> Html
 colorPropertyView address model =
