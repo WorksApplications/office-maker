@@ -195,3 +195,16 @@ transition disabled =
     [ ("transition-property", "width, height, top, left")
     , ("transition-duration", "0.2s")
     ]
+
+prototypePreviewView : Bool -> S
+prototypePreviewView stampMode =
+  [ ("width", "238px")
+  , ("height", "238px")
+  , ("position", "relative")
+  , ("border-style", "solid")
+  , ("border-width", if stampMode then "2px" else "1px")
+  , ("border-color", if stampMode then "#69e" else "#666")
+  , ("box-sizing", "border-box")
+  , ("margin-top", "10px")
+  , ("background-color", "#fff")
+  ]

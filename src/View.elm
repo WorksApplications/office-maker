@@ -166,8 +166,22 @@ card children =
     style [("margin-bottom", "20px"), ("padding", "10px")]
     ] children
 
+isStampMode : EditMode -> Bool
+isStampMode editMode =
+  case editMode of
+    Stamp _ -> True
+    _ -> False
+
 penView : Address Action -> Model -> List Html
 penView address model =
+    [ text "PenView"
+    , modeSelectionView address model
+    , prototypePreviewView model.selectedPrototype (isStampMode model.editMode)
+    , fileLoadButton (forwardTo address LoadFile)
+    ]
+
+modeSelectionView : Address Action -> Model -> Html
+modeSelectionView address model =
   let
     widthStyle = [("width", "80px")]
     selection =
@@ -182,21 +196,16 @@ penView address model =
         , onClick' (forwardTo address (always <| ChangeMode Pen))
         ]
         [ text "Pen" ]
+    nowStampMode =
+      isStampMode model.editMode
     stamp =
       div
-        [ style (Styles.selection (
-            case model.editMode of
-              Stamp _ -> True
-              _ -> False
-            ) ++ widthStyle)
+        [ style (Styles.selection nowStampMode ++ widthStyle)
         , onClick' (forwardTo address (always <| ChangeMode <| Stamp model.selectedPrototype))
         ]
         [ text "Stamp" ]
   in
-    [ text "PenView"
-    , div [ style Styles.flex ] [selection, pen, stamp]
-    , fileLoadButton (forwardTo address LoadFile)
-    ]
+    div [ style Styles.flex ] [selection, pen, stamp]
 
 propertyView : Address Action -> Model -> List Html
 propertyView address model =
@@ -316,8 +325,14 @@ canvasView address model =
       ]
       ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
 
+prototypePreviewView : Prototype -> Bool -> Html
+prototypePreviewView (color, name, (width, height)) stampMode =
+  div
+    [ style (Styles.prototypePreviewView stampMode) ]
+    [ temporaryStampView ((color, name, (width, height)), (40, 40), Scale.init) ]
+
 temporaryStampView : StampCandidate -> Html
-temporaryStampView (scale, color, name, (left, top, deskWidth, deskHeight)) =
+temporaryStampView ((color, name, (deskWidth, deskHeight)), (left, top), scale) =
   equipmentView'
       ("temporary_" ++ toString left ++ "_" ++ toString top)
       (left, top, deskWidth, deskHeight)

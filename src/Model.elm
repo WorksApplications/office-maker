@@ -715,7 +715,7 @@ colorProperty model =
         ) (Just firstColor) selected
       Nothing -> Nothing
 
-type alias StampCandidate = (Scale.Model, String, String, (Int, Int, Int, Int))
+type alias StampCandidate = (Prototype, (Int, Int), Scale.Model)
 
 stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
 stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
@@ -784,7 +784,7 @@ stampCandidates model =
 
             in
               List.map (\(left, top) ->
-                 (model.scale, color, name, (left, top, deskWidth, deskHeight))
+                 ((color, name, (deskWidth, deskHeight)), (left, top), model.scale)
               ) all
           _ ->
             let
@@ -792,7 +792,7 @@ stampCandidates model =
               (left, top) =
                 fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
             in
-              [ (model.scale, color, name, (left, top, deskWidth, deskHeight))
+              [ ((color, name, (deskWidth, deskHeight)), (left, top), model.scale)
               ]
     _ -> []
 --
