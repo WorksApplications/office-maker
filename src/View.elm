@@ -174,10 +174,9 @@ isStampMode editMode =
 
 penView : Address Action -> Model -> List Html
 penView address model =
-    [ text "PenView"
+    [ fileLoadButton (forwardTo address LoadFile)
     , modeSelectionView address model
     , prototypePreviewView model.selectedPrototype (isStampMode model.editMode)
-    , fileLoadButton (forwardTo address LoadFile)
     ]
 
 modeSelectionView : Address Action -> Model -> Html
@@ -205,7 +204,7 @@ modeSelectionView address model =
         ]
         [ text "Stamp" ]
   in
-    div [ style Styles.flex ] [selection, pen, stamp]
+    div [ style (Styles.flex ++ [("margin-top", "10px")]) ] [selection, pen, stamp]
 
 propertyView : Address Action -> Model -> List Html
 propertyView address model =
@@ -329,10 +328,10 @@ prototypePreviewView : Prototype -> Bool -> Html
 prototypePreviewView (color, name, (width, height)) stampMode =
   div
     [ style (Styles.prototypePreviewView stampMode) ]
-    [ temporaryStampView ((color, name, (width, height)), (40, 40), Scale.init) ]
+    [ temporaryStampView Scale.init ((color, name, (width, height)), (40, 40)) ]
 
-temporaryStampView : StampCandidate -> Html
-temporaryStampView ((color, name, (deskWidth, deskHeight)), (left, top), scale) =
+temporaryStampView : Scale.Model -> StampCandidate -> Html
+temporaryStampView scale ((color, name, (deskWidth, deskHeight)), (left, top)) =
   equipmentView'
       ("temporary_" ++ toString left ++ "_" ++ toString top)
       (left, top, deskWidth, deskHeight)
@@ -346,7 +345,9 @@ temporaryStampView ((color, name, (deskWidth, deskHeight)), (left, top), scale) 
 
 temporaryStampsView : Model -> List Html
 temporaryStampsView model =
-  List.map temporaryStampView (stampCandidates model)
+  List.map
+    (temporaryStampView model.scale)
+    (stampCandidates model)
 
 colorPropertyView : Address Action -> Model -> Html
 colorPropertyView address model =

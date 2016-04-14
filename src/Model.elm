@@ -49,10 +49,13 @@ type ContextMenu =
   | Equipment (Int, Int) Id
 
 type alias Prototype = (String, String, (Int, Int))
+type alias StampCandidate = (Prototype, (Int, Int))
+
 type EditMode = Select | Pen | Stamp Prototype
 
 type Commit =
-    Move (List Id) Int (Int, Int)
+    Create (List (StampCandidate, Id))
+  | Move (List Id) Int (Int, Int)
   | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
   | ChangeColor (List Id) String
@@ -255,6 +258,15 @@ update action model =
                         Just (x, y, w, h)
                     _ -> model.selectorRect
               }
+            StampScreenPos _ ->
+              let
+                (candidatesWithNewIds, newSeed) =
+                  IdGenerator.zipWithNewIds model.seed (stampCandidates model)
+              in
+                { model |
+                  seed = newSeed
+                , floor = UndoRedo.commit model.floor (Create candidatesWithNewIds)
+                }
             _ -> model
         newModel =
           { model' |
@@ -640,6 +652,10 @@ blurEffect id =
 updateFloorByCommit : Commit -> Floor -> Floor
 updateFloorByCommit commit floor =
   case commit of
+    Create candidateWithNewIds ->
+      setEquipments
+        floor
+        (floor.equipments ++ List.map (\(((color, name, (w, h)), (x, y)), newId) -> Desk newId (x, y, w, h) color name) candidateWithNewIds)
     Move ids gridSize (dx, dy) ->
       setEquipments
         floor
@@ -715,8 +731,6 @@ colorProperty model =
         ) (Just firstColor) selected
       Nothing -> Nothing
 
-type alias StampCandidate = (Prototype, (Int, Int), Scale.Model)
-
 stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
 stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
   let
@@ -784,7 +798,7 @@ stampCandidates model =
 
             in
               List.map (\(left, top) ->
-                 ((color, name, (deskWidth, deskHeight)), (left, top), model.scale)
+                 ((color, name, (deskWidth, deskHeight)), (left, top))
               ) all
           _ ->
             let
@@ -792,7 +806,7 @@ stampCandidates model =
               (left, top) =
                 fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
             in
-              [ ((color, name, (deskWidth, deskHeight)), (left, top), model.scale)
+              [ ((color, name, (deskWidth, deskHeight)), (left, top))
               ]
     _ -> []
 --
