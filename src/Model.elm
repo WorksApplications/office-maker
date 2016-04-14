@@ -163,7 +163,7 @@ update action model =
       let
         model' =
           { model |
-            pos = Just (e.clientX, e.clientY)
+            pos = Just (e.clientX, e.clientY - 37)
           }
         newModel =
           case model.draggingContext of
@@ -296,7 +296,7 @@ update action model =
         draggingContext =
           case model.editMode of
             Stamp _ ->
-              StampScreenPos (e.clientX, e.clientY)
+              StampScreenPos (e.clientX, e.clientY - 37)
             Pen -> None -- TODO
             Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
 

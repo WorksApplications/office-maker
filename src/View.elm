@@ -218,7 +218,9 @@ canvasContainerView : Address Action -> Model -> Html
 canvasContainerView address model =
   div
     [ style (Styles.canvasContainer ++ (case model.editMode of
-        Stamp _ -> [("cursor", "none")]
+        Stamp _ ->
+          []
+          -- [("cursor", "none")]
         _ -> []
       ))
     , onMouseMove' (forwardTo address MoveOnCanvas)
@@ -314,20 +316,25 @@ canvasView address model =
       ]
       ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
 
-stampAmount : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
-stampAmount horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
-  if horizontal then
-    let
-      amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
-      amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
-    in
-     (amountX, amountY)
-  else
-    let
-      amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
-      amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
-    in
-      (amountX, amountY)
+stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
+stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
+  let
+    (amountX, amountY) =
+      if horizontal then
+        let
+          amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
+          amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
+        in
+         (amountX, amountY)
+      else
+        let
+          amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
+          amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
+        in
+          (amountX, amountY)
+  in
+    ( List.map (\i -> if x2' > x1' then i else -i) [0..amountX]
+    , List.map (\i -> if y2' > y1' then i else -i) [0..amountY] )
 
 temporaryStampView : Scale.Model -> String -> (Int, Int) -> (Int, Int) -> Html
 temporaryStampView scale color (deskWidth, deskHeight) (left, top) =
@@ -358,7 +365,8 @@ temporaryStampsView model =
     Stamp (color, deskSize) ->
       let
         (offsetX, offsetY) = model.offset
-        (x2, y2) = Debug.log "x2y2" <|
+        (x2, y2) =
+          -- Debug.log "x2y2" <|
           Maybe.withDefault (0, 0) model.pos
         (x2', y2') =
           ( Scale.screenToImage model.scale x2 - offsetX
@@ -375,8 +383,8 @@ temporaryStampsView model =
               flip (w, h) = (h, w)
               horizontal = abs (x2 - x1) > abs (y2 - y1)
               (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
-              (stampAmountX, stampAmountY) =
-                stampAmount horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2')
+              (indicesX, indicesY) =
+                stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2')
               (centerLeft, centerTop) =
                 -- fitToGrid model.gridSize (x1' - deskWidth // 2, y1' - deskHeight // 2)
                 fitToGrid model.gridSize (x1' - fst deskSize // 2, y1' - snd deskSize // 2)
@@ -384,8 +392,8 @@ temporaryStampsView model =
                 generateAllCandidatePosition
                   (deskWidth, deskHeight)
                   (centerLeft, centerTop)
-                  ( List.map (\i -> if x2 > x1 then i else -i) [0..stampAmountX]
-                  , List.map (\i -> if y2 > y1 then i else -i) [0..stampAmountY] )
+                  (indicesX, indicesY)
+
             in
               List.map (\(left, top) ->
                 temporaryStampView model.scale color (deskWidth, deskHeight) (left, top)
@@ -394,7 +402,9 @@ temporaryStampsView model =
             let
               (deskWidth, deskHeight) = deskSize
               (left, top) =
-                fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+                fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2) --TODO
+              _ = Debug.log "XXX" <|
+                ((x2', y2'), (left, top))
             in
               [ temporaryStampView model.scale color (deskWidth, deskHeight) (left, top)
               ]
