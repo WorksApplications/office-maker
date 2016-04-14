@@ -173,12 +173,12 @@ update action model =
             ShiftOffsetPrevScreenPos (prevX, prevY) ->
               { model' |
                 draggingContext =
-                  ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
+                  ShiftOffsetPrevScreenPos (e.clientX, e.clientY - 37)
               , offset =
                   let
                     (offsetX, offsetY) = model.offset
                     (dx, dy) =
-                      ((e.clientX - prevX), (e.clientY - prevY))
+                      ((e.clientX - prevX), (e.clientY - 37 - prevY))
                   in
                     ( offsetX + Scale.screenToImage model.scale dx
                     , offsetY + Scale.screenToImage model.scale dy
@@ -225,7 +225,7 @@ update action model =
                 if List.member lastTouchedId model.selectedEquipments
                 then model.selectedEquipments
                 else [lastTouchedId]
-          , draggingContext = MoveEquipment lastTouchedId (e.clientX, e.clientY)
+          , draggingContext = MoveEquipment lastTouchedId (e.clientX, e.clientY - 37)
           , selectorRect = Nothing
           }
       in
@@ -236,7 +236,7 @@ update action model =
           case model.draggingContext of
             MoveEquipment _ (x, y) ->
               let
-                shift = Scale.screenToImageForPosition model.scale (e.clientX - x, e.clientY - y)
+                shift = Scale.screenToImageForPosition model.scale (e.clientX - x, e.clientY - 37 - y)
               in
                 if shift /= (0, 0) then
                   { model |
@@ -252,7 +252,7 @@ update action model =
                       let
                         (w, h) =
                           ( Scale.screenToImage model.scale e.clientX - x
-                          , Scale.screenToImage model.scale e.clientY - y
+                          , Scale.screenToImage model.scale e.clientY - 37 - y
                           )
                       in
                         Just (x, y, w, h)
@@ -277,7 +277,7 @@ update action model =
               else
                 case model.draggingContext of
                   MoveEquipment id (startX, startY) ->
-                    if e.clientX == startX && e.clientY == startY
+                    if e.clientX == startX && e.clientY - 37 == startY
                     then (if e.shiftKey then model.selectedEquipments else [id])
                     else model.selectedEquipments
                   _ -> model.selectedEquipments
@@ -310,7 +310,7 @@ update action model =
             Stamp _ ->
               StampScreenPos (e.clientX, e.clientY - 37)
             Pen -> None -- TODO
-            Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY)
+            Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY - 37)
 
         newModel =
           { model' |
