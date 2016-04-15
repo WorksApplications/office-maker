@@ -41,7 +41,12 @@ type alias Model =
   , offset : (Int, Int)
   , scaling : Bool
   , prototypes : Prototypes.Model
+  , errors : List Error
   }
+
+type Error =
+    APIError API.Error
+  | HtmlError HtmlUtil.Error
 
 type ContextMenu =
     NoContextMenu
@@ -85,6 +90,7 @@ init initialSize =
     , offset = (35, 35)
     , scaling = False
     , prototypes = Prototypes.init
+    , errors = []
     }
   , Effects.task (Task.succeed Init)
   )
@@ -113,6 +119,7 @@ type Action = NoOp
   | ScaleEnd
   | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
+  | Error Error
 
 debug : Bool
 debug = False
@@ -515,7 +522,12 @@ update action model =
               model'
       in
         (newModel, Effects.none)
-
+    Error e ->
+      let
+        newModel =
+          { model | errors = e :: model.errors }
+      in
+        (newModel, Effects.none)
 
 updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
 updateByKeyAction action model =
@@ -643,26 +655,20 @@ shiftSelectionToward direction model =
           }
       _ -> model
 
-
 focusEffect : String -> Effects Action
 focusEffect id =
-  let
-    task =
-      (HtmlUtil.focus id)
-        `Task.andThen` (\_ -> Task.succeed NoOp)
-        `Task.onError` (\error -> Task.succeed NoOp)
-  in
-    Effects.task task
+  fromTask (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
 
 blurEffect : String -> Effects Action
 blurEffect id =
-  let
-    task =
-      (HtmlUtil.blur id)
-        `Task.andThen` (\_ -> Task.succeed NoOp)
-        `Task.onError` (\error -> Task.succeed NoOp)
-  in
-    Effects.task task
+  fromTask (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
+
+fromTask : (err -> b) -> (a -> b) -> Task.Task err a -> Effects b
+fromTask g f task =
+  Effects.task <|
+    task
+      `Task.andThen` (\a -> Task.succeed (f a))
+      `Task.onError` (\e -> Task.succeed (g e))
 
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =

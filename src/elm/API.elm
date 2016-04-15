@@ -1,4 +1,4 @@
-module API(saveFloor, Floor) where
+module API(saveFloor, Floor, Error) where
 
 import Equipments exposing (..)
 import Floor
@@ -10,7 +10,7 @@ import Floor
 
 type alias Floor = Floor.Model
 
-type alias APIError = Http.Error
+type alias Error = Http.Error
 
 put : Json.Decode.Decoder value -> String -> Http.Body -> Task Http.Error value
 put decoder url body =
@@ -55,7 +55,7 @@ serializeFloor : Floor -> String
 serializeFloor floor =
     encode 0 (encodeFloor floor)
 
-saveFloor : Floor -> Task APIError ()
+saveFloor : Floor -> Task Error ()
 saveFloor floor =
     put
       (Json.Decode.map (always ()) Json.Decode.value)

@@ -10,20 +10,19 @@ import Json.Decode exposing (..)
 -- import Json.Encode
 import Task exposing (Task)
 
-
-type HtmlUtilError =
+type Error =
   IdNotFound String
 
 type alias KeyboardEvent = HtmlEvent.KeyboardEvent
 type alias MouseEvent = HtmlEvent.MouseEvent
 
-focus : String -> Task HtmlUtilError ()
+focus : String -> Task Error ()
 focus id =
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
 
-blur : String -> Task HtmlUtilError ()
+blur : String -> Task Error ()
 blur id =
   Task.mapError
     (always (IdNotFound id))
