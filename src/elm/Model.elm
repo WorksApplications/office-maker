@@ -243,13 +243,8 @@ update action model =
               let
                 (candidatesWithNewIds, newSeed) =
                   IdGenerator.zipWithNewIds model.seed (stampCandidates model)
-                task =
-                  API.saveFloor (UndoRedo.data model.floor)
-                    `Task.andThen` (\_ -> Task.succeed NoOp)
-                    `Task.onError` (\error -> Task.succeed NoOp)
                 effects =
-                  Effects.task task
-
+                  fromTask (Error << APIError) (always NoOp) (API.saveFloor (UndoRedo.data model.floor))
                 candidatesWithNewIds' =
                   List.map
                     (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
@@ -457,7 +452,7 @@ update action model =
           , scaling = True
           }
         effects =
-          setTimeout 200.0 ScaleEnd
+          fromTaskWithNoError (always ScaleEnd) (Task.sleep 200.0)
       in
         (newModel, effects)
     ScaleEnd ->
@@ -480,11 +475,8 @@ update action model =
         (newModel, Effects.none)
     LoadFile fileList ->
       let
-        task =
-          (readFirstAsDataURL fileList)
-          `Task.andThen` (\dataURL -> Task.succeed (GotDataURL dataURL))
-          `Task.onError` (\error -> Task.succeed NoOp)
-        effects = Effects.task task
+        effects =
+          fromTask (Error << HtmlError) GotDataURL (readFirstAsDataURL fileList)
       in
         (model, effects)
     GotDataURL dataURL ->
@@ -624,11 +616,6 @@ updateByKeyAction action model =
         (newModel, Effects.none)
     _ ->
       (model, Effects.none)
-
-setTimeout : Float -> Action -> Effects Action
-setTimeout time action =
-  Effects.task <|
-    (Task.map (always action) (Task.sleep time))
 
 shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =

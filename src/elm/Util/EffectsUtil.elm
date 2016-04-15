@@ -9,3 +9,8 @@ fromTask g f task =
     task
       `Task.andThen` (\a -> Task.succeed (f a))
       `Task.onError` (\e -> Task.succeed (g e))
+
+fromTaskWithNoError : (a -> b) -> Task.Task Never a -> Effects b
+fromTaskWithNoError f task =
+  Effects.task <|
+    Task.map f task

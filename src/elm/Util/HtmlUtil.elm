@@ -11,7 +11,7 @@ import Json.Decode exposing (..)
 import Task exposing (Task)
 
 type Error =
-  IdNotFound String
+  IdNotFound String | Unexpected String
 
 type alias KeyboardEvent = HtmlEvent.KeyboardEvent
 type alias MouseEvent = HtmlEvent.MouseEvent
@@ -154,8 +154,11 @@ decodeWheelEvent =
 
 type FileList = FileList Json.Decode.Value
 
-readFirstAsDataURL : FileList -> Task () String
-readFirstAsDataURL = Native.HtmlUtil.readAsDataURL
+readFirstAsDataURL : FileList -> Task Error String
+readFirstAsDataURL list =
+    Task.mapError
+      (always (Unexpected (toString list)))
+      (Native.HtmlUtil.readAsDataURL list)
 
 getWidthAndHeightOfImage : String -> (Int, Int)
 getWidthAndHeightOfImage =
