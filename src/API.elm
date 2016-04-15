@@ -1,4 +1,4 @@
-module API(save) where
+module API(save, Floor) where
 
 import Equipments exposing (..)
 import Http
