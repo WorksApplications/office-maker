@@ -8,7 +8,6 @@ app.use(express.static(__dirname + '/public'));
 var floors = {
 }
 
-
 app.get('/floor/:id', function (req, res) {
   var id = req.params.id;
   console.log(id);

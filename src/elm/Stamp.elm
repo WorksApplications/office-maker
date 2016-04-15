@@ -1,0 +1,1 @@
+module Stamp where
