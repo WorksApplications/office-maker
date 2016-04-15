@@ -171,7 +171,7 @@ card children =
 penView : Address Action -> Model -> List Html
 penView address model =
   let
-    prototypes = Debug.log "prototypes" <|
+    prototypes =
       List.indexedMap (\index (id, color, name, pos) ->
           ((id, color, name, pos), model.selectedPrototype == index)
         ) model.prototypes

@@ -1,4 +1,4 @@
-module API(save, Floor) where
+module API(saveFloor, Floor) where
 
 import Equipments exposing (..)
 import Http
@@ -22,7 +22,8 @@ put : Json.Decode.Decoder value -> String -> Http.Body -> Task Http.Error value
 put decoder url body =
   let request =
     { verb = "PUT"
-    , headers = []
+    , headers =
+        [("Content-Type", "application/json; charset=utf-8")]
     , url = url
     , body = body
     }
@@ -60,9 +61,9 @@ serializeFloor : Floor -> String
 serializeFloor floor =
     encode 0 (encodeFloor floor)
 
-save : Floor -> Task APIError ()
-save floor =
+saveFloor : Floor -> Task APIError ()
+saveFloor floor =
     put
       (Json.Decode.map (always ()) Json.Decode.value)
-      ("/floor/" ++ toString floor.id)
+      ("/floor/" ++ floor.id)
       (Http.string <| serializeFloor floor)

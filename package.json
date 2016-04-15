@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "body-parser": "^1.15.0",
     "express": "^4.13.4"
   }
 }

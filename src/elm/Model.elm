@@ -230,20 +230,20 @@ update action model =
         (newModel, Effects.none)
     MouseUpOnCanvas e ->
       let
-        model' =
+        (model', effects) =
           case model.draggingContext of
             MoveEquipment _ (x, y) ->
               let
                 shift = Scale.screenToImageForPosition model.scale (e.clientX - x, e.clientY - 37 - y)
               in
                 if shift /= (0, 0) then
-                  { model |
+                  ({ model |
                     floor = UndoRedo.commit model.floor (Move model.selectedEquipments model.gridSize shift)
-                  }
+                  }, Effects.none)
                 else
-                  model
+                  (model, Effects.none)
             Selector ->
-              { model |
+              ({ model |
                 selectorRect =
                   case model.selectorRect of
                     Just (x, y, _, _) ->
@@ -255,17 +255,23 @@ update action model =
                       in
                         Just (x, y, w, h)
                     _ -> model.selectorRect
-              }
+              }, Effects.none)
             StampScreenPos _ ->
               let
                 (candidatesWithNewIds, newSeed) =
                   IdGenerator.zipWithNewIds model.seed (stampCandidates model)
+                task =
+                  API.saveFloor (UndoRedo.data model.floor)
+                    `Task.andThen` (\_ -> Task.succeed NoOp)
+                    `Task.onError` (\error -> Task.succeed NoOp)
+                effects =
+                  Effects.task task
               in
-                { model |
+                ({ model |
                   seed = newSeed
                 , floor = UndoRedo.commit model.floor (Create candidatesWithNewIds)
-                }
-            _ -> model
+                }, effects)
+            _ -> (model, Effects.none)
         newModel =
           { model' |
             selectedEquipments =
@@ -282,7 +288,7 @@ update action model =
           , draggingContext = None
           }
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     MouseDownOnCanvas e ->
       let
         model' =
