@@ -1,4 +1,5 @@
 elm-stuff
+node_modules
 index.js
 *.ttf
 data
