@@ -3,7 +3,7 @@ module EquipmentsOperation where
 {- this module does not know Model or Floor -}
 
 import Equipments exposing (..)
-import ListUtil exposing (..)
+import Util.ListUtil exposing (..)
 
 rect : Equipment -> (Int, Int, Int, Int)
 rect (Desk _ rect _ _) = rect

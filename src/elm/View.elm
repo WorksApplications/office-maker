@@ -8,13 +8,13 @@ import Signal exposing (Address, forwardTo)
 import Styles
 -- import Debug
 
-import UndoRedo
-import HtmlUtil exposing (..)
+import Util.UndoRedo as UndoRedo
+import Util.HtmlUtil exposing (..)
 import Equipments exposing (..)
 import Model exposing (..)
 import Scale
 import EquipmentsOperation exposing (..)
-import ListUtil exposing (..)
+import Util.ListUtil exposing (..)
 import Prototypes exposing (Prototype, StampCandidate)
 
 headerView : Address Action -> Model -> Html

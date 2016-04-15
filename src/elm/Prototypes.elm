@@ -1,6 +1,6 @@
 module Prototypes where
 
-import ListUtil exposing (..)
+import Util.ListUtil exposing (..)
 -- import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
 

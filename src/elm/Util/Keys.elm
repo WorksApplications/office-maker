@@ -1,10 +1,10 @@
-module Keys where
+module Util.Keys where
 
 import Native.Keys
 
 import Keyboard
 import Char
-import HtmlEvent exposing (..)
+import Util.HtmlEvent exposing (..)
 import Json.Decode exposing (..)
 
 type Action =

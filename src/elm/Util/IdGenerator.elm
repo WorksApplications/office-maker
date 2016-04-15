@@ -1,4 +1,4 @@
-module IdGenerator where
+module Util.IdGenerator where
 
 type Seed = Seed Int
 type alias Id = String

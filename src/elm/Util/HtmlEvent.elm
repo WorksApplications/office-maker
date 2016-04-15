@@ -1,4 +1,4 @@
-module HtmlEvent where
+module Util.HtmlEvent where
 
 import Json.Decode exposing (..)
 

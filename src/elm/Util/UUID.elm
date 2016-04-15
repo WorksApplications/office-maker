@@ -1,4 +1,4 @@
-module UUID(gen) where
+module Util.UUID(gen) where
 import Random
 
 gen : Task () String

@@ -7,12 +7,12 @@ import Effects exposing (Effects)
 import Debug
 import Window
 
-import UndoRedo
-import Keys exposing (..)
-import HtmlUtil exposing (..)
+import Util.UndoRedo as UndoRedo
+import Util.Keys as Keys exposing (..)
+import Util.HtmlUtil as HtmlUtil exposing (..)
 import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
-import IdGenerator exposing (Seed)
+import Util.IdGenerator as IdGenerator exposing (Seed)
 import Scale
 import API
 import Prototypes exposing (..)

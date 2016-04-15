@@ -1,4 +1,4 @@
-module ListUtil where
+module Util.ListUtil where
 
 import List.Extra as ListX
 

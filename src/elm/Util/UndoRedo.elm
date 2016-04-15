@@ -1,4 +1,4 @@
-module UndoRedo (Model, init, undo, redo, commit, canUndo, canRedo, data) where
+module Util.UndoRedo (Model, init, undo, redo, commit, canUndo, canRedo, data) where
 
 type alias Model a commit =
   { cursor : Int

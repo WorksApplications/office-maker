@@ -1,6 +1,6 @@
-module HtmlUtil where
+module Util.HtmlUtil where
 
-import HtmlEvent exposing (..)
+import Util.HtmlEvent as HtmlEvent exposing (..)
 import Native.HtmlUtil
 import Signal exposing (Address)
 import Html exposing (Html, Attribute)

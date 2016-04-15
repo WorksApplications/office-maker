@@ -2,7 +2,7 @@ module Floor where
 
 import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
-import HtmlUtil exposing (..)
+import Util.HtmlUtil exposing (..)
 
 type alias Id = String
 
