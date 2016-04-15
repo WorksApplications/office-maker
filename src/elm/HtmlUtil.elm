@@ -159,7 +159,8 @@ readFirstAsDataURL : FileList -> Task () String
 readFirstAsDataURL = Native.HtmlUtil.readAsDataURL
 
 getWidthAndHeightOfImage : String -> (Int, Int)
-getWidthAndHeightOfImage = Native.HtmlUtil.getWidthAndHeightOfImage
+getWidthAndHeightOfImage =
+  Native.HtmlUtil.getWidthAndHeightOfImage
 
 fileLoadButton : Address FileList -> Html
 fileLoadButton address =

@@ -333,70 +333,23 @@ commitInputName : (Id, String) -> List Equipment -> List Equipment
 commitInputName (id, name) equipments =
   partiallyChange (changeName name) [id] equipments
 
-
-
-stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
-stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
-  let
-    (amountX, amountY) =
-      if horizontal then
-        let
-          amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
-          amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
-        in
-         (amountX, amountY)
-      else
-        let
-          amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
-          amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
-        in
-          (amountX, amountY)
-  in
-    ( List.map (\i -> if x2' > x1' then i else -i) [0..amountX]
-    , List.map (\i -> if y2' > y1' then i else -i) [0..amountY] )
-
-
-generateAllCandidatePosition : (Int, Int) -> (Int, Int) -> (List Int, List Int) -> List (Int, Int)
-generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (indicesX, indicesY) =
-  let
-    lefts =
-      List.map (\index -> centerLeft + deskWidth * index) indicesX
-    tops =
-      List.map (\index -> centerTop + deskHeight * index) indicesY
-  in
-    List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
-
-
-findPrototypeByIndex : Int -> List Prototype -> Prototype
-findPrototypeByIndex index list =
-  case getAt index list of
-    Just prototype ->
-      prototype
-    Nothing ->
-      case List.head list of
-        Just prototype -> prototype
-        Nothing -> Debug.crash "no prototypes found"
-
-stampCandidatesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List StampCandidate
-stampCandidatesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
-  let
-    (prototypeId, color, name, deskSize) = prototype
-    flip (w, h) = (h, w)
-    horizontal = abs (x2 - x1) > abs (y2 - y1)
-    (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
-    (indicesX, indicesY) =
-      stampIndices horizontal (deskWidth, deskHeight) (x1, y1) (x2, y2)
-    (centerLeft, centerTop) =
-      fitToGrid gridSize (x1 - fst deskSize // 2, y1 - snd deskSize // 2)
-    all =
-      generateAllCandidatePosition
-        (deskWidth, deskHeight)
-        (centerLeft, centerTop)
-        (indicesX, indicesY)
-  in
-    List.map (\(left, top) ->
-       ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
-    ) all
+colorProperty : List Equipment -> Maybe String
+colorProperty equipments =
+  case List.head equipments of
+    Just e ->
+      let
+        firstColor = colorOf e
+      in
+        List.foldl (\e maybeColor ->
+          let
+            color = colorOf e
+          in
+            case maybeColor of
+              Just color_ ->
+                if color == color_ then Just color else Nothing
+              Nothing -> Nothing
+        ) (Just firstColor) equipments
+    Nothing -> Nothing
 
 
 --

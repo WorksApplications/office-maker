@@ -15,6 +15,7 @@ import Model exposing (..)
 import Scale
 import EquipmentsOperation exposing (..)
 import ListUtil exposing (..)
+import Prototypes exposing (Prototype, StampCandidate)
 
 headerView : Address Action -> Model -> Html
 headerView address model =
@@ -172,9 +173,7 @@ penView : Address Action -> Model -> List Html
 penView address model =
   let
     prototypes =
-      List.indexedMap (\index (id, color, name, pos) ->
-          ((id, color, name, pos), model.selectedPrototype == index)
-        ) model.prototypes
+      Prototypes.prototypes model.prototypes
   in
     [ fileLoadButton (forwardTo address LoadFile)
     , modeSelectionView address model
@@ -348,7 +347,7 @@ prototypePreviewView address prototypes stampMode =
         in
           div
             [ style (position :: Styles.prototypePreviewScroll)
-            , onClick' (forwardTo address (always <| if label == "<" then PrevPrototype else NextPrototype))
+            , onClick' (forwardTo address (always <| if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next))
             ]
             [ text label ]
         )
@@ -388,7 +387,7 @@ colorPropertyView : Address Action -> Model -> Html
 colorPropertyView address model =
   let
     match color =
-      case colorProperty model of
+      case colorProperty (selectedEquipments model) of
         Just c -> color == c
         Nothing -> False
     viewForEach color =

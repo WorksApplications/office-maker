@@ -1,14 +1,9 @@
-module Equipments (Id, Equipment(..), Prototype, StampCandidate, init, copy, position) where
+module Equipments (Id, Equipment(..), init, copy, position) where
 
 type alias Id = String
 
 type Equipment =
   Desk Id (Int, Int, Int, Int) String String -- id (x, y, width, height) color name
-
-type alias Prototype =
-  (Id, String, String, (Int, Int))
-
-type alias StampCandidate = (Prototype, (Int, Int))
 
 init : Id -> (Int, Int, Int, Int) -> String -> String -> Equipment
 init = Desk

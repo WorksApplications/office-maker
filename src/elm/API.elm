@@ -1,20 +1,14 @@
 module API(saveFloor, Floor) where
 
 import Equipments exposing (..)
+import Floor
 import Http
 import Json.Encode exposing (object, list, encode, string, int, null, Value)
 import Json.Decode
 import Task exposing (Task)
+import Floor
 
-type alias Id = String
-type alias Floor =
-  { id : Id
-  , name : String
-  , equipments: List Equipment
-  , width : Int
-  , height : Int
-  , dataURL : Maybe String
-  }
+type alias Floor = Floor.Model
 
 type alias APIError = Http.Error
 

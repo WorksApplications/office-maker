@@ -15,8 +15,12 @@ import EquipmentsOperation exposing (..)
 import IdGenerator exposing (Seed)
 import Scale
 import API
+import Prototypes exposing (..)
+import Floor exposing (Model, setEquipments, setImage, equipments, addEquipments)
 
-type alias Floor = API.Floor
+type alias Floor = Floor.Model
+
+type alias Commit = Floor.Action
 
 type alias Model =
   { seed : Seed
@@ -36,8 +40,7 @@ type alias Model =
   , scale : Scale.Model
   , offset : (Int, Int)
   , scaling : Bool
-  , prototypes : List Prototype
-  , selectedPrototype : Int
+  , prototypes : Prototypes.Model
   }
 
 type ContextMenu =
@@ -45,15 +48,6 @@ type ContextMenu =
   | Equipment (Int, Int) Id
 
 type EditMode = Select | Pen | Stamp
-
-type Commit =
-    Create (List (StampCandidate, Id))
-  | Move (List Id) Int (Int, Int)
-  | Paste (List (Equipment, Id)) (Int, Int)
-  | Delete (List Id)
-  | ChangeColor (List Id) String
-  | ChangeName Id String
-  | ChangeImage String
 
 type DraggingContext =
     None
@@ -85,16 +79,12 @@ init initialSize =
     , editMode = Select
     , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
     , contextMenu = NoContextMenu
-    , floor = UndoRedo.init { data = initFloor, update = updateFloorByCommit }
+    , floor = UndoRedo.init { data = Floor.init, update = Floor.update }
     , windowDimensions = initialSize
     , scale = Scale.init
     , offset = (35, 35)
     , scaling = False
-    , prototypes =
-      [ ("1", "#ed9", "", (gridSize*6, gridSize*10))
-      , ("2", "#8bd", "foo", (gridSize*7, gridSize*12))
-      ] -- TODO: For now, hight bust be larger than width
-    , selectedPrototype = 0
+    , prototypes = Prototypes.init
     }
   , Effects.task (Task.succeed Init)
   )
@@ -121,21 +111,8 @@ type Action = NoOp
   | LoadFile FileList
   | GotDataURL String
   | ScaleEnd
-  | PrevPrototype
-  | NextPrototype
+  | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
-
-initFloor : Floor
-initFloor =
-  setEquipments
-    { id = "1"
-    , name = "1F"
-    , equipments = []
-    , width = 1610
-    , height = 810
-    , dataURL = Nothing
-    }
-    []
 
 debug : Bool
 debug = False
@@ -235,7 +212,7 @@ update action model =
               in
                 if shift /= (0, 0) then
                   ({ model |
-                    floor = UndoRedo.commit model.floor (Move model.selectedEquipments model.gridSize shift)
+                    floor = UndoRedo.commit model.floor (Floor.move model.selectedEquipments model.gridSize shift)
                   }, Effects.none)
                 else
                   (model, Effects.none)
@@ -263,10 +240,15 @@ update action model =
                     `Task.onError` (\error -> Task.succeed NoOp)
                 effects =
                   Effects.task task
+
+                candidatesWithNewIds' =
+                  List.map
+                    (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
+                    candidatesWithNewIds
               in
                 ({ model |
                   seed = newSeed
-                , floor = UndoRedo.commit model.floor (Create candidatesWithNewIds)
+                , floor = UndoRedo.commit model.floor (Floor.create candidatesWithNewIds')
                 }, effects)
             _ -> (model, Effects.none)
         newModel =
@@ -292,7 +274,7 @@ update action model =
           case model.editingEquipment of
             Just (id, name) ->
               { model |
-                floor = UndoRedo.commit model.floor (ChangeName id name)
+                floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
               }
             Nothing -> model
 
@@ -340,7 +322,7 @@ update action model =
       let
         newModel =
           { model |
-            floor = UndoRedo.commit model.floor (ChangeColor model.selectedEquipments color)
+            floor = UndoRedo.commit model.floor (Floor.changeEquipmentColor model.selectedEquipments color)
           }
       in
         (newModel, Effects.none)
@@ -384,7 +366,7 @@ update action model =
                           Nothing -> Nothing
                     in
                       { model |
-                        floor = UndoRedo.commit model.floor (ChangeName id name) --TODO if name really changed
+                        floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
                       , editingEquipment = editingEquipment
                       }
                   Nothing ->
@@ -499,19 +481,13 @@ update action model =
     GotDataURL dataURL ->
       let
         newModel =
-          { model | floor = UndoRedo.commit model.floor (ChangeImage dataURL) }
+          { model | floor = UndoRedo.commit model.floor (Floor.changeImage dataURL) }
       in
         (newModel, Effects.none)
-    PrevPrototype ->
+    PrototypesAction action ->
       let
         newModel =
-          { model | selectedPrototype = model.selectedPrototype - 1 }
-      in
-        (newModel, Effects.none)
-    NextPrototype ->
-      let
-        newModel =
-          { model | selectedPrototype = model.selectedPrototype + 1 }
+          { model | prototypes = Prototypes.update action model.prototypes }
       in
         (newModel, Effects.none)
     RegisterPrototype id ->
@@ -528,12 +504,12 @@ update action model =
               let
                 (_, _, w, h) = rect e
                 (newId, seed) = IdGenerator.new model.seed
-                newPrototypes = model.prototypes ++ [(newId, colorOf e, nameOf e, (w, h))]
+                newPrototypes =
+                  Prototypes.register (newId, colorOf e, nameOf e, (w, h)) model.prototypes
               in
                 { model' |
                   seed = seed
                 , prototypes = newPrototypes
-                , selectedPrototype = List.length newPrototypes - 1
                 }
             Nothing ->
               model'
@@ -563,7 +539,7 @@ updateByKeyAction action model =
           IdGenerator.zipWithNewIds model.seed model.copiedEquipments
         model' =
           { model |
-            floor = UndoRedo.commit model.floor (Paste copiedIdsWithNewIds base)
+            floor = UndoRedo.commit model.floor (Floor.paste copiedIdsWithNewIds base)
           , seed = newSeed
           }
         selected = List.map snd copiedIdsWithNewIds
@@ -578,7 +554,7 @@ updateByKeyAction action model =
       let
         newModel =
           { model |
-            floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
+            floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
           , copiedEquipments = selectedEquipments model
           , selectedEquipments = []
           }
@@ -628,7 +604,7 @@ updateByKeyAction action model =
       let
         newModel =
           { model |
-            floor = UndoRedo.commit model.floor (Delete model.selectedEquipments)
+            floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
           }
       in
         (newModel, Effects.none)
@@ -688,60 +664,6 @@ blurEffect id =
   in
     Effects.task task
 
-updateFloorByCommit : Commit -> Floor -> Floor
-updateFloorByCommit commit floor =
-  case commit of
-    Create candidateWithNewIds ->
-      let
-        create (((_, color, name, (w, h)), (x, y)), newId) =
-          Equipments.init newId (x, y, w, h) color name
-      in
-        setEquipments
-          floor
-          (floor.equipments ++ List.map create candidateWithNewIds)
-    Move ids gridSize (dx, dy) ->
-      setEquipments
-        floor
-        (moveEquipments gridSize (dx, dy) ids floor.equipments)
-    Paste copiedWithNewIds (baseX, baseY) ->
-      setEquipments
-        floor
-        (floor.equipments ++ (pasteEquipments (baseX, baseY) copiedWithNewIds floor.equipments))
-    Delete ids ->
-      setEquipments
-        floor
-        (List.filter (\equipment -> not (List.member (idOf equipment) ids)) floor.equipments)
-    ChangeColor ids color ->
-      let
-        newEquipments =
-          partiallyChange (changeColor color) ids floor.equipments
-      in
-        setEquipments floor newEquipments
-    ChangeName id name ->
-      setEquipments
-        floor
-        (commitInputName (id, name) floor.equipments)
-    ChangeImage dataURL ->
-      setImage dataURL floor
-
-
-setEquipments : Floor -> List Equipment -> Floor
-setEquipments floor equipments =
-  { floor |
-    equipments = equipments
-  }
-
-setImage : String -> Floor -> Floor
-setImage dataURL floor =
-  let
-    (width, height) = getWidthAndHeightOfImage dataURL
-  in
-    { floor |
-      width = width
-    , height = height
-    , dataURL = Just dataURL
-    }
-
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
   List.member (idOf equipment) model.selectedEquipments
@@ -750,7 +672,7 @@ primarySelectedEquipment : Model -> Maybe Equipment
 primarySelectedEquipment model =
   case model.selectedEquipments of
     head :: _ ->
-      findEquipmentById (UndoRedo.data model.floor).equipments head
+      findEquipmentById (equipments <| UndoRedo.data model.floor) head
     _ -> Nothing
 
 selectedEquipments : Model -> List Equipment
@@ -759,37 +681,13 @@ selectedEquipments model =
     findEquipmentById (UndoRedo.data model.floor).equipments id
   ) model.selectedEquipments
 
-colorProperty : Model -> Maybe String
-colorProperty model =
-  let
-    selected = selectedEquipments model
-  in
-    case List.head selected of
-      Just e ->
-        let
-          firstColor = colorOf e
-        in
-          List.foldl (\e maybeColor ->
-            let
-              color = colorOf e
-            in
-              case maybeColor of
-                Just color_ ->
-                  if color == color_ then Just color else Nothing
-                Nothing -> Nothing
-          ) (Just firstColor) selected
-      Nothing -> Nothing
-
-
-
-
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
   case model.editMode of
     Stamp ->
       let
         prototype =
-          findPrototypeByIndex model.selectedPrototype model.prototypes
+          selectedPrototype model.prototypes
         (prototypeId, color, name, deskSize) =
           prototype
         (offsetX, offsetY) = model.offset
