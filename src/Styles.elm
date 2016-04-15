@@ -207,4 +207,32 @@ prototypePreviewView stampMode =
   , ("box-sizing", "border-box")
   , ("margin-top", "10px")
   , ("background-color", "#fff")
+  , ("overflow", "hidden")
+  ]
+
+prototypePreviewViewInner : Int -> S
+prototypePreviewViewInner index =
+  [ ("width", "238px")
+  , ("height", "238px")
+  , ("position", "relative")
+  , ("top", "0")
+  , ("left", toString (index * -238) ++ "px")
+  , ("transition-property", "left")
+  , ("transition-duration", "0.2s")
+  ]
+
+prototypePreviewScroll : S
+prototypePreviewScroll =
+  [ ("width", "30px")
+  , ("height", "30px")
+  , ("font-size", "large")
+  , ("font-weight", "bold")
+  , ("line-height", "30px")
+  , ("position", "absolute")
+  , ("top", "104px")
+  , ("border-radius", "15px")
+  , ("text-align", "center")
+  , ("color", "#fff")
+  , ("background-color", "#ccc")
+  , ("cursor", "pointer")
   ]

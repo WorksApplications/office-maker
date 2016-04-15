@@ -14,6 +14,7 @@ import Equipments exposing (..)
 import Model exposing (..)
 import Scale
 import EquipmentsOperation exposing (..)
+import ListUtil exposing (..)
 
 headerView : Address Action -> Model -> Html
 headerView address model =
@@ -167,23 +168,17 @@ card children =
     style [("margin-bottom", "20px"), ("padding", "20px")]
     ] children
 
-isStampMode : EditMode -> Bool
-isStampMode editMode =
-  case editMode of
-    Stamp _ -> True
-    _ -> False
-
 penView : Address Action -> Model -> List Html
 penView address model =
   let
-    prototypes =
-      List.map (\(id, color, name, pos) ->
-          ((id, color, name, pos), model.selectedPrototype == id)
+    prototypes = Debug.log "prototypes" <|
+      List.indexedMap (\index (id, color, name, pos) ->
+          ((id, color, name, pos), model.selectedPrototype == index)
         ) model.prototypes
   in
     [ fileLoadButton (forwardTo address LoadFile)
     , modeSelectionView address model
-    , prototypePreviewView prototypes (isStampMode model.editMode)
+    , prototypePreviewView address prototypes (model.editMode == Stamp)
     ]
 
 modeSelectionView : Address Action -> Model -> Html
@@ -202,12 +197,10 @@ modeSelectionView address model =
         , onClick' (forwardTo address (always <| ChangeMode Pen))
         ]
         [ text "Pen" ]
-    nowStampMode =
-      isStampMode model.editMode
     stamp =
       div
-        [ style (Styles.selection nowStampMode ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode <| Stamp model.selectedPrototype))
+        [ style (Styles.selection (model.editMode == Stamp) ++ widthStyle)
+        , onClick' (forwardTo address (always <| ChangeMode Stamp))
         ]
         [ text "Stamp" ]
   in
@@ -232,11 +225,11 @@ debugView address model =
 canvasContainerView : Address Action -> Model -> Html
 canvasContainerView address model =
   div
-    [ style (Styles.canvasContainer ++ (case model.editMode of
-        Stamp _ ->
+    [ style (Styles.canvasContainer ++
+      ( if model.editMode == Stamp then
+          [] -- [("cursor", "none")]
+        else
           []
-          -- [("cursor", "none")]
-        _ -> []
       ))
     , onMouseMove' (forwardTo address MoveOnCanvas)
     , onMouseDown' (forwardTo address (MouseDownOnCanvas))
@@ -331,15 +324,46 @@ canvasView address model =
       ]
       ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
 
-prototypePreviewView : List (Prototype, Bool) -> Bool -> Html
-prototypePreviewView prototypes stampMode =
+prototypePreviewView : Address Action -> List (Prototype, Bool) -> Bool -> Html
+prototypePreviewView address prototypes stampMode =
   let
+    width = 238 -- TODO
+    height = 238 -- TODO
     each index (prototype, selected) =
-      temporaryStampView Scale.init selected (prototype, (40, 10 + index * 90))
+      let
+        (_, _, _, (w, h)) = prototype
+        left = width // 2 - w // 2
+        top = height // 2 - h // 2
+      in
+        temporaryStampView Scale.init False (prototype, (left + index * width, top))
+    selectedIndex =
+      Maybe.withDefault 0 <|
+      List.head <|
+      List.filterMap (\((prototype, selected), index) -> if selected then Just index else Nothing) <|
+      zipWithIndex prototypes
+    buttons =
+      List.map (\label ->
+        let
+          position = (if label == "<" then "left" else "right", "3px")
+        in
+          div
+            [ style (position :: Styles.prototypePreviewScroll)
+            , onClick' (forwardTo address (always <| if label == "<" then PrevPrototype else NextPrototype))
+            ]
+            [ text label ]
+        )
+      ( (if selectedIndex > 0 then ["<"] else []) ++
+        (if selectedIndex < List.length prototypes - 1 then [">"] else [])
+      )
+
+    inner =
+      div
+        [ style (Styles.prototypePreviewViewInner selectedIndex) ]
+        (List.indexedMap each prototypes)
   in
     div
       [ style (Styles.prototypePreviewView stampMode) ]
-      (List.indexedMap each prototypes)
+      ( inner :: buttons )
 
 temporaryStampView : Scale.Model -> Bool -> StampCandidate -> Html
 temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =

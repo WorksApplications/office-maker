@@ -38,7 +38,7 @@ type alias Model =
   , offset : (Int, Int)
   , scaling : Bool
   , prototypes : List Prototype
-  , selectedPrototype : Id
+  , selectedPrototype : Int
   }
 
 type ContextMenu =
@@ -47,7 +47,7 @@ type ContextMenu =
 
 type alias StampCandidate = (Prototype, (Int, Int))
 
-type EditMode = Select | Pen | Stamp Id
+type EditMode = Select | Pen | Stamp
 
 type Commit =
     Create (List (StampCandidate, Id))
@@ -93,8 +93,11 @@ init initialSize =
     , scale = Scale.init
     , offset = (35, 35)
     , scaling = False
-    , prototypes = [("1", "#ed9", "", (gridSize*6, gridSize*10)), ("2", "#ed9", "", (gridSize*10, gridSize*6))]
-    , selectedPrototype = "1"
+    , prototypes =
+      [ ("1", "#ed9", "", (gridSize*6, gridSize*10))
+      , ("2", "#8bd", "foo", (gridSize*7, gridSize*12))
+      ] -- TODO: For now, hight bust be larger than width
+    , selectedPrototype = 0
     }
   , Effects.task (Task.succeed Init)
   )
@@ -121,6 +124,8 @@ type Action = NoOp
   | LoadFile FileList
   | GotDataURL String
   | ScaleEnd
+  | PrevPrototype
+  | NextPrototype
 
 initFloor : Floor
 initFloor =
@@ -299,7 +304,7 @@ update action model =
 
         draggingContext =
           case model.editMode of
-            Stamp _ ->
+            Stamp ->
               StampScreenPos (e.clientX, e.clientY - 37)
             Pen -> None -- TODO
             Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY - 37)
@@ -492,7 +497,18 @@ update action model =
           { model | floor = UndoRedo.commit model.floor (ChangeImage dataURL) }
       in
         (newModel, Effects.none)
-
+    PrevPrototype ->
+      let
+        newModel =
+          { model | selectedPrototype = model.selectedPrototype - 1 }
+      in
+        (newModel, Effects.none)
+    NextPrototype ->
+      let
+        newModel =
+          { model | selectedPrototype = model.selectedPrototype + 1 }
+      in
+        (newModel, Effects.none)
 
 updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
 updateByKeyAction action model =
@@ -764,10 +780,11 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
   in
     List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
 
-findPrototypeById : Id -> List Prototype -> Prototype
-findPrototypeById id list =
-  case findBy (\(id_, _, _, _) -> id == id) list of
-    Just prototype -> prototype
+findPrototypeByIndex : Int -> List Prototype -> Prototype
+findPrototypeByIndex index list =
+  case getAt index list of
+    Just prototype ->
+      prototype
     Nothing ->
       case List.head list of
         Just prototype -> prototype
@@ -777,10 +794,10 @@ findPrototypeById id list =
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
   case model.editMode of
-    Stamp prototypeId ->
+    Stamp ->
       let
         (prototypeId, color, name, deskSize) =
-          findPrototypeById prototypeId model.prototypes
+          findPrototypeByIndex model.selectedPrototype model.prototypes
         (offsetX, offsetY) = model.offset
         (x2, y2) =
           Maybe.withDefault (0, 0) model.pos
