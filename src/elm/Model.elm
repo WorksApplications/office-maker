@@ -10,9 +10,11 @@ import Window
 import Util.UndoRedo as UndoRedo
 import Util.Keys as Keys exposing (..)
 import Util.HtmlUtil as HtmlUtil exposing (..)
+import Util.EffectsUtil as EffectsUtil exposing (..)
+import Util.IdGenerator as IdGenerator exposing (Seed)
+
 import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
-import Util.IdGenerator as IdGenerator exposing (Seed)
 import Scale
 import API
 import Prototypes exposing (..)
@@ -662,13 +664,6 @@ focusEffect id =
 blurEffect : String -> Effects Action
 blurEffect id =
   fromTask (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
-
-fromTask : (err -> b) -> (a -> b) -> Task.Task err a -> Effects b
-fromTask g f task =
-  Effects.task <|
-    task
-      `Task.andThen` (\a -> Task.succeed (f a))
-      `Task.onError` (\e -> Task.succeed (g e))
 
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
