@@ -34,7 +34,7 @@ contextMenuView address model =
         [ style (Styles.contextMenu (x, y) (fst model.windowDimensions, snd model.windowDimensions) 2)
         ] -- TODO
         [ contextMenuItemView address (SelectIsland id) "Select Island"
-        , contextMenuItemView address (always NoOp) "Other"
+        , contextMenuItemView address (always <| RegisterPrototype id) "Register as stamp"
         ]
 
 contextMenuItemView : Address Action -> (MouseEvent -> Action) -> String -> Html

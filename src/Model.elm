@@ -126,6 +126,7 @@ type Action = NoOp
   | ScaleEnd
   | PrevPrototype
   | NextPrototype
+  | RegisterPrototype Id
 
 initFloor : Floor
 initFloor =
@@ -326,6 +327,7 @@ update action model =
             newModel =
               { model |
                 editingEquipment = Just (idOf e, nameOf e)
+              , contextMenu = NoContextMenu
               }
           in
             (newModel, focusEffect "name-input")
@@ -509,6 +511,32 @@ update action model =
           { model | selectedPrototype = model.selectedPrototype + 1 }
       in
         (newModel, Effects.none)
+    RegisterPrototype id ->
+      let
+        equipment =
+          findEquipmentById (UndoRedo.data model.floor).equipments id
+        model' =
+          { model |
+            contextMenu = NoContextMenu
+          }
+        newModel =
+          case equipment of
+            Just e ->
+              let
+                (_, _, w, h) = rect e
+                (newId, seed) = IdGenerator.new model.seed
+                newPrototypes = model.prototypes ++ [(newId, colorOf e, nameOf e, (w, h))]
+              in
+                { model' |
+                  seed = seed
+                , prototypes = newPrototypes
+                , selectedPrototype = List.length newPrototypes - 1
+                }
+            Nothing ->
+              model'
+      in
+        (newModel, Effects.none)
+
 
 updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
 updateByKeyAction action model =
