@@ -215,13 +215,17 @@ update action model =
       let
         (model', effects) =
           case model.draggingContext of
-            MoveEquipment _ (x, y) ->
+            MoveEquipment id (x, y) ->
               let
                 shift = Scale.screenToImageForPosition model.scale (e.clientX - x, e.clientY - 37 - y)
               in
                 if shift /= (0, 0) then
                   ({ model |
                     floor = UndoRedo.commit model.floor (Floor.move model.selectedEquipments model.gridSize shift)
+                  }, Effects.none)
+                else if not e.ctrlKey && not e.shiftKey then
+                  ({ model |
+                    selectedEquipments = [id]
                   }, Effects.none)
                 else
                   (model, Effects.none)
@@ -257,18 +261,7 @@ update action model =
             _ -> (model, Effects.none)
         newModel =
           { model' |
-            selectedEquipments =
-              if e.ctrlKey
-              then
-                model.selectedEquipments
-              else
-                case model.draggingContext of
-                  MoveEquipment id (startX, startY) ->
-                    if e.clientX == startX && e.clientY - 37 == startY
-                    then (if e.shiftKey then model.selectedEquipments else [id])
-                    else model.selectedEquipments
-                  _ -> model.selectedEquipments
-          , draggingContext = None
+            draggingContext = None
           }
       in
         (newModel, effects)
