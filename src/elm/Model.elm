@@ -60,7 +60,7 @@ type DraggingContext =
     None
   | MoveEquipment Id (Int, Int)
   | Selector
-  | ShiftOffsetPrevScreenPos (Int, Int)
+  | ShiftOffsetPrevScreenPos
   | StampScreenPos (Int, Int)
 
 inputs : List (Signal Action)
@@ -145,29 +145,25 @@ update action model =
       (model, Effects.none) -- TODO fetch from server
     MoveOnCanvas e ->
       let
+        (x, y) = (e.clientX, e.clientY - 37)
         model' =
           { model |
-            pos = Just (e.clientX, e.clientY - 37)
+            pos = Just (x, y)
           }
         newModel =
-          case model.draggingContext of
-            ShiftOffsetPrevScreenPos (prevX, prevY) ->
-              let
-                (x, y) = (e.clientX, e.clientY - 37)
-              in
-                { model' |
-                  draggingContext =
-                    ShiftOffsetPrevScreenPos (x, y)
-                , offset =
-                    let
-                      (offsetX, offsetY) = model.offset
-                      (dx, dy) =
-                        ((x - prevX), (y - prevY))
-                    in
-                      ( offsetX + Scale.screenToImage model.scale dx
-                      , offsetY + Scale.screenToImage model.scale dy
-                      )
-                }
+          case (model.draggingContext, model.pos) of
+            (ShiftOffsetPrevScreenPos, Just (prevX, prevY)) ->
+              { model' |
+                offset =
+                  let
+                    (offsetX, offsetY) = model.offset
+                    (dx, dy) =
+                      ((x - prevX), (y - prevY))
+                  in
+                    ( offsetX + Scale.screenToImage model.scale dx
+                    , offsetY + Scale.screenToImage model.scale dy
+                    )
+              }
             _ -> model'
       in
         (newModel, Effects.none)
@@ -177,10 +173,10 @@ update action model =
       let
         newModel =
           { model |
-              draggingContext =
-                case model.draggingContext of
-                  ShiftOffsetPrevScreenPos _ -> None
-                  _ -> model.draggingContext
+            draggingContext =
+              case model.draggingContext of
+                ShiftOffsetPrevScreenPos -> None
+                _ -> model.draggingContext
           }
       in
         (newModel, Effects.none)
@@ -282,7 +278,7 @@ update action model =
             Stamp ->
               StampScreenPos (e.clientX, e.clientY - 37)
             Pen -> None -- TODO
-            Select -> ShiftOffsetPrevScreenPos (e.clientX, e.clientY - 37)
+            Select -> ShiftOffsetPrevScreenPos
 
         newModel =
           { model' |
