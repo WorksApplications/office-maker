@@ -32,6 +32,7 @@ type Action =
   | Delete (List Id)
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
+  | ChangeName String
   | ChangeImage String
 
 create : (List (Id, (Int, Int, Int, Int), String, String)) -> Action
@@ -52,44 +53,49 @@ changeEquipmentColor = ChangeEquipmentColor
 changeEquipmentName : Id -> String -> Action
 changeEquipmentName = ChangeEquipmentName
 
+changeName : String -> Action
+changeName = ChangeName
+
 changeImage : String -> Action
 changeImage = ChangeImage
 
 update : Action -> Model -> Model
-update action floor =
+update action model =
   case action of
     Create candidateWithNewIds ->
       let
-        create (newId, (x, y, w, h), color, name)=
+        create (newId, (x, y, w, h), color, name) =
           Equipments.init newId (x, y, w, h) color name
       in
         addEquipments
           (List.map create candidateWithNewIds)
-          floor
+          model
     Move ids gridSize (dx, dy) ->
       setEquipments
-        (moveEquipments gridSize (dx, dy) ids (equipments floor))
-        floor
+        (moveEquipments gridSize (dx, dy) ids (equipments model))
+        model
     Paste copiedWithNewIds (baseX, baseY) ->
       setEquipments
-        (floor.equipments ++ (pasteEquipments (baseX, baseY) copiedWithNewIds (equipments floor)))
-        floor
+        (model.equipments ++ (pasteEquipments (baseX, baseY) copiedWithNewIds (equipments model)))
+        model
     Delete ids ->
       setEquipments
-        (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments floor))
-        floor
+        (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
+        model
     ChangeEquipmentColor ids color ->
       let
         newEquipments =
-          partiallyChange (changeColor color) ids (equipments floor)
+          partiallyChange (changeColor color) ids (equipments model)
       in
-        setEquipments newEquipments floor
+        setEquipments newEquipments model
     ChangeEquipmentName id name ->
       setEquipments
-        (commitInputName (id, name) (equipments floor))
-        floor
+        (commitInputName (id, name) (equipments model))
+        model
+    ChangeName name ->
+      { model | name = name }
     ChangeImage dataURL ->
-      setImage dataURL floor
+      setImage dataURL model
 
 
 equipments : Model -> List Equipment

@@ -129,6 +129,7 @@ type Action = NoOp
   | ScaleEnd
   | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
+  | InputFloorName String
   | Error Error
 
 debug : Bool
@@ -233,8 +234,13 @@ update action model =
         (model', effects) =
           case model.draggingContext of
             MoveEquipment id (x, y) ->
-              ( updateByMoveEquipmentEnd id (x, y) (e.clientX, e.clientY - 37) e.ctrlKey e.shiftKey model
-              , Effects.none)
+              let
+                newModel =
+                  updateByMoveEquipmentEnd id (x, y) (e.clientX, e.clientY - 37) e.ctrlKey e.shiftKey model
+                effects =
+                  saveFloorEffects (UndoRedo.data newModel.floor)
+              in
+                (newModel, effects)
             Selector ->
               ({ model |
                 selectorRect =
@@ -253,16 +259,18 @@ update action model =
               let
                 (candidatesWithNewIds, newSeed) =
                   IdGenerator.zipWithNewIds model.seed (stampCandidates model)
-                effects =
-                  fromTask (Error << APIError) (always NoOp) (API.saveFloor (UndoRedo.data model.floor))
                 candidatesWithNewIds' =
                   List.map
                     (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
                     candidatesWithNewIds
+                newFloor =
+                  UndoRedo.commit model.floor (Floor.create candidatesWithNewIds')
+                effects =
+                  saveFloorEffects (UndoRedo.data newFloor)
               in
                 ({ model |
                   seed = newSeed
-                , floor = UndoRedo.commit model.floor (Floor.create candidatesWithNewIds')
+                , floor = newFloor
                 }, effects)
             _ -> (model, Effects.none)
         newModel =
@@ -515,12 +523,27 @@ update action model =
               model'
       in
         (newModel, Effects.none)
+    InputFloorName name ->
+      let
+        newFloor =
+          UndoRedo.commit model.floor (Floor.changeName name)
+        effects =
+          saveFloorEffects (UndoRedo.data newFloor)
+        newModel =
+          { model | floor =  newFloor }
+      in
+        (newModel, effects)
     Error e ->
       let
         newModel =
           { model | errors = e :: model.errors }
       in
         (newModel, Effects.none)
+
+saveFloorEffects : Floor -> Effects Action
+saveFloorEffects floor =
+  fromTask (Error << APIError) (always NoOp) (API.saveFloor floor)
+
 
 updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
 updateByKeyAction action model =

@@ -128,17 +128,20 @@ nameInputView address model =
               Styles.transition (transitionDisabled model)
           in
             textarea
-              [ Html.Attributes.id "name-input"
+              ([ Html.Attributes.id "name-input"
               , style styles
-              , onInput' (forwardTo address (InputName id)) -- TODO cannot input japanese
-              , onKeyDown'' (forwardTo address (KeydownOnNameInput))
-              , onMouseDown' (forwardTo address (always NoOp))
-              , value name
-              ]
+              ] ++ (inputAttributes address (InputName id) KeydownOnNameInput name True))
               [text name]
         Nothing -> text ""
     Nothing ->
       text ""
+
+inputAttributes : Address Action -> (String -> Action) -> (KeyboardEvent -> Action) -> String -> Bool -> List Attribute
+inputAttributes address toInputAction toKeydownAction value defence =
+  [ onInput' (forwardTo address toInputAction) -- TODO cannot input japanese
+  , onKeyDown'' (forwardTo address toKeydownAction)
+  -- ,
+  ] ++ (if defence then [onMouseDown' (forwardTo address (always NoOp))] else [])
 
 mainView : Address Action -> Model -> Html
 mainView address model =
@@ -155,7 +158,7 @@ subView : Address Action -> Model -> Html
 subView address model =
   div
     [ style (Styles.subMenu)
-    , mouseDownDefence address NoOp
+    -- , mouseDownDefence address NoOp
     ]
     [ card <| penView address model
     , card <| propertyView address model
@@ -174,8 +177,16 @@ penView address model =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
+    floorNameInput =
+      input
+      ([ Html.Attributes.id "floor-name-input"
+      , type' "text"
+      -- , style
+      ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
+      []
   in
     [ fileLoadButton (forwardTo address LoadFile)
+    , floorNameInput
     , modeSelectionView address model
     , prototypePreviewView address prototypes (model.editMode == Stamp)
     ]
@@ -402,6 +413,7 @@ colorPropertyView address model =
 
 view : Address Action -> Model -> Html
 view address model =
+
   div
     []
     [ headerView address model
