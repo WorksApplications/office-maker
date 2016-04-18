@@ -152,19 +152,22 @@ update action model =
         newModel =
           case model.draggingContext of
             ShiftOffsetPrevScreenPos (prevX, prevY) ->
-              { model' |
-                draggingContext =
-                  ShiftOffsetPrevScreenPos (e.clientX, e.clientY - 37)
-              , offset =
-                  let
-                    (offsetX, offsetY) = model.offset
-                    (dx, dy) =
-                      ((e.clientX - prevX), (e.clientY - 37 - prevY))
-                  in
-                    ( offsetX + Scale.screenToImage model.scale dx
-                    , offsetY + Scale.screenToImage model.scale dy
-                    )
-              }
+              let
+                (x, y) = (e.clientX, e.clientY - 37)
+              in
+                { model' |
+                  draggingContext =
+                    ShiftOffsetPrevScreenPos (x, y)
+                , offset =
+                    let
+                      (offsetX, offsetY) = model.offset
+                      (dx, dy) =
+                        ((x - prevX), (y - prevY))
+                    in
+                      ( offsetX + Scale.screenToImage model.scale dx
+                      , offsetY + Scale.screenToImage model.scale dy
+                      )
+                }
             _ -> model'
       in
         (newModel, Effects.none)
@@ -216,19 +219,8 @@ update action model =
         (model', effects) =
           case model.draggingContext of
             MoveEquipment id (x, y) ->
-              let
-                shift = Scale.screenToImageForPosition model.scale (e.clientX - x, e.clientY - 37 - y)
-              in
-                if shift /= (0, 0) then
-                  ({ model |
-                    floor = UndoRedo.commit model.floor (Floor.move model.selectedEquipments model.gridSize shift)
-                  }, Effects.none)
-                else if not e.ctrlKey && not e.shiftKey then
-                  ({ model |
-                    selectedEquipments = [id]
-                  }, Effects.none)
-                else
-                  (model, Effects.none)
+              ( updateByMoveEquipmentEnd id (x, y) (e.clientX, e.clientY - 37) e.ctrlKey e.shiftKey model
+              , Effects.none)
             Selector ->
               ({ model |
                 selectorRect =
@@ -609,6 +601,23 @@ updateByKeyAction action model =
         (newModel, Effects.none)
     _ ->
       (model, Effects.none)
+
+
+updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Bool -> Bool -> Model -> Model
+updateByMoveEquipmentEnd id (x0, y0) (x1, y1) ctrlKey shiftKey model =
+  let
+    shift = Scale.screenToImageForPosition model.scale (x1 - x0, y1 - y0)
+  in
+    if shift /= (0, 0) then
+      { model |
+        floor = UndoRedo.commit model.floor (Floor.move model.selectedEquipments model.gridSize shift)
+      }
+    else if not ctrlKey && not shiftKey then
+      { model |
+        selectedEquipments = [id]
+      }
+    else
+      model
 
 shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =
