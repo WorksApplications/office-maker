@@ -28,6 +28,10 @@ blur id =
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
 
+locationHash : Task a String
+locationHash =
+  Native.HtmlUtil.locationHash
+
 onMouseMove' : Address MouseEvent -> Attribute
 onMouseMove' address =
   onWithOptions

@@ -1,10 +1,10 @@
-module API(saveFloor, Floor, Error) where
+module API(saveFloor, getFloor, Floor, Error) where
 
 import Equipments exposing (..)
 import Floor
 import Http
 import Json.Encode exposing (object, list, encode, string, int, null, Value)
-import Json.Decode
+import Json.Decode as Decode exposing ((:=), object5, object7, Decoder)
 import Task exposing (Task)
 import Floor
 
@@ -12,7 +12,7 @@ type alias Floor = Floor.Model
 
 type alias Error = Http.Error
 
-put : Json.Decode.Decoder value -> String -> Http.Body -> Task Http.Error value
+put : Decoder value -> String -> Http.Body -> Task Http.Error value
 put decoder url body =
   let request =
     { verb = "PUT"
@@ -23,6 +23,8 @@ put decoder url body =
     }
   in
     Http.fromJson decoder (Http.send Http.defaultSettings request)
+
+
 
 encodeEquipment : Equipment -> Value
 encodeEquipment (Desk id (x, y, width, height) color name) =
@@ -51,6 +53,30 @@ encodeFloor floor =
         )
       ]
 
+
+decodeEquipment : Decoder Equipment
+decodeEquipment =
+  object7
+    (\id x y width height color name -> Desk id (x, y, width, height) color name)
+    ("id" := Decode.string)
+    ("x" := Decode.int)
+    ("y" := Decode.int)
+    ("width" := Decode.int)
+    ("height" := Decode.int)
+    ("color" := Decode.string)
+    ("name" := Decode.string)
+
+decodeFloor : Decoder Floor
+decodeFloor =
+  object5
+    (\id name equipments width height ->
+      { id = id, name = name, equipments = equipments, width = width, height = height, dataURL = Nothing }) -- TODO
+    ("id" := Decode.string)
+    ("name" := Decode.string)
+    ("equipments" := Decode.list decodeEquipment)
+    ("width" := Decode.int)
+    ("height" := Decode.int)
+
 serializeFloor : Floor -> String
 serializeFloor floor =
     encode 0 (encodeFloor floor)
@@ -58,6 +84,12 @@ serializeFloor floor =
 saveFloor : Floor -> Task Error ()
 saveFloor floor =
     put
-      (Json.Decode.map (always ()) Json.Decode.value)
+      (Decode.map (always ()) Decode.value)
       ("/floor/" ++ floor.id)
       (Http.string <| serializeFloor floor)
+
+getFloor : String -> Task Error Floor
+getFloor id =
+    Http.get
+      decodeFloor
+      ("/floor/" ++ id)

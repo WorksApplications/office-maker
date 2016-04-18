@@ -6,13 +6,24 @@ app.use(bodyParser.json());
 app.use(express.static(__dirname + '/public'));
 
 var floors = {
-}
+  '1': {
+    id: '1',
+    name: '2ndFloor',
+    equipments: [ { id: '1', x: 80, y:60, width: 80, height: 60, color: '#fa0', name: 'Foo' } ],
+    width: 700,
+    height: 350,
+  }
+};
 
 app.get('/floor/:id', function (req, res) {
   var id = req.params.id;
   console.log(id);
   var floor = floors[id];
-  res.send('Hello World!');
+  if(floor) {
+    res.send(floor);
+  } else {
+    res.status(404).send('not found by id: ' + id);
+  }
 });
 
 app.put('/floor/:id', function (req, res) {

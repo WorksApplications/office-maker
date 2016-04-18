@@ -52,11 +52,16 @@ Elm.Native.HtmlUtil.make = function(localRuntime) {
       image.src = dataUrl;
       return Utils.Tuple2(image.width, image.height);
     }
+    var locationHash = Task.asyncFunction(function(callback) {
+      console.log(window.location.hash);
+      callback(Task.succeed(window.location.hash));
+    });
 
     return localRuntime.Native.HtmlUtil.values = {
         focus: focus,
         blur: blur,
         readAsDataURL : readAsDataURL,
-        getWidthAndHeightOfImage: getWidthAndHeightOfImage
+        getWidthAndHeightOfImage: getWidthAndHeightOfImage,
+        locationHash: locationHash
     };
 };

@@ -6,6 +6,7 @@ import Task
 import Effects exposing (Effects)
 import Debug
 import Window
+import String
 
 import Util.UndoRedo as UndoRedo
 import Util.Keys as Keys exposing (..)
@@ -100,6 +101,7 @@ init initialSize =
 
 type Action = NoOp
   | Init
+  | FloorLoaded Floor
   | MoveOnCanvas MouseEvent
   | EnterCanvas
   | LeaveCanvas
@@ -142,7 +144,30 @@ update action model =
     NoOp ->
       (model, Effects.none)
     Init ->
-      (model, Effects.none) -- TODO fetch from server
+      let
+        task =
+          HtmlUtil.locationHash
+          `Task.andThen` (\hash ->
+            let
+              floorName = Debug.log "hash" <| String.dropLeft 1 hash
+            in
+              if String.length floorName > 0 then
+                API.getFloor floorName
+              else
+                Task.succeed Floor.init
+            )
+        effects =
+          fromTask (always NoOp) FloorLoaded task
+      in
+        Debug.log "Init" <| (model, effects)
+    FloorLoaded floor ->
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.init { data = floor, update = Floor.update }
+          }
+      in
+        (newModel, Effects.none)
     MoveOnCanvas e ->
       let
         (x, y) = (e.clientX, e.clientY - 37)
