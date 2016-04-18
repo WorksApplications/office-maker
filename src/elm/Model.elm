@@ -91,7 +91,7 @@ init initialSize initialHash =
     , editMode = Select
     , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
     , contextMenu = NoContextMenu
-    , floor = UndoRedo.init { data = Floor.init, update = Floor.update }
+    , floor = UndoRedo.init { data = Floor.init "-1", update = Floor.update }
     , windowDimensions = initialSize
     , scale = Scale.init
     , offset = (35, 35)
@@ -686,13 +686,13 @@ shiftSelectionToward direction model =
 loadFloorEffects : String -> Effects Action
 loadFloorEffects hash =
   let
-    floorName =
+    floorId =
       String.dropLeft 1 hash
     task =
-      if String.length floorName > 0 then
-        API.getFloor floorName `Task.onError` (\e -> Task.succeed Floor.init)
+      if String.length floorId > 0 then
+        API.getFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
       else
-        Task.succeed Floor.init
+        Task.succeed (Floor.init "-1")
   in
     fromTaskWithNoError FloorLoaded task
 

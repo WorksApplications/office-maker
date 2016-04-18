@@ -15,9 +15,9 @@ type alias Model =
   , dataURL : Maybe String
   }
 
-init : Model
-init =
-    { id = "1"
+init : Id -> Model
+init id =
+    { id = id
     , name = "1F"
     , equipments = []
     , width = 800
