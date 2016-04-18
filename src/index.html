@@ -8,33 +8,6 @@
 		<!-- <link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'> -->
 	</head>
 	<body>
-		<!-- <input type="file" id="file">
-		<script>
-
-		var inputFile = document.getElementById('file');
-		function fileChange(ev) {
-		  var target = ev.target;
-		  var file = target.files[0];
-		  var type = file.type; // MIMEタイプ
-		  var size = file.size; // ファイル容量（byte）
-		  var limit = 10000; // byte, 10KB
-
-		  // MIMEタイプの判定
-		  if ( type !== 'image/jpeg' ) {
-		    alert('選択できるファイルは10KB以下のJPEG画像だけです。');
-		    inputFile.value = '';
-		    return;
-		  }
-
-		  // サイズの判定
-		  if ( limit < size ) {
-		    alert('10KBを超えています。10KB以下のファイルを選択してください。');
-		    inputFile.value = '';
-		  }
-		}
-
-		inputFile.addEventListener('change', fileChange, false);
-		</script> -->
 		<script>
 			var main = Elm.fullscreen(Elm.Main, {
 				initialSize : [window.innerWidth, window.innerHeight]
