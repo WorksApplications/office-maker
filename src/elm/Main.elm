@@ -8,7 +8,7 @@ import View
 
 app : StartApp.App Model.Model
 app = StartApp.start
-  { init = Model.init initialSize
+  { init = Model.init initialSize initialHash
   , view = View.view
   , update = Model.update
   , inputs = Model.inputs
@@ -21,3 +21,5 @@ port tasks : Signal (Task.Task Effects.Never ())
 port tasks = app.tasks
 
 port initialSize : (Int, Int)
+
+port initialHash : String

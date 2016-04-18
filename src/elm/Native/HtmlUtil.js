@@ -7,6 +7,7 @@ Elm.Native.HtmlUtil.make = function(localRuntime) {
 
     var Task = Elm.Native.Task.make(localRuntime);
     var Utils = Elm.Native.Utils.make(localRuntime);
+    var Signal = Elm.Native.Signal.make(localRuntime);
 
     function focus(id) {
       return Task.asyncFunction(function(callback) {
@@ -53,8 +54,13 @@ Elm.Native.HtmlUtil.make = function(localRuntime) {
       return Utils.Tuple2(image.width, image.height);
     }
     var locationHash = Task.asyncFunction(function(callback) {
-      console.log(window.location.hash);
+      console.log();
       callback(Task.succeed(window.location.hash));
+    });
+    var locationHash = Signal.input('locationHash', window.location.hash);
+    window.addEventListener('hashchange', function() {
+      var hash = window.location.hash;
+      localRuntime.notify(locationHash.id, hash);
     });
 
     return localRuntime.Native.HtmlUtil.values = {

@@ -93,3 +93,5 @@ getFloor id =
     Http.get
       decodeFloor
       ("/floor/" ++ id)
+
+-- reserveId : TODO

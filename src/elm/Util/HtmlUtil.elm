@@ -28,7 +28,7 @@ blur id =
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
 
-locationHash : Task a String
+locationHash : Signal String
 locationHash =
   Native.HtmlUtil.locationHash
 

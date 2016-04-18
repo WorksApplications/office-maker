@@ -45,6 +45,7 @@ type alias Model =
   , scaling : Bool
   , prototypes : Prototypes.Model
   , errors : List Error
+  , hash : String
   }
 
 type Error =
@@ -67,13 +68,16 @@ type DraggingContext =
 inputs : List (Signal Action)
 inputs =
   (List.map (Signal.map KeysAction) Keys.inputs) ++
-  [Signal.map WindowDimensions (Window.dimensions)]
+  [ Signal.map WindowDimensions (Window.dimensions)
+  , Signal.map HashChange HtmlUtil.locationHash ]
 
 gridSize : Int
 gridSize = 8 -- 2^N
 
-init : (Int, Int) -> (Model, Effects Action)
-init initialSize =
+
+
+init : (Int, Int) -> String -> (Model, Effects Action)
+init initialSize initialHash =
   (
     { seed = IdGenerator.init
     , pos = Nothing
@@ -94,6 +98,7 @@ init initialSize =
     , scaling = False
     , prototypes = Prototypes.init
     , errors = []
+    , hash = initialHash
     }
   , Effects.task (Task.succeed Init)
   )
@@ -101,6 +106,7 @@ init initialSize =
 
 type Action = NoOp
   | Init
+  | HashChange String
   | FloorLoaded Floor
   | MoveOnCanvas MouseEvent
   | EnterCanvas
@@ -143,23 +149,10 @@ update action model =
   case debugAction action of
     NoOp ->
       (model, Effects.none)
+    HashChange hash ->
+      ({ model | hash = hash}, loadFloorEffects hash)
     Init ->
-      let
-        task =
-          HtmlUtil.locationHash
-          `Task.andThen` (\hash ->
-            let
-              floorName = Debug.log "hash" <| String.dropLeft 1 hash
-            in
-              if String.length floorName > 0 then
-                API.getFloor floorName
-              else
-                Task.succeed Floor.init
-            )
-        effects =
-          fromTask (always NoOp) FloorLoaded task
-      in
-        Debug.log "Init" <| (model, effects)
+      (model, loadFloorEffects model.hash)
     FloorLoaded floor ->
       let
         newModel =
@@ -666,6 +659,20 @@ shiftSelectionToward direction model =
             selectedEquipments = toBeSelected
           }
       _ -> model
+
+loadFloorEffects : String -> Effects Action
+loadFloorEffects hash =
+  let
+    floorName =
+      String.dropLeft 1 hash
+    task =
+      if String.length floorName > 0 then
+        API.getFloor floorName `Task.onError` (\e -> Task.succeed Floor.init)
+      else
+        Task.succeed Floor.init
+  in
+    fromTaskWithNoError FloorLoaded task
+
 
 focusEffect : String -> Effects Action
 focusEffect id =
