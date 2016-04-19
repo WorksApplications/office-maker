@@ -76,12 +76,10 @@ inputs =
 gridSize : Int
 gridSize = 8 -- 2^N
 
-
-
-init : (Int, Int) -> String -> (Model, Effects Action)
-init initialSize initialHash =
+init : (Int, Int) -> (Int, Int) -> String -> (Model, Effects Action)
+init randomSeed initialSize initialHash =
   (
-    { seed = IdGenerator.init
+    { seed = IdGenerator.init randomSeed
     , pos = Nothing
     , draggingContext = None
     , selectedEquipments = []
@@ -140,7 +138,7 @@ type Action = NoOp
   | Error Error
 
 debug : Bool
-debug = False
+debug = True
 
 debugAction : Action -> Action
 debugAction action =
