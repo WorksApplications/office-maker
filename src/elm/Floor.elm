@@ -13,8 +13,11 @@ type alias Model =
   , width : Int
   , height : Int
   , realSize : Maybe (Int, Int)
-  , dataURL : Maybe String
+  , imageSource : ImageSource
   }
+
+type ImageSource =
+  DataURL String | URL String | None
 
 init : Id -> Model
 init id =
@@ -24,7 +27,7 @@ init id =
     , width = 800
     , height = 600
     , realSize = Nothing
-    , dataURL = Nothing
+    , imageSource = None
     }
 
 type Action =
@@ -36,7 +39,7 @@ type Action =
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
   | ChangeName String
-  | ChangeImage String
+  | SetDataURL String
   | ChangeRealWidth Int
   | ChangeRealHeight Int
 
@@ -64,8 +67,8 @@ changeEquipmentName = ChangeEquipmentName
 changeName : String -> Action
 changeName = ChangeName
 
-changeImage : String -> Action
-changeImage = ChangeImage
+setDataURL : String -> Action
+setDataURL = SetDataURL
 
 changeRealWidth : Int -> Action
 changeRealWidth = ChangeRealWidth
@@ -110,8 +113,8 @@ update action model =
         model
     ChangeName name ->
       { model | name = name }
-    ChangeImage dataURL ->
-      setImage dataURL model
+    SetDataURL dataURL ->
+      setDataURL' dataURL model
     ChangeRealWidth width ->
       let
         newRealSize =
@@ -178,13 +181,20 @@ addEquipments equipments model =
   setEquipments (model.equipments ++ equipments) model
 
 
-setImage : String -> Model -> Model
-setImage dataURL model =
+setDataURL' : String -> Model -> Model
+setDataURL' dataURL model =
   let
     (width, height) = getWidthAndHeightOfImage dataURL
   in
     { model |
       width = width
     , height = height
-    , dataURL = Just dataURL
+    , imageSource = DataURL dataURL
     }
+
+src : Model -> Maybe String
+src model =
+  case model.imageSource of
+    DataURL src -> Just src
+    URL src -> Just src
+    None -> Nothing

@@ -1,10 +1,10 @@
 module API(saveFloor, getFloor, Floor, Error) where
 
 import Equipments exposing (..)
-import Floor
+import Floor exposing (ImageSource(..))
 import Http
 import Json.Encode exposing (object, list, encode, string, int, null, Value)
-import Json.Decode as Decode exposing ((:=), object5, object7, Decoder)
+import Json.Decode as Decode exposing ((:=), object8, object7, Decoder)
 import Task exposing (Task)
 import Floor
 
@@ -47,12 +47,8 @@ encodeFloor floor =
       , ("equipments", list <| List.map encodeEquipment floor.equipments)
       , ("width", int floor.width)
       , ("height", int floor.height)
-      , ("dataURL", case floor.dataURL of
-          Just s -> string s
-          Nothing -> null
-        )
+      , ("imageSource", string "/dummy.jpg")
       ]
-
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
@@ -68,14 +64,14 @@ decodeEquipment =
 
 decodeFloor : Decoder Floor
 decodeFloor =
-  object7
-    (\id name equipments width height realWidth realHeight ->
+  object8
+    (\id name equipments width height realWidth realHeight src ->
       { id = id
       , name = name
       , equipments = equipments
       , width = width
       , height = height
-      , dataURL = Nothing
+      , imageSource = Maybe.withDefault None (Maybe.map URL src)
       , realSize = realWidth `Maybe.andThen` (\w -> realHeight `Maybe.andThen` (\h -> Just (w, h)))
       }) -- TODO
     ("id" := Decode.string)
@@ -85,6 +81,7 @@ decodeFloor =
     ("height" := Decode.int)
     (Decode.maybe ("realWidth" := Decode.int))
     (Decode.maybe ("realHeight" := Decode.int))
+    (Decode.maybe ("src" := Decode.string))
 
 serializeFloor : Floor -> String
 serializeFloor floor =

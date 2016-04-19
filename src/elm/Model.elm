@@ -19,7 +19,7 @@ import EquipmentsOperation exposing (..)
 import Scale
 import API
 import Prototypes exposing (..)
-import Floor exposing (Model, setEquipments, setImage, equipments, addEquipments)
+import Floor exposing (Model, setEquipments, setDataURL, equipments, addEquipments)
 
 type alias Floor = Floor.Model
 
@@ -497,7 +497,7 @@ update action model =
     GotDataURL dataURL ->
       let
         newModel =
-          { model | floor = UndoRedo.commit model.floor (Floor.changeImage dataURL) }
+          { model | floor = UndoRedo.commit model.floor (Floor.setDataURL dataURL) }
       in
         (newModel, Effects.none)
     PrototypesAction action ->

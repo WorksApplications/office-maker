@@ -355,7 +355,7 @@ canvasView address model =
     image =
       img
         [ style [("width", "100%"), ("height", "100%")]
-        , src (Maybe.withDefault "" floor.dataURL)
+        , src (Maybe.withDefault "" (Floor.src floor))
         ] []
   in
     div
