@@ -47,7 +47,7 @@ encodeFloor floor =
       , ("equipments", list <| List.map encodeEquipment floor.equipments)
       , ("width", int floor.width)
       , ("height", int floor.height)
-      , ("imageSource", string "/dummy.jpg")
+      , ("src", string "/dummy.jpg") -- TODO
       ]
 
 decodeEquipment : Decoder Equipment

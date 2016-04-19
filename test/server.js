@@ -17,8 +17,8 @@ var floors = {
 
 app.get('/floor/:id', function (req, res) {
   var id = req.params.id;
-  console.log(id);
   var floor = floors[id];
+  console.log(floor);
   if(floor) {
     res.send(floor);
   } else {
@@ -34,6 +34,7 @@ app.put('/floor/:id', function (req, res) {
   }
   floors[id] = newFloor;
   console.log('saved floor: ' + id);
+  console.log(newFloor);
   res.send('');
 });
 
