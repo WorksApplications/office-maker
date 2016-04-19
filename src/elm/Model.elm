@@ -138,7 +138,7 @@ type Action = NoOp
   | Error Error
 
 debug : Bool
-debug = True
+debug = False
 
 debugAction : Action -> Action
 debugAction action =
