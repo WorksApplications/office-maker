@@ -291,13 +291,13 @@ pasteEquipments (baseX, baseY) copiedWithNewIds allEquipments =
 
 partiallyChange : (Equipment -> Equipment) -> List Id -> List Equipment -> List Equipment
 partiallyChange f ids equipments =
-  List.map (\equipment ->
-    case equipment of
-      Desk id _ _ _ ->
-        if List.member id ids
-        then f equipment
-        else equipment
+  List.map (\e ->
+    if List.member (idOf e) ids then f e else e
   ) equipments
+
+rotate : Equipment -> Equipment
+rotate (Desk id (x, y, width, height) color name) =
+  (Desk id (x, y, height, width) color name)
 
 moveEquipments : Int -> (Int, Int) -> List Id -> List Equipment -> List Equipment
 moveEquipments gridSize (dx, dy) ids equipments =

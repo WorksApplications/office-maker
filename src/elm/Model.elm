@@ -130,6 +130,7 @@ type Action = NoOp
   | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
   | InputFloorName String
+  | Rotate Id
   | Error Error
 
 debug : Bool
@@ -533,6 +534,17 @@ update action model =
           { model | floor =  newFloor }
       in
         (newModel, effects)
+    Rotate id ->
+      let
+        newFloor =
+          UndoRedo.commit model.floor (Floor.rotate id)
+        newModel =
+          { model |
+            floor =  newFloor
+          , contextMenu = NoContextMenu
+          }
+      in
+        (newModel, Effects.none)
     Error e ->
       let
         newModel =

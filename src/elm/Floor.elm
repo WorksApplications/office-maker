@@ -30,6 +30,7 @@ type Action =
   | Move (List Id) Int (Int, Int)
   | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
+  | Rotate Id
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
   | ChangeName String
@@ -46,6 +47,9 @@ paste = Paste
 
 delete : (List Id) -> Action
 delete = Delete
+
+rotate : Id -> Action
+rotate = Rotate
 
 changeEquipmentColor : (List Id) -> String -> Action
 changeEquipmentColor = ChangeEquipmentColor
@@ -82,6 +86,8 @@ update action model =
       setEquipments
         (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
         model
+    Rotate id ->
+      setEquipments (partiallyChange EquipmentsOperation.rotate [id] (equipments model)) model
     ChangeEquipmentColor ids color ->
       let
         newEquipments =

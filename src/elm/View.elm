@@ -36,6 +36,7 @@ contextMenuView address model =
         ] -- TODO
         [ contextMenuItemView address (SelectIsland id) "Select Island"
         , contextMenuItemView address (always <| RegisterPrototype id) "Register as stamp"
+        , contextMenuItemView address (always <| Rotate id) "Rotate"
         ]
 
 contextMenuItemView : Address Action -> (MouseEvent -> Action) -> String -> Html
