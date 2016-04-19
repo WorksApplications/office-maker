@@ -46,6 +46,8 @@ type alias Model =
   , prototypes : Prototypes.Model
   , errors : List Error
   , hash : String
+  , inputFloorRealWidth : String
+  , inputFloorRealHeight : String
   }
 
 type Error =
@@ -99,6 +101,8 @@ init initialSize initialHash =
     , prototypes = Prototypes.init
     , errors = []
     , hash = initialHash
+    , inputFloorRealWidth = ""
+    , inputFloorRealHeight = ""
     }
   , Effects.task (Task.succeed Init)
   )
@@ -130,6 +134,8 @@ type Action = NoOp
   | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
   | InputFloorName String
+  | InputFloorRealWidth String
+  | InputFloorRealHeight String
   | Rotate Id
   | Error Error
 
@@ -157,9 +163,12 @@ update action model =
       (model, loadFloorEffects model.hash)
     FloorLoaded floor ->
       let
+        (realWidth, realHeight) = Floor.realSize floor
         newModel =
           { model |
             floor = UndoRedo.init { data = floor, update = Floor.update }
+          , inputFloorRealWidth = toString realWidth
+          , inputFloorRealHeight = toString realHeight
           }
       in
         (newModel, Effects.none)
@@ -534,6 +543,40 @@ update action model =
           { model | floor =  newFloor }
       in
         (newModel, effects)
+    InputFloorRealWidth width ->
+      let
+        newFloor =
+          case String.toInt width of
+            Err s -> model.floor
+            Ok i ->
+              if i > 0 then
+                UndoRedo.commit model.floor (Floor.changeRealWidth i)
+              else
+                model.floor
+        newModel =
+          { model |
+            floor = newFloor
+          , inputFloorRealWidth = width
+          }
+      in
+        (newModel, Effects.none)
+    InputFloorRealHeight height ->
+      let
+        newFloor =
+          case String.toInt height of
+            Err s -> model.floor
+            Ok i ->
+              if i > 0 then
+                UndoRedo.commit model.floor (Floor.changeRealHeight i)
+              else
+                model.floor
+        newModel =
+          { model |
+            floor = newFloor
+          , inputFloorRealHeight = height
+          }
+      in
+        (newModel, Effects.none)
     Rotate id ->
       let
         newFloor =

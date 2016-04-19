@@ -10,6 +10,7 @@ import Styles
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
+import Floor
 import Equipments exposing (..)
 import Model exposing (..)
 import Scale
@@ -138,10 +139,10 @@ nameInputView address model =
       text ""
 
 inputAttributes : Address Action -> (String -> Action) -> (KeyboardEvent -> Action) -> String -> Bool -> List Attribute
-inputAttributes address toInputAction toKeydownAction value defence =
+inputAttributes address toInputAction toKeydownAction value' defence =
   [ onInput' (forwardTo address toInputAction) -- TODO cannot input japanese
   , onKeyDown'' (forwardTo address toKeydownAction)
-  -- ,
+  , value value'
   ] ++ (if defence then [onMouseDown' (forwardTo address (always NoOp))] else [])
 
 mainView : Address Action -> Model -> Html
@@ -178,19 +179,46 @@ penView address model =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
-    floorNameInput =
-      input
-      ([ Html.Attributes.id "floor-name-input"
-      , type' "text"
-      -- , style
-      ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
-      []
   in
     [ fileLoadButton (forwardTo address LoadFile)
-    , floorNameInput
+    , floorNameInputView address model
+    , floorRealSizeInputView address model
     , modeSelectionView address model
     , prototypePreviewView address prototypes (model.editMode == Stamp)
     ]
+
+floorNameInputView : Address Action -> Model -> Html
+floorNameInputView address model =
+    input
+    ([ Html.Attributes.id "floor-name-input"
+    , type' "text"
+    ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
+    []
+
+floorRealSizeInputView : Address Action -> Model -> Html
+floorRealSizeInputView address model =
+  let
+    floor = UndoRedo.data model.floor
+    useReal = True--TODO
+    widthInput =
+      input
+      ([ Html.Attributes.id "floor-real-width-input"
+      , type' "text"
+      , disabled (not useReal)
+      , style Styles.realSizeInput
+      ] ++ (inputAttributes address InputFloorRealWidth (always NoOp) (model.inputFloorRealWidth) False))
+      []
+    heightInput =
+      input
+      ([ Html.Attributes.id "floor-real-height-input"
+      , type' "text"
+      , disabled (not useReal)
+      , style Styles.realSizeInput
+      ] ++ (inputAttributes address InputFloorRealHeight (always NoOp) (model.inputFloorRealHeight) False))
+      []
+  in
+    div [] [ widthInput, heightInput ]
+
 
 modeSelectionView : Address Action -> Model -> Html
 modeSelectionView address model =
@@ -322,7 +350,7 @@ canvasView address model =
     rect =
       Scale.imageToScreenForRect
         model.scale
-        (offsetX, offsetY, floor.width, floor.height)
+        (offsetX, offsetY, Floor.width floor, Floor.height floor)
 
     image =
       img

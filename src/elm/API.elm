@@ -68,14 +68,23 @@ decodeEquipment =
 
 decodeFloor : Decoder Floor
 decodeFloor =
-  object5
-    (\id name equipments width height ->
-      { id = id, name = name, equipments = equipments, width = width, height = height, dataURL = Nothing }) -- TODO
+  object7
+    (\id name equipments width height realWidth realHeight ->
+      { id = id
+      , name = name
+      , equipments = equipments
+      , width = width
+      , height = height
+      , dataURL = Nothing
+      , realSize = realWidth `Maybe.andThen` (\w -> realHeight `Maybe.andThen` (\h -> Just (w, h)))
+      }) -- TODO
     ("id" := Decode.string)
     ("name" := Decode.string)
     ("equipments" := Decode.list decodeEquipment)
     ("width" := Decode.int)
     ("height" := Decode.int)
+    (Decode.maybe ("realWidth" := Decode.int))
+    (Decode.maybe ("realHeight" := Decode.int))
 
 serializeFloor : Floor -> String
 serializeFloor floor =

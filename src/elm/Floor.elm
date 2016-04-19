@@ -12,6 +12,7 @@ type alias Model =
   , equipments: List Equipment
   , width : Int
   , height : Int
+  , realSize : Maybe (Int, Int)
   , dataURL : Maybe String
   }
 
@@ -22,6 +23,7 @@ init id =
     , equipments = []
     , width = 800
     , height = 600
+    , realSize = Nothing
     , dataURL = Nothing
     }
 
@@ -35,6 +37,8 @@ type Action =
   | ChangeEquipmentName Id String
   | ChangeName String
   | ChangeImage String
+  | ChangeRealWidth Int
+  | ChangeRealHeight Int
 
 create : (List (Id, (Int, Int, Int, Int), String, String)) -> Action
 create = Create
@@ -62,6 +66,12 @@ changeName = ChangeName
 
 changeImage : String -> Action
 changeImage = ChangeImage
+
+changeRealWidth : Int -> Action
+changeRealWidth = ChangeRealWidth
+
+changeRealHeight : Int -> Action
+changeRealHeight = ChangeRealHeight
 
 update : Action -> Model -> Model
 update action model =
@@ -102,7 +112,56 @@ update action model =
       { model | name = name }
     ChangeImage dataURL ->
       setImage dataURL model
+    ChangeRealWidth width ->
+      let
+        newRealSize =
+          case model.realSize of
+            Just (w, h) -> Just (width, h)
+            Nothing -> Just (width, pixelToReal model.height)
+      in
+        { model |
+          realSize = newRealSize
+        -- , useReal = True
+        }
+    ChangeRealHeight height ->
+      let
+        newRealSize =
+          case model.realSize of
+            Just (w, h) -> Just (w, height)
+            Nothing -> Just (pixelToReal model.width, height)
+      in
+        { model |
+          realSize = newRealSize
+        -- , useReal = True
+        }
 
+
+{- 10cm -> 8px -}
+realToPixel : Int -> Int
+realToPixel real =
+  Basics.floor (toFloat real * 80)
+
+pixelToReal : Int -> Int
+pixelToReal pixel =
+  Basics.floor (toFloat pixel / 80)
+
+size : Model -> (Int, Int)
+size model =
+  case model.realSize of
+    Just (w, h) -> (realToPixel w, realToPixel h)
+    Nothing -> (model.width, model.height)
+
+width : Model -> Int
+width model = size model |> fst
+
+height : Model -> Int
+height model = size model |> snd
+
+realSize : Model -> (Int, Int)
+realSize model =
+  case model.realSize of
+    Just (w, h) -> (w, h)
+    Nothing -> (pixelToReal model.width, pixelToReal model.height)
 
 equipments : Model -> List Equipment
 equipments model =

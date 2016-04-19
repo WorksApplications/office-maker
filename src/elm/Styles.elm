@@ -236,3 +236,8 @@ prototypePreviewScroll =
   , ("background-color", "#ccc")
   , ("cursor", "pointer")
   ]
+
+realSizeInput : S
+realSizeInput =
+  [ ("width", "30px")
+  ]
