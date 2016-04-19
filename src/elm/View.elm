@@ -18,6 +18,8 @@ import EquipmentsOperation exposing (..)
 import Util.ListUtil exposing (..)
 import Prototypes exposing (Prototype, StampCandidate)
 
+import Icons
+
 headerView : Address Action -> Model -> Html
 headerView address model =
   header
@@ -229,19 +231,19 @@ modeSelectionView address model =
         [ style (Styles.selection (model.editMode == Select) ++ widthStyle)
         , onClick' (forwardTo address (always <| ChangeMode Select))
         ]
-        [ text "Select" ]
+        [ Icons.selectMode (model.editMode == Select) ]
     pen =
       div
         [ style (Styles.selection (model.editMode == Pen) ++ widthStyle)
         , onClick' (forwardTo address (always <| ChangeMode Pen))
         ]
-        [ text "Pen" ]
+        [ Icons.penMode (model.editMode == Pen) ]
     stamp =
       div
         [ style (Styles.selection (model.editMode == Stamp) ++ widthStyle)
         , onClick' (forwardTo address (always <| ChangeMode Stamp))
         ]
-        [ text "Stamp" ]
+        [ Icons.stampMode (model.editMode == Stamp) ]
   in
     div [ style (Styles.flex ++ [("margin-top", "10px")]) ] [selection, pen, stamp]
 
@@ -442,7 +444,6 @@ colorPropertyView address model =
 
 view : Address Action -> Model -> Html
 view address model =
-
   div
     []
     [ headerView address model

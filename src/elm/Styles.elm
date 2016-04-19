@@ -179,7 +179,8 @@ card =
 selection : Bool -> S
 selection selected =
   [ ("cursor", "pointer")
-  , ("padding", "10px")
+  , ("padding-top", "8px")
+  , ("padding-bottom", "4px")
   , ("text-align", "center")
   , ("box-sizing", "border-box")
   , ("margin-right", "-1px")
