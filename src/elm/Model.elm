@@ -19,7 +19,7 @@ import EquipmentsOperation exposing (..)
 import Scale
 import API
 import Prototypes exposing (..)
-import Floor exposing (Model, setEquipments, setDataURL, equipments, addEquipments)
+import Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 
 type alias Floor = Floor.Model
 
@@ -71,7 +71,8 @@ inputs : List (Signal Action)
 inputs =
   (List.map (Signal.map KeysAction) Keys.inputs) ++
   [ Signal.map WindowDimensions (Window.dimensions)
-  , Signal.map HashChange HtmlUtil.locationHash ]
+  , Signal.map HashChange HtmlUtil.locationHash
+  ]
 
 gridSize : Int
 gridSize = 8 -- 2^N
@@ -110,6 +111,7 @@ type Action = NoOp
   | Init
   | HashChange String
   | FloorLoaded Floor
+  | FloorSaved
   | MoveOnCanvas MouseEvent
   | EnterCanvas
   | LeaveCanvas
@@ -127,7 +129,7 @@ type Action = NoOp
   | MouseWheel MouseWheelEvent
   | ChangeMode EditMode
   | LoadFile FileList
-  | GotDataURL String
+  | GotDataURL String FileList String
   | ScaleEnd
   | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
@@ -145,7 +147,7 @@ debugAction action =
   if debug then
     case action of
       MoveOnCanvas _ -> action
-      GotDataURL _ -> action
+      GotDataURL _ _ _ -> action
       _ -> Debug.log "action" action
   else
     action
@@ -167,6 +169,14 @@ update action model =
             floor = UndoRedo.init { data = floor, update = Floor.update }
           , inputFloorRealWidth = toString realWidth
           , inputFloorRealHeight = toString realHeight
+          }
+      in
+        (newModel, Effects.none)
+    FloorSaved ->
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.commit model.floor Floor.useURL
           }
       in
         (newModel, Effects.none)
@@ -490,16 +500,22 @@ update action model =
         (newModel, Effects.none)
     LoadFile fileList ->
       let
+        (id, newSeed) =
+          IdGenerator.new model.seed
+        newModel =
+          { model | seed = newSeed }
         effects =
-          fromTask (Error << HtmlError) GotDataURL (readFirstAsDataURL fileList)
+          fromTask (Error << HtmlError) (GotDataURL id fileList) (readFirstAsDataURL fileList)
       in
         (model, effects)
-    GotDataURL dataURL ->
+    GotDataURL id fileList dataURL ->
       let
         newModel =
-          { model | floor = UndoRedo.commit model.floor (Floor.setDataURL dataURL) }
+          { model | floor = UndoRedo.commit model.floor (Floor.setLocalFile id fileList dataURL) }
+        effects =
+          saveFloorEffects (UndoRedo.data newModel.floor)
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     PrototypesAction action ->
       let
         newModel =
@@ -595,8 +611,19 @@ update action model =
 
 saveFloorEffects : Floor -> Effects Action
 saveFloorEffects floor =
-  fromTask (Error << APIError) (always NoOp) (API.saveFloor floor)
-
+  let
+    firstTask =
+      case floor.imageSource of
+        Floor.LocalFile id fileList url ->
+          API.saveEditingImage id fileList
+        _ ->
+          Task.succeed ()
+    secondTask = API.saveEditingFloor floor
+  in
+    fromTask
+      (Error << APIError)
+      (always FloorSaved)
+      (firstTask `Task.andThen` (always secondTask))
 
 updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
 updateByKeyAction action model =
@@ -743,7 +770,7 @@ loadFloorEffects hash =
       String.dropLeft 1 hash
     task =
       if String.length floorId > 0 then
-        API.getFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
+        API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
       else
         Task.succeed (Floor.init "-1")
   in

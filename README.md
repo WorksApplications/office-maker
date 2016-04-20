@@ -28,7 +28,7 @@ CAUTION: This product is under construction.
 |PUT| /api/v1/floor/:id/edit|Floor||update latest unpublished version||✓|✓|
 |PUSH| /api/v1/floor/:id|||publish latest unpublished version|||✓|
 |DELETE| /api/v1/floor/:id||||||✓|
-|PUT| /api/v1/floor/:id/image|Image|||||✓|
+|PUT| /api/v1/image/:id|Image|||||✓|
 
 #### Types
 |Type|Structure|

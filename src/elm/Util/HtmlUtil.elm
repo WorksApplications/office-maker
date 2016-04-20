@@ -15,6 +15,16 @@ type Error =
 
 type alias KeyboardEvent = HtmlEvent.KeyboardEvent
 type alias MouseEvent = HtmlEvent.MouseEvent
+type alias MouseWheelEvent =
+  { clientX : Int
+  , clientY : Int
+  , layerX : Int
+  , layerY : Int
+  , ctrlKey : Bool
+  , shiftKey : Bool
+  , value : Float
+  }
+type FileList = FileList Json.Decode.Value
 
 focus : String -> Task Error ()
 focus id =
@@ -118,17 +128,6 @@ decodeMousePosition =
     ("ctrlKey" := bool)
     ("shiftKey" := bool)
 
-
-type alias MouseWheelEvent =
-  { clientX : Int
-  , clientY : Int
-  , layerX : Int
-  , layerY : Int
-  , ctrlKey : Bool
-  , shiftKey : Bool
-  , value : Float
-  }
-
 decodeWheelEvent : Json.Decode.Decoder MouseWheelEvent
 decodeWheelEvent =
   (object7
@@ -154,12 +153,8 @@ decodeWheelEvent =
       ]))
     `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
 
-
-
-type FileList = FileList Json.Decode.Value
-
 readFirstAsDataURL : FileList -> Task Error String
-readFirstAsDataURL list =
+readFirstAsDataURL (FileList list) =
     Task.mapError
       (always (Unexpected (toString list)))
       (Native.HtmlUtil.readAsDataURL list)

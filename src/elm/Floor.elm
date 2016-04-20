@@ -17,7 +17,7 @@ type alias Model =
   }
 
 type ImageSource =
-  DataURL String | URL String | None
+  LocalFile String FileList String | URL String | None
 
 init : Id -> Model
 init id =
@@ -39,9 +39,10 @@ type Action =
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
   | ChangeName String
-  | SetDataURL String
+  | SetLocalFile String FileList String
   | ChangeRealWidth Int
   | ChangeRealHeight Int
+  | UseURL
 
 create : (List (Id, (Int, Int, Int, Int), String, String)) -> Action
 create = Create
@@ -67,14 +68,17 @@ changeEquipmentName = ChangeEquipmentName
 changeName : String -> Action
 changeName = ChangeName
 
-setDataURL : String -> Action
-setDataURL = SetDataURL
+setLocalFile : String -> FileList -> String -> Action
+setLocalFile = SetLocalFile
 
 changeRealWidth : Int -> Action
 changeRealWidth = ChangeRealWidth
 
 changeRealHeight : Int -> Action
 changeRealHeight = ChangeRealHeight
+
+useURL : Action
+useURL = UseURL
 
 update : Action -> Model -> Model
 update action model =
@@ -113,8 +117,8 @@ update action model =
         model
     ChangeName name ->
       { model | name = name }
-    SetDataURL dataURL ->
-      setDataURL' dataURL model
+    SetLocalFile id fileList dataURL ->
+      setLocalFile' id fileList dataURL model
     ChangeRealWidth width ->
       let
         newRealSize =
@@ -137,7 +141,15 @@ update action model =
           realSize = newRealSize
         -- , useReal = True
         }
-
+    UseURL ->
+      { model |
+        imageSource =
+          case model.imageSource of
+            LocalFile id list dataURL ->
+              URL id
+            _ ->
+              model.imageSource
+      }
 
 {- 10cm -> 8px -}
 realToPixel : Int -> Int
@@ -181,20 +193,21 @@ addEquipments equipments model =
   setEquipments (model.equipments ++ equipments) model
 
 
-setDataURL' : String -> Model -> Model
-setDataURL' dataURL model =
+setLocalFile' : String -> FileList -> String -> Model -> Model
+setLocalFile' id fileList dataURL model =
   let
-    (width, height) = getWidthAndHeightOfImage dataURL
+    (width, height) =
+      getWidthAndHeightOfImage dataURL
   in
     { model |
       width = width
     , height = height
-    , imageSource = DataURL dataURL
+    , imageSource = LocalFile id fileList dataURL
     }
 
 src : Model -> Maybe String
 src model =
   case model.imageSource of
-    DataURL src -> Just src
-    URL src -> Just src
+    LocalFile id list dataURL -> Just dataURL
+    URL src -> Just ("/images/" ++ src)
     None -> Nothing

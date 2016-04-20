@@ -1,4 +1,4 @@
-module API(saveFloor, getFloor, Floor, Error) where
+module API(saveEditingFloor, getEditingFloor, getFloor, saveEditingImage, Floor, Error) where
 
 import Equipments exposing (..)
 import Floor exposing (ImageSource(..))
@@ -7,6 +7,8 @@ import Json.Encode exposing (object, list, encode, string, int, null, Value)
 import Json.Decode as Decode exposing ((:=), object8, object7, Decoder)
 import Task exposing (Task)
 import Floor
+import Util.HttpUtil as HttpUtil
+import Util.HtmlUtil exposing (FileList)
 
 type alias Floor = Floor.Model
 
@@ -41,13 +43,20 @@ encodeEquipment (Desk id (x, y, width, height) color name) =
 
 encodeFloor : Floor -> Value
 encodeFloor floor =
+  let
+    src =
+      case floor.imageSource of
+        LocalFile id _ _ -> string id
+        URL url -> string url
+        _ -> null
+  in
     object
       [ ("id", string floor.id)
       , ("name", string floor.name)
       , ("equipments", list <| List.map encodeEquipment floor.equipments)
       , ("width", int floor.width)
       , ("height", int floor.height)
-      , ("src", string "/dummy.jpg") -- TODO
+      , ("src", src)
       ]
 
 decodeEquipment : Decoder Equipment
@@ -87,17 +96,27 @@ serializeFloor : Floor -> String
 serializeFloor floor =
     encode 0 (encodeFloor floor)
 
-saveFloor : Floor -> Task Error ()
-saveFloor floor =
+saveEditingFloor : Floor -> Task Error ()
+saveEditingFloor floor =
     put
       (Decode.map (always ()) Decode.value)
-      ("/floor/" ++ floor.id)
+      ("/api/v1/floor/" ++ floor.id ++ "/edit")
       (Http.string <| serializeFloor floor)
+
+getEditingFloor : String -> Task Error Floor
+getEditingFloor id =
+    Http.get
+      decodeFloor
+      ("/api/v1/floor/" ++ id ++ "/edit")
 
 getFloor : String -> Task Error Floor
 getFloor id =
     Http.get
       decodeFloor
-      ("/floor/" ++ id)
+      ("/api/v1/floor/" ++ id)
 
--- reserveId : TODO
+saveEditingImage : Id -> FileList -> Task a ()
+saveEditingImage id filelist =
+    HttpUtil.putFile
+      ("/api/v1/image/" ++ id)
+      filelist

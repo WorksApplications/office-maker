@@ -35,10 +35,10 @@ Elm.Native.HtmlUtil.make = function(localRuntime) {
         }, 100);
       });
     }
-    function readAsDataURL(file) {
+    function readAsDataURL(fileList) {
       return Task.asyncFunction(function(callback) {
         var reader = new FileReader();
-        reader.readAsDataURL(file._0[0]);
+        reader.readAsDataURL(fileList[0]);
         reader.onload = function() {
           var dataUrl = reader.result;
           callback(Task.succeed(dataUrl));
