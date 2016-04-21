@@ -1,0 +1,245 @@
+Elm.Util = Elm.Util || {};
+Elm.Util.HtmlUtil = Elm.Util.HtmlUtil || {};
+Elm.Util.HtmlUtil.make = function (_elm) {
+   "use strict";
+   _elm.Util = _elm.Util || {};
+   _elm.Util.HtmlUtil = _elm.Util.HtmlUtil || {};
+   if (_elm.Util.HtmlUtil.values) return _elm.Util.HtmlUtil.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$HtmlUtil = Elm.Native.HtmlUtil.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Util$HtmlEvent = Elm.Util.HtmlEvent.make(_elm);
+   var _op = {};
+   var getWidthAndHeightOfImage = $Native$HtmlUtil.getWidthAndHeightOfImage;
+   var decodeWheelEvent = A2($Json$Decode.andThen,
+   A8($Json$Decode.object7,
+   F7(function (clientX,clientY,layerX,layerY,ctrl,shift,value) {
+      return {clientX: clientX
+             ,clientY: clientY
+             ,layerX: layerX
+             ,layerY: layerY
+             ,ctrlKey: ctrl
+             ,shiftKey: shift
+             ,value: value};
+   }),
+   A2($Json$Decode._op[":="],"clientX",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"clientY",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"layerX",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"layerY",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"ctrlKey",$Json$Decode.bool),
+   A2($Json$Decode._op[":="],"shiftKey",$Json$Decode.bool),
+   $Json$Decode.oneOf(_U.list([A2($Json$Decode.at,
+                              _U.list(["deltaY"]),
+                              $Json$Decode.$float)
+                              ,A2($Json$Decode.map,
+                              function (v) {
+                                 return 0 - v;
+                              },
+                              A2($Json$Decode.at,
+                              _U.list(["wheelDelta"]),
+                              $Json$Decode.$float))]))),
+   function (e) {
+      return !_U.eq(e.value,
+      0) ? $Json$Decode.succeed(e) : $Json$Decode.fail("Wheel of 0");
+   });
+   var decodeMousePosition = A7($Json$Decode.object6,
+   F6(function (clientX,clientY,layerX,layerY,ctrl,shift) {
+      return {clientX: clientX
+             ,clientY: clientY
+             ,layerX: layerX
+             ,layerY: layerY
+             ,ctrlKey: ctrl
+             ,shiftKey: shift};
+   }),
+   A2($Json$Decode._op[":="],"clientX",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"clientY",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"layerX",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"layerY",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"ctrlKey",$Json$Decode.bool),
+   A2($Json$Decode._op[":="],"shiftKey",$Json$Decode.bool));
+   var onMouseWheel = F2(function (address,toAction) {
+      var handler = function (v) {
+         return A2($Signal.message,address,toAction(v));
+      };
+      return A4($Html$Events.onWithOptions,
+      "wheel",
+      {stopPropagation: true,preventDefault: true},
+      decodeWheelEvent,
+      handler);
+   });
+   var onContextMenu$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "contextmenu",
+      {stopPropagation: true,preventDefault: true},
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var onKeyDown$$ = function (address) {
+      return A3($Html$Events.on,
+      "keydown",
+      $Util$HtmlEvent.decodeKeyboardEvent,
+      $Signal.message(address));
+   };
+   var onKeyDown$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "keydown",
+      {stopPropagation: true,preventDefault: true},
+      $Util$HtmlEvent.decodeKeyboardEvent,
+      $Signal.message(address));
+   };
+   var onChange$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "change",
+      {stopPropagation: true,preventDefault: true},
+      $Html$Events.targetValue,
+      $Signal.message(address));
+   };
+   var onInput$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "input",
+      {stopPropagation: true,preventDefault: true},
+      $Html$Events.targetValue,
+      $Signal.message(address));
+   };
+   var onClick$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "click",
+      {stopPropagation: true,preventDefault: true},
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var onDblClick$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "dblclick",
+      {stopPropagation: true,preventDefault: true},
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var onMouseDown$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "mousedown",
+      {stopPropagation: true,preventDefault: true},
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var mouseDownDefence = F2(function (address,noOp) {
+      return onMouseDown$(A2($Signal.forwardTo,
+      address,
+      $Basics.always(noOp)));
+   });
+   var onMouseUp$ = function (address) {
+      return A3($Html$Events.on,
+      "mouseup",
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var onMouseLeave$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "mouseleave",
+      {stopPropagation: true,preventDefault: true},
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var onMouseEnter$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "mouseenter",
+      {stopPropagation: true,preventDefault: true},
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var onMouseMove$ = function (address) {
+      return A4($Html$Events.onWithOptions,
+      "mousemove",
+      {stopPropagation: true,preventDefault: true},
+      decodeMousePosition,
+      $Signal.message(address));
+   };
+   var locationHash = $Native$HtmlUtil.locationHash;
+   var FileList = function (a) {
+      return {ctor: "FileList",_0: a};
+   };
+   var decodeFile = A2($Json$Decode.map,
+   FileList,
+   A2($Json$Decode.at,
+   _U.list(["target","files"]),
+   $Json$Decode.value));
+   var fileLoadButton = function (address) {
+      return A2($Html.input,
+      _U.list([$Html$Attributes.type$("file")
+              ,A3($Html$Events.on,
+              "change",
+              decodeFile,
+              $Signal.message(address))]),
+      _U.list([]));
+   };
+   var MouseWheelEvent = F7(function (a,b,c,d,e,f,g) {
+      return {clientX: a
+             ,clientY: b
+             ,layerX: c
+             ,layerY: d
+             ,ctrlKey: e
+             ,shiftKey: f
+             ,value: g};
+   });
+   var Unexpected = function (a) {
+      return {ctor: "Unexpected",_0: a};
+   };
+   var readFirstAsDataURL = function (_p0) {
+      var _p1 = _p0;
+      var _p2 = _p1._0;
+      return A2($Task.mapError,
+      $Basics.always(Unexpected($Basics.toString(_p2))),
+      $Native$HtmlUtil.readAsDataURL(_p2));
+   };
+   var IdNotFound = function (a) {
+      return {ctor: "IdNotFound",_0: a};
+   };
+   var focus = function (id) {
+      return A2($Task.mapError,
+      $Basics.always(IdNotFound(id)),
+      $Native$HtmlUtil.focus(id));
+   };
+   var blur = function (id) {
+      return A2($Task.mapError,
+      $Basics.always(IdNotFound(id)),
+      $Native$HtmlUtil.blur(id));
+   };
+   return _elm.Util.HtmlUtil.values = {_op: _op
+                                      ,IdNotFound: IdNotFound
+                                      ,Unexpected: Unexpected
+                                      ,MouseWheelEvent: MouseWheelEvent
+                                      ,FileList: FileList
+                                      ,focus: focus
+                                      ,blur: blur
+                                      ,locationHash: locationHash
+                                      ,onMouseMove$: onMouseMove$
+                                      ,onMouseEnter$: onMouseEnter$
+                                      ,onMouseLeave$: onMouseLeave$
+                                      ,onMouseUp$: onMouseUp$
+                                      ,onMouseDown$: onMouseDown$
+                                      ,onDblClick$: onDblClick$
+                                      ,onClick$: onClick$
+                                      ,onInput$: onInput$
+                                      ,onChange$: onChange$
+                                      ,onKeyDown$: onKeyDown$
+                                      ,onKeyDown$$: onKeyDown$$
+                                      ,onContextMenu$: onContextMenu$
+                                      ,onMouseWheel: onMouseWheel
+                                      ,mouseDownDefence: mouseDownDefence
+                                      ,decodeMousePosition: decodeMousePosition
+                                      ,decodeWheelEvent: decodeWheelEvent
+                                      ,readFirstAsDataURL: readFirstAsDataURL
+                                      ,getWidthAndHeightOfImage: getWidthAndHeightOfImage
+                                      ,fileLoadButton: fileLoadButton
+                                      ,decodeFile: decodeFile};
+};

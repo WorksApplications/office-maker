@@ -1,0 +1,31 @@
+Elm.Material = Elm.Material || {};
+Elm.Material.Icons = Elm.Material.Icons || {};
+Elm.Material.Icons.Alert = Elm.Material.Icons.Alert || {};
+Elm.Material.Icons.Alert.make = function (_elm) {
+   "use strict";
+   _elm.Material = _elm.Material || {};
+   _elm.Material.Icons = _elm.Material.Icons || {};
+   _elm.Material.Icons.Alert = _elm.Material.Icons.Alert || {};
+   if (_elm.Material.Icons.Alert.values)
+   return _elm.Material.Icons.Alert.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Color = Elm.Color.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Material$Icons$Internal = Elm.Material.Icons.Internal.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Svg = Elm.Svg.make(_elm);
+   var _op = {};
+   var warning = $Material$Icons$Internal.icon("M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z");
+   var error_outline = $Material$Icons$Internal.icon("M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z");
+   var error = $Material$Icons$Internal.icon("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z");
+   var add_alert = $Material$Icons$Internal.icon("M10.01 21.01c0 1.1.89 1.99 1.99 1.99s1.99-.89 1.99-1.99h-3.98zm8.87-4.19V11c0-3.25-2.25-5.97-5.29-6.69v-.72C13.59 2.71 12.88 2 12 2s-1.59.71-1.59 1.59v.72C7.37 5.03 5.12 7.75 5.12 11v5.82L3 18.94V20h18v-1.06l-2.12-2.12zM16 13.01h-3v3h-2v-3H8V11h3V8h2v3h3v2.01z");
+   return _elm.Material.Icons.Alert.values = {_op: _op
+                                             ,add_alert: add_alert
+                                             ,error: error
+                                             ,error_outline: error_outline
+                                             ,warning: warning};
+};

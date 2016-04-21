@@ -1,0 +1,59 @@
+Elm.Material = Elm.Material || {};
+Elm.Material.Icons = Elm.Material.Icons || {};
+Elm.Material.Icons.Internal = Elm.Material.Icons.Internal || {};
+Elm.Material.Icons.Internal.make = function (_elm) {
+   "use strict";
+   _elm.Material = _elm.Material || {};
+   _elm.Material.Icons = _elm.Material.Icons || {};
+   _elm.Material.Icons.Internal = _elm.Material.Icons.Internal || {};
+   if (_elm.Material.Icons.Internal.values)
+   return _elm.Material.Icons.Internal.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Color = Elm.Color.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Svg = Elm.Svg.make(_elm),
+   $Svg$Attributes = Elm.Svg.Attributes.make(_elm);
+   var _op = {};
+   var toRgbaString = function (color) {
+      var _p0 = $Color.toRgb(color);
+      var red = _p0.red;
+      var green = _p0.green;
+      var blue = _p0.blue;
+      var alpha = _p0.alpha;
+      return A2($Basics._op["++"],
+      "rgba(",
+      A2($Basics._op["++"],
+      $Basics.toString(red),
+      A2($Basics._op["++"],
+      ",",
+      A2($Basics._op["++"],
+      $Basics.toString(green),
+      A2($Basics._op["++"],
+      ",",
+      A2($Basics._op["++"],
+      $Basics.toString(blue),
+      A2($Basics._op["++"],
+      ",",
+      A2($Basics._op["++"],$Basics.toString(alpha),")"))))))));
+   };
+   var icon = F3(function (path,color,size) {
+      var stringColor = toRgbaString(color);
+      var stringSize = $Basics.toString(size);
+      return A2($Svg.svg,
+      _U.list([$Svg$Attributes.width(stringSize)
+              ,$Svg$Attributes.height(stringSize)
+              ,$Svg$Attributes.viewBox("0 0 24 24")]),
+      _U.list([A2($Svg.path,
+      _U.list([$Svg$Attributes.d(path)
+              ,$Svg$Attributes.fill(stringColor)]),
+      _U.list([]))]));
+   });
+   return _elm.Material.Icons.Internal.values = {_op: _op
+                                                ,icon: icon
+                                                ,toRgbaString: toRgbaString};
+};

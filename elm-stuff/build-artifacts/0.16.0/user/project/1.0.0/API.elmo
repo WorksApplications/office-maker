@@ -1,0 +1,168 @@
+Elm.API = Elm.API || {};
+Elm.API.make = function (_elm) {
+   "use strict";
+   _elm.API = _elm.API || {};
+   if (_elm.API.values) return _elm.API.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Equipments = Elm.Equipments.make(_elm),
+   $Floor = Elm.Floor.make(_elm),
+   $Http = Elm.Http.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Util$HtmlUtil = Elm.Util.HtmlUtil.make(_elm),
+   $Util$HttpUtil = Elm.Util.HttpUtil.make(_elm);
+   var _op = {};
+   var saveEditingImage = F2(function (id,filelist) {
+      return A2($Util$HttpUtil.putFile,
+      A2($Basics._op["++"],"/api/v1/image/",id),
+      filelist);
+   });
+   var decodeEquipment = A8($Json$Decode.object7,
+   F7(function (id,x,y,width,height,color,name) {
+      return A4($Equipments.Desk,
+      id,
+      {ctor: "_Tuple4",_0: x,_1: y,_2: width,_3: height},
+      color,
+      name);
+   }),
+   A2($Json$Decode._op[":="],"id",$Json$Decode.string),
+   A2($Json$Decode._op[":="],"x",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"y",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"width",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"height",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"color",$Json$Decode.string),
+   A2($Json$Decode._op[":="],"name",$Json$Decode.string));
+   var decodeFloor = A9($Json$Decode.object8,
+   F8(function (id,
+   name,
+   equipments,
+   width,
+   height,
+   realWidth,
+   realHeight,
+   src) {
+      return {id: id
+             ,name: name
+             ,equipments: equipments
+             ,width: width
+             ,height: height
+             ,imageSource: A2($Maybe.withDefault,
+             $Floor.None,
+             A2($Maybe.map,$Floor.URL,src))
+             ,realSize: A2($Maybe.andThen,
+             realWidth,
+             function (w) {
+                return A2($Maybe.andThen,
+                realHeight,
+                function (h) {
+                   return $Maybe.Just({ctor: "_Tuple2",_0: w,_1: h});
+                });
+             })};
+   }),
+   A2($Json$Decode._op[":="],"id",$Json$Decode.string),
+   A2($Json$Decode._op[":="],"name",$Json$Decode.string),
+   A2($Json$Decode._op[":="],
+   "equipments",
+   $Json$Decode.list(decodeEquipment)),
+   A2($Json$Decode._op[":="],"width",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"height",$Json$Decode.$int),
+   $Json$Decode.maybe(A2($Json$Decode._op[":="],
+   "realWidth",
+   $Json$Decode.$int)),
+   $Json$Decode.maybe(A2($Json$Decode._op[":="],
+   "realHeight",
+   $Json$Decode.$int)),
+   $Json$Decode.maybe(A2($Json$Decode._op[":="],
+   "src",
+   $Json$Decode.string)));
+   var getEditingFloor = function (id) {
+      return A2($Http.get,
+      decodeFloor,
+      A2($Basics._op["++"],
+      "/api/v1/floor/",
+      A2($Basics._op["++"],id,"/edit")));
+   };
+   var getFloor = function (id) {
+      return A2($Http.get,
+      decodeFloor,
+      A2($Basics._op["++"],"/api/v1/floor/",id));
+   };
+   var encodeEquipment = function (_p0) {
+      var _p1 = _p0;
+      return $Json$Encode.object(_U.list([{ctor: "_Tuple2"
+                                          ,_0: "id"
+                                          ,_1: $Json$Encode.string(_p1._0)}
+                                         ,{ctor: "_Tuple2",_0: "type",_1: $Json$Encode.string("desk")}
+                                         ,{ctor: "_Tuple2",_0: "x",_1: $Json$Encode.$int(_p1._1._0)}
+                                         ,{ctor: "_Tuple2",_0: "y",_1: $Json$Encode.$int(_p1._1._1)}
+                                         ,{ctor: "_Tuple2",_0: "width",_1: $Json$Encode.$int(_p1._1._2)}
+                                         ,{ctor: "_Tuple2",_0: "height",_1: $Json$Encode.$int(_p1._1._3)}
+                                         ,{ctor: "_Tuple2",_0: "color",_1: $Json$Encode.string(_p1._2)}
+                                         ,{ctor: "_Tuple2"
+                                          ,_0: "name"
+                                          ,_1: $Json$Encode.string(_p1._3)}]));
+   };
+   var encodeFloor = function (floor) {
+      var src = function () {
+         var _p2 = floor.imageSource;
+         switch (_p2.ctor)
+         {case "LocalFile": return $Json$Encode.string(_p2._0);
+            case "URL": return $Json$Encode.string(_p2._0);
+            default: return $Json$Encode.$null;}
+      }();
+      return $Json$Encode.object(_U.list([{ctor: "_Tuple2"
+                                          ,_0: "id"
+                                          ,_1: $Json$Encode.string(floor.id)}
+                                         ,{ctor: "_Tuple2"
+                                          ,_0: "name"
+                                          ,_1: $Json$Encode.string(floor.name)}
+                                         ,{ctor: "_Tuple2"
+                                          ,_0: "equipments"
+                                          ,_1: $Json$Encode.list(A2($List.map,
+                                          encodeEquipment,
+                                          floor.equipments))}
+                                         ,{ctor: "_Tuple2"
+                                          ,_0: "width"
+                                          ,_1: $Json$Encode.$int(floor.width)}
+                                         ,{ctor: "_Tuple2"
+                                          ,_0: "height"
+                                          ,_1: $Json$Encode.$int(floor.height)}
+                                         ,{ctor: "_Tuple2",_0: "src",_1: src}]));
+   };
+   var serializeFloor = function (floor) {
+      return A2($Json$Encode.encode,0,encodeFloor(floor));
+   };
+   var put = F3(function (decoder,url,body) {
+      var request = {verb: "PUT"
+                    ,headers: _U.list([{ctor: "_Tuple2"
+                                       ,_0: "Content-Type"
+                                       ,_1: "application/json; charset=utf-8"}])
+                    ,url: url
+                    ,body: body};
+      return A2($Http.fromJson,
+      decoder,
+      A2($Http.send,$Http.defaultSettings,request));
+   });
+   var saveEditingFloor = function (floor) {
+      return A3(put,
+      A2($Json$Decode.map,
+      $Basics.always({ctor: "_Tuple0"}),
+      $Json$Decode.value),
+      A2($Basics._op["++"],
+      "/api/v1/floor/",
+      A2($Basics._op["++"],floor.id,"/edit")),
+      $Http.string(serializeFloor(floor)));
+   };
+   return _elm.API.values = {_op: _op
+                            ,saveEditingFloor: saveEditingFloor
+                            ,getEditingFloor: getEditingFloor
+                            ,getFloor: getFloor
+                            ,saveEditingImage: saveEditingImage};
+};

@@ -1,0 +1,280 @@
+Elm.Floor = Elm.Floor || {};
+Elm.Floor.make = function (_elm) {
+   "use strict";
+   _elm.Floor = _elm.Floor || {};
+   if (_elm.Floor.values) return _elm.Floor.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Equipments = Elm.Equipments.make(_elm),
+   $EquipmentsOperation = Elm.EquipmentsOperation.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Util$HtmlUtil = Elm.Util.HtmlUtil.make(_elm);
+   var _op = {};
+   var src = function (model) {
+      var _p0 = model.imageSource;
+      switch (_p0.ctor)
+      {case "LocalFile": return $Maybe.Just(_p0._2);
+         case "URL": return $Maybe.Just(A2($Basics._op["++"],
+           "/images/",
+           _p0._0));
+         default: return $Maybe.Nothing;}
+   };
+   var setEquipments = F2(function (equipments,model) {
+      return _U.update(model,{equipments: equipments});
+   });
+   var addEquipments = F2(function (equipments,model) {
+      return A2(setEquipments,
+      A2($Basics._op["++"],model.equipments,equipments),
+      model);
+   });
+   var equipments = function (model) {
+      return model.equipments;
+   };
+   var pixelToReal = function (pixel) {
+      return $Basics.floor($Basics.toFloat(pixel) / 80);
+   };
+   var realSize = function (model) {
+      var _p1 = model.realSize;
+      if (_p1.ctor === "Just") {
+            return {ctor: "_Tuple2",_0: _p1._0._0,_1: _p1._0._1};
+         } else {
+            return {ctor: "_Tuple2"
+                   ,_0: pixelToReal(model.width)
+                   ,_1: pixelToReal(model.height)};
+         }
+   };
+   var realToPixel = function (real) {
+      return $Basics.floor($Basics.toFloat(real) * 80);
+   };
+   var size = function (model) {
+      var _p2 = model.realSize;
+      if (_p2.ctor === "Just") {
+            return {ctor: "_Tuple2"
+                   ,_0: realToPixel(_p2._0._0)
+                   ,_1: realToPixel(_p2._0._1)};
+         } else {
+            return {ctor: "_Tuple2",_0: model.width,_1: model.height};
+         }
+   };
+   var width = function (model) {
+      return $Basics.fst(size(model));
+   };
+   var height = function (model) {
+      return $Basics.snd(size(model));
+   };
+   var UseURL = {ctor: "UseURL"};
+   var useURL = UseURL;
+   var ChangeRealHeight = function (a) {
+      return {ctor: "ChangeRealHeight",_0: a};
+   };
+   var changeRealHeight = ChangeRealHeight;
+   var ChangeRealWidth = function (a) {
+      return {ctor: "ChangeRealWidth",_0: a};
+   };
+   var changeRealWidth = ChangeRealWidth;
+   var SetLocalFile = F3(function (a,b,c) {
+      return {ctor: "SetLocalFile",_0: a,_1: b,_2: c};
+   });
+   var setLocalFile = SetLocalFile;
+   var ChangeName = function (a) {
+      return {ctor: "ChangeName",_0: a};
+   };
+   var changeName = ChangeName;
+   var ChangeEquipmentName = F2(function (a,b) {
+      return {ctor: "ChangeEquipmentName",_0: a,_1: b};
+   });
+   var changeEquipmentName = ChangeEquipmentName;
+   var ChangeEquipmentColor = F2(function (a,b) {
+      return {ctor: "ChangeEquipmentColor",_0: a,_1: b};
+   });
+   var changeEquipmentColor = ChangeEquipmentColor;
+   var Rotate = function (a) {    return {ctor: "Rotate",_0: a};};
+   var rotate = Rotate;
+   var Delete = function (a) {    return {ctor: "Delete",_0: a};};
+   var $delete = Delete;
+   var Paste = F2(function (a,b) {
+      return {ctor: "Paste",_0: a,_1: b};
+   });
+   var paste = Paste;
+   var Move = F3(function (a,b,c) {
+      return {ctor: "Move",_0: a,_1: b,_2: c};
+   });
+   var move = Move;
+   var Create = function (a) {    return {ctor: "Create",_0: a};};
+   var create = Create;
+   var None = {ctor: "None"};
+   var init = function (id) {
+      return {id: id
+             ,name: "1F"
+             ,equipments: _U.list([])
+             ,width: 800
+             ,height: 600
+             ,realSize: $Maybe.Nothing
+             ,imageSource: None};
+   };
+   var URL = function (a) {    return {ctor: "URL",_0: a};};
+   var LocalFile = F3(function (a,b,c) {
+      return {ctor: "LocalFile",_0: a,_1: b,_2: c};
+   });
+   var setLocalFile$ = F4(function (id,fileList,dataURL,model) {
+      var _p3 = $Util$HtmlUtil.getWidthAndHeightOfImage(dataURL);
+      var width = _p3._0;
+      var height = _p3._1;
+      return _U.update(model,
+      {width: width
+      ,height: height
+      ,imageSource: A3(LocalFile,id,fileList,dataURL)});
+   });
+   var update = F2(function (action,model) {
+      var _p4 = action;
+      switch (_p4.ctor)
+      {case "Create": var create = function (_p5) {
+              var _p6 = _p5;
+              return A4($Equipments.init,
+              _p6._0,
+              {ctor: "_Tuple4"
+              ,_0: _p6._1._0
+              ,_1: _p6._1._1
+              ,_2: _p6._1._2
+              ,_3: _p6._1._3},
+              _p6._2,
+              _p6._3);
+           };
+           return A2(addEquipments,A2($List.map,create,_p4._0),model);
+         case "Move": return A2(setEquipments,
+           A4($EquipmentsOperation.moveEquipments,
+           _p4._1,
+           {ctor: "_Tuple2",_0: _p4._2._0,_1: _p4._2._1},
+           _p4._0,
+           equipments(model)),
+           model);
+         case "Paste": return A2(setEquipments,
+           A2($Basics._op["++"],
+           model.equipments,
+           A3($EquipmentsOperation.pasteEquipments,
+           {ctor: "_Tuple2",_0: _p4._1._0,_1: _p4._1._1},
+           _p4._0,
+           equipments(model))),
+           model);
+         case "Delete": return A2(setEquipments,
+           A2($List.filter,
+           function (equipment) {
+              return $Basics.not(A2($List.member,
+              $EquipmentsOperation.idOf(equipment),
+              _p4._0));
+           },
+           equipments(model)),
+           model);
+         case "Rotate": return A2(setEquipments,
+           A3($EquipmentsOperation.partiallyChange,
+           $EquipmentsOperation.rotate,
+           _U.list([_p4._0]),
+           equipments(model)),
+           model);
+         case "ChangeEquipmentColor":
+         var newEquipments = A3($EquipmentsOperation.partiallyChange,
+           $EquipmentsOperation.changeColor(_p4._1),
+           _p4._0,
+           equipments(model));
+           return A2(setEquipments,newEquipments,model);
+         case "ChangeEquipmentName": return A2(setEquipments,
+           A2($EquipmentsOperation.commitInputName,
+           {ctor: "_Tuple2",_0: _p4._0,_1: _p4._1},
+           equipments(model)),
+           model);
+         case "ChangeName": return _U.update(model,{name: _p4._0});
+         case "SetLocalFile": return A4(setLocalFile$,
+           _p4._0,
+           _p4._1,
+           _p4._2,
+           model);
+         case "ChangeRealWidth": var _p8 = _p4._0;
+           var newRealSize = function () {
+              var _p7 = model.realSize;
+              if (_p7.ctor === "Just") {
+                    return $Maybe.Just({ctor: "_Tuple2",_0: _p8,_1: _p7._0._1});
+                 } else {
+                    return $Maybe.Just({ctor: "_Tuple2"
+                                       ,_0: _p8
+                                       ,_1: pixelToReal(model.height)});
+                 }
+           }();
+           return _U.update(model,{realSize: newRealSize});
+         case "ChangeRealHeight": var _p10 = _p4._0;
+           var newRealSize = function () {
+              var _p9 = model.realSize;
+              if (_p9.ctor === "Just") {
+                    return $Maybe.Just({ctor: "_Tuple2",_0: _p9._0._0,_1: _p10});
+                 } else {
+                    return $Maybe.Just({ctor: "_Tuple2"
+                                       ,_0: pixelToReal(model.width)
+                                       ,_1: _p10});
+                 }
+           }();
+           return _U.update(model,{realSize: newRealSize});
+         default: return _U.update(model,
+           {imageSource: function () {
+              var _p11 = model.imageSource;
+              if (_p11.ctor === "LocalFile") {
+                    return URL(_p11._0);
+                 } else {
+                    return model.imageSource;
+                 }
+           }()});}
+   });
+   var Model = F7(function (a,b,c,d,e,f,g) {
+      return {id: a
+             ,name: b
+             ,equipments: c
+             ,width: d
+             ,height: e
+             ,realSize: f
+             ,imageSource: g};
+   });
+   return _elm.Floor.values = {_op: _op
+                              ,Model: Model
+                              ,LocalFile: LocalFile
+                              ,URL: URL
+                              ,None: None
+                              ,init: init
+                              ,Create: Create
+                              ,Move: Move
+                              ,Paste: Paste
+                              ,Delete: Delete
+                              ,Rotate: Rotate
+                              ,ChangeEquipmentColor: ChangeEquipmentColor
+                              ,ChangeEquipmentName: ChangeEquipmentName
+                              ,ChangeName: ChangeName
+                              ,SetLocalFile: SetLocalFile
+                              ,ChangeRealWidth: ChangeRealWidth
+                              ,ChangeRealHeight: ChangeRealHeight
+                              ,UseURL: UseURL
+                              ,create: create
+                              ,move: move
+                              ,paste: paste
+                              ,$delete: $delete
+                              ,rotate: rotate
+                              ,changeEquipmentColor: changeEquipmentColor
+                              ,changeEquipmentName: changeEquipmentName
+                              ,changeName: changeName
+                              ,setLocalFile: setLocalFile
+                              ,changeRealWidth: changeRealWidth
+                              ,changeRealHeight: changeRealHeight
+                              ,useURL: useURL
+                              ,update: update
+                              ,realToPixel: realToPixel
+                              ,pixelToReal: pixelToReal
+                              ,size: size
+                              ,width: width
+                              ,height: height
+                              ,realSize: realSize
+                              ,equipments: equipments
+                              ,setEquipments: setEquipments
+                              ,addEquipments: addEquipments
+                              ,setLocalFile$: setLocalFile$
+                              ,src: src};
+};

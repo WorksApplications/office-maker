@@ -1,0 +1,58 @@
+Elm.Util = Elm.Util || {};
+Elm.Util.HtmlEvent = Elm.Util.HtmlEvent || {};
+Elm.Util.HtmlEvent.make = function (_elm) {
+   "use strict";
+   _elm.Util = _elm.Util || {};
+   _elm.Util.HtmlEvent = _elm.Util.HtmlEvent || {};
+   if (_elm.Util.HtmlEvent.values)
+   return _elm.Util.HtmlEvent.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var decodeKeyboardEvent = A4($Json$Decode.object3,
+   F3(function (keyCode,ctrlKey,shiftKey) {
+      return {keyCode: keyCode
+             ,ctrlKey: ctrlKey
+             ,shiftKey: shiftKey};
+   }),
+   A2($Json$Decode._op[":="],"keyCode",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"ctrlKey",$Json$Decode.bool),
+   A2($Json$Decode._op[":="],"shiftKey",$Json$Decode.bool));
+   var decodeMousePosition = A7($Json$Decode.object6,
+   F6(function (clientX,clientY,layerX,layerY,ctrl,shift) {
+      return {clientX: clientX
+             ,clientY: clientY
+             ,layerX: layerX
+             ,layerY: layerY
+             ,ctrlKey: ctrl
+             ,shiftKey: shift};
+   }),
+   A2($Json$Decode._op[":="],"clientX",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"clientY",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"layerX",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"layerY",$Json$Decode.$int),
+   A2($Json$Decode._op[":="],"ctrlKey",$Json$Decode.bool),
+   A2($Json$Decode._op[":="],"shiftKey",$Json$Decode.bool));
+   var KeyboardEvent = F3(function (a,b,c) {
+      return {keyCode: a,ctrlKey: b,shiftKey: c};
+   });
+   var MouseEvent = F6(function (a,b,c,d,e,f) {
+      return {clientX: a
+             ,clientY: b
+             ,layerX: c
+             ,layerY: d
+             ,ctrlKey: e
+             ,shiftKey: f};
+   });
+   return _elm.Util.HtmlEvent.values = {_op: _op
+                                       ,MouseEvent: MouseEvent
+                                       ,KeyboardEvent: KeyboardEvent
+                                       ,decodeMousePosition: decodeMousePosition
+                                       ,decodeKeyboardEvent: decodeKeyboardEvent};
+};

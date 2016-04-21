@@ -1,0 +1,106 @@
+Elm.Keys = Elm.Keys || {};
+Elm.Keys.make = function (_elm) {
+   "use strict";
+   _elm.Keys = _elm.Keys || {};
+   if (_elm.Keys.values) return _elm.Keys.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Char = Elm.Char.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $HtmlEvent = Elm.HtmlEvent.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $Keyboard = Elm.Keyboard.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$Keys = Elm.Native.Keys.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var initKeyboardEvent = {keyCode: -1
+                           ,ctrlKey: false
+                           ,shiftKey: false};
+   var downs_ = $Native$Keys.downs;
+   var downs = A3($Signal.filterMap,
+   function (value) {
+      var _p0 = A2($Json$Decode.decodeValue,
+      $HtmlEvent.decodeKeyboardEvent,
+      value);
+      if (_p0.ctor === "Ok") {
+            return $Maybe.Just(_p0._0);
+         } else {
+            return $Maybe.Nothing;
+         }
+   },
+   initKeyboardEvent,
+   downs_);
+   var update = F2(function (action,model) {
+      var _p1 = action;
+      switch (_p1.ctor)
+      {case "KeyCtrl": return _U.update(model,{ctrl: _p1._0});
+         case "KeyShift": return _U.update(model,{shift: _p1._0});
+         default: return model;}
+   });
+   var init = {ctrl: false,shift: false};
+   var Model = F2(function (a,b) {    return {ctrl: a,shift: b};});
+   var Other = {ctor: "Other"};
+   var KeyDownArrow = {ctor: "KeyDownArrow"};
+   var KeyRightArrow = {ctor: "KeyRightArrow"};
+   var KeyUpArrow = {ctor: "KeyUpArrow"};
+   var KeyLeftArrow = {ctor: "KeyLeftArrow"};
+   var KeyZ = {ctor: "KeyZ"};
+   var KeyY = {ctor: "KeyY"};
+   var KeyX = function (a) {    return {ctor: "KeyX",_0: a};};
+   var KeyV = function (a) {    return {ctor: "KeyV",_0: a};};
+   var KeyC = function (a) {    return {ctor: "KeyC",_0: a};};
+   var KeyDel = function (a) {    return {ctor: "KeyDel",_0: a};};
+   var KeyShift = function (a) {
+      return {ctor: "KeyShift",_0: a};
+   };
+   var KeyCtrl = function (a) {
+      return {ctor: "KeyCtrl",_0: a};
+   };
+   var inputs = _U.list([A2($Signal.map,KeyCtrl,$Keyboard.ctrl)
+                        ,A2($Signal.map,KeyShift,$Keyboard.shift)
+                        ,A2($Signal.map,KeyDel,$Keyboard.isDown(46))
+                        ,A2($Signal.map,
+                        KeyC,
+                        $Keyboard.isDown($Char.toCode(_U.chr("C"))))
+                        ,A2($Signal.map,
+                        KeyV,
+                        $Keyboard.isDown($Char.toCode(_U.chr("V"))))
+                        ,A2($Signal.map,
+                        KeyX,
+                        $Keyboard.isDown($Char.toCode(_U.chr("X"))))
+                        ,A2($Signal.map,
+                        function (e) {
+                           return _U.eq(e.keyCode,
+                           $Char.toCode(_U.chr("Y"))) ? KeyY : _U.eq(e.keyCode,
+                           $Char.toCode(_U.chr("Z"))) ? KeyZ : _U.eq(e.keyCode,
+                           37) ? KeyLeftArrow : _U.eq(e.keyCode,
+                           38) ? KeyUpArrow : _U.eq(e.keyCode,
+                           39) ? KeyRightArrow : _U.eq(e.keyCode,
+                           40) ? KeyDownArrow : Other;
+                        },
+                        downs)]);
+   return _elm.Keys.values = {_op: _op
+                             ,KeyCtrl: KeyCtrl
+                             ,KeyShift: KeyShift
+                             ,KeyDel: KeyDel
+                             ,KeyC: KeyC
+                             ,KeyV: KeyV
+                             ,KeyX: KeyX
+                             ,KeyY: KeyY
+                             ,KeyZ: KeyZ
+                             ,KeyLeftArrow: KeyLeftArrow
+                             ,KeyUpArrow: KeyUpArrow
+                             ,KeyRightArrow: KeyRightArrow
+                             ,KeyDownArrow: KeyDownArrow
+                             ,Other: Other
+                             ,Model: Model
+                             ,init: init
+                             ,inputs: inputs
+                             ,update: update
+                             ,downs_: downs_
+                             ,downs: downs
+                             ,initKeyboardEvent: initKeyboardEvent};
+};

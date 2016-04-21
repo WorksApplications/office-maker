@@ -1,0 +1,24 @@
+Elm.Util = Elm.Util || {};
+Elm.Util.HttpUtil = Elm.Util.HttpUtil || {};
+Elm.Util.HttpUtil.make = function (_elm) {
+   "use strict";
+   _elm.Util = _elm.Util || {};
+   _elm.Util.HttpUtil = _elm.Util.HttpUtil || {};
+   if (_elm.Util.HttpUtil.values) return _elm.Util.HttpUtil.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$HttpUtil = Elm.Native.HttpUtil.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Util$HtmlUtil = Elm.Util.HtmlUtil.make(_elm);
+   var _op = {};
+   var putFile = F2(function (url,_p0) {
+      var _p1 = _p0;
+      return A2($Native$HttpUtil.putFile,url,_p1._0);
+   });
+   return _elm.Util.HttpUtil.values = {_op: _op,putFile: putFile};
+};

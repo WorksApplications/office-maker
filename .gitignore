@@ -1,8 +1,4 @@
-elm-stuff
-node_modules
-index.js
 test/public
-*.ttf
 data
 repl-temp-*
 *.ods*

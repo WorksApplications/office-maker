@@ -1,0 +1,1085 @@
+Elm.Model = Elm.Model || {};
+Elm.Model.make = function (_elm) {
+   "use strict";
+   _elm.Model = _elm.Model || {};
+   if (_elm.Model.values) return _elm.Model.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $API = Elm.API.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
+   $Equipments = Elm.Equipments.make(_elm),
+   $EquipmentsOperation = Elm.EquipmentsOperation.make(_elm),
+   $Floor = Elm.Floor.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Prototypes = Elm.Prototypes.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Scale = Elm.Scale.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Util$EffectsUtil = Elm.Util.EffectsUtil.make(_elm),
+   $Util$HtmlUtil = Elm.Util.HtmlUtil.make(_elm),
+   $Util$IdGenerator = Elm.Util.IdGenerator.make(_elm),
+   $Util$Keys = Elm.Util.Keys.make(_elm),
+   $Util$UndoRedo = Elm.Util.UndoRedo.make(_elm),
+   $Window = Elm.Window.make(_elm);
+   var _op = {};
+   var stampCandidates = function (model) {
+      var _p0 = model.editMode;
+      if (_p0.ctor === "Stamp") {
+            var _p1 = A2($Maybe.withDefault,
+            {ctor: "_Tuple2",_0: 0,_1: 0},
+            model.pos);
+            var x2 = _p1._0;
+            var y2 = _p1._1;
+            var _p2 = model.offset;
+            var offsetX = _p2._0;
+            var offsetY = _p2._1;
+            var _p3 = {ctor: "_Tuple2"
+                      ,_0: A2($Scale.screenToImage,model.scale,x2) - offsetX
+                      ,_1: A2($Scale.screenToImage,model.scale,y2) - offsetY};
+            var x2$ = _p3._0;
+            var y2$ = _p3._1;
+            var prototype = $Prototypes.selectedPrototype(model.prototypes);
+            var _p4 = prototype;
+            var prototypeId = _p4._0;
+            var color = _p4._1;
+            var name = _p4._2;
+            var deskSize = _p4._3;
+            var _p5 = model.draggingContext;
+            if (_p5.ctor === "StampScreenPos" && _p5._0.ctor === "_Tuple2")
+            {
+                  var _p6 = {ctor: "_Tuple2"
+                            ,_0: A2($Scale.screenToImage,model.scale,_p5._0._0) - offsetX
+                            ,_1: A2($Scale.screenToImage,model.scale,_p5._0._1) - offsetY};
+                  var x1$ = _p6._0;
+                  var y1$ = _p6._1;
+                  return A4($Prototypes.stampCandidatesOnDragging,
+                  model.gridSize,
+                  prototype,
+                  {ctor: "_Tuple2",_0: x1$,_1: y1$},
+                  {ctor: "_Tuple2",_0: x2$,_1: y2$});
+               } else {
+                  var _p7 = deskSize;
+                  var deskWidth = _p7._0;
+                  var deskHeight = _p7._1;
+                  var _p8 = A2($EquipmentsOperation.fitToGrid,
+                  model.gridSize,
+                  {ctor: "_Tuple2"
+                  ,_0: x2$ - (deskWidth / 2 | 0)
+                  ,_1: y2$ - (deskHeight / 2 | 0)});
+                  var left = _p8._0;
+                  var top = _p8._1;
+                  return _U.list([{ctor: "_Tuple2"
+                                  ,_0: {ctor: "_Tuple4"
+                                       ,_0: prototypeId
+                                       ,_1: color
+                                       ,_2: name
+                                       ,_3: {ctor: "_Tuple2",_0: deskWidth,_1: deskHeight}}
+                                  ,_1: {ctor: "_Tuple2",_0: left,_1: top}}]);
+               }
+         } else {
+            return _U.list([]);
+         }
+   };
+   var selectedEquipments = function (model) {
+      return A2($List.filterMap,
+      function (id) {
+         return A2($EquipmentsOperation.findEquipmentById,
+         $Util$UndoRedo.data(model.floor).equipments,
+         id);
+      },
+      model.selectedEquipments);
+   };
+   var primarySelectedEquipment = function (model) {
+      var _p9 = model.selectedEquipments;
+      if (_p9.ctor === "::") {
+            return A2($EquipmentsOperation.findEquipmentById,
+            $Floor.equipments($Util$UndoRedo.data(model.floor)),
+            _p9._0);
+         } else {
+            return $Maybe.Nothing;
+         }
+   };
+   var isSelected = F2(function (model,equipment) {
+      return A2($List.member,
+      $EquipmentsOperation.idOf(equipment),
+      model.selectedEquipments);
+   });
+   var shiftSelectionToward = F2(function (direction,model) {
+      var selected = selectedEquipments(model);
+      var floor = $Util$UndoRedo.data(model.floor);
+      var _p10 = selected;
+      if (_p10.ctor === "::") {
+            var _p12 = _p10._0;
+            var toBeSelected = function () {
+               if (model.keys.shift) return A2($List.map,
+                  $EquipmentsOperation.idOf,
+                  A4($EquipmentsOperation.expandOrShrink,
+                  direction,
+                  _p12,
+                  selected,
+                  floor.equipments)); else {
+                     var _p11 = A3($EquipmentsOperation.nearest,
+                     direction,
+                     _p12,
+                     floor.equipments);
+                     if (_p11.ctor === "Just") {
+                           var newEquipments = _U.list([_p11._0]);
+                           return A2($List.map,$EquipmentsOperation.idOf,newEquipments);
+                        } else {
+                           return model.selectedEquipments;
+                        }
+                  }
+            }();
+            return _U.update(model,{selectedEquipments: toBeSelected});
+         } else {
+            return model;
+         }
+   });
+   var updateByMoveEquipmentEnd = F6(function (id,
+   _p14,
+   _p13,
+   ctrlKey,
+   shiftKey,
+   model) {
+      var _p15 = _p14;
+      var _p16 = _p13;
+      var shift = A2($Scale.screenToImageForPosition,
+      model.scale,
+      {ctor: "_Tuple2",_0: _p16._0 - _p15._0,_1: _p16._1 - _p15._1});
+      return !_U.eq(shift,
+      {ctor: "_Tuple2",_0: 0,_1: 0}) ? _U.update(model,
+      {floor: A2($Util$UndoRedo.commit,
+      model.floor,
+      A3($Floor.move,
+      model.selectedEquipments,
+      model.gridSize,
+      shift))}) : $Basics.not(ctrlKey) && $Basics.not(shiftKey) ? _U.update(model,
+      {selectedEquipments: _U.list([id])}) : model;
+   });
+   var updateByKeyAction = F2(function (action,model) {
+      var _p17 = {ctor: "_Tuple2",_0: model.keys.ctrl,_1: action};
+      _v7_10: do {
+         if (_p17.ctor === "_Tuple2") {
+               switch (_p17._1.ctor)
+               {case "KeyC": if (_p17._0 === true && _p17._1._0 === true) {
+                          var newModel = _U.update(model,
+                          {copiedEquipments: selectedEquipments(model)});
+                          return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                       } else {
+                          break _v7_10;
+                       }
+                  case "KeyV": if (_p17._0 === true && _p17._1._0 === true) {
+                          var _p18 = A2($Util$IdGenerator.zipWithNewIds,
+                          model.seed,
+                          model.copiedEquipments);
+                          var copiedIdsWithNewIds = _p18._0;
+                          var newSeed = _p18._1;
+                          var selected = A2($List.map,$Basics.snd,copiedIdsWithNewIds);
+                          var base = function () {
+                             var _p19 = model.selectorRect;
+                             if (_p19.ctor === "Just") {
+                                   return {ctor: "_Tuple2",_0: _p19._0._0,_1: _p19._0._1};
+                                } else {
+                                   return {ctor: "_Tuple2",_0: 0,_1: 0};
+                                }
+                          }();
+                          var model$ = _U.update(model,
+                          {floor: A2($Util$UndoRedo.commit,
+                          model.floor,
+                          A2($Floor.paste,copiedIdsWithNewIds,base))
+                          ,seed: newSeed});
+                          var newModel = _U.update(model$,
+                          {selectedEquipments: selected,selectorRect: $Maybe.Nothing});
+                          return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                       } else {
+                          break _v7_10;
+                       }
+                  case "KeyX": if (_p17._0 === true && _p17._1._0 === true) {
+                          var newModel = _U.update(model,
+                          {floor: A2($Util$UndoRedo.commit,
+                          model.floor,
+                          $Floor.$delete(model.selectedEquipments))
+                          ,copiedEquipments: selectedEquipments(model)
+                          ,selectedEquipments: _U.list([])});
+                          return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                       } else {
+                          break _v7_10;
+                       }
+                  case "KeyY": if (_p17._0 === true) {
+                          var newModel = _U.update(model,
+                          {floor: $Util$UndoRedo.redo(model.floor)});
+                          return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                       } else {
+                          break _v7_10;
+                       }
+                  case "KeyZ": if (_p17._0 === true) {
+                          var newModel = _U.update(model,
+                          {floor: $Util$UndoRedo.undo(model.floor)});
+                          return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                       } else {
+                          break _v7_10;
+                       }
+                  case "KeyUpArrow": var newModel = A2(shiftSelectionToward,
+                    $EquipmentsOperation.Up,
+                    model);
+                    return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                  case "KeyDownArrow": var newModel = A2(shiftSelectionToward,
+                    $EquipmentsOperation.Down,
+                    model);
+                    return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                  case "KeyLeftArrow": var newModel = A2(shiftSelectionToward,
+                    $EquipmentsOperation.Left,
+                    model);
+                    return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                  case "KeyRightArrow": var newModel = A2(shiftSelectionToward,
+                    $EquipmentsOperation.Right,
+                    model);
+                    return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                  case "KeyDel": if (_p17._1._0 === true) {
+                          var newModel = _U.update(model,
+                          {floor: A2($Util$UndoRedo.commit,
+                          model.floor,
+                          $Floor.$delete(model.selectedEquipments))});
+                          return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                       } else {
+                          break _v7_10;
+                       }
+                  default: break _v7_10;}
+            } else {
+               break _v7_10;
+            }
+      } while (false);
+      return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+   });
+   var debug = false;
+   var debugAction = function (action) {
+      if (debug) {
+            var _p20 = action;
+            switch (_p20.ctor)
+            {case "MoveOnCanvas": return action;
+               case "GotDataURL": return action;
+               default: return A2($Debug.log,"action",action);}
+         } else return action;
+   };
+   var Error = function (a) {    return {ctor: "Error",_0: a};};
+   var Rotate = function (a) {    return {ctor: "Rotate",_0: a};};
+   var InputFloorRealHeight = function (a) {
+      return {ctor: "InputFloorRealHeight",_0: a};
+   };
+   var InputFloorRealWidth = function (a) {
+      return {ctor: "InputFloorRealWidth",_0: a};
+   };
+   var InputFloorName = function (a) {
+      return {ctor: "InputFloorName",_0: a};
+   };
+   var RegisterPrototype = function (a) {
+      return {ctor: "RegisterPrototype",_0: a};
+   };
+   var PrototypesAction = function (a) {
+      return {ctor: "PrototypesAction",_0: a};
+   };
+   var ScaleEnd = {ctor: "ScaleEnd"};
+   var GotDataURL = F3(function (a,b,c) {
+      return {ctor: "GotDataURL",_0: a,_1: b,_2: c};
+   });
+   var LoadFile = function (a) {
+      return {ctor: "LoadFile",_0: a};
+   };
+   var ChangeMode = function (a) {
+      return {ctor: "ChangeMode",_0: a};
+   };
+   var MouseWheel = function (a) {
+      return {ctor: "MouseWheel",_0: a};
+   };
+   var WindowDimensions = function (a) {
+      return {ctor: "WindowDimensions",_0: a};
+   };
+   var SelectIsland = F2(function (a,b) {
+      return {ctor: "SelectIsland",_0: a,_1: b};
+   });
+   var ShowContextMenuOnEquipment = F2(function (a,b) {
+      return {ctor: "ShowContextMenuOnEquipment",_0: a,_1: b};
+   });
+   var KeydownOnNameInput = function (a) {
+      return {ctor: "KeydownOnNameInput",_0: a};
+   };
+   var InputName = F2(function (a,b) {
+      return {ctor: "InputName",_0: a,_1: b};
+   });
+   var SelectColor = F2(function (a,b) {
+      return {ctor: "SelectColor",_0: a,_1: b};
+   });
+   var KeysAction = function (a) {
+      return {ctor: "KeysAction",_0: a};
+   };
+   var StartEditEquipment = F2(function (a,b) {
+      return {ctor: "StartEditEquipment",_0: a,_1: b};
+   });
+   var MouseDownOnEquipment = F2(function (a,b) {
+      return {ctor: "MouseDownOnEquipment",_0: a,_1: b};
+   });
+   var MouseDownOnCanvas = function (a) {
+      return {ctor: "MouseDownOnCanvas",_0: a};
+   };
+   var MouseUpOnCanvas = function (a) {
+      return {ctor: "MouseUpOnCanvas",_0: a};
+   };
+   var LeaveCanvas = {ctor: "LeaveCanvas"};
+   var EnterCanvas = {ctor: "EnterCanvas"};
+   var MoveOnCanvas = function (a) {
+      return {ctor: "MoveOnCanvas",_0: a};
+   };
+   var FloorSaved = {ctor: "FloorSaved"};
+   var FloorLoaded = function (a) {
+      return {ctor: "FloorLoaded",_0: a};
+   };
+   var loadFloorEffects = function (hash) {
+      var floorId = A2($String.dropLeft,1,hash);
+      var task = _U.cmp($String.length(floorId),
+      0) > 0 ? A2($Task.onError,
+      $API.getEditingFloor(floorId),
+      function (e) {
+         return $Task.succeed($Floor.init(floorId));
+      }) : $Task.succeed($Floor.init("-1"));
+      return A2($Util$EffectsUtil.fromTaskWithNoError,
+      FloorLoaded,
+      task);
+   };
+   var HashChange = function (a) {
+      return {ctor: "HashChange",_0: a};
+   };
+   var Init = {ctor: "Init"};
+   var NoOp = {ctor: "NoOp"};
+   var gridSize = 8;
+   var inputs = A2($Basics._op["++"],
+   A2($List.map,$Signal.map(KeysAction),$Util$Keys.inputs),
+   _U.list([A2($Signal.map,WindowDimensions,$Window.dimensions)
+           ,A2($Signal.map,HashChange,$Util$HtmlUtil.locationHash)]));
+   var StampScreenPos = function (a) {
+      return {ctor: "StampScreenPos",_0: a};
+   };
+   var ShiftOffsetPrevScreenPos = {ctor: "ShiftOffsetPrevScreenPos"};
+   var Selector = {ctor: "Selector"};
+   var MoveEquipment = F2(function (a,b) {
+      return {ctor: "MoveEquipment",_0: a,_1: b};
+   });
+   var None = {ctor: "None"};
+   var Stamp = {ctor: "Stamp"};
+   var Pen = {ctor: "Pen"};
+   var Select = {ctor: "Select"};
+   var Equipment = F2(function (a,b) {
+      return {ctor: "Equipment",_0: a,_1: b};
+   });
+   var NoContextMenu = {ctor: "NoContextMenu"};
+   var init = F3(function (randomSeed,initialSize,initialHash) {
+      return {ctor: "_Tuple2"
+             ,_0: {seed: $Util$IdGenerator.init(randomSeed)
+                  ,pos: $Maybe.Nothing
+                  ,draggingContext: None
+                  ,selectedEquipments: _U.list([])
+                  ,copiedEquipments: _U.list([])
+                  ,editingEquipment: $Maybe.Nothing
+                  ,gridSize: gridSize
+                  ,selectorRect: $Maybe.Nothing
+                  ,keys: $Util$Keys.init
+                  ,editMode: Select
+                  ,colorPalette: _U.list(["#ed9"
+                                         ,"#b8f"
+                                         ,"#fa9"
+                                         ,"#8bd"
+                                         ,"#af6"
+                                         ,"#6df"])
+                  ,contextMenu: NoContextMenu
+                  ,floor: $Util$UndoRedo.init({data: $Floor.init("-1")
+                                              ,update: $Floor.update})
+                  ,windowDimensions: initialSize
+                  ,scale: $Scale.init
+                  ,offset: {ctor: "_Tuple2",_0: 35,_1: 35}
+                  ,scaling: false
+                  ,prototypes: $Prototypes.init
+                  ,errors: _U.list([])
+                  ,hash: initialHash
+                  ,inputFloorRealWidth: ""
+                  ,inputFloorRealHeight: ""}
+             ,_1: $Effects.task($Task.succeed(Init))};
+   });
+   var HtmlError = function (a) {
+      return {ctor: "HtmlError",_0: a};
+   };
+   var focusEffect = function (id) {
+      return A3($Util$EffectsUtil.fromTask,
+      function (_p21) {
+         return Error(HtmlError(_p21));
+      },
+      $Basics.always(NoOp),
+      $Util$HtmlUtil.focus(id));
+   };
+   var blurEffect = function (id) {
+      return A3($Util$EffectsUtil.fromTask,
+      function (_p22) {
+         return Error(HtmlError(_p22));
+      },
+      $Basics.always(NoOp),
+      $Util$HtmlUtil.blur(id));
+   };
+   var APIError = function (a) {
+      return {ctor: "APIError",_0: a};
+   };
+   var saveFloorEffects = function (floor) {
+      var secondTask = $API.saveEditingFloor(floor);
+      var firstTask = function () {
+         var _p23 = floor.imageSource;
+         if (_p23.ctor === "LocalFile") {
+               return A2($API.saveEditingImage,_p23._0,_p23._1);
+            } else {
+               return $Task.succeed({ctor: "_Tuple0"});
+            }
+      }();
+      return A3($Util$EffectsUtil.fromTask,
+      function (_p24) {
+         return Error(APIError(_p24));
+      },
+      $Basics.always(FloorSaved),
+      A2($Task.andThen,firstTask,$Basics.always(secondTask)));
+   };
+   var update = F2(function (action,model) {
+      var _p25 = debugAction(action);
+      switch (_p25.ctor)
+      {case "NoOp": return {ctor: "_Tuple2"
+                           ,_0: model
+                           ,_1: $Effects.none};
+         case "HashChange": var _p26 = _p25._0;
+           return {ctor: "_Tuple2"
+                  ,_0: _U.update(model,{hash: _p26})
+                  ,_1: loadFloorEffects(_p26)};
+         case "Init": return {ctor: "_Tuple2"
+                             ,_0: model
+                             ,_1: loadFloorEffects(model.hash)};
+         case "FloorLoaded": var _p28 = _p25._0;
+           var _p27 = $Floor.realSize(_p28);
+           var realWidth = _p27._0;
+           var realHeight = _p27._1;
+           var newModel = _U.update(model,
+           {floor: $Util$UndoRedo.init({data: _p28,update: $Floor.update})
+           ,inputFloorRealWidth: $Basics.toString(realWidth)
+           ,inputFloorRealHeight: $Basics.toString(realHeight)});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "FloorSaved": var newModel = _U.update(model,
+           {floor: A2($Util$UndoRedo.commit,model.floor,$Floor.useURL)});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "MoveOnCanvas": var _p33 = _p25._0;
+           var _p29 = {ctor: "_Tuple2"
+                      ,_0: _p33.clientX
+                      ,_1: _p33.clientY - 37};
+           var x = _p29._0;
+           var y = _p29._1;
+           var model$ = _U.update(model,
+           {pos: $Maybe.Just({ctor: "_Tuple2",_0: x,_1: y})});
+           var newModel = function () {
+              var _p30 = {ctor: "_Tuple2"
+                         ,_0: model.draggingContext
+                         ,_1: model.pos};
+              if (_p30.ctor === "_Tuple2" && _p30._0.ctor === "ShiftOffsetPrevScreenPos" && _p30._1.ctor === "Just" && _p30._1._0.ctor === "_Tuple2")
+              {
+                    return _U.update(model$,
+                    {offset: function () {
+                       var _p31 = {ctor: "_Tuple2"
+                                  ,_0: x - _p30._1._0._0
+                                  ,_1: y - _p30._1._0._1};
+                       var dx = _p31._0;
+                       var dy = _p31._1;
+                       var _p32 = model.offset;
+                       var offsetX = _p32._0;
+                       var offsetY = _p32._1;
+                       return {ctor: "_Tuple2"
+                              ,_0: offsetX + A2($Scale.screenToImage,model.scale,dx)
+                              ,_1: offsetY + A2($Scale.screenToImage,model.scale,dy)};
+                    }()});
+                 } else {
+                    return model$;
+                 }
+           }();
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "EnterCanvas": return {ctor: "_Tuple2"
+                                    ,_0: model
+                                    ,_1: $Effects.none};
+         case "LeaveCanvas": var newModel = _U.update(model,
+           {draggingContext: function () {
+              var _p34 = model.draggingContext;
+              if (_p34.ctor === "ShiftOffsetPrevScreenPos") {
+                    return None;
+                 } else {
+                    return model.draggingContext;
+                 }
+           }()});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "MouseDownOnEquipment": var _p38 = _p25._0;
+           var _p37 = _p25._1;
+           var newModel = _U.update(model,
+           {selectedEquipments: function () {
+              if (_p37.ctrlKey) return A2($List.member,
+                 _p38,
+                 model.selectedEquipments) ? A2($List.filter,
+                 F2(function (x,y) {    return !_U.eq(x,y);})(_p38),
+                 model.selectedEquipments) : A2($List._op["::"],
+                 _p38,
+                 model.selectedEquipments); else if (_p37.shiftKey) {
+                       var allEquipments = $Util$UndoRedo.data(model.floor).equipments;
+                       var equipmentsExcept = function (target) {
+                          return A2($List.filter,
+                          function (e) {
+                             return !_U.eq($EquipmentsOperation.idOf(e),
+                             $EquipmentsOperation.idOf(target));
+                          },
+                          allEquipments);
+                       };
+                       var _p35 = {ctor: "_Tuple2"
+                                  ,_0: A2($EquipmentsOperation.findEquipmentById,
+                                  allEquipments,
+                                  _p38)
+                                  ,_1: primarySelectedEquipment(model)};
+                       if (_p35.ctor === "_Tuple2" && _p35._0.ctor === "Just" && _p35._1.ctor === "Just")
+                       {
+                             var _p36 = _p35._1._0;
+                             return A2($List.map,
+                             $EquipmentsOperation.idOf,
+                             A2($List._op["::"],
+                             _p36,
+                             A2($EquipmentsOperation.withinRange,
+                             {ctor: "_Tuple2",_0: _p36,_1: _p35._0._0},
+                             equipmentsExcept(_p36))));
+                          } else {
+                             return _U.list([_p38]);
+                          }
+                    } else if (A2($List.member,_p38,model.selectedEquipments))
+                    return model.selectedEquipments; else return _U.list([_p38]);
+           }()
+           ,draggingContext: A2(MoveEquipment,
+           _p38,
+           {ctor: "_Tuple2",_0: _p37.clientX,_1: _p37.clientY - 37})
+           ,selectorRect: $Maybe.Nothing});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "MouseUpOnCanvas": var _p48 = _p25._0;
+           var _p39 = function () {
+              var _p40 = model.draggingContext;
+              _v15_3: do {
+                 switch (_p40.ctor)
+                 {case "MoveEquipment": if (_p40._1.ctor === "_Tuple2") {
+                            var newModel = A6(updateByMoveEquipmentEnd,
+                            _p40._0,
+                            {ctor: "_Tuple2",_0: _p40._1._0,_1: _p40._1._1},
+                            {ctor: "_Tuple2",_0: _p48.clientX,_1: _p48.clientY - 37},
+                            _p48.ctrlKey,
+                            _p48.shiftKey,
+                            model);
+                            var effects = saveFloorEffects($Util$UndoRedo.data(newModel.floor));
+                            return {ctor: "_Tuple2",_0: newModel,_1: effects};
+                         } else {
+                            break _v15_3;
+                         }
+                    case "Selector": return {ctor: "_Tuple2"
+                                            ,_0: _U.update(model,
+                                            {selectorRect: function () {
+                                               var _p41 = model.selectorRect;
+                                               if (_p41.ctor === "Just" && _p41._0.ctor === "_Tuple4") {
+                                                     var _p44 = _p41._0._1;
+                                                     var _p43 = _p41._0._0;
+                                                     var _p42 = {ctor: "_Tuple2"
+                                                                ,_0: A2($Scale.screenToImage,model.scale,_p48.clientX) - _p43
+                                                                ,_1: A2($Scale.screenToImage,
+                                                                model.scale,
+                                                                _p48.clientY) - 37 - _p44};
+                                                     var w = _p42._0;
+                                                     var h = _p42._1;
+                                                     return $Maybe.Just({ctor: "_Tuple4"
+                                                                        ,_0: _p43
+                                                                        ,_1: _p44
+                                                                        ,_2: w
+                                                                        ,_3: h});
+                                                  } else {
+                                                     return model.selectorRect;
+                                                  }
+                                            }()})
+                                            ,_1: $Effects.none};
+                    case "StampScreenPos":
+                    var _p45 = A2($Util$IdGenerator.zipWithNewIds,
+                      model.seed,
+                      stampCandidates(model));
+                      var candidatesWithNewIds = _p45._0;
+                      var newSeed = _p45._1;
+                      var candidatesWithNewIds$ = A2($List.map,
+                      function (_p46) {
+                         var _p47 = _p46;
+                         return {ctor: "_Tuple4"
+                                ,_0: _p47._1
+                                ,_1: {ctor: "_Tuple4"
+                                     ,_0: _p47._0._1._0
+                                     ,_1: _p47._0._1._1
+                                     ,_2: _p47._0._0._3._0
+                                     ,_3: _p47._0._0._3._1}
+                                ,_2: _p47._0._0._1
+                                ,_3: _p47._0._0._2};
+                      },
+                      candidatesWithNewIds);
+                      var newFloor = A2($Util$UndoRedo.commit,
+                      model.floor,
+                      $Floor.create(candidatesWithNewIds$));
+                      var effects = saveFloorEffects($Util$UndoRedo.data(newFloor));
+                      return {ctor: "_Tuple2"
+                             ,_0: _U.update(model,{seed: newSeed,floor: newFloor})
+                             ,_1: effects};
+                    default: break _v15_3;}
+              } while (false);
+              return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+           }();
+           var model$ = _p39._0;
+           var effects = _p39._1;
+           var newModel = _U.update(model$,{draggingContext: None});
+           return {ctor: "_Tuple2",_0: newModel,_1: effects};
+         case "MouseDownOnCanvas": var _p53 = _p25._0;
+           var draggingContext = function () {
+              var _p49 = model.editMode;
+              switch (_p49.ctor)
+              {case "Stamp": return StampScreenPos({ctor: "_Tuple2"
+                                                   ,_0: _p53.clientX
+                                                   ,_1: _p53.clientY - 37});
+                 case "Pen": return None;
+                 default: return ShiftOffsetPrevScreenPos;}
+           }();
+           var selectorRect = function () {
+              var _p50 = model.editMode;
+              if (_p50.ctor === "Select") {
+                    var _p51 = A2($EquipmentsOperation.fitToGrid,
+                    model.gridSize,
+                    A2($Scale.screenToImageForPosition,
+                    model.scale,
+                    {ctor: "_Tuple2",_0: _p53.layerX,_1: _p53.layerY}));
+                    var x = _p51._0;
+                    var y = _p51._1;
+                    return $Maybe.Just({ctor: "_Tuple4"
+                                       ,_0: x
+                                       ,_1: y
+                                       ,_2: model.gridSize
+                                       ,_3: model.gridSize});
+                 } else {
+                    return model.selectorRect;
+                 }
+           }();
+           var model$ = function () {
+              var _p52 = model.editingEquipment;
+              if (_p52.ctor === "Just") {
+                    return _U.update(model,
+                    {floor: A2($Util$UndoRedo.commit,
+                    model.floor,
+                    A2($Floor.changeEquipmentName,_p52._0._0,_p52._0._1))});
+                 } else {
+                    return model;
+                 }
+           }();
+           var newModel = _U.update(model$,
+           {selectedEquipments: _U.list([])
+           ,selectorRect: selectorRect
+           ,editingEquipment: $Maybe.Nothing
+           ,contextMenu: NoContextMenu
+           ,draggingContext: draggingContext});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "StartEditEquipment":
+         var _p54 = A2($EquipmentsOperation.findEquipmentById,
+           $Util$UndoRedo.data(model.floor).equipments,
+           _p25._0);
+           if (_p54.ctor === "Just") {
+                 var _p55 = _p54._0;
+                 var newModel = _U.update(model,
+                 {editingEquipment: $Maybe.Just({ctor: "_Tuple2"
+                                                ,_0: $EquipmentsOperation.idOf(_p55)
+                                                ,_1: $EquipmentsOperation.nameOf(_p55)})
+                 ,contextMenu: NoContextMenu});
+                 return {ctor: "_Tuple2"
+                        ,_0: newModel
+                        ,_1: focusEffect("name-input")};
+              } else {
+                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+              }
+         case "SelectColor": var newModel = _U.update(model,
+           {floor: A2($Util$UndoRedo.commit,
+           model.floor,
+           A2($Floor.changeEquipmentColor,
+           model.selectedEquipments,
+           _p25._0))});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "InputName": var _p58 = _p25._0;
+           var newModel = _U.update(model,
+           {editingEquipment: function () {
+              var _p56 = model.editingEquipment;
+              if (_p56.ctor === "Just") {
+                    var _p57 = _p56._0._0;
+                    return _U.eq(_p58,_p57) ? $Maybe.Just({ctor: "_Tuple2"
+                                                          ,_0: _p58
+                                                          ,_1: _p25._1}) : $Maybe.Just({ctor: "_Tuple2"
+                                                                                       ,_0: _p57
+                                                                                       ,_1: _p56._0._1});
+                 } else {
+                    return $Maybe.Nothing;
+                 }
+           }()});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "KeydownOnNameInput": var _p67 = _p25._0;
+           var _p59 = function () {
+              if (_U.eq(_p67.keyCode,13) && $Basics.not(_p67.ctrlKey)) {
+                    var newModel = function () {
+                       var _p60 = model.editingEquipment;
+                       if (_p60.ctor === "Just") {
+                             var _p65 = _p60._0._0;
+                             var allEquipments = $Util$UndoRedo.data(model.floor).equipments;
+                             var editingEquipment = function () {
+                                var _p61 = A2($EquipmentsOperation.findEquipmentById,
+                                allEquipments,
+                                _p65);
+                                if (_p61.ctor === "Just") {
+                                      var _p64 = _p61._0;
+                                      var island$ = A2($EquipmentsOperation.island,
+                                      _U.list([_p64]),
+                                      A2($List.filter,
+                                      function (e) {
+                                         return !_U.eq($EquipmentsOperation.idOf(e),_p65);
+                                      },
+                                      allEquipments));
+                                      var _p62 = A3($EquipmentsOperation.nearest,
+                                      $EquipmentsOperation.Down,
+                                      _p64,
+                                      island$);
+                                      if (_p62.ctor === "Just") {
+                                            var _p63 = _p62._0;
+                                            return $Maybe.Just({ctor: "_Tuple2"
+                                                               ,_0: $EquipmentsOperation.idOf(_p63)
+                                                               ,_1: $EquipmentsOperation.nameOf(_p63)});
+                                         } else {
+                                            return $Maybe.Nothing;
+                                         }
+                                   } else {
+                                      return $Maybe.Nothing;
+                                   }
+                             }();
+                             return _U.update(model,
+                             {floor: A2($Util$UndoRedo.commit,
+                             model.floor,
+                             A2($Floor.changeEquipmentName,_p65,_p60._0._1))
+                             ,editingEquipment: editingEquipment});
+                          } else {
+                             return model;
+                          }
+                    }();
+                    return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                 } else if (_U.eq(_p67.keyCode,13)) {
+                       var newModel = _U.update(model,
+                       {editingEquipment: function () {
+                          var _p66 = model.editingEquipment;
+                          if (_p66.ctor === "Just") {
+                                return $Maybe.Just({ctor: "_Tuple2"
+                                                   ,_0: _p66._0._0
+                                                   ,_1: A2($Basics._op["++"],_p66._0._1,"\n")});
+                             } else {
+                                return $Maybe.Nothing;
+                             }
+                       }()});
+                       return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+                    } else return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+           }();
+           var newModel = _p59._0;
+           var effects = _p59._1;
+           return {ctor: "_Tuple2",_0: newModel,_1: effects};
+         case "ShowContextMenuOnEquipment": var _p68 = _p25._1;
+           var newModel = _U.update(model,
+           {contextMenu: A2(Equipment,
+           {ctor: "_Tuple2",_0: _p68.clientX,_1: _p68.clientY},
+           _p25._0)});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "SelectIsland": var _p70 = _p25._0;
+           var newModel = function () {
+              var _p69 = A2($EquipmentsOperation.findEquipmentById,
+              $Util$UndoRedo.data(model.floor).equipments,
+              _p70);
+              if (_p69.ctor === "Just") {
+                    var island$ = A2($EquipmentsOperation.island,
+                    _U.list([_p69._0]),
+                    A2($List.filter,
+                    function (e) {
+                       return !_U.eq($EquipmentsOperation.idOf(e),_p70);
+                    },
+                    $Util$UndoRedo.data(model.floor).equipments));
+                    return _U.update(model,
+                    {selectedEquipments: A2($List.map,
+                    $EquipmentsOperation.idOf,
+                    island$)
+                    ,contextMenu: NoContextMenu});
+                 } else {
+                    return model;
+                 }
+           }();
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "KeysAction": var _p71 = _p25._0;
+           var model$ = _U.update(model,
+           {keys: A2($Util$Keys.update,_p71,model.keys)});
+           return A2(updateByKeyAction,_p71,model$);
+         case "MouseWheel": var _p73 = _p25._0;
+           var effects = A2($Util$EffectsUtil.fromTaskWithNoError,
+           $Basics.always(ScaleEnd),
+           $Task.sleep(200.0));
+           var _p72 = model.offset;
+           var offsetX = _p72._0;
+           var offsetY = _p72._1;
+           var newScale = _U.cmp(_p73.value,0) < 0 ? A2($Scale.update,
+           $Scale.ScaleUp,
+           model.scale) : A2($Scale.update,$Scale.ScaleDown,model.scale);
+           var ratio = A2($Scale.ratio,model.scale,newScale);
+           var newOffset = function () {
+              var y = A2($Scale.screenToImage,
+              model.scale,
+              _p73.clientY - 37);
+              var x = A2($Scale.screenToImage,model.scale,_p73.clientX);
+              return {ctor: "_Tuple2"
+                     ,_0: $Basics.floor($Basics.toFloat(x - $Basics.floor(ratio * $Basics.toFloat(x - offsetX))) / ratio)
+                     ,_1: $Basics.floor($Basics.toFloat(y - $Basics.floor(ratio * $Basics.toFloat(y - offsetY))) / ratio)};
+           }();
+           var newModel = _U.update(model,
+           {scale: newScale,offset: newOffset,scaling: true});
+           return {ctor: "_Tuple2",_0: newModel,_1: effects};
+         case "ScaleEnd": var newModel = _U.update(model,
+           {scaling: false});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "WindowDimensions": var newModel = _U.update(model,
+           {windowDimensions: {ctor: "_Tuple2"
+                              ,_0: _p25._0._0
+                              ,_1: _p25._0._1}});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "ChangeMode": var newModel = _U.update(model,
+           {editMode: _p25._0});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "LoadFile": var _p76 = _p25._0;
+           var _p74 = $Util$IdGenerator.$new(model.seed);
+           var id = _p74._0;
+           var newSeed = _p74._1;
+           var newModel = _U.update(model,{seed: newSeed});
+           var effects = A3($Util$EffectsUtil.fromTask,
+           function (_p75) {
+              return Error(HtmlError(_p75));
+           },
+           A2(GotDataURL,id,_p76),
+           $Util$HtmlUtil.readFirstAsDataURL(_p76));
+           return {ctor: "_Tuple2",_0: model,_1: effects};
+         case "GotDataURL": var newModel = _U.update(model,
+           {floor: A2($Util$UndoRedo.commit,
+           model.floor,
+           A3($Floor.setLocalFile,_p25._0,_p25._1,_p25._2))});
+           var effects = saveFloorEffects($Util$UndoRedo.data(newModel.floor));
+           return {ctor: "_Tuple2",_0: newModel,_1: effects};
+         case "PrototypesAction": var newModel = _U.update(model,
+           {prototypes: A2($Prototypes.update,_p25._0,model.prototypes)});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "RegisterPrototype": var model$ = _U.update(model,
+           {contextMenu: NoContextMenu});
+           var equipment = A2($EquipmentsOperation.findEquipmentById,
+           $Util$UndoRedo.data(model.floor).equipments,
+           _p25._0);
+           var newModel = function () {
+              var _p77 = equipment;
+              if (_p77.ctor === "Just") {
+                    var _p80 = _p77._0;
+                    var _p78 = $Util$IdGenerator.$new(model.seed);
+                    var newId = _p78._0;
+                    var seed = _p78._1;
+                    var _p79 = $EquipmentsOperation.rect(_p80);
+                    var w = _p79._2;
+                    var h = _p79._3;
+                    var newPrototypes = A2($Prototypes.register,
+                    {ctor: "_Tuple4"
+                    ,_0: newId
+                    ,_1: $EquipmentsOperation.colorOf(_p80)
+                    ,_2: $EquipmentsOperation.nameOf(_p80)
+                    ,_3: {ctor: "_Tuple2",_0: w,_1: h}},
+                    model.prototypes);
+                    return _U.update(model$,{seed: seed,prototypes: newPrototypes});
+                 } else {
+                    return model$;
+                 }
+           }();
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "InputFloorName": var newFloor = A2($Util$UndoRedo.commit,
+           model.floor,
+           $Floor.changeName(_p25._0));
+           var effects = saveFloorEffects($Util$UndoRedo.data(newFloor));
+           var newModel = _U.update(model,{floor: newFloor});
+           return {ctor: "_Tuple2",_0: newModel,_1: effects};
+         case "InputFloorRealWidth": var _p83 = _p25._0;
+           var newFloor = function () {
+              var _p81 = $String.toInt(_p83);
+              if (_p81.ctor === "Err") {
+                    return model.floor;
+                 } else {
+                    var _p82 = _p81._0;
+                    return _U.cmp(_p82,0) > 0 ? A2($Util$UndoRedo.commit,
+                    model.floor,
+                    $Floor.changeRealWidth(_p82)) : model.floor;
+                 }
+           }();
+           var newModel = _U.update(model,
+           {floor: newFloor,inputFloorRealWidth: _p83});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "InputFloorRealHeight": var _p86 = _p25._0;
+           var newFloor = function () {
+              var _p84 = $String.toInt(_p86);
+              if (_p84.ctor === "Err") {
+                    return model.floor;
+                 } else {
+                    var _p85 = _p84._0;
+                    return _U.cmp(_p85,0) > 0 ? A2($Util$UndoRedo.commit,
+                    model.floor,
+                    $Floor.changeRealHeight(_p85)) : model.floor;
+                 }
+           }();
+           var newModel = _U.update(model,
+           {floor: newFloor,inputFloorRealHeight: _p86});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         case "Rotate": var newFloor = A2($Util$UndoRedo.commit,
+           model.floor,
+           $Floor.rotate(_p25._0));
+           var newModel = _U.update(model,
+           {floor: newFloor,contextMenu: NoContextMenu});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};
+         default: var newModel = _U.update(model,
+           {errors: A2($List._op["::"],_p25._0,model.errors)});
+           return {ctor: "_Tuple2",_0: newModel,_1: $Effects.none};}
+   });
+   var Model = function (a) {
+      return function (b) {
+         return function (c) {
+            return function (d) {
+               return function (e) {
+                  return function (f) {
+                     return function (g) {
+                        return function (h) {
+                           return function (i) {
+                              return function (j) {
+                                 return function (k) {
+                                    return function (l) {
+                                       return function (m) {
+                                          return function (n) {
+                                             return function (o) {
+                                                return function (p) {
+                                                   return function (q) {
+                                                      return function (r) {
+                                                         return function (s) {
+                                                            return function (t) {
+                                                               return function (u) {
+                                                                  return function (v) {
+                                                                     return {seed: a
+                                                                            ,pos: b
+                                                                            ,draggingContext: c
+                                                                            ,selectedEquipments: d
+                                                                            ,copiedEquipments: e
+                                                                            ,editingEquipment: f
+                                                                            ,gridSize: g
+                                                                            ,selectorRect: h
+                                                                            ,keys: i
+                                                                            ,editMode: j
+                                                                            ,colorPalette: k
+                                                                            ,contextMenu: l
+                                                                            ,floor: m
+                                                                            ,windowDimensions: n
+                                                                            ,scale: o
+                                                                            ,offset: p
+                                                                            ,scaling: q
+                                                                            ,prototypes: r
+                                                                            ,errors: s
+                                                                            ,hash: t
+                                                                            ,inputFloorRealWidth: u
+                                                                            ,inputFloorRealHeight: v};
+                                                                  };
+                                                               };
+                                                            };
+                                                         };
+                                                      };
+                                                   };
+                                                };
+                                             };
+                                          };
+                                       };
+                                    };
+                                 };
+                              };
+                           };
+                        };
+                     };
+                  };
+               };
+            };
+         };
+      };
+   };
+   return _elm.Model.values = {_op: _op
+                              ,Model: Model
+                              ,APIError: APIError
+                              ,HtmlError: HtmlError
+                              ,NoContextMenu: NoContextMenu
+                              ,Equipment: Equipment
+                              ,Select: Select
+                              ,Pen: Pen
+                              ,Stamp: Stamp
+                              ,None: None
+                              ,MoveEquipment: MoveEquipment
+                              ,Selector: Selector
+                              ,ShiftOffsetPrevScreenPos: ShiftOffsetPrevScreenPos
+                              ,StampScreenPos: StampScreenPos
+                              ,inputs: inputs
+                              ,gridSize: gridSize
+                              ,init: init
+                              ,NoOp: NoOp
+                              ,Init: Init
+                              ,HashChange: HashChange
+                              ,FloorLoaded: FloorLoaded
+                              ,FloorSaved: FloorSaved
+                              ,MoveOnCanvas: MoveOnCanvas
+                              ,EnterCanvas: EnterCanvas
+                              ,LeaveCanvas: LeaveCanvas
+                              ,MouseUpOnCanvas: MouseUpOnCanvas
+                              ,MouseDownOnCanvas: MouseDownOnCanvas
+                              ,MouseDownOnEquipment: MouseDownOnEquipment
+                              ,StartEditEquipment: StartEditEquipment
+                              ,KeysAction: KeysAction
+                              ,SelectColor: SelectColor
+                              ,InputName: InputName
+                              ,KeydownOnNameInput: KeydownOnNameInput
+                              ,ShowContextMenuOnEquipment: ShowContextMenuOnEquipment
+                              ,SelectIsland: SelectIsland
+                              ,WindowDimensions: WindowDimensions
+                              ,MouseWheel: MouseWheel
+                              ,ChangeMode: ChangeMode
+                              ,LoadFile: LoadFile
+                              ,GotDataURL: GotDataURL
+                              ,ScaleEnd: ScaleEnd
+                              ,PrototypesAction: PrototypesAction
+                              ,RegisterPrototype: RegisterPrototype
+                              ,InputFloorName: InputFloorName
+                              ,InputFloorRealWidth: InputFloorRealWidth
+                              ,InputFloorRealHeight: InputFloorRealHeight
+                              ,Rotate: Rotate
+                              ,Error: Error
+                              ,debug: debug
+                              ,debugAction: debugAction
+                              ,update: update
+                              ,saveFloorEffects: saveFloorEffects
+                              ,updateByKeyAction: updateByKeyAction
+                              ,updateByMoveEquipmentEnd: updateByMoveEquipmentEnd
+                              ,shiftSelectionToward: shiftSelectionToward
+                              ,loadFloorEffects: loadFloorEffects
+                              ,focusEffect: focusEffect
+                              ,blurEffect: blurEffect
+                              ,isSelected: isSelected
+                              ,primarySelectedEquipment: primarySelectedEquipment
+                              ,selectedEquipments: selectedEquipments
+                              ,stampCandidates: stampCandidates};
+};

@@ -1,0 +1,18 @@
+Elm.Equipment = Elm.Equipment || {};
+Elm.Equipment.make = function (_elm) {
+   "use strict";
+   _elm.Equipment = _elm.Equipment || {};
+   if (_elm.Equipment.values) return _elm.Equipment.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var Desk = F4(function (a,b,c,d) {
+      return {ctor: "Desk",_0: a,_1: b,_2: c,_3: d};
+   });
+   return _elm.Equipment.values = {_op: _op,Desk: Desk};
+};

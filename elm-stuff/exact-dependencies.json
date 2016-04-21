@@ -1,0 +1,13 @@
+{
+    "danyx23/elm-uuid": "1.0.2",
+    "evancz/elm-html": "4.0.2",
+    "evancz/elm-svg": "2.0.1",
+    "elm-lang/core": "3.0.0",
+    "evancz/elm-effects": "2.0.1",
+    "circuithub/elm-list-extra": "3.10.0",
+    "elm-community/elm-material-icons": "1.0.0",
+    "evancz/virtual-dom": "2.1.0",
+    "evancz/elm-http": "3.0.0",
+    "evancz/start-app": "2.0.2",
+    "mgold/elm-random-pcg": "1.4.0"
+}

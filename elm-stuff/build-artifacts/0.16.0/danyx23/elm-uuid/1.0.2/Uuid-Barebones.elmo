@@ -1,0 +1,83 @@
+Elm.Uuid = Elm.Uuid || {};
+Elm.Uuid.Barebones = Elm.Uuid.Barebones || {};
+Elm.Uuid.Barebones.make = function (_elm) {
+   "use strict";
+   _elm.Uuid = _elm.Uuid || {};
+   _elm.Uuid.Barebones = _elm.Uuid.Barebones || {};
+   if (_elm.Uuid.Barebones.values)
+   return _elm.Uuid.Barebones.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Array = Elm.Array.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Bitwise = Elm.Bitwise.make(_elm),
+   $Char = Elm.Char.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Random$PCG = Elm.Random.PCG.make(_elm),
+   $Regex = Elm.Regex.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var hexGenerator = A2($Random$PCG.$int,0,15);
+   var hexDigits = function () {
+      var mapChars = F2(function (offset,digit) {
+         return $Char.fromCode(digit + offset);
+      });
+      return $Array.fromList(A2($Basics._op["++"],
+      A2($List.map,mapChars(48),_U.range(0,9)),
+      A2($List.map,mapChars(97),_U.range(0,5))));
+   }();
+   var mapToHex = function (index) {
+      var maybeResult = A2($Basics.flip,
+      $Array.get,
+      hexDigits)(index);
+      var _p0 = maybeResult;
+      if (_p0.ctor === "Nothing") {
+            return _U.chr("x");
+         } else {
+            return _p0._0;
+         }
+   };
+   var uuidRegex = $Regex.regex("^[0-9A-Fa-f]{8,8}-[0-9A-Fa-f]{4,4}-[1-5][0-9A-Fa-f]{3,3}-[8-9A-Ba-b][0-9A-Fa-f]{3,3}-[0-9A-Fa-f]{12,12}$");
+   var limitDigitRange8ToB = function (digit) {
+      return A2($Bitwise.or,A2($Bitwise.and,digit,3),8);
+   };
+   var toUuidString = function (thirtyOneHexDigits) {
+      return $String.concat(_U.list([$String.fromList(A2($List.map,
+                                    mapToHex,
+                                    A2($List.take,8,thirtyOneHexDigits)))
+                                    ,"-"
+                                    ,$String.fromList(A2($List.map,
+                                    mapToHex,
+                                    A2($List.take,4,A2($List.drop,8,thirtyOneHexDigits))))
+                                    ,"-"
+                                    ,"4"
+                                    ,$String.fromList(A2($List.map,
+                                    mapToHex,
+                                    A2($List.take,3,A2($List.drop,12,thirtyOneHexDigits))))
+                                    ,"-"
+                                    ,$String.fromList(A2($List.map,
+                                    mapToHex,
+                                    A2($List.map,
+                                    limitDigitRange8ToB,
+                                    A2($List.take,1,A2($List.drop,15,thirtyOneHexDigits)))))
+                                    ,$String.fromList(A2($List.map,
+                                    mapToHex,
+                                    A2($List.take,3,A2($List.drop,16,thirtyOneHexDigits))))
+                                    ,"-"
+                                    ,$String.fromList(A2($List.map,
+                                    mapToHex,
+                                    A2($List.take,12,A2($List.drop,19,thirtyOneHexDigits))))]));
+   };
+   var isValidUuid = function (uuidAsString) {
+      return A2($Regex.contains,uuidRegex,uuidAsString);
+   };
+   var uuidStringGenerator = A2($Random$PCG.map,
+   toUuidString,
+   A2($Random$PCG.list,31,hexGenerator));
+   return _elm.Uuid.Barebones.values = {_op: _op
+                                       ,uuidStringGenerator: uuidStringGenerator
+                                       ,isValidUuid: isValidUuid};
+};

@@ -1,0 +1,474 @@
+Elm.Random = Elm.Random || {};
+Elm.Random.PCG = Elm.Random.PCG || {};
+Elm.Random.PCG.make = function (_elm) {
+   "use strict";
+   _elm.Random = _elm.Random || {};
+   _elm.Random.PCG = _elm.Random.PCG || {};
+   if (_elm.Random.PCG.values) return _elm.Random.PCG.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Bitwise = Elm.Bitwise.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var toJson = function (_p0) {
+      var _p1 = _p0;
+      return $Json$Encode.list(A2($List.map,
+      $Json$Encode.$int,
+      _U.list([_p1._0._0,_p1._0._1,_p1._1._0,_p1._1._1])));
+   };
+   var listHelp = F4(function (list,n,generate,seed) {
+      listHelp: while (true) if (_U.cmp(n,1) < 0)
+      return {ctor: "_Tuple2",_0: $List.reverse(list),_1: seed};
+      else {
+            var _p2 = generate(seed);
+            var value = _p2._0;
+            var newSeed = _p2._1;
+            var _v1 = A2($List._op["::"],value,list),
+            _v2 = n - 1,
+            _v3 = generate,
+            _v4 = newSeed;
+            list = _v1;
+            n = _v2;
+            generate = _v3;
+            seed = _v4;
+            continue listHelp;
+         }
+   });
+   var minInt = 0;
+   var maxInt = -1;
+   var bit27 = 1.34217728e8;
+   var bit53 = 9.007199254740992e15;
+   var Seed = F2(function (a,b) {
+      return {ctor: "Seed",_0: a,_1: b};
+   });
+   var generate = F2(function (_p3,seed) {
+      var _p4 = _p3;
+      return _p4._0(seed);
+   });
+   var Generator = function (a) {
+      return {ctor: "Generator",_0: a};
+   };
+   var list = F2(function (n,_p5) {
+      var _p6 = _p5;
+      return Generator(function (seed) {
+         return A4(listHelp,_U.list([]),n,_p6._0,seed);
+      });
+   });
+   var constant = function (value) {
+      return Generator(function (seed) {
+         return {ctor: "_Tuple2",_0: value,_1: seed};
+      });
+   };
+   var map = F2(function (func,_p7) {
+      var _p8 = _p7;
+      return Generator(function (seed0) {
+         var _p9 = _p8._0(seed0);
+         var a = _p9._0;
+         var seed1 = _p9._1;
+         return {ctor: "_Tuple2",_0: func(a),_1: seed1};
+      });
+   });
+   var map2 = F3(function (func,_p11,_p10) {
+      var _p12 = _p11;
+      var _p13 = _p10;
+      return Generator(function (seed0) {
+         var _p14 = _p12._0(seed0);
+         var a = _p14._0;
+         var seed1 = _p14._1;
+         var _p15 = _p13._0(seed1);
+         var b = _p15._0;
+         var seed2 = _p15._1;
+         return {ctor: "_Tuple2",_0: A2(func,a,b),_1: seed2};
+      });
+   });
+   var pair = F2(function (genA,genB) {
+      return A3(map2,
+      F2(function (v0,v1) {
+         return {ctor: "_Tuple2",_0: v0,_1: v1};
+      }),
+      genA,
+      genB);
+   });
+   var andMap = map2(F2(function (x,y) {    return x(y);}));
+   var map3 = F4(function (func,_p18,_p17,_p16) {
+      var _p19 = _p18;
+      var _p20 = _p17;
+      var _p21 = _p16;
+      return Generator(function (seed0) {
+         var _p22 = _p19._0(seed0);
+         var a = _p22._0;
+         var seed1 = _p22._1;
+         var _p23 = _p20._0(seed1);
+         var b = _p23._0;
+         var seed2 = _p23._1;
+         var _p24 = _p21._0(seed2);
+         var c = _p24._0;
+         var seed3 = _p24._1;
+         return {ctor: "_Tuple2",_0: A3(func,a,b,c),_1: seed3};
+      });
+   });
+   var map4 = F5(function (func,_p28,_p27,_p26,_p25) {
+      var _p29 = _p28;
+      var _p30 = _p27;
+      var _p31 = _p26;
+      var _p32 = _p25;
+      return Generator(function (seed0) {
+         var _p33 = _p29._0(seed0);
+         var a = _p33._0;
+         var seed1 = _p33._1;
+         var _p34 = _p30._0(seed1);
+         var b = _p34._0;
+         var seed2 = _p34._1;
+         var _p35 = _p31._0(seed2);
+         var c = _p35._0;
+         var seed3 = _p35._1;
+         var _p36 = _p32._0(seed3);
+         var d = _p36._0;
+         var seed4 = _p36._1;
+         return {ctor: "_Tuple2",_0: A4(func,a,b,c,d),_1: seed4};
+      });
+   });
+   var map5 = F6(function (func,_p41,_p40,_p39,_p38,_p37) {
+      var _p42 = _p41;
+      var _p43 = _p40;
+      var _p44 = _p39;
+      var _p45 = _p38;
+      var _p46 = _p37;
+      return Generator(function (seed0) {
+         var _p47 = _p42._0(seed0);
+         var a = _p47._0;
+         var seed1 = _p47._1;
+         var _p48 = _p43._0(seed1);
+         var b = _p48._0;
+         var seed2 = _p48._1;
+         var _p49 = _p44._0(seed2);
+         var c = _p49._0;
+         var seed3 = _p49._1;
+         var _p50 = _p45._0(seed3);
+         var d = _p50._0;
+         var seed4 = _p50._1;
+         var _p51 = _p46._0(seed4);
+         var e = _p51._0;
+         var seed5 = _p51._1;
+         return {ctor: "_Tuple2",_0: A5(func,a,b,c,d,e),_1: seed5};
+      });
+   });
+   var andThen = F2(function (_p52,callback) {
+      var _p53 = _p52;
+      return Generator(function (seed) {
+         var _p54 = _p53._0(seed);
+         var result = _p54._0;
+         var newSeed = _p54._1;
+         var _p55 = callback(result);
+         var generateB = _p55._0;
+         return generateB(newSeed);
+      });
+   });
+   var filter = F2(function (predicate,generator) {
+      return A2(andThen,
+      generator,
+      function (a) {
+         return predicate(a) ? constant(a) : A2(filter,
+         predicate,
+         generator);
+      });
+   });
+   var maybe = F2(function (genBool,genA) {
+      return A2(andThen,
+      genBool,
+      function (b) {
+         return b ? A2(map,
+         $Maybe.Just,
+         genA) : constant($Maybe.Nothing);
+      });
+   });
+   var Int64 = F2(function (a,b) {
+      return {ctor: "Int64",_0: a,_1: b};
+   });
+   var magicFactor = A2(Int64,1481765933,1284865837);
+   _op[">>>"] = $Bitwise.shiftRightLogical;
+   var add64 = F2(function (_p57,_p56) {
+      var _p58 = _p57;
+      var _p60 = _p58._1;
+      var _p59 = _p56;
+      var lo = A2(_op[">>>"],_p60 + _p59._1,0);
+      var hi = A2(_op[">>>"],_p58._0 + _p59._0,0);
+      var hi$ = _U.cmp(A2(_op[">>>"],lo,0),
+      A2(_op[">>>"],_p60,0)) < 0 ? A2($Bitwise.or,hi + 1,0) : hi;
+      return A2(Int64,hi$,lo);
+   });
+   _op["<<"] = $Bitwise.shiftLeft;
+   _op["&"] = $Bitwise.and;
+   var peel = function (_p61) {
+      var _p62 = _p61;
+      var _p64 = _p62._0._1;
+      var _p63 = _p62._0._0;
+      var rot = A2(_op[">>>"],_p63,27);
+      var rot2 = A2(_op[">>>"],
+      A2(_op["&"],A2(_op[">>>"],0 - rot,0),31),
+      0);
+      var xsLo = A2(_op[">>>"],
+      A2($Bitwise.or,A2(_op[">>>"],_p64,18),A2(_op["<<"],_p63,14)),
+      0);
+      var xsLo$ = A2(_op[">>>"],A2($Bitwise.xor,xsLo,_p64),0);
+      var xsHi = A2(_op[">>>"],_p63,18);
+      var xsHi$ = A2(_op[">>>"],A2($Bitwise.xor,xsHi,_p63),0);
+      var xorshifted = A2(_op[">>>"],
+      A2($Bitwise.or,A2(_op[">>>"],xsLo$,27),A2(_op["<<"],xsHi$,5)),
+      0);
+      return A2(_op[">>>"],
+      A2($Bitwise.or,
+      A2(_op[">>>"],xorshifted,rot),
+      A2(_op["<<"],xorshifted,rot2)),
+      0);
+   };
+   var mul32 = F2(function (a,b) {
+      var bl = A2(_op["&"],b,65535);
+      var bh = A2(_op["&"],A2(_op[">>>"],b,16),65535);
+      var al = A2(_op["&"],a,65535);
+      var ah = A2(_op["&"],A2(_op[">>>"],a,16),65535);
+      return A2($Bitwise.or,
+      0,
+      al * bl + A2(_op[">>>"],A2(_op["<<"],ah * bl + al * bh,16),0));
+   });
+   var mul64 = F2(function (_p66,_p65) {
+      var _p67 = _p66;
+      var _p70 = _p67._1;
+      var _p68 = _p65;
+      var _p69 = _p68._1;
+      var lo = A2(_op[">>>"],
+      A2(_op["&"],_p70,65535) * A2(_op["&"],_p69,65535),
+      0);
+      var c0 = A2(_op["&"],_p70,65535) * A2(_op[">>>"],
+      A2(_op[">>>"],_p69,16),
+      0);
+      var c0$ = A2(_op[">>>"],A2(_op["<<"],c0,16),0);
+      var lo$ = A2(_op[">>>"],lo + c0$,0);
+      var c1 = A2(_op[">>>"],_p70,16) * A2(_op[">>>"],
+      A2(_op["&"],_p69,65535),
+      0);
+      var hi = A2(_op[">>>"],_p70,16) * A2(_op[">>>"],
+      _p69,
+      16) + A2(_op[">>>"],
+      A2(_op[">>>"],c0,16) + A2(_op[">>>"],c1,16),
+      0);
+      var hi$ = _U.cmp(A2(_op[">>>"],lo$,0),
+      A2(_op[">>>"],c0$,0)) < 0 ? A2(_op[">>>"],hi + 1,0) : hi;
+      var c1$ = A2(_op[">>>"],A2(_op["<<"],c1,16),0);
+      var lo$$ = A2(_op[">>>"],lo$ + c1$,0);
+      var hi$$ = _U.cmp(A2(_op[">>>"],lo$$,0),
+      A2(_op[">>>"],c1$,0)) < 0 ? A2(_op[">>>"],hi$ + 1,0) : hi$;
+      var hi$$$ = A2(_op[">>>"],hi$$ + A2(mul32,_p70,_p68._0),0);
+      var hi$$$$ = A2(_op[">>>"],hi$$$ + A2(mul32,_p67._0,_p69),0);
+      return A2(Int64,hi$$$$,lo$$);
+   });
+   var next = function (_p71) {
+      var _p72 = _p71;
+      var _p73 = _p72._1;
+      var state1 = A2(mul64,_p72._0,magicFactor);
+      var state2 = A2(add64,state1,_p73);
+      return A2(Seed,state2,_p73);
+   };
+   var initialSeed2 = F2(function (stateHi,stateLo) {
+      var incr = A2(Int64,335903614,-144211633);
+      var zero = A2(Int64,0,0);
+      var seed0 = A2(Seed,zero,incr);
+      var _p74 = next(seed0);
+      var state1 = _p74._0;
+      var state2 = A2(add64,
+      state1,
+      A2(Int64,A2(_op[">>>"],stateHi,0),A2(_op[">>>"],stateLo,0)));
+      return next(A2(Seed,state2,incr));
+   });
+   var initialSeed = initialSeed2(0);
+   var fromJson = $Json$Decode.oneOf(_U.list([A5($Json$Decode.tuple4,
+                                             F4(function (a,b,c,d) {
+                                                return A2(Seed,A2(Int64,a,b),A2(Int64,c,d));
+                                             }),
+                                             $Json$Decode.$int,
+                                             $Json$Decode.$int,
+                                             $Json$Decode.$int,
+                                             $Json$Decode.$int)
+                                             ,A3($Json$Decode.tuple2,
+                                             initialSeed2,
+                                             $Json$Decode.$int,
+                                             $Json$Decode.$int)
+                                             ,A2($Json$Decode.tuple1,initialSeed,$Json$Decode.$int)
+                                             ,A2($Json$Decode.map,initialSeed,$Json$Decode.$int)]));
+   var integer = F2(function (max,seed0) {
+      if (_U.eq(A2(_op["&"],max,max - 1),0))
+      return {ctor: "_Tuple2"
+             ,_0: A2(_op[">>>"],A2(_op["&"],peel(seed0),max - 1),0)
+             ,_1: next(seed0)}; else {
+            var threshhold = A2(_op[">>>"],
+            A2($Basics._op["%"],A2(_op[">>>"],0 - max,0),max),
+            0);
+            var accountForBias = function (seed) {
+               accountForBias: while (true) {
+                  var seedN = next(seed);
+                  var x = peel(seed);
+                  if (_U.cmp(x,threshhold) < 0) {
+                        var _v29 = seedN;
+                        seed = _v29;
+                        continue accountForBias;
+                     } else return {ctor: "_Tuple2"
+                                   ,_0: A2($Basics._op["%"],x,max)
+                                   ,_1: seedN};
+               }
+            };
+            return accountForBias(seed0);
+         }
+   });
+   var $int = F2(function (min,max) {
+      return Generator(function (seed0) {
+         if (_U.eq(min,max)) return {ctor: "_Tuple2"
+                                    ,_0: min
+                                    ,_1: seed0}; else {
+               var range = $Basics.abs(max - min) + 1;
+               var _p75 = A2(integer,range,seed0);
+               var i = _p75._0;
+               var seed1 = _p75._1;
+               return {ctor: "_Tuple2",_0: i + min,_1: seed1};
+            }
+      });
+   });
+   var bool = A2(map,
+   F2(function (x,y) {    return _U.eq(x,y);})(1),
+   A2($int,0,1));
+   var choice = F2(function (x,y) {
+      return A2(map,function (b) {    return b ? x : y;},bool);
+   });
+   var oneIn = function (n) {
+      return A2(map,
+      F2(function (x,y) {    return _U.eq(x,y);})(1),
+      A2($int,1,n));
+   };
+   var $float = F2(function (min,max) {
+      return Generator(function (seed0) {
+         var range = $Basics.abs(max - min);
+         var n0 = peel(seed0);
+         var hi = $Basics.toFloat(A2(_op["&"],n0,67108863)) * 1.0;
+         var seed1 = next(seed0);
+         var n1 = peel(seed1);
+         var lo = $Basics.toFloat(A2(_op["&"],n1,134217727)) * 1.0;
+         var val = (hi * bit27 + lo) / bit53;
+         var scaled = val * range + min;
+         return {ctor: "_Tuple2",_0: scaled,_1: next(seed1)};
+      });
+   });
+   var independentSeed = Generator(function (seed0) {
+      var gen1 = A2($int,minInt,maxInt);
+      var gen4 = A5(map4,
+      F4(function (v0,v1,v2,v3) {
+         return {ctor: "_Tuple4",_0: v0,_1: v1,_2: v2,_3: v3};
+      }),
+      gen1,
+      gen1,
+      gen1,
+      gen1);
+      var _p76 = A2(generate,gen4,seed0);
+      var a = _p76._0._0;
+      var b = _p76._0._1;
+      var c = _p76._0._2;
+      var d = _p76._0._3;
+      var seed1 = _p76._1;
+      var dOdd = A2(_op[">>>"],A2($Bitwise.or,d,1),0);
+      var seed2 = A2(Seed,A2(Int64,a,b),A2(Int64,c,dOdd));
+      return {ctor: "_Tuple2",_0: next(seed2),_1: next(seed1)};
+   });
+   var split = generate(independentSeed);
+   var fastForward = F2(function (delta0,_p77) {
+      var _p78 = _p77;
+      var _p80 = _p78._1;
+      var zero = A2(Int64,0,0);
+      var one = A2(Int64,0,1);
+      var helper = F6(function (accMult,
+      accPlus,
+      curMult,
+      curPlus,
+      delta,
+      repeat) {
+         helper: while (true) {
+            var newDelta = A2(_op[">>>"],delta,1);
+            var curMult$ = A2(mul64,curMult,curMult);
+            var curPlus$ = A2(mul64,A2(add64,curMult,one),curPlus);
+            var deltaOdd = _U.eq(A2(_op["&"],delta,1),1);
+            var accMult$ = deltaOdd ? A2(mul64,accMult,curMult) : accMult;
+            var accPlus$ = deltaOdd ? A2(add64,
+            A2(mul64,accPlus,curMult),
+            curPlus) : accPlus;
+            if (_U.eq(newDelta,0)) if (_U.cmp(delta0,0) < 0 && repeat) {
+                     var _v31 = accMult$,
+                     _v32 = accPlus$,
+                     _v33 = curMult$,
+                     _v34 = curPlus$,
+                     _v35 = -1,
+                     _v36 = false;
+                     accMult = _v31;
+                     accPlus = _v32;
+                     curMult = _v33;
+                     curPlus = _v34;
+                     delta = _v35;
+                     repeat = _v36;
+                     continue helper;
+                  } else return {ctor: "_Tuple2",_0: accMult$,_1: accPlus$};
+            else {
+                  var _v37 = accMult$,
+                  _v38 = accPlus$,
+                  _v39 = curMult$,
+                  _v40 = curPlus$,
+                  _v41 = newDelta,
+                  _v42 = repeat;
+                  accMult = _v37;
+                  accPlus = _v38;
+                  curMult = _v39;
+                  curPlus = _v40;
+                  delta = _v41;
+                  repeat = _v42;
+                  continue helper;
+               }
+         }
+      });
+      var _p79 = A6(helper,one,zero,magicFactor,_p80,delta0,true);
+      var accMultFinal = _p79._0;
+      var accPlusFinal = _p79._1;
+      var state1 = A2(add64,
+      accPlusFinal,
+      A2(mul64,accMultFinal,_p78._0));
+      return A2(Seed,state1,_p80);
+   });
+   return _elm.Random.PCG.values = {_op: _op
+                                   ,bool: bool
+                                   ,$int: $int
+                                   ,$float: $float
+                                   ,oneIn: oneIn
+                                   ,pair: pair
+                                   ,list: list
+                                   ,maybe: maybe
+                                   ,choice: choice
+                                   ,map: map
+                                   ,map2: map2
+                                   ,map3: map3
+                                   ,map4: map4
+                                   ,map5: map5
+                                   ,andMap: andMap
+                                   ,filter: filter
+                                   ,constant: constant
+                                   ,andThen: andThen
+                                   ,minInt: minInt
+                                   ,maxInt: maxInt
+                                   ,generate: generate
+                                   ,initialSeed2: initialSeed2
+                                   ,initialSeed: initialSeed
+                                   ,split: split
+                                   ,independentSeed: independentSeed
+                                   ,fastForward: fastForward
+                                   ,toJson: toJson
+                                   ,fromJson: fromJson};
+};

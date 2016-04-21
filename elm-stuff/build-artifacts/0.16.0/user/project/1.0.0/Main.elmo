@@ -1,0 +1,55 @@
+Elm.Main = Elm.Main || {};
+Elm.Main.make = function (_elm) {
+   "use strict";
+   _elm.Main = _elm.Main || {};
+   if (_elm.Main.values) return _elm.Main.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Model = Elm.Model.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $StartApp = Elm.StartApp.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $View = Elm.View.make(_elm);
+   var _op = {};
+   var randomSeed = Elm.Native.Port.make(_elm).inbound("randomSeed",
+   "( Int, Int )",
+   function (v) {
+      return typeof v === "object" && v instanceof Array ? {ctor: "_Tuple2"
+                                                           ,_0: typeof v[0] === "number" && isFinite(v[0]) && Math.floor(v[0]) === v[0] ? v[0] : _U.badPort("an integer",
+                                                           v[0])
+                                                           ,_1: typeof v[1] === "number" && isFinite(v[1]) && Math.floor(v[1]) === v[1] ? v[1] : _U.badPort("an integer",
+                                                           v[1])} : _U.badPort("an array",v);
+   });
+   var initialHash = Elm.Native.Port.make(_elm).inbound("initialHash",
+   "String",
+   function (v) {
+      return typeof v === "string" || typeof v === "object" && v instanceof String ? v : _U.badPort("a string",
+      v);
+   });
+   var initialSize = Elm.Native.Port.make(_elm).inbound("initialSize",
+   "( Int, Int )",
+   function (v) {
+      return typeof v === "object" && v instanceof Array ? {ctor: "_Tuple2"
+                                                           ,_0: typeof v[0] === "number" && isFinite(v[0]) && Math.floor(v[0]) === v[0] ? v[0] : _U.badPort("an integer",
+                                                           v[0])
+                                                           ,_1: typeof v[1] === "number" && isFinite(v[1]) && Math.floor(v[1]) === v[1] ? v[1] : _U.badPort("an integer",
+                                                           v[1])} : _U.badPort("an array",v);
+   });
+   var app = $StartApp.start({init: A3($Model.init,
+                             randomSeed,
+                             initialSize,
+                             initialHash)
+                             ,view: $View.view
+                             ,update: $Model.update
+                             ,inputs: $Model.inputs});
+   var main = app.html;
+   var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",
+   app.tasks);
+   return _elm.Main.values = {_op: _op,app: app,main: main};
+};

@@ -1,0 +1,190 @@
+Elm.Svg = Elm.Svg || {};
+Elm.Svg.make = function (_elm) {
+   "use strict";
+   _elm.Svg = _elm.Svg || {};
+   if (_elm.Svg.values) return _elm.Svg.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $VirtualDom = Elm.VirtualDom.make(_elm);
+   var _op = {};
+   var text = $VirtualDom.text;
+   var svgNamespace = A2($VirtualDom.property,
+   "namespace",
+   $Json$Encode.string("http://www.w3.org/2000/svg"));
+   var node = F3(function (name,attributes,children) {
+      return A3($VirtualDom.node,
+      name,
+      A2($List._op["::"],svgNamespace,attributes),
+      children);
+   });
+   var svg = node("svg");
+   var foreignObject = node("foreignObject");
+   var animate = node("animate");
+   var animateColor = node("animateColor");
+   var animateMotion = node("animateMotion");
+   var animateTransform = node("animateTransform");
+   var mpath = node("mpath");
+   var set = node("set");
+   var a = node("a");
+   var defs = node("defs");
+   var g = node("g");
+   var marker = node("marker");
+   var mask = node("mask");
+   var missingGlyph = node("missingGlyph");
+   var pattern = node("pattern");
+   var $switch = node("switch");
+   var symbol = node("symbol");
+   var desc = node("desc");
+   var metadata = node("metadata");
+   var title = node("title");
+   var feBlend = node("feBlend");
+   var feColorMatrix = node("feColorMatrix");
+   var feComponentTransfer = node("feComponentTransfer");
+   var feComposite = node("feComposite");
+   var feConvolveMatrix = node("feConvolveMatrix");
+   var feDiffuseLighting = node("feDiffuseLighting");
+   var feDisplacementMap = node("feDisplacementMap");
+   var feFlood = node("feFlood");
+   var feFuncA = node("feFuncA");
+   var feFuncB = node("feFuncB");
+   var feFuncG = node("feFuncG");
+   var feFuncR = node("feFuncR");
+   var feGaussianBlur = node("feGaussianBlur");
+   var feImage = node("feImage");
+   var feMerge = node("feMerge");
+   var feMergeNode = node("feMergeNode");
+   var feMorphology = node("feMorphology");
+   var feOffset = node("feOffset");
+   var feSpecularLighting = node("feSpecularLighting");
+   var feTile = node("feTile");
+   var feTurbulence = node("feTurbulence");
+   var font = node("font");
+   var fontFace = node("fontFace");
+   var fontFaceFormat = node("fontFaceFormat");
+   var fontFaceName = node("fontFaceName");
+   var fontFaceSrc = node("fontFaceSrc");
+   var fontFaceUri = node("fontFaceUri");
+   var hkern = node("hkern");
+   var vkern = node("vkern");
+   var linearGradient = node("linearGradient");
+   var radialGradient = node("radialGradient");
+   var stop = node("stop");
+   var circle = node("circle");
+   var ellipse = node("ellipse");
+   var image = node("image");
+   var line = node("line");
+   var path = node("path");
+   var polygon = node("polygon");
+   var polyline = node("polyline");
+   var rect = node("rect");
+   var use = node("use");
+   var feDistantLight = node("feDistantLight");
+   var fePointLight = node("fePointLight");
+   var feSpotLight = node("feSpotLight");
+   var altGlyph = node("altGlyph");
+   var altGlyphDef = node("altGlyphDef");
+   var altGlyphItem = node("altGlyphItem");
+   var glyph = node("glyph");
+   var glyphRef = node("glyphRef");
+   var textPath = node("textPath");
+   var text$ = node("text");
+   var tref = node("tref");
+   var tspan = node("tspan");
+   var clipPath = node("clipPath");
+   var colorProfile = node("colorProfile");
+   var cursor = node("cursor");
+   var filter = node("filter");
+   var script = node("script");
+   var style = node("style");
+   var view = node("view");
+   return _elm.Svg.values = {_op: _op
+                            ,text: text
+                            ,node: node
+                            ,svg: svg
+                            ,foreignObject: foreignObject
+                            ,circle: circle
+                            ,ellipse: ellipse
+                            ,image: image
+                            ,line: line
+                            ,path: path
+                            ,polygon: polygon
+                            ,polyline: polyline
+                            ,rect: rect
+                            ,use: use
+                            ,animate: animate
+                            ,animateColor: animateColor
+                            ,animateMotion: animateMotion
+                            ,animateTransform: animateTransform
+                            ,mpath: mpath
+                            ,set: set
+                            ,desc: desc
+                            ,metadata: metadata
+                            ,title: title
+                            ,a: a
+                            ,defs: defs
+                            ,g: g
+                            ,marker: marker
+                            ,mask: mask
+                            ,missingGlyph: missingGlyph
+                            ,pattern: pattern
+                            ,$switch: $switch
+                            ,symbol: symbol
+                            ,altGlyph: altGlyph
+                            ,altGlyphDef: altGlyphDef
+                            ,altGlyphItem: altGlyphItem
+                            ,glyph: glyph
+                            ,glyphRef: glyphRef
+                            ,textPath: textPath
+                            ,text$: text$
+                            ,tref: tref
+                            ,tspan: tspan
+                            ,font: font
+                            ,fontFace: fontFace
+                            ,fontFaceFormat: fontFaceFormat
+                            ,fontFaceName: fontFaceName
+                            ,fontFaceSrc: fontFaceSrc
+                            ,fontFaceUri: fontFaceUri
+                            ,hkern: hkern
+                            ,vkern: vkern
+                            ,linearGradient: linearGradient
+                            ,radialGradient: radialGradient
+                            ,stop: stop
+                            ,feBlend: feBlend
+                            ,feColorMatrix: feColorMatrix
+                            ,feComponentTransfer: feComponentTransfer
+                            ,feComposite: feComposite
+                            ,feConvolveMatrix: feConvolveMatrix
+                            ,feDiffuseLighting: feDiffuseLighting
+                            ,feDisplacementMap: feDisplacementMap
+                            ,feFlood: feFlood
+                            ,feFuncA: feFuncA
+                            ,feFuncB: feFuncB
+                            ,feFuncG: feFuncG
+                            ,feFuncR: feFuncR
+                            ,feGaussianBlur: feGaussianBlur
+                            ,feImage: feImage
+                            ,feMerge: feMerge
+                            ,feMergeNode: feMergeNode
+                            ,feMorphology: feMorphology
+                            ,feOffset: feOffset
+                            ,feSpecularLighting: feSpecularLighting
+                            ,feTile: feTile
+                            ,feTurbulence: feTurbulence
+                            ,feDistantLight: feDistantLight
+                            ,fePointLight: fePointLight
+                            ,feSpotLight: feSpotLight
+                            ,clipPath: clipPath
+                            ,colorProfile: colorProfile
+                            ,cursor: cursor
+                            ,filter: filter
+                            ,script: script
+                            ,style: style
+                            ,view: view};
+};

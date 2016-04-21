@@ -1,0 +1,520 @@
+Elm.EquipmentsOperation = Elm.EquipmentsOperation || {};
+Elm.EquipmentsOperation.make = function (_elm) {
+   "use strict";
+   _elm.EquipmentsOperation = _elm.EquipmentsOperation || {};
+   if (_elm.EquipmentsOperation.values)
+   return _elm.EquipmentsOperation.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Equipments = Elm.Equipments.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Util$ListUtil = Elm.Util.ListUtil.make(_elm);
+   var _op = {};
+   var colorOf = function (_p0) {    var _p1 = _p0;return _p1._2;};
+   var colorProperty = function (equipments) {
+      var _p2 = $List.head(equipments);
+      if (_p2.ctor === "Just") {
+            var firstColor = colorOf(_p2._0);
+            return A3($List.foldl,
+            F2(function (e,maybeColor) {
+               var color = colorOf(e);
+               var _p3 = maybeColor;
+               if (_p3.ctor === "Just") {
+                     return _U.eq(color,
+                     _p3._0) ? $Maybe.Just(color) : $Maybe.Nothing;
+                  } else {
+                     return $Maybe.Nothing;
+                  }
+            }),
+            $Maybe.Just(firstColor),
+            equipments);
+         } else {
+            return $Maybe.Nothing;
+         }
+   };
+   var nameOf = function (_p4) {    var _p5 = _p4;return _p5._3;};
+   var idOf = function (_p6) {    var _p7 = _p6;return _p7._0;};
+   var changeName = F2(function (name,_p8) {
+      var _p9 = _p8;
+      return A4($Equipments.Desk,_p9._0,_p9._1,_p9._2,name);
+   });
+   var changeColor = F2(function (color,_p10) {
+      var _p11 = _p10;
+      return A4($Equipments.Desk,_p11._0,_p11._1,color,_p11._3);
+   });
+   var fitToGrid = F2(function (gridSize,_p12) {
+      var _p13 = _p12;
+      return {ctor: "_Tuple2"
+             ,_0: (_p13._0 / gridSize | 0) * gridSize
+             ,_1: (_p13._1 / gridSize | 0) * gridSize};
+   });
+   var findEquipmentById = F2(function (equipments,id) {
+      return A2($Util$ListUtil.findBy,
+      function (equipment) {
+         return _U.eq(id,idOf(equipment));
+      },
+      equipments);
+   });
+   var rotate = function (_p14) {
+      var _p15 = _p14;
+      return A4($Equipments.Desk,
+      _p15._0,
+      {ctor: "_Tuple4"
+      ,_0: _p15._1._0
+      ,_1: _p15._1._1
+      ,_2: _p15._1._3
+      ,_3: _p15._1._2},
+      _p15._2,
+      _p15._3);
+   };
+   var partiallyChange = F3(function (f,ids,equipments) {
+      return A2($List.map,
+      function (e) {
+         return A2($List.member,idOf(e),ids) ? f(e) : e;
+      },
+      equipments);
+   });
+   var moveEquipments = F4(function (gridSize,
+   _p16,
+   ids,
+   equipments) {
+      var _p17 = _p16;
+      return A3(partiallyChange,
+      function (_p18) {
+         var _p19 = _p18;
+         var _p20 = A2(fitToGrid,
+         gridSize,
+         {ctor: "_Tuple2"
+         ,_0: _p19._1._0 + _p17._0
+         ,_1: _p19._1._1 + _p17._1});
+         var newX = _p20._0;
+         var newY = _p20._1;
+         return A4($Equipments.Desk,
+         _p19._0,
+         {ctor: "_Tuple4"
+         ,_0: newX
+         ,_1: newY
+         ,_2: _p19._1._2
+         ,_3: _p19._1._3},
+         _p19._2,
+         _p19._3);
+      },
+      ids,
+      equipments);
+   });
+   var commitInputName = F2(function (_p21,equipments) {
+      var _p22 = _p21;
+      return A3(partiallyChange,
+      changeName(_p22._1),
+      _U.list([_p22._0]),
+      equipments);
+   });
+   var pasteEquipments = F3(function (_p23,
+   copiedWithNewIds,
+   allEquipments) {
+      var _p24 = _p23;
+      var _p25 = A3($List.foldl,
+      F2(function (_p27,_p26) {
+         var _p28 = _p27;
+         var _p29 = _p26;
+         var _p30 = $Equipments.position(_p28._0);
+         var x = _p30._0;
+         var y = _p30._1;
+         return {ctor: "_Tuple2"
+                ,_0: A2($Basics.min,_p29._0,x)
+                ,_1: A2($Basics.min,_p29._1,y)};
+      }),
+      {ctor: "_Tuple2",_0: 99999,_1: 99999},
+      copiedWithNewIds);
+      var minX = _p25._0;
+      var minY = _p25._1;
+      var newEquipments = A2($List.map,
+      function (_p31) {
+         var _p32 = _p31;
+         var _p34 = _p32._0;
+         var _p33 = $Equipments.position(_p34);
+         var x = _p33._0;
+         var y = _p33._1;
+         return A3($Equipments.copy,
+         _p32._1,
+         {ctor: "_Tuple2"
+         ,_0: _p24._0 + (x - minX)
+         ,_1: _p24._1 + (y - minY)},
+         _p34);
+      },
+      copiedWithNewIds);
+      return newEquipments;
+   });
+   var Down = {ctor: "Down"};
+   var Right = {ctor: "Right"};
+   var Left = {ctor: "Left"};
+   var Up = {ctor: "Up"};
+   var opposite = function (direction) {
+      var _p35 = direction;
+      switch (_p35.ctor)
+      {case "Left": return Right;
+         case "Right": return Left;
+         case "Up": return Down;
+         default: return Up;}
+   };
+   var linked = F2(function (_p37,_p36) {
+      var _p38 = _p37;
+      var _p43 = _p38._1;
+      var _p42 = _p38._0;
+      var _p39 = _p36;
+      var _p41 = _p39._1;
+      var _p40 = _p39._0;
+      return _U.cmp(_p42,_p40 + _p39._2) < 1 && (_U.cmp(_p40,
+      _p42 + _p38._2) < 1 && (_U.cmp(_p43,
+      _p41 + _p39._3) < 1 && _U.cmp(_p41,_p43 + _p38._3) < 1));
+   });
+   var rect = function (_p44) {
+      var _p45 = _p44;
+      return _p45._1;
+   };
+   var rectFloat = function (e) {
+      var _p46 = rect(e);
+      var x = _p46._0;
+      var y = _p46._1;
+      var w = _p46._2;
+      var h = _p46._3;
+      return {ctor: "_Tuple4"
+             ,_0: $Basics.toFloat(x)
+             ,_1: $Basics.toFloat(y)
+             ,_2: $Basics.toFloat(w)
+             ,_3: $Basics.toFloat(h)};
+   };
+   var center = function (e) {
+      var _p47 = rectFloat(e);
+      var x = _p47._0;
+      var y = _p47._1;
+      var w = _p47._2;
+      var h = _p47._3;
+      return {ctor: "_Tuple2",_0: x + w / 2,_1: y + h / 2};
+   };
+   var compareBy = F3(function (direction,from,$new) {
+      var _p48 = center($new);
+      var newCenterX = _p48._0;
+      var newCenterY = _p48._1;
+      var _p49 = center(from);
+      var centerX = _p49._0;
+      var centerY = _p49._1;
+      if (_U.eq({ctor: "_Tuple2",_0: centerX,_1: centerY},
+      {ctor: "_Tuple2",_0: newCenterX,_1: newCenterY}))
+      return $Basics.EQ; else {
+            var greater = function () {
+               var _p50 = direction;
+               switch (_p50.ctor)
+               {case "Up": return _U.cmp(newCenterX,
+                    centerX) < 0 || _U.eq(newCenterX,centerX) && _U.cmp(newCenterY,
+                    centerY) < 0;
+                  case "Down": return _U.cmp(newCenterX,
+                    centerX) > 0 || _U.eq(newCenterX,centerX) && _U.cmp(newCenterY,
+                    centerY) > 0;
+                  case "Left": return _U.cmp(newCenterY,
+                    centerY) < 0 || _U.eq(newCenterY,centerY) && _U.cmp(newCenterX,
+                    centerX) < 0;
+                  default: return _U.cmp(newCenterY,
+                    centerY) > 0 || _U.eq(newCenterY,centerY) && _U.cmp(newCenterX,
+                    centerX) > 0;}
+            }();
+            return greater ? $Basics.GT : $Basics.LT;
+         }
+   });
+   var lessBy = F3(function (direction,from,$new) {
+      return _U.eq(A3(compareBy,direction,from,$new),$Basics.LT);
+   });
+   var minimumBy = F2(function (direction,list) {
+      var f = F2(function (e1,memo) {
+         var _p51 = memo;
+         if (_p51.ctor === "Just") {
+               var _p52 = _p51._0;
+               return A3(lessBy,
+               direction,
+               _p52,
+               e1) ? $Maybe.Just(e1) : $Maybe.Just(_p52);
+            } else {
+               return $Maybe.Just(e1);
+            }
+      });
+      return A3($List.foldl,f,$Maybe.Nothing,list);
+   });
+   var greaterBy = F3(function (direction,from,$new) {
+      return _U.eq(A3(compareBy,direction,from,$new),$Basics.GT);
+   });
+   var filterCandidate = F3(function (direction,from,$new) {
+      return A3(greaterBy,direction,from,$new);
+   });
+   var nearest = F3(function (direction,from,list) {
+      var filtered = A2($List.filter,
+      A2(filterCandidate,direction,from),
+      list);
+      return $List.isEmpty(filtered) ? A2(minimumBy,
+      direction,
+      list) : A2(minimumBy,direction,filtered);
+   });
+   var withinRange = F2(function (range,list) {
+      var _p53 = range;
+      var start = _p53._0;
+      var end = _p53._1;
+      var _p54 = center(start);
+      var startX = _p54._0;
+      var startY = _p54._1;
+      var _p55 = center(end);
+      var endX = _p55._0;
+      var endY = _p55._1;
+      var left = A2($Basics.min,startX,endX);
+      var right = A2($Basics.max,startX,endX);
+      var top = A2($Basics.min,startY,endY);
+      var bottom = A2($Basics.max,startY,endY);
+      var isContained = function (e) {
+         var _p56 = center(e);
+         var centerX = _p56._0;
+         var centerY = _p56._1;
+         return _U.cmp(centerX,left) > -1 && (_U.cmp(centerX,
+         right) < 1 && (_U.cmp(centerY,top) > -1 && _U.cmp(centerY,
+         bottom) < 1));
+      };
+      return A2($List.filter,isContained,list);
+   });
+   var linkedByAnyOf = F2(function (list,newEquipment) {
+      return A2($List.any,
+      function (e) {
+         return A2(linked,rect(e),rect(newEquipment));
+      },
+      list);
+   });
+   var island = F2(function (current,rest) {
+      island: while (true) {
+         var _p57 = A2($List.partition,linkedByAnyOf(current),rest);
+         var newEquipments = _p57._0;
+         var rest$ = _p57._1;
+         if ($List.isEmpty(newEquipments)) return A2($Basics._op["++"],
+            current,
+            newEquipments); else {
+               var _v22 = A2($Basics._op["++"],current,newEquipments),
+               _v23 = rest$;
+               current = _v22;
+               rest = _v23;
+               continue island;
+            }
+      }
+   });
+   var bounds = function (list) {
+      var f = F2(function (e1,memo) {
+         var _p58 = rect(e1);
+         var x1 = _p58._0;
+         var y1 = _p58._1;
+         var w1 = _p58._2;
+         var h1 = _p58._3;
+         var right1 = x1 + w1;
+         var bottom1 = y1 + h1;
+         var _p59 = memo;
+         if (_p59.ctor === "Just") {
+               return $Maybe.Just({ctor: "_Tuple4"
+                                  ,_0: A2($Basics.min,_p59._0._0,x1)
+                                  ,_1: A2($Basics.min,_p59._0._1,y1)
+                                  ,_2: A2($Basics.max,_p59._0._2,right1)
+                                  ,_3: A2($Basics.max,_p59._0._3,bottom1)});
+            } else {
+               return $Maybe.Just({ctor: "_Tuple4"
+                                  ,_0: x1
+                                  ,_1: y1
+                                  ,_2: right1
+                                  ,_3: bottom1});
+            }
+      });
+      return A3($List.foldl,f,$Maybe.Nothing,list);
+   };
+   var bound = F2(function (direction,equipment) {
+      var _p60 = rect(equipment);
+      var left = _p60._0;
+      var top = _p60._1;
+      var w = _p60._2;
+      var h = _p60._3;
+      var right = left + w;
+      var bottom = top + h;
+      var _p61 = direction;
+      switch (_p61.ctor)
+      {case "Up": return top;
+         case "Down": return bottom;
+         case "Left": return left;
+         default: return right;}
+   });
+   var compareBoundBy = F3(function (direction,e1,e2) {
+      var _p62 = rect(e2);
+      var left2 = _p62._0;
+      var top2 = _p62._1;
+      var w2 = _p62._2;
+      var h2 = _p62._3;
+      var right2 = left2 + w2;
+      var bottom2 = top2 + h2;
+      var _p63 = rect(e1);
+      var left1 = _p63._0;
+      var top1 = _p63._1;
+      var w1 = _p63._2;
+      var h1 = _p63._3;
+      var right1 = left1 + w1;
+      var bottom1 = top1 + h1;
+      var _p64 = direction;
+      switch (_p64.ctor)
+      {case "Up": return _U.eq(top1,top2) ? $Basics.EQ : _U.cmp(top1,
+           top2) < 0 ? $Basics.GT : $Basics.LT;
+         case "Down": return _U.eq(bottom1,
+           bottom2) ? $Basics.EQ : _U.cmp(bottom1,
+           bottom2) > 0 ? $Basics.GT : $Basics.LT;
+         case "Left": return _U.eq(left1,
+           left2) ? $Basics.EQ : _U.cmp(left1,
+           left2) < 0 ? $Basics.GT : $Basics.LT;
+         default: return _U.eq(right1,
+           right2) ? $Basics.EQ : _U.cmp(right1,
+           right2) > 0 ? $Basics.GT : $Basics.LT;}
+   });
+   var minimumPartsOf = F2(function (direction,list) {
+      var f = F2(function (e,memo) {
+         var _p65 = memo;
+         if (_p65.ctor === "::") {
+               var _p66 = A3(compareBoundBy,direction,e,_p65._0);
+               switch (_p66.ctor)
+               {case "LT": return _U.list([e]);
+                  case "EQ": return A2($List._op["::"],e,memo);
+                  default: return memo;}
+            } else {
+               return _U.list([e]);
+            }
+      });
+      return A3($List.foldl,f,_U.list([]),list);
+   });
+   var restOfMinimumPartsOf = F2(function (direction,list) {
+      var minimumParts = A2(minimumPartsOf,direction,list);
+      return A2($List.filter,
+      function (e) {
+         return $Basics.not(A2($List.member,e,minimumParts));
+      },
+      list);
+   });
+   var maximumPartsOf = F2(function (direction,list) {
+      var f = F2(function (e,memo) {
+         var _p67 = memo;
+         if (_p67.ctor === "::") {
+               var _p68 = A3(compareBoundBy,direction,e,_p67._0);
+               switch (_p68.ctor)
+               {case "LT": return memo;
+                  case "EQ": return A2($List._op["::"],e,memo);
+                  default: return _U.list([e]);}
+            } else {
+               return _U.list([e]);
+            }
+      });
+      return A3($List.foldl,f,_U.list([]),list);
+   });
+   var restOfMaximumPartsOf = F2(function (direction,list) {
+      var maximumParts = A2(maximumPartsOf,direction,list);
+      return A2($List.filter,
+      function (e) {
+         return $Basics.not(A2($List.member,e,maximumParts));
+      },
+      list);
+   });
+   var expandOrShrink = F4(function (direction,
+   primary,
+   current,
+   all) {
+      var _p69 = rect(primary);
+      var left0 = _p69._0;
+      var top0 = _p69._1;
+      var w0 = _p69._2;
+      var h0 = _p69._3;
+      var right0 = left0 + w0;
+      var bottom0 = top0 + h0;
+      var _p70 = A2($Maybe.withDefault,
+      {ctor: "_Tuple4",_0: left0,_1: top0,_2: right0,_3: bottom0},
+      bounds(current));
+      var left = _p70._0;
+      var top = _p70._1;
+      var right = _p70._2;
+      var bottom = _p70._3;
+      var isExpand = function () {
+         var _p71 = direction;
+         switch (_p71.ctor)
+         {case "Up": return _U.eq(bottom,bottom0) && _U.cmp(top,
+              top0) < 1;
+            case "Down": return _U.eq(top,top0) && _U.cmp(bottom,
+              bottom0) > -1;
+            case "Left": return _U.eq(right,right0) && _U.cmp(left,
+              left0) < 1;
+            default: return _U.eq(left,left0) && _U.cmp(right,right0) > -1;}
+      }();
+      if (isExpand) {
+            var filter = function (e1) {
+               var _p72 = rect(e1);
+               var left1 = _p72._0;
+               var top1 = _p72._1;
+               var w1 = _p72._2;
+               var h1 = _p72._3;
+               var right1 = left1 + w1;
+               var bottom1 = top1 + h1;
+               var _p73 = direction;
+               switch (_p73.ctor)
+               {case "Up": return _U.cmp(left1,left) > -1 && (_U.cmp(right1,
+                    right) < 1 && _U.cmp(top1,top) < 0);
+                  case "Down": return _U.cmp(left1,left) > -1 && (_U.cmp(right1,
+                    right) < 1 && _U.cmp(bottom1,bottom) > 0);
+                  case "Left": return _U.cmp(top1,top) > -1 && (_U.cmp(bottom1,
+                    bottom) < 1 && _U.cmp(left1,left) < 0);
+                  default: return _U.cmp(top1,top) > -1 && (_U.cmp(bottom1,
+                    bottom) < 1 && _U.cmp(right1,right) > 0);}
+            };
+            var filtered = A2($List.filter,filter,all);
+            return A2($Basics._op["++"],
+            current,
+            A2(minimumPartsOf,direction,filtered));
+         } else return A2(restOfMaximumPartsOf,
+         opposite(direction),
+         current);
+   });
+   return _elm.EquipmentsOperation.values = {_op: _op
+                                            ,rect: rect
+                                            ,rectFloat: rectFloat
+                                            ,center: center
+                                            ,linked: linked
+                                            ,linkedByAnyOf: linkedByAnyOf
+                                            ,island: island
+                                            ,Up: Up
+                                            ,Left: Left
+                                            ,Right: Right
+                                            ,Down: Down
+                                            ,opposite: opposite
+                                            ,compareBy: compareBy
+                                            ,lessBy: lessBy
+                                            ,greaterBy: greaterBy
+                                            ,minimumBy: minimumBy
+                                            ,filterCandidate: filterCandidate
+                                            ,nearest: nearest
+                                            ,withinRange: withinRange
+                                            ,bounds: bounds
+                                            ,bound: bound
+                                            ,compareBoundBy: compareBoundBy
+                                            ,minimumPartsOf: minimumPartsOf
+                                            ,maximumPartsOf: maximumPartsOf
+                                            ,restOfMinimumPartsOf: restOfMinimumPartsOf
+                                            ,restOfMaximumPartsOf: restOfMaximumPartsOf
+                                            ,expandOrShrink: expandOrShrink
+                                            ,pasteEquipments: pasteEquipments
+                                            ,partiallyChange: partiallyChange
+                                            ,rotate: rotate
+                                            ,moveEquipments: moveEquipments
+                                            ,findEquipmentById: findEquipmentById
+                                            ,fitToGrid: fitToGrid
+                                            ,changeColor: changeColor
+                                            ,changeName: changeName
+                                            ,idOf: idOf
+                                            ,nameOf: nameOf
+                                            ,colorOf: colorOf
+                                            ,commitInputName: commitInputName
+                                            ,colorProperty: colorProperty};
+};

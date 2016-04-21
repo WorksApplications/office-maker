@@ -1,0 +1,152 @@
+Elm.Stamp = Elm.Stamp || {};
+Elm.Stamp.make = function (_elm) {
+   "use strict";
+   _elm.Stamp = _elm.Stamp || {};
+   if (_elm.Stamp.values) return _elm.Stamp.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $EquipmentsOperation = Elm.EquipmentsOperation.make(_elm),
+   $List = Elm.List.make(_elm),
+   $ListUtil = Elm.ListUtil.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var findPrototypeByIndex = F2(function (index,list) {
+      var _p0 = A2($ListUtil.getAt,index,list);
+      if (_p0.ctor === "Just") {
+            return _p0._0;
+         } else {
+            var _p1 = $List.head(list);
+            if (_p1.ctor === "Just") {
+                  return _p1._0;
+               } else {
+                  return _U.crashCase("Stamp",
+                  {start: {line: 55,column: 7},end: {line: 57,column: 53}},
+                  _p1)("no prototypes found");
+               }
+         }
+   });
+   var generateAllCandidatePosition = F3(function (_p5,_p4,_p3) {
+      var _p6 = _p5;
+      var _p7 = _p4;
+      var _p8 = _p3;
+      var tops = A2($List.map,
+      function (index) {
+         return _p7._1 + _p6._1 * index;
+      },
+      _p8._1);
+      var lefts = A2($List.map,
+      function (index) {
+         return _p7._0 + _p6._0 * index;
+      },
+      _p8._0);
+      return A2($List.concatMap,
+      function (left) {
+         return A2($List.map,
+         function (top) {
+            return {ctor: "_Tuple2",_0: left,_1: top};
+         },
+         tops);
+      },
+      lefts);
+   });
+   var stampIndices = F4(function (horizontal,_p11,_p10,_p9) {
+      var _p12 = _p11;
+      var _p21 = _p12._0;
+      var _p20 = _p12._1;
+      var _p13 = _p10;
+      var _p19 = _p13._1;
+      var _p18 = _p13._0;
+      var _p14 = _p9;
+      var _p17 = _p14._1;
+      var _p16 = _p14._0;
+      var _p15 = function () {
+         if (horizontal) {
+               var amountY = _U.cmp($Basics.abs(_p17 - _p19),
+               _p20 / 2 | 0) > 0 ? 1 : 0;
+               var amountX = ($Basics.abs(_p16 - _p18) + (_p21 / 2 | 0)) / _p21 | 0;
+               return {ctor: "_Tuple2",_0: amountX,_1: amountY};
+            } else {
+               var amountY = ($Basics.abs(_p17 - _p19) + (_p20 / 2 | 0)) / _p20 | 0;
+               var amountX = _U.cmp($Basics.abs(_p16 - _p18),
+               _p21 / 2 | 0) > 0 ? 1 : 0;
+               return {ctor: "_Tuple2",_0: amountX,_1: amountY};
+            }
+      }();
+      var amountX = _p15._0;
+      var amountY = _p15._1;
+      return {ctor: "_Tuple2"
+             ,_0: A2($List.map,
+             function (i) {
+                return _U.cmp(_p16,_p18) > 0 ? i : 0 - i;
+             },
+             _U.range(0,amountX))
+             ,_1: A2($List.map,
+             function (i) {
+                return _U.cmp(_p17,_p19) > 0 ? i : 0 - i;
+             },
+             _U.range(0,amountY))};
+   });
+   var stampCandidatesOnDragging = F4(function (gridSize,
+   prototype,
+   _p23,
+   _p22) {
+      var _p24 = _p23;
+      var _p37 = _p24._1;
+      var _p36 = _p24._0;
+      var _p25 = _p22;
+      var _p35 = _p25._1;
+      var _p34 = _p25._0;
+      var horizontal = _U.cmp($Basics.abs(_p34 - _p36),
+      $Basics.abs(_p35 - _p37)) > 0;
+      var flip = function (_p26) {
+         var _p27 = _p26;
+         return {ctor: "_Tuple2",_0: _p27._1,_1: _p27._0};
+      };
+      var _p28 = prototype;
+      var prototypeId = _p28._0;
+      var color = _p28._1;
+      var name = _p28._2;
+      var deskSize = _p28._3;
+      var _p29 = horizontal ? flip(deskSize) : deskSize;
+      var deskWidth = _p29._0;
+      var deskHeight = _p29._1;
+      var _p30 = A4(stampIndices,
+      horizontal,
+      {ctor: "_Tuple2",_0: deskWidth,_1: deskHeight},
+      {ctor: "_Tuple2",_0: _p36,_1: _p37},
+      {ctor: "_Tuple2",_0: _p34,_1: _p35});
+      var indicesX = _p30._0;
+      var indicesY = _p30._1;
+      var _p31 = A2($EquipmentsOperation.fitToGrid,
+      gridSize,
+      {ctor: "_Tuple2"
+      ,_0: _p36 - ($Basics.fst(deskSize) / 2 | 0)
+      ,_1: _p37 - ($Basics.snd(deskSize) / 2 | 0)});
+      var centerLeft = _p31._0;
+      var centerTop = _p31._1;
+      var all = A3(generateAllCandidatePosition,
+      {ctor: "_Tuple2",_0: deskWidth,_1: deskHeight},
+      {ctor: "_Tuple2",_0: centerLeft,_1: centerTop},
+      {ctor: "_Tuple2",_0: indicesX,_1: indicesY});
+      return A2($List.map,
+      function (_p32) {
+         var _p33 = _p32;
+         return {ctor: "_Tuple2"
+                ,_0: {ctor: "_Tuple4"
+                     ,_0: prototypeId
+                     ,_1: color
+                     ,_2: name
+                     ,_3: {ctor: "_Tuple2",_0: deskWidth,_1: deskHeight}}
+                ,_1: {ctor: "_Tuple2",_0: _p33._0,_1: _p33._1}};
+      },
+      all);
+   });
+   return _elm.Stamp.values = {_op: _op
+                              ,stampIndices: stampIndices
+                              ,generateAllCandidatePosition: generateAllCandidatePosition
+                              ,findPrototypeByIndex: findPrototypeByIndex
+                              ,stampCandidatesOnDragging: stampCandidatesOnDragging};
+};
