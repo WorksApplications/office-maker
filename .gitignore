@@ -5,4 +5,4 @@ test/public
 *.ttf
 data
 repl-temp-*
-tasks.ods
+*.ods*
