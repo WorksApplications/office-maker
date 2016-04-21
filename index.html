@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Main</title>
+		<script src="index.js"></script>
+		<link rel="stylesheet" href="style.css"></link>
+		<!-- <link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'> -->
+	</head>
+	<body>
+		<script>
+			var main = Elm.fullscreen(Elm.Main, {
+				initialSize : [window.innerWidth, window.innerHeight],
+				initialHash : window.location.hash,
+				randomSeed : [Math.floor(Math.random()*0xFFFFFFFF), Math.floor(Math.random()*0xFFFFFFFF)]
+			});
+		</script>
+	</body>
+</html>
