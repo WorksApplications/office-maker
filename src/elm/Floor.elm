@@ -2,7 +2,7 @@ module Floor where
 
 import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
-import Util.HtmlUtil exposing (..)
+import Util.File exposing (..)
 
 type alias Id = String
 
@@ -17,7 +17,7 @@ type alias Model =
   }
 
 type ImageSource =
-  LocalFile String FileList String | URL String | None
+  LocalFile String File String | URL String | None
 
 init : Id -> Model
 init id =
@@ -39,7 +39,7 @@ type Action =
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
   | ChangeName String
-  | SetLocalFile String FileList String
+  | SetLocalFile String File String
   | ChangeRealWidth Int
   | ChangeRealHeight Int
   | UseURL
@@ -68,7 +68,7 @@ changeEquipmentName = ChangeEquipmentName
 changeName : String -> Action
 changeName = ChangeName
 
-setLocalFile : String -> FileList -> String -> Action
+setLocalFile : String -> File -> String -> Action
 setLocalFile = SetLocalFile
 
 changeRealWidth : Int -> Action
@@ -117,8 +117,8 @@ update action model =
         model
     ChangeName name ->
       { model | name = name }
-    SetLocalFile id fileList dataURL ->
-      setLocalFile' id fileList dataURL model
+    SetLocalFile id file dataURL ->
+      setLocalFile' id file dataURL model
     ChangeRealWidth width ->
       let
         newRealSize =
@@ -193,16 +193,16 @@ addEquipments equipments model =
   setEquipments (model.equipments ++ equipments) model
 
 
-setLocalFile' : String -> FileList -> String -> Model -> Model
-setLocalFile' id fileList dataURL model =
+setLocalFile' : String -> File -> String -> Model -> Model
+setLocalFile' id file dataURL model =
   let
     (width, height) =
-      getWidthAndHeightOfImage dataURL
+      getSizeOfImage dataURL
   in
     { model |
       width = width
     , height = height
-    , imageSource = LocalFile id fileList dataURL
+    , imageSource = LocalFile id file dataURL
     }
 
 src : Model -> Maybe String

@@ -8,7 +8,7 @@ import Json.Decode as Decode exposing ((:=), object8, object7, Decoder)
 import Task exposing (Task)
 import Floor
 import Util.HttpUtil as HttpUtil
-import Util.HtmlUtil exposing (FileList)
+import Util.File exposing (File)
 
 type alias Floor = Floor.Model
 
@@ -115,8 +115,9 @@ getFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ id)
 
-saveEditingImage : Id -> FileList -> Task a ()
-saveEditingImage id filelist =
-    HttpUtil.putFile
+saveEditingImage : Id -> File -> Task a ()
+saveEditingImage id file =
+    HttpUtil.sendFile
+      "PUT"
       ("/api/v1/image/" ++ id)
-      filelist
+      file

@@ -2,8 +2,8 @@ module Util.HttpUtil where
 
 import Task exposing(..)
 import Native.HttpUtil
-import Util.HtmlUtil as HtmlUtil exposing(FileList(FileList))
+import Util.File as File exposing(File(File))
 
-putFile : String -> HtmlUtil.FileList -> Task a ()
-putFile url (FileList fileList) =
-  Native.HttpUtil.putFile url fileList
+sendFile : String -> String -> File.File -> Task a ()
+sendFile method url (File file) =
+  Native.HttpUtil.sendFile method url file

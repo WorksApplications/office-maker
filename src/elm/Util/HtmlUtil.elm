@@ -7,7 +7,7 @@ import Html exposing (Html, Attribute)
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode exposing (..)
--- import Json.Encode
+import Util.File exposing (..)
 import Task exposing (Task)
 
 type Error =
@@ -24,7 +24,7 @@ type alias MouseWheelEvent =
   , shiftKey : Bool
   , value : Float
   }
-type FileList = FileList Json.Decode.Value
+
 
 focus : String -> Task Error ()
 focus id =
@@ -153,16 +153,6 @@ decodeWheelEvent =
       ]))
     `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
 
-readFirstAsDataURL : FileList -> Task Error String
-readFirstAsDataURL (FileList list) =
-    Task.mapError
-      (always (Unexpected (toString list)))
-      (Native.HtmlUtil.readAsDataURL list)
-
-getWidthAndHeightOfImage : String -> (Int, Int)
-getWidthAndHeightOfImage =
-  Native.HtmlUtil.getWidthAndHeightOfImage
-
 fileLoadButton : Address FileList -> Html
 fileLoadButton address =
   Html.input
@@ -173,7 +163,3 @@ fileLoadButton address =
         (Signal.message address)
     ]
     []
-
-decodeFile : Decoder FileList
-decodeFile =
-  Json.Decode.map FileList (at ["target", "files"] (value))
