@@ -4,7 +4,7 @@ import Signal exposing (Signal, Address)
 import Task
 import Effects exposing (Effects)
 import Model
-import View
+import View.View as View
 
 app : StartApp.App Model.Model
 app = StartApp.start

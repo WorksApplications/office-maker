@@ -1,11 +1,12 @@
-module View(view) where
+module View.View(view) where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 -- import Html.Lazy exposing (..)
 import Maybe
 import Signal exposing (Address, forwardTo)
-import Styles
+import View.Styles as Styles
+import View.Icons as Icons
 -- import Debug
 
 import Util.UndoRedo as UndoRedo
@@ -18,7 +19,7 @@ import EquipmentsOperation exposing (..)
 import Util.ListUtil exposing (..)
 import Prototypes exposing (Prototype, StampCandidate)
 
-import Icons
+
 
 headerView : Address Action -> Model -> Html
 headerView address model =

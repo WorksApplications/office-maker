@@ -1,4 +1,4 @@
-module API(saveEditingFloor, getEditingFloor, getFloor, saveEditingImage, Floor, Error) where
+module API(saveEditingFloor, getEditingFloor, getFloor, saveEditingImage, Error) where
 
 import Equipments exposing (..)
 import Floor exposing (ImageSource(..))
