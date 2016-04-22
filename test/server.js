@@ -2,7 +2,6 @@ var fs = require('fs-extra');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var rimraf = require('rimraf');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
