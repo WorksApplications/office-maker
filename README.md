@@ -12,14 +12,15 @@ CAUTION: This product is under construction.
 |/#floorId?q=foo|
 
 ### REST API
+
 |Method|URL|Req Body|Res Body|Description|Guest|General|Admin|
-|:--|:--|:--|:--|:--|:--|:--|
+|:--|:--|:--|:--|:--|:--|:--|:--|
 |GET| /api/v1/users||||✓|✓|✓|
 |GET| /api/v1/users/missing||||✓|✓|✓|
 |GET| /api/v1/user/:user||||✓|✓|✓|
 |GET| /api/v1/prototypes||||✓|✓|✓|
 |PUT| /api/v1/prototype/:id|Prototype|||||✓|
-|DELETE| /api/v1/prototypes/:id||||||✓|
+|DELETE| /api/v1/prototype/:id||||||✓|
 |GET| /api/v1/floors||||✓|✓|✓|
 |GET| /api/v1/floor/:id|||fetch latest version|✓|✓|✓|
 |GET| /api/v1/floor/:id/versions||||✓|✓|✓|
