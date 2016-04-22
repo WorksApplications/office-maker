@@ -41,13 +41,24 @@ CAUTION: This product is under construction.
 
 ### Development
 
+#### Requirement
+
+You need to have [Elm](http://elm-lang.org/) (== 0.16) and [Node.js](https://nodejs.org/) installed.
+
+#### Install
+
+```
+npm install
+```
+
+#### Build
+
+```
+sh build.sh
+```
+
 If `elm-make` fails in Windows, try
 ```
 chcp 65001
 ```
 which will change encoding to UTF-8.
-
-To build:
-```
-sh build.sh
-```
