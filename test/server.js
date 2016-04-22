@@ -52,7 +52,7 @@ app.put('/api/v1/image/:id', function (req, res) {
   })
 });
 
-fs.emptyDirSync('public/images');
+fs.emptyDirSync(__dirname + '/public/images');
 app.listen(3000, function () {
   console.log('mock server listening on port 3000.');
 });
