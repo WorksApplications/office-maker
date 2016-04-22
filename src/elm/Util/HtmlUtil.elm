@@ -28,12 +28,15 @@ type alias MouseWheelEvent =
 
 focus : String -> Task Error ()
 focus id =
+  Task.sleep 100 `Task.andThen` \_ ->
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
 
+
 blur : String -> Task Error ()
 blur id =
+  Task.sleep 100 `Task.andThen` \_ ->
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
