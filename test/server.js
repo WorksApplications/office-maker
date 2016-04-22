@@ -3,9 +3,11 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 
+var publicDir = __dirname + '/public';
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(publicDir));
 
 var floors = {};
 
@@ -42,7 +44,7 @@ app.put('/api/v1/image/:id', function (req, res) {
   });
   req.on('end', function() {
     var image = Buffer.concat(all);
-    fs.writeFile('public/images/' + id, image, function(e) {
+    fs.writeFile(publicDir + '/images/' + id, image, function(e) {
       if(e) {
         res.status(500).send('' + e);
       } else {
@@ -52,7 +54,7 @@ app.put('/api/v1/image/:id', function (req, res) {
   })
 });
 
-fs.emptyDirSync(__dirname + '/public/images');
+fs.emptyDirSync(publicDir + '/images');
 app.listen(3000, function () {
   console.log('mock server listening on port 3000.');
 });
