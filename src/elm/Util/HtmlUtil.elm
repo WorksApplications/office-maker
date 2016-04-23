@@ -156,13 +156,18 @@ decodeWheelEvent =
       ]))
     `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
 
-fileLoadButton : Address FileList -> Html
-fileLoadButton address =
-  Html.input
-    [ Html.Attributes.type' "file"
-    , on
-        "change"
-        decodeFile
-        (Signal.message address)
+fileLoadButton : Address FileList -> List (String, String) -> String -> Html
+fileLoadButton address styles text =
+  Html.label
+    [ Html.Attributes.style styles ]
+    [ Html.text text
+    , Html.input
+        [ Html.Attributes.type' "file"
+        , Html.Attributes.style [("display", "none")]
+        , on
+            "change"
+            decodeFile
+            (Signal.message address)
+        ]
+        []
     ]
-    []

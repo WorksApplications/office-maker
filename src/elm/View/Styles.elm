@@ -238,7 +238,59 @@ prototypePreviewScroll =
   , ("cursor", "pointer")
   ]
 
+
+button : S
+button =
+  formControl ++
+    [ ("display", "block")
+    , ("text-align", "center")
+    , ("background-color", "#eee")
+    -- , ("box-shadow", "0 1px 1.5px 0 rgba(0,0,0,.12),0 1px 1px 0 rgba(0,0,0,.24)")
+    -- , ("box-shadow", "rgba(0, 0, 0, 0.12) 0px 0.1px 0.0px 0px, rgba(0, 0, 0, 0.24) 0px 0.5px 0.2px 0px")
+    ]
+
+
+imageLoadButton : S
+imageLoadButton =
+  button ++
+    [ ("width", "120px")
+    ]
+
+floorNameInput : S
+floorNameInput =
+  input ++ [ ("width", "177px")
+  ]
+
 realSizeInput : S
 realSizeInput =
-  [ ("width", "30px")
+  input ++ [ ("width", "50px")
+  ]
+
+input : S
+input =
+  formControl ++
+    [ ("color", "#555")
+    , ("background-color", "#fff")
+    , ("margin-right", "12px")
+    ]
+
+formControl : S
+formControl =
+  [ ("height", "34px")
+  , ("box-sizing", "border-box")
+  , ("font-size", "14px")
+  , ("line-height", "1.42857143")
+  , ("padding", "6px 12px")
+  , ("border", "1px solid #ccc")
+  , ("margin-bottom", "6px")
+  ]
+
+floorNameLabel : S
+floorNameLabel =
+  [ ("margin-right", "23px")
+  ]
+
+widthHeightLabel : S
+widthHeightLabel =
+  [ ("margin-right", "3px")
   ]
