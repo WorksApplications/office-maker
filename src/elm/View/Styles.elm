@@ -97,8 +97,8 @@ colorProperty : String -> Bool -> S
 colorProperty color selected =
   [ ("background-color", color)
   , ("cursor", "pointer")
-  , ("width", "30px")
-  , ("height", "30px")
+  , ("width", "24px")
+  , ("height", "24px")
   , ("box-sizing", "border-box")
   , ("border-style", "solid")
   , ("margin-right", "2px")

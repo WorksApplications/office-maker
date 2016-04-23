@@ -92,7 +92,9 @@ init randomSeed initialSize initialHash =
     , selectorRect = Nothing
     , keys = Keys.init
     , editMode = Select
-    , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
+    , colorPalette =
+        ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
+        , "#bbb", "#fff", "rgba(255,255,255,0.5)"] --TODO
     , contextMenu = NoContextMenu
     , floor = UndoRedo.init { data = Floor.init "-1", update = Floor.update }
     , windowDimensions = initialSize
