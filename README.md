@@ -3,7 +3,7 @@ Office Maker (WIP)
 
 CAUTION: This product is under construction.
 
-### Routing
+## Routing
 
 |URL|
 |:--|
@@ -11,15 +11,16 @@ CAUTION: This product is under construction.
 |/#flooId|
 |/#floorId?q=foo|
 
-### REST API
+## REST API
+
 |Method|URL|Req Body|Res Body|Description|Guest|General|Admin|
-|:--|:--|:--|:--|:--|:--|:--|
+|:--|:--|:--|:--|:--|:--|:--|:--|
 |GET| /api/v1/users||||✓|✓|✓|
 |GET| /api/v1/users/missing||||✓|✓|✓|
 |GET| /api/v1/user/:user||||✓|✓|✓|
 |GET| /api/v1/prototypes||||✓|✓|✓|
 |PUT| /api/v1/prototype/:id|Prototype|||||✓|
-|DELETE| /api/v1/prototypes/:id||||||✓|
+|DELETE| /api/v1/prototype/:id||||||✓|
 |GET| /api/v1/floors||||✓|✓|✓|
 |GET| /api/v1/floor/:id|||fetch latest version|✓|✓|✓|
 |GET| /api/v1/floor/:id/versions||||✓|✓|✓|
@@ -30,7 +31,7 @@ CAUTION: This product is under construction.
 |DELETE| /api/v1/floor/:id||||||✓|
 |PUT| /api/v1/image/:id|Image|||||✓|
 
-#### Types
+### Types
 |Type|Structure|
 |:--|:--|
 |Floor|TODO|
@@ -38,7 +39,23 @@ CAUTION: This product is under construction.
 |Image|TODO|
 |User|TODO|
 
-### Development
+## Development
+
+### Requirement
+
+You need to have [Elm](http://elm-lang.org/) (== 0.16) and [Node.js](https://nodejs.org/) installed.
+
+### Install
+
+```
+npm install
+```
+
+### Build
+
+```
+sh build.sh
+```
 
 If `elm-make` fails in Windows, try
 ```
@@ -46,7 +63,12 @@ chcp 65001
 ```
 which will change encoding to UTF-8.
 
-To build:
+### Testing with mock server
+
 ```
-sh build.sh
+node test/server.js
 ```
+
+## License
+
+[Apache License 2.0](LICENSE)
