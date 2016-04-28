@@ -21,3 +21,9 @@ sendJson verb decoder url body =
     }
   in
     Http.fromJson decoder (Http.send Http.defaultSettings request)
+
+postJson : Decoder value -> String -> Http.Body -> Task Http.Error value
+postJson = sendJson "POST"
+
+putJson : Decoder value -> String -> Http.Body -> Task Http.Error value
+putJson = sendJson "PUT"

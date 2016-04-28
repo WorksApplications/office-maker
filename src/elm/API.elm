@@ -7,18 +7,12 @@ import Json.Encode exposing (object, list, encode, string, int, null, Value)
 import Json.Decode as Decode exposing ((:=), object8, object7, Decoder)
 import Task exposing (Task)
 import Floor
-import Util.HttpUtil as HttpUtil
+import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
 type alias Floor = Floor.Model
 
 type alias Error = Http.Error
-
-post : Decoder value -> String -> Http.Body -> Task Http.Error value
-post = HttpUtil.sendJson "POST"
-
-put : Decoder value -> String -> Http.Body -> Task Http.Error value
-put = HttpUtil.sendJson "PUT"
 
 encodeEquipment : Equipment -> Value
 encodeEquipment (Desk id (x, y, width, height) color name) =
@@ -99,14 +93,14 @@ serializeFloor floor =
 
 saveEditingFloor : Floor -> Task Error ()
 saveEditingFloor floor =
-    put
+    putJson
       (Decode.map (always ()) Decode.value)
       ("/api/v1/floor/" ++ floor.id ++ "/edit")
       (Http.string <| serializeFloor floor)
 
 publishEditingFloor : Floor -> Task Error ()
 publishEditingFloor floor =
-    post
+    postJson
       (Decode.map (always ()) Decode.value)
       ("/api/v1/floor/" ++ floor.id)
       (Http.string <| serializeFloor floor)
