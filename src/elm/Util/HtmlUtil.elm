@@ -7,7 +7,7 @@ import Html exposing (Html, Attribute)
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode exposing (..)
--- import Json.Encode
+import Util.File exposing (..)
 import Task exposing (Task)
 
 type Error =
@@ -24,16 +24,19 @@ type alias MouseWheelEvent =
   , shiftKey : Bool
   , value : Float
   }
-type FileList = FileList Json.Decode.Value
+
 
 focus : String -> Task Error ()
 focus id =
+  Task.sleep 100 `Task.andThen` \_ ->
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
 
+
 blur : String -> Task Error ()
 blur id =
+  Task.sleep 100 `Task.andThen` \_ ->
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
@@ -153,27 +156,18 @@ decodeWheelEvent =
       ]))
     `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
 
-readFirstAsDataURL : FileList -> Task Error String
-readFirstAsDataURL (FileList list) =
-    Task.mapError
-      (always (Unexpected (toString list)))
-      (Native.HtmlUtil.readAsDataURL list)
-
-getWidthAndHeightOfImage : String -> (Int, Int)
-getWidthAndHeightOfImage =
-  Native.HtmlUtil.getWidthAndHeightOfImage
-
-fileLoadButton : Address FileList -> Html
-fileLoadButton address =
-  Html.input
-    [ Html.Attributes.type' "file"
-    , on
-        "change"
-        decodeFile
-        (Signal.message address)
+fileLoadButton : Address FileList -> List (String, String) -> String -> Html
+fileLoadButton address styles text =
+  Html.label
+    [ Html.Attributes.style styles ]
+    [ Html.text text
+    , Html.input
+        [ Html.Attributes.type' "file"
+        , Html.Attributes.style [("display", "none")]
+        , on
+            "change"
+            decodeFile
+            (Signal.message address)
+        ]
+        []
     ]
-    []
-
-decodeFile : Decoder FileList
-decodeFile =
-  Json.Decode.map FileList (at ["target", "files"] (value))

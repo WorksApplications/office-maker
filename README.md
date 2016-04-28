@@ -63,10 +63,10 @@ chcp 65001
 ```
 which will change encoding to UTF-8.
 
-### Testing with mock server
+### Running tasks with mock server
 
 ```
-node test/server.js
+node watch
 ```
 
 ## License

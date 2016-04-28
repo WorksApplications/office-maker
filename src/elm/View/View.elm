@@ -1,11 +1,12 @@
-module View(view) where
+module View.View(view) where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 -- import Html.Lazy exposing (..)
 import Maybe
 import Signal exposing (Address, forwardTo)
-import Styles
+import View.Styles as Styles
+import View.Icons as Icons
 -- import Debug
 
 import Util.UndoRedo as UndoRedo
@@ -18,7 +19,7 @@ import EquipmentsOperation exposing (..)
 import Util.ListUtil exposing (..)
 import Prototypes exposing (Prototype, StampCandidate)
 
-import Icons
+
 
 headerView : Address Action -> Model -> Html
 headerView address model =
@@ -182,7 +183,7 @@ penView address model =
     prototypes =
       Prototypes.prototypes model.prototypes
   in
-    [ fileLoadButton (forwardTo address LoadFile)
+    [ fileLoadButton (forwardTo address LoadFile) Styles.imageLoadButton "Load Image"
     , floorNameInputView address model
     , floorRealSizeInputView address model
     , modeSelectionView address model
@@ -191,11 +192,17 @@ penView address model =
 
 floorNameInputView : Address Action -> Model -> Html
 floorNameInputView address model =
-    input
-    ([ Html.Attributes.id "floor-name-input"
-    , type' "text"
-    ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
-    []
+  let
+    floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
+    nameInput =
+      input
+      ([ Html.Attributes.id "floor-name-input"
+      , type' "text"
+      , style Styles.floorNameInput
+      ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
+      []
+  in
+    div [] [ floorNameLabel, nameInput ]
 
 floorRealSizeInputView : Address Action -> Model -> Html
 floorRealSizeInputView address model =
@@ -218,8 +225,10 @@ floorRealSizeInputView address model =
       , style Styles.realSizeInput
       ] ++ (inputAttributes address InputFloorRealHeight (always NoOp) (model.inputFloorRealHeight) False))
       []
+    widthLabel = label [ style Styles.widthHeightLabel ] [ text "Width(m)" ]
+    heightLabel = label [ style Styles.widthHeightLabel ] [ text "Height(m)" ]
   in
-    div [] [ widthInput, heightInput ]
+    div [] [widthLabel, widthInput, heightLabel, heightInput ]
 
 
 modeSelectionView : Address Action -> Model -> Html

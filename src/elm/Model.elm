@@ -13,6 +13,7 @@ import Util.Keys as Keys exposing (..)
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.EffectsUtil as EffectsUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
+import Util.File as File exposing (..)
 
 import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
@@ -52,6 +53,7 @@ type alias Model =
 
 type Error =
     APIError API.Error
+  | FileError File.Error
   | HtmlError HtmlUtil.Error
 
 type ContextMenu =
@@ -90,7 +92,9 @@ init randomSeed initialSize initialHash =
     , selectorRect = Nothing
     , keys = Keys.init
     , editMode = Select
-    , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
+    , colorPalette =
+        ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
+        , "#bbb", "#fff", "rgba(255,255,255,0.5)"] --TODO
     , contextMenu = NoContextMenu
     , floor = UndoRedo.init { data = Floor.init "-1", update = Floor.update }
     , windowDimensions = initialSize
@@ -129,7 +133,7 @@ type Action = NoOp
   | MouseWheel MouseWheelEvent
   | ChangeMode EditMode
   | LoadFile FileList
-  | GotDataURL String FileList String
+  | GotDataURL String File String
   | ScaleEnd
   | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
@@ -499,19 +503,24 @@ update action model =
       in
         (newModel, Effects.none)
     LoadFile fileList ->
+      case File.getAt 0 fileList of
+        Just file ->
+          let
+            (id, newSeed) =
+              IdGenerator.new model.seed
+            newModel =
+              { model | seed = newSeed }
+            effects =
+              fromTask (Error << FileError) (GotDataURL id file) (readAsDataURL file)
+          in
+            (model, effects)
+        Nothing ->
+          (model, Effects.none)
+
+    GotDataURL id file dataURL ->
       let
-        (id, newSeed) =
-          IdGenerator.new model.seed
         newModel =
-          { model | seed = newSeed }
-        effects =
-          fromTask (Error << HtmlError) (GotDataURL id fileList) (readFirstAsDataURL fileList)
-      in
-        (model, effects)
-    GotDataURL id fileList dataURL ->
-      let
-        newModel =
-          { model | floor = UndoRedo.commit model.floor (Floor.setLocalFile id fileList dataURL) }
+          { model | floor = UndoRedo.commit model.floor (Floor.setLocalFile id file dataURL) }
         effects =
           saveFloorEffects (UndoRedo.data newModel.floor)
       in
@@ -614,8 +623,8 @@ saveFloorEffects floor =
   let
     firstTask =
       case floor.imageSource of
-        Floor.LocalFile id fileList url ->
-          API.saveEditingImage id fileList
+        Floor.LocalFile id file url ->
+          API.saveEditingImage id file
         _ ->
           Task.succeed ()
     secondTask = API.saveEditingFloor floor

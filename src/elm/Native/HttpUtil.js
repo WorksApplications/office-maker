@@ -8,13 +8,10 @@ Elm.Native.HttpUtil.make = function(localRuntime) {
     var Task = Elm.Native.Task.make(localRuntime);
     var Utils = Elm.Native.Utils.make(localRuntime);
 
-    function putFile(url, filelist) {
-      console.log('putFile', url, filelist)
+    function sendFile(method, url, file) {
       return Task.asyncFunction(function(callback) {
         var xhr = new XMLHttpRequest();
-        xhr.open('PUT', url, true);
-        var formData = new FormData();
-        formData.append("uploads", filelist[0]);
+        xhr.open(method, url, true);
         xhr.onload = function(e) {
           if (this.status == 200) {
             callback(Task.succeed(Utils.tuple0))
@@ -22,10 +19,10 @@ Elm.Native.HttpUtil.make = function(localRuntime) {
             callback(Task.fail("")) //TODO
           }
         };
-        xhr.send(filelist[0]);
+        xhr.send(file);
       });
     }
     return localRuntime.Native.HttpUtil.values = {
-        putFile: F2(putFile)
+        sendFile: F3(sendFile)
     };
 };
