@@ -529,7 +529,10 @@ update action model =
     PrototypesAction action ->
       let
         newModel =
-          { model | prototypes = Prototypes.update action model.prototypes }
+          { model |
+            prototypes = Prototypes.update action model.prototypes
+          , editMode = Stamp -- TODO if event == select
+          }
       in
         (newModel, Effects.none)
     RegisterPrototype id ->
