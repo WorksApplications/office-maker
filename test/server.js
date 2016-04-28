@@ -15,7 +15,7 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;
   var floor = floors[id];
   console.log('get: ' + id);
-  // console.log(floor);
+  console.log(floor);
   if(floor) {
     res.send(floor);
   } else {

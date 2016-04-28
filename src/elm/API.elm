@@ -56,6 +56,9 @@ encodeFloor floor =
       , ("equipments", list <| List.map encodeEquipment floor.equipments)
       , ("width", int floor.width)
       , ("height", int floor.height)
+      , ("realSize", case floor.realSize of
+          Just (w, h) -> list [ int w, int h ]
+          Nothing -> null)
       , ("src", src)
       ]
 
@@ -71,25 +74,31 @@ decodeEquipment =
     ("color" := Decode.string)
     ("name" := Decode.string)
 
+listToTuple2 : List a -> Maybe (a, a)
+listToTuple2 list =
+  case list of
+    a :: b :: _ -> Just (a, b)
+    _ -> Nothing
+
+
 decodeFloor : Decoder Floor
 decodeFloor =
-  object8
-    (\id name equipments width height realWidth realHeight src ->
+  object7
+    (\id name equipments width height realSize src ->
       { id = id
       , name = name
       , equipments = equipments
       , width = width
       , height = height
       , imageSource = Maybe.withDefault None (Maybe.map URL src)
-      , realSize = realWidth `Maybe.andThen` (\w -> realHeight `Maybe.andThen` (\h -> Just (w, h)))
+      , realSize = Maybe.andThen realSize listToTuple2
       }) -- TODO
     ("id" := Decode.string)
     ("name" := Decode.string)
     ("equipments" := Decode.list decodeEquipment)
     ("width" := Decode.int)
     ("height" := Decode.int)
-    (Decode.maybe ("realWidth" := Decode.int))
-    (Decode.maybe ("realHeight" := Decode.int))
+    (Decode.maybe ("realSize" := Decode.list Decode.int))
     (Decode.maybe ("src" := Decode.string))
 
 serializeFloor : Floor -> String

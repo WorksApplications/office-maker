@@ -109,7 +109,7 @@ colorProperty color selected =
 subMenu : S
 subMenu =
     [ ("z-index", zIndex.subMenu)
-    , ("width", "300px")
+    , ("width", "320px") -- TODO was 300px
     , ("overflow", "hidden")
     , ("background", "#eee")
     ]

@@ -167,7 +167,8 @@ update action model =
       (model, loadFloorEffects model.hash)
     FloorLoaded floor ->
       let
-        (realWidth, realHeight) = Floor.realSize floor
+        (realWidth, realHeight) =
+          Floor.realSize floor
         newModel =
           { model |
             floor = UndoRedo.init { data = floor, update = Floor.update }
@@ -568,38 +569,50 @@ update action model =
         (newModel, effects)
     InputFloorRealWidth width ->
       let
-        newFloor =
+        (newFloor, effects) =
           case String.toInt width of
-            Err s -> model.floor
+            Err s -> (model.floor, Effects.none)
             Ok i ->
               if i > 0 then
-                UndoRedo.commit model.floor (Floor.changeRealWidth i)
+                let
+                  newFloor =
+                    UndoRedo.commit model.floor (Floor.changeRealWidth i)
+                  effects =
+                    saveFloorEffects (UndoRedo.data newFloor)
+                in
+                  (newFloor, effects)
               else
-                model.floor
+                (model.floor, Effects.none)
         newModel =
           { model |
             floor = newFloor
           , inputFloorRealWidth = width
           }
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     InputFloorRealHeight height ->
       let
-        newFloor =
+        (newFloor, effects) =
           case String.toInt height of
-            Err s -> model.floor
+            Err s -> (model.floor, Effects.none)
             Ok i ->
               if i > 0 then
-                UndoRedo.commit model.floor (Floor.changeRealHeight i)
+                let
+                  newFloor =
+                    UndoRedo.commit model.floor (Floor.changeRealHeight i)
+                  effects =
+                    saveFloorEffects (UndoRedo.data newFloor)
+                in
+                  (newFloor, effects)
               else
-                model.floor
+                (model.floor, Effects.none)
         newModel =
           { model |
             floor = newFloor
           , inputFloorRealHeight = height
           }
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     Rotate id ->
       let
         newFloor =
