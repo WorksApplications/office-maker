@@ -1,4 +1,4 @@
-module API(saveEditingFloor, getEditingFloor, getFloor, saveEditingImage, Error) where
+module API(saveEditingFloor, publishEditingFloor, getEditingFloor, getFloor, saveEditingImage, Error) where
 
 import Equipments exposing (..)
 import Floor exposing (ImageSource(..))
@@ -14,19 +14,11 @@ type alias Floor = Floor.Model
 
 type alias Error = Http.Error
 
+post : Decoder value -> String -> Http.Body -> Task Http.Error value
+post = HttpUtil.sendJson "POST"
+
 put : Decoder value -> String -> Http.Body -> Task Http.Error value
-put decoder url body =
-  let request =
-    { verb = "PUT"
-    , headers =
-        [("Content-Type", "application/json; charset=utf-8")]
-    , url = url
-    , body = body
-    }
-  in
-    Http.fromJson decoder (Http.send Http.defaultSettings request)
-
-
+put = HttpUtil.sendJson "PUT"
 
 encodeEquipment : Equipment -> Value
 encodeEquipment (Desk id (x, y, width, height) color name) =
@@ -110,6 +102,13 @@ saveEditingFloor floor =
     put
       (Decode.map (always ()) Decode.value)
       ("/api/v1/floor/" ++ floor.id ++ "/edit")
+      (Http.string <| serializeFloor floor)
+
+publishEditingFloor : Floor -> Task Error ()
+publishEditingFloor floor =
+    post
+      (Decode.map (always ()) Decode.value)
+      ("/api/v1/floor/" ++ floor.id)
       (Http.string <| serializeFloor floor)
 
 getEditingFloor : String -> Task Error Floor

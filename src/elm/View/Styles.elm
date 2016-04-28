@@ -256,6 +256,12 @@ imageLoadButton =
     [ ("width", "120px")
     ]
 
+publishButton : S
+publishButton =
+  button ++
+    [ ("width", "120px")
+    ]
+
 floorNameInput : S
 floorNameInput =
   input ++ [ ("width", "177px")

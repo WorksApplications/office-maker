@@ -35,6 +35,21 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
   res.send('');
 });
 
+// publish
+app.post('/api/v1/floor/:id', function (req, res) {
+  var id = req.params.id;
+  var newFloor = req.body;
+  console.log(req.body);
+  if(id !== newFloor.id) {
+    throw "invalid! : " + [id, newFloor.id];
+  }
+  floors[id] = newFloor;
+  console.log('published floor: ' + id);
+  // console.log(newFloor);
+  res.send('');
+});
+
+
 app.put('/api/v1/image/:id', function (req, res) {
   var id = req.params.id;
   console.log(id);

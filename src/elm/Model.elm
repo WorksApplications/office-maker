@@ -141,6 +141,7 @@ type Action = NoOp
   | InputFloorRealWidth String
   | InputFloorRealHeight String
   | Rotate Id
+  | Publish
   | Error Error
 
 debug : Bool
@@ -627,6 +628,12 @@ update action model =
           }
       in
         (newModel, Effects.none)
+    Publish ->
+      let
+        floor = UndoRedo.data model.floor
+        effects = publishFloorEffects floor
+      in
+        (model, effects)
     Error e ->
       let
         newModel =
@@ -644,6 +651,23 @@ saveFloorEffects floor =
         _ ->
           Task.succeed ()
     secondTask = API.saveEditingFloor floor
+  in
+    fromTask
+      (Error << APIError)
+      (always FloorSaved)
+      (firstTask `Task.andThen` (always secondTask))
+
+
+publishFloorEffects : Floor -> Effects Action
+publishFloorEffects floor =
+  let
+    firstTask =
+      case floor.imageSource of
+        Floor.LocalFile id file url ->
+          API.saveEditingImage id file
+        _ ->
+          Task.succeed ()
+    secondTask = API.publishEditingFloor floor
   in
     fromTask
       (Error << APIError)

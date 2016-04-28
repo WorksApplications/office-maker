@@ -167,6 +167,7 @@ subView address model =
     ]
     [ card <| penView address model
     , card <| propertyView address model
+    , card <| floorView address model
     , card <| debugView address model
     ]
 
@@ -183,10 +184,7 @@ penView address model =
     prototypes =
       Prototypes.prototypes model.prototypes
   in
-    [ fileLoadButton (forwardTo address LoadFile) Styles.imageLoadButton "Load Image"
-    , floorNameInputView address model
-    , floorRealSizeInputView address model
-    , modeSelectionView address model
+    [ modeSelectionView address model
     , prototypePreviewView address prototypes (model.editMode == Stamp)
     ]
 
@@ -450,6 +448,21 @@ colorPropertyView address model =
   in
     ul [ style (Styles.ul ++ [("display", "flex")]) ]
       (List.map viewForEach model.colorPalette)
+
+publishButtonView : Address Action -> Model -> Html
+publishButtonView address model =
+  button
+    [ onClick' (forwardTo address (always Publish))
+    , style Styles.publishButton ]
+    [ text "Publish" ]
+
+floorView : Address Action -> Model -> List Html
+floorView address model =
+    [ fileLoadButton (forwardTo address LoadFile) Styles.imageLoadButton "Load Image"
+    , floorNameInputView address model
+    , floorRealSizeInputView address model
+    , publishButtonView address model
+    ]
 
 view : Address Action -> Model -> Html
 view address model =
