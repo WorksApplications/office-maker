@@ -67,7 +67,8 @@ type DraggingContext =
   | MoveEquipment Id (Int, Int)
   | Selector
   | ShiftOffsetPrevScreenPos
-  | StampScreenPos (Int, Int)
+  | PenFromScreenPos (Int, Int)
+  | StampFromScreenPos (Int, Int)
 
 inputs : List (Signal Action)
 inputs =
@@ -279,7 +280,7 @@ update action model =
                         Just (x, y, w, h)
                     _ -> model.selectorRect
               }, Effects.none)
-            StampScreenPos _ ->
+            StampFromScreenPos _ ->
               let
                 (candidatesWithNewIds, newSeed) =
                   IdGenerator.zipWithNewIds model.seed (stampCandidates model)
@@ -289,6 +290,21 @@ update action model =
                     candidatesWithNewIds
                 newFloor =
                   UndoRedo.commit model.floor (Floor.create candidatesWithNewIds')
+                effects =
+                  saveFloorEffects (UndoRedo.data newFloor)
+              in
+                ({ model |
+                  seed = newSeed
+                , floor = newFloor
+                }, effects)
+            PenFromScreenPos (x, y) ->
+              let
+                (color, name, (left, top, width, height)) =
+                  temporaryPen model (x, y)
+                (newId, newSeed) =
+                  IdGenerator.new model.seed
+                newFloor =
+                  UndoRedo.commit model.floor (Floor.create [(newId, (left, top, width, height), color, name)])
                 effects =
                   saveFloorEffects (UndoRedo.data newFloor)
               in
@@ -326,8 +342,9 @@ update action model =
         draggingContext =
           case model.editMode of
             Stamp ->
-              StampScreenPos (e.clientX, e.clientY - 37)
-            Pen -> None -- TODO
+              StampFromScreenPos (e.clientX, e.clientY - 37)
+            Pen ->
+              PenFromScreenPos (e.clientX, e.clientY - 37)
             Select -> ShiftOffsetPrevScreenPos
 
         newModel =
@@ -851,6 +868,13 @@ selectedEquipments model =
     findEquipmentById (UndoRedo.data model.floor).equipments id
   ) model.selectedEquipments
 
+
+screenToImageWithOffset : Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int)
+screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
+    ( Scale.screenToImage scale screenX - offsetX
+    , Scale.screenToImage scale screenY - offsetY
+    )
+
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
   case model.editMode of
@@ -864,17 +888,13 @@ stampCandidates model =
         (x2, y2) =
           Maybe.withDefault (0, 0) model.pos
         (x2', y2') =
-          ( Scale.screenToImage model.scale x2 - offsetX
-          , Scale.screenToImage model.scale y2 - offsetY
-          )
+          screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
       in
         case model.draggingContext of
-          StampScreenPos (x1, y1) ->
+          StampFromScreenPos (x1, y1) ->
             let
               (x1', y1') =
-                ( Scale.screenToImage model.scale x1 - offsetX
-                , Scale.screenToImage model.scale y1 - offsetY
-                )
+                screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
             in
               stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
           _ ->
@@ -886,5 +906,23 @@ stampCandidates model =
               [ ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
               ]
     _ -> []
+
+temporaryPen : Model -> (Int, Int) -> (String, String, (Int, Int, Int, Int))
+temporaryPen model from =
+  let
+    (offsetX, offsetY) = model.offset
+    (left, top) =
+      fitToGrid model.gridSize <|
+        screenToImageWithOffset model.scale from (offsetX, offsetY)
+    (right, bottom) =
+      fitToGrid model.gridSize <|
+        screenToImageWithOffset model.scale (Maybe.withDefault (left, top) model.pos) (offsetX, offsetY)
+    width = right - left
+    height = bottom - top
+    color = "#fff" -- TODO
+    name = ""
+  in
+    (color, name, (left, top, width, height))
+
 
 --

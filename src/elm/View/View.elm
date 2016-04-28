@@ -353,6 +353,11 @@ canvasView address model =
         _ -> text ""
 
     temporaryStamps' = temporaryStampsView model
+    temporaryPen' =
+      case model.draggingContext of
+        PenFromScreenPos (x, y) ->
+          temporaryPenView model (x, y)
+        _ -> text ""
 
     (offsetX, offsetY) = model.offset
 
@@ -370,7 +375,7 @@ canvasView address model =
     div
       [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
       ]
-      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
+      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
 
 prototypePreviewView : Address Action -> List (Prototype, Bool) -> Bool -> Html
 prototypePreviewView address prototypes stampMode =
@@ -424,6 +429,23 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       False -- alpha
       [] -- eventHandlers
       scale
+      True -- disableTransition
+
+temporaryPenView : Model -> (Int, Int) -> Html
+temporaryPenView model from =
+  let
+    (color, name, (left, top, width, height)) =
+      temporaryPen model from
+  in
+    equipmentView'
+      ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
+      (left, top, width, height)
+      color
+      name --name
+      False -- selected
+      False -- alpha
+      [] -- eventHandlers
+      model.scale
       True -- disableTransition
 
 temporaryStampsView : Model -> List Html
