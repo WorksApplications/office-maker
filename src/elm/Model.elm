@@ -28,7 +28,7 @@ type alias Commit = Floor.Action
 
 type alias Model =
   { seed : Seed
-  , pos : Maybe (Int, Int)
+  , pos : (Int, Int)
   , draggingContext : DraggingContext
   , selectedEquipments : List Id
   , copiedEquipments : List Equipment
@@ -84,7 +84,7 @@ init : (Int, Int) -> (Int, Int) -> String -> (Model, Effects Action)
 init randomSeed initialSize initialHash =
   (
     { seed = IdGenerator.init randomSeed
-    , pos = Nothing
+    , pos = (0, 0)
     , draggingContext = None
     , selectedEquipments = []
     , copiedEquipments = []
@@ -192,11 +192,13 @@ update action model =
         (x, y) = (clientX, clientY - 37)
         model' =
           { model |
-            pos = Just (x, y)
+            pos = (x, y)
           }
+        (prevX, prevY) =
+          model.pos
         newModel =
-          case (model.draggingContext, model.pos) of
-            (ShiftOffsetPrevScreenPos, Just (prevX, prevY)) ->
+          case model.draggingContext of
+            ShiftOffsetPrevScreenPos ->
               { model' |
                 offset =
                   let
@@ -893,7 +895,7 @@ stampCandidates model =
           prototype
         (offsetX, offsetY) = model.offset
         (x2, y2) =
-          Maybe.withDefault (0, 0) model.pos
+          model.pos
         (x2', y2') =
           screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
       in
@@ -923,7 +925,7 @@ temporaryPen model from =
         screenToImageWithOffset model.scale from (offsetX, offsetY)
     (right, bottom) =
       fitToGrid model.gridSize <|
-        screenToImageWithOffset model.scale (Maybe.withDefault (left, top) model.pos) (offsetX, offsetY)
+        screenToImageWithOffset model.scale model.pos (offsetX, offsetY)
     width = right - left
     height = bottom - top
     color = "#fff" -- TODO

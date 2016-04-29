@@ -323,9 +323,10 @@ canvasView address model =
       then
         let
           equipments = List.filter isDragged floor.equipments
+          (x, y) = model.pos
           moving =
-            case (model.draggingContext, model.pos) of
-              (MoveEquipment _ (startX, startY), Just (x, y)) -> Just ((startX, startY), (x, y))
+            case model.draggingContext of
+              MoveEquipment _ (startX, startY) -> Just ((startX, startY), (x, y))
               _ -> Nothing
         in
           List.map
