@@ -64,9 +64,9 @@ onMouseUp' : Address MouseEvent -> Attribute
 onMouseUp' address =
   on "mouseup" decodeMousePosition (Signal.message address)
 
-onMouseDown' : Address MouseEvent -> Attribute
-onMouseDown' address =
-  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onMouseDown' : Address a -> a -> Attribute
+onMouseDown' address e =
+  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } decodeMousePosition (\_ -> Signal.message address e)
 
 onDblClick' : Address MouseEvent -> Attribute
 onDblClick' address =
@@ -108,8 +108,8 @@ onMouseWheel address toAction =
     onWithOptions "wheel" { stopPropagation = True, preventDefault = True } decodeWheelEvent handler
 
 mouseDownDefence : Address a -> a -> Attribute
-mouseDownDefence address noOp =
-  onMouseDown' (Signal.forwardTo address (always noOp))
+mouseDownDefence address e =
+  onMouseDown' address e
 
 decodeClientXY : Decoder (Int, Int)
 decodeClientXY =

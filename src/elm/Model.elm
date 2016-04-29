@@ -121,15 +121,15 @@ type Action = NoOp
   | EnterCanvas
   | LeaveCanvas
   | MouseUpOnCanvas MouseEvent
-  | MouseDownOnCanvas MouseEvent
-  | MouseDownOnEquipment Id MouseEvent
+  | MouseDownOnCanvas
+  | MouseDownOnEquipment Id
   | StartEditEquipment Id MouseEvent
   | KeysAction Keys.Action
-  | SelectColor String MouseEvent
+  | SelectColor String
   | InputName Id String
   | KeydownOnNameInput KeyboardEvent
   | ShowContextMenuOnEquipment Id MouseEvent
-  | SelectIsland Id MouseEvent
+  | SelectIsland Id
   | WindowDimensions (Int, Int)
   | MouseWheel MouseWheelEvent
   | ChangeMode EditMode
@@ -226,16 +226,17 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    MouseDownOnEquipment lastTouchedId e ->
+    MouseDownOnEquipment lastTouchedId ->
       let
+        (clientX, clientY) = model.pos
         newModel =
           { model |
             selectedEquipments =
-              if e.ctrlKey then
+              if model.keys.ctrl then
                 if List.member lastTouchedId model.selectedEquipments
                 then List.filter ((/=) lastTouchedId) model.selectedEquipments
                 else lastTouchedId :: model.selectedEquipments
-              else if e.shiftKey then
+              else if model.keys.shift then
                 let
                   allEquipments =
                     (UndoRedo.data model.floor).equipments
@@ -251,7 +252,7 @@ update action model =
                 if List.member lastTouchedId model.selectedEquipments
                 then model.selectedEquipments
                 else [lastTouchedId]
-          , draggingContext = MoveEquipment lastTouchedId (e.clientX, e.clientY - 37)
+          , draggingContext = MoveEquipment lastTouchedId (clientX, clientY)
           , selectorRect = Nothing
           }
       in
@@ -328,7 +329,7 @@ update action model =
           }
       in
         (newModel, effects)
-    MouseDownOnCanvas e ->
+    MouseDownOnCanvas ->
       let
         model' =
           case model.editingEquipment of
@@ -337,23 +338,23 @@ update action model =
                 floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
               }
             Nothing -> model
-
+        (clientX, clientY) =
+          model.pos
         selectorRect =
           case model.editMode of
             Select ->
               let
                 (x, y) = fitToGrid model.gridSize <|
-                  Scale.screenToImageForPosition model.scale (e.layerX, e.layerY)
+                  Scale.screenToImageForPosition model.scale (clientX, clientY) -- TODO was layerX, layerY
               in
                 Just (x, y, model.gridSize, model.gridSize)
             _ -> model.selectorRect
-
         draggingContext =
           case model.editMode of
             Stamp ->
-              StampFromScreenPos (e.clientX, e.clientY - 37)
+              StampFromScreenPos (clientX, clientY)
             Pen ->
-              PenFromScreenPos (e.clientX, e.clientY - 37)
+              PenFromScreenPos (clientX, clientY)
             Select -> ShiftOffsetPrevScreenPos
 
         newModel =
@@ -379,7 +380,7 @@ update action model =
             (newModel, focusEffect "name-input")
         Nothing ->
           (model, Effects.none)
-    SelectColor color e ->
+    SelectColor color ->
       let
         newModel =
           { model |
@@ -457,7 +458,7 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    SelectIsland id e ->
+    SelectIsland id ->
       let
         newModel =
           case findEquipmentById (UndoRedo.data model.floor).equipments id of

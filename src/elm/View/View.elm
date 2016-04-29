@@ -39,16 +39,16 @@ contextMenuView address model =
         [ style (Styles.contextMenu (x, y) (fst model.windowDimensions, snd model.windowDimensions) 2)
         ] -- TODO
         [ contextMenuItemView address (SelectIsland id) "Select Island"
-        , contextMenuItemView address (always <| RegisterPrototype id) "Register as stamp"
-        , contextMenuItemView address (always <| Rotate id) "Rotate"
+        , contextMenuItemView address (RegisterPrototype id) "Register as stamp"
+        , contextMenuItemView address (Rotate id) "Rotate"
         ]
 
-contextMenuItemView : Address Action -> (MouseEvent -> Action) -> String -> Html
+contextMenuItemView : Address Action -> Action -> String -> Html
 contextMenuItemView address action text' =
   div
     [ class "hovarable"
     , style Styles.contextMenuItem
-    , onMouseDown' (forwardTo address action)
+    , onMouseDown' address action
     ]
     [ text text' ]
 
@@ -74,7 +74,7 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
             [ onContextMenu' (forwardTo address (ShowContextMenuOnEquipment id)) ]
         eventHandlers =
           contextMenu ++
-            [ onMouseDown' (forwardTo address (MouseDownOnEquipment id))
+            [ onMouseDown' address (MouseDownOnEquipment id)
             , onDblClick' (forwardTo address (StartEditEquipment id))
             ]
       in
@@ -146,7 +146,7 @@ inputAttributes address toInputAction toKeydownAction value' defence =
   [ onInput' (forwardTo address toInputAction) -- TODO cannot input japanese
   , onKeyDown'' (forwardTo address toKeydownAction)
   , value value'
-  ] ++ (if defence then [onMouseDown' (forwardTo address (always NoOp))] else [])
+  ] ++ (if defence then [onMouseDown' address NoOp] else [])
 
 mainView : Address Action -> Model -> Html
 mainView address model =
@@ -280,7 +280,7 @@ canvasContainerView address model =
           []
       ))
     , onMouseMove' (forwardTo address MoveOnCanvas)
-    , onMouseDown' (forwardTo address (MouseDownOnCanvas))
+    , onMouseDown' address MouseDownOnCanvas
     , onMouseUp' (forwardTo address (MouseUpOnCanvas))
     , onMouseEnter' (forwardTo address (always EnterCanvas))
     , onMouseLeave' (forwardTo address (always LeaveCanvas))
@@ -465,7 +465,7 @@ colorPropertyView address model =
     viewForEach color =
       li
         [ style (Styles.colorProperty color (match color))
-        , onMouseDown' (forwardTo address (SelectColor color))
+        , onMouseDown' address (SelectColor color)
         ]
         []
   in
