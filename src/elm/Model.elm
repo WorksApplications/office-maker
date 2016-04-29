@@ -117,7 +117,7 @@ type Action = NoOp
   | HashChange String
   | FloorLoaded Floor
   | FloorSaved
-  | MoveOnCanvas MouseEvent
+  | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
   | MouseUpOnCanvas MouseEvent
@@ -187,9 +187,9 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    MoveOnCanvas e ->
+    MoveOnCanvas (clientX, clientY) ->
       let
-        (x, y) = (e.clientX, e.clientY - 37)
+        (x, y) = (clientX, clientY - 37)
         model' =
           { model |
             pos = Just (x, y)

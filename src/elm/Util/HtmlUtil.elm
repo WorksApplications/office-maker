@@ -45,10 +45,10 @@ locationHash : Signal String
 locationHash =
   Native.HtmlUtil.locationHash
 
-onMouseMove' : Address MouseEvent -> Attribute
+onMouseMove' : Address (Int, Int) -> Attribute
 onMouseMove' address =
   onWithOptions
-    "mousemove" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+    "mousemove" { stopPropagation = True, preventDefault = True } decodeClientXY (Signal.message address)
 
 onMouseEnter' : Address MouseEvent -> Attribute
 onMouseEnter' address =
@@ -111,6 +111,9 @@ mouseDownDefence : Address a -> a -> Attribute
 mouseDownDefence address noOp =
   onMouseDown' (Signal.forwardTo address (always noOp))
 
+decodeClientXY : Decoder (Int, Int)
+decodeClientXY =
+  Json.Decode.map (\e -> (e.clientX, e.clientY)) decodeMousePosition
 
 decodeMousePosition : Decoder MouseEvent
 decodeMousePosition =
