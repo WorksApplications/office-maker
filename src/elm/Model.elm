@@ -299,14 +299,21 @@ update action model =
                 }, effects)
             PenFromScreenPos (x, y) ->
               let
-                (color, name, (left, top, width, height)) =
-                  temporaryPen model (x, y)
-                (newId, newSeed) =
-                  IdGenerator.new model.seed
-                newFloor =
-                  UndoRedo.commit model.floor (Floor.create [(newId, (left, top, width, height), color, name)])
-                effects =
-                  saveFloorEffects (UndoRedo.data newFloor)
+                (newFloor, newSeed, effects) =
+                  case temporaryPen model (x, y) of
+                    Just (color, name, (left, top, width, height)) ->
+                      let
+                        (newId, newSeed) =
+                          IdGenerator.new model.seed
+                        newFloor =
+                          UndoRedo.commit model.floor (Floor.create [(newId, (left, top, width, height), color, name)])
+                      in
+                        ( newFloor
+                        , newSeed
+                        , saveFloorEffects (UndoRedo.data newFloor)
+                        )
+                    Nothing ->
+                      (model.floor, model.seed, Effects.none)
               in
                 ({ model |
                   seed = newSeed
@@ -907,7 +914,7 @@ stampCandidates model =
               ]
     _ -> []
 
-temporaryPen : Model -> (Int, Int) -> (String, String, (Int, Int, Int, Int))
+temporaryPen : Model -> (Int, Int) -> Maybe (String, String, (Int, Int, Int, Int))
 temporaryPen model from =
   let
     (offsetX, offsetY) = model.offset
@@ -922,7 +929,10 @@ temporaryPen model from =
     color = "#fff" -- TODO
     name = ""
   in
-    (color, name, (left, top, width, height))
+    if width > 0 && height > 0 then
+      Just (color, name, (left, top, width, height))
+    else
+      Nothing
 
 
 --

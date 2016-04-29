@@ -433,20 +433,20 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
 
 temporaryPenView : Model -> (Int, Int) -> Html
 temporaryPenView model from =
-  let
-    (color, name, (left, top, width, height)) =
-      temporaryPen model from
-  in
-    equipmentView'
-      ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
-      (left, top, width, height)
-      color
-      name --name
-      False -- selected
-      False -- alpha
-      [] -- eventHandlers
-      model.scale
-      True -- disableTransition
+  case temporaryPen model from of
+    Just (color, name, (left, top, width, height)) ->
+      equipmentView'
+        ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
+        (left, top, width, height)
+        color
+        name --name
+        False -- selected
+        False -- alpha
+        [] -- eventHandlers
+        model.scale
+        True -- disableTransition
+    Nothing ->
+      text ""
 
 temporaryStampsView : Model -> List Html
 temporaryStampsView model =
