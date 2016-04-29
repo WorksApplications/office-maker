@@ -8,55 +8,43 @@ Elm.Native.HtmlUtil.make = function(localRuntime) {
     var Task = Elm.Native.Task.make(localRuntime);
     var Utils = Elm.Native.Utils.make(localRuntime);
     var Signal = Elm.Native.Signal.make(localRuntime);
+    // var Maybe = Elm.Maybe.make(localRuntime);
+    //
+    // function getElementById(id) {
+    //   return Task.asyncFunction(function(callback) {
+    //     var el = document.getElementById(id);
+    //     if(el) {
+    //       callback(Task.succeed(Maybe.Just(el)));
+    //     } else {
+    //       callback(Task.succeed(Maybe.Nothing));
+    //     }
+    //   });
+    // }
 
     function focus(id) {
       return Task.asyncFunction(function(callback) {
-        localRuntime.setTimeout(function() {
-          var el = document.getElementById(id);
-          if(el) {
-            el.focus();
-            return callback(Task.succeed(Utils.Tuple0));
-          } else {
-            return callback(Task.fail(Utils.Tuple0));
-          }
-        }, 100);
+        var el = document.getElementById(id);
+        if(el) {
+          el.focus();
+          return callback(Task.succeed(Utils.Tuple0));
+        } else {
+          return callback(Task.fail(Utils.Tuple0));
+        }
       });
     }
     function blur(id) {
       return Task.asyncFunction(function(callback) {
-        localRuntime.setTimeout(function() {
-          var el = document.getElementById(id);
-          if(el) {
-            el.blur();
-            return callback(Task.succeed(Utils.Tuple0));
-          } else {
-            return callback(Task.fail(Utils.Tuple0));
-          }
-        }, 100);
+        var el = document.getElementById(id);
+        if(el) {
+          el.blur();
+          return callback(Task.succeed(Utils.Tuple0));
+        } else {
+          return callback(Task.fail(Utils.Tuple0));
+        }
       });
     }
-    function readAsDataURL(fileList) {
-      return Task.asyncFunction(function(callback) {
-        var reader = new FileReader();
-        reader.readAsDataURL(fileList[0]);
-        reader.onload = function() {
-          var dataUrl = reader.result;
-          callback(Task.succeed(dataUrl));
-        };
-        reader.onerror = function() {
-          callback(Task.succeed(""));//TODO
-        };
-      });
-    }
-    function getWidthAndHeightOfImage(dataUrl) {
-      var image = new Image();
-      image.src = dataUrl;
-      return Utils.Tuple2(image.width, image.height);
-    }
-    var locationHash = Task.asyncFunction(function(callback) {
-      console.log();
-      callback(Task.succeed(window.location.hash));
-    });
+
+
     var locationHash = Signal.input('locationHash', window.location.hash);
     window.addEventListener('hashchange', function() {
       var hash = window.location.hash;
@@ -66,8 +54,6 @@ Elm.Native.HtmlUtil.make = function(localRuntime) {
     return localRuntime.Native.HtmlUtil.values = {
         focus: focus,
         blur: blur,
-        readAsDataURL : readAsDataURL,
-        getWidthAndHeightOfImage: getWidthAndHeightOfImage,
         locationHash: locationHash
     };
 };

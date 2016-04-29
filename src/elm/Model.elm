@@ -13,6 +13,7 @@ import Util.Keys as Keys exposing (..)
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.EffectsUtil as EffectsUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
+import Util.File as File exposing (..)
 
 import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
@@ -52,6 +53,7 @@ type alias Model =
 
 type Error =
     APIError API.Error
+  | FileError File.Error
   | HtmlError HtmlUtil.Error
 
 type ContextMenu =
@@ -65,7 +67,8 @@ type DraggingContext =
   | MoveEquipment Id (Int, Int)
   | Selector
   | ShiftOffsetPrevScreenPos
-  | StampScreenPos (Int, Int)
+  | PenFromScreenPos (Int, Int)
+  | StampFromScreenPos (Int, Int)
 
 inputs : List (Signal Action)
 inputs =
@@ -90,7 +93,9 @@ init randomSeed initialSize initialHash =
     , selectorRect = Nothing
     , keys = Keys.init
     , editMode = Select
-    , colorPalette = ["#ed9", "#b8f", "#fa9", "#8bd", "#af6", "#6df"] --TODO
+    , colorPalette =
+        ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
+        , "#bbb", "#fff", "rgba(255,255,255,0.5)"] --TODO
     , contextMenu = NoContextMenu
     , floor = UndoRedo.init { data = Floor.init "-1", update = Floor.update }
     , windowDimensions = initialSize
@@ -129,7 +134,7 @@ type Action = NoOp
   | MouseWheel MouseWheelEvent
   | ChangeMode EditMode
   | LoadFile FileList
-  | GotDataURL String FileList String
+  | GotDataURL String File String
   | ScaleEnd
   | PrototypesAction Prototypes.Action
   | RegisterPrototype Id
@@ -137,6 +142,7 @@ type Action = NoOp
   | InputFloorRealWidth String
   | InputFloorRealHeight String
   | Rotate Id
+  | Publish
   | Error Error
 
 debug : Bool
@@ -163,7 +169,8 @@ update action model =
       (model, loadFloorEffects model.hash)
     FloorLoaded floor ->
       let
-        (realWidth, realHeight) = Floor.realSize floor
+        (realWidth, realHeight) =
+          Floor.realSize floor
         newModel =
           { model |
             floor = UndoRedo.init { data = floor, update = Floor.update }
@@ -273,7 +280,7 @@ update action model =
                         Just (x, y, w, h)
                     _ -> model.selectorRect
               }, Effects.none)
-            StampScreenPos _ ->
+            StampFromScreenPos _ ->
               let
                 (candidatesWithNewIds, newSeed) =
                   IdGenerator.zipWithNewIds model.seed (stampCandidates model)
@@ -283,6 +290,21 @@ update action model =
                     candidatesWithNewIds
                 newFloor =
                   UndoRedo.commit model.floor (Floor.create candidatesWithNewIds')
+                effects =
+                  saveFloorEffects (UndoRedo.data newFloor)
+              in
+                ({ model |
+                  seed = newSeed
+                , floor = newFloor
+                }, effects)
+            PenFromScreenPos (x, y) ->
+              let
+                (color, name, (left, top, width, height)) =
+                  temporaryPen model (x, y)
+                (newId, newSeed) =
+                  IdGenerator.new model.seed
+                newFloor =
+                  UndoRedo.commit model.floor (Floor.create [(newId, (left, top, width, height), color, name)])
                 effects =
                   saveFloorEffects (UndoRedo.data newFloor)
               in
@@ -320,8 +342,9 @@ update action model =
         draggingContext =
           case model.editMode of
             Stamp ->
-              StampScreenPos (e.clientX, e.clientY - 37)
-            Pen -> None -- TODO
+              StampFromScreenPos (e.clientX, e.clientY - 37)
+            Pen ->
+              PenFromScreenPos (e.clientX, e.clientY - 37)
             Select -> ShiftOffsetPrevScreenPos
 
         newModel =
@@ -499,19 +522,24 @@ update action model =
       in
         (newModel, Effects.none)
     LoadFile fileList ->
+      case File.getAt 0 fileList of
+        Just file ->
+          let
+            (id, newSeed) =
+              IdGenerator.new model.seed
+            newModel =
+              { model | seed = newSeed }
+            effects =
+              fromTask (Error << FileError) (GotDataURL id file) (readAsDataURL file)
+          in
+            (model, effects)
+        Nothing ->
+          (model, Effects.none)
+
+    GotDataURL id file dataURL ->
       let
-        (id, newSeed) =
-          IdGenerator.new model.seed
         newModel =
-          { model | seed = newSeed }
-        effects =
-          fromTask (Error << HtmlError) (GotDataURL id fileList) (readFirstAsDataURL fileList)
-      in
-        (model, effects)
-    GotDataURL id fileList dataURL ->
-      let
-        newModel =
-          { model | floor = UndoRedo.commit model.floor (Floor.setLocalFile id fileList dataURL) }
+          { model | floor = UndoRedo.commit model.floor (Floor.setLocalFile id file dataURL) }
         effects =
           saveFloorEffects (UndoRedo.data newModel.floor)
       in
@@ -519,7 +547,10 @@ update action model =
     PrototypesAction action ->
       let
         newModel =
-          { model | prototypes = Prototypes.update action model.prototypes }
+          { model |
+            prototypes = Prototypes.update action model.prototypes
+          , editMode = Stamp -- TODO if event == select
+          }
       in
         (newModel, Effects.none)
     RegisterPrototype id ->
@@ -559,38 +590,50 @@ update action model =
         (newModel, effects)
     InputFloorRealWidth width ->
       let
-        newFloor =
+        (newFloor, effects) =
           case String.toInt width of
-            Err s -> model.floor
+            Err s -> (model.floor, Effects.none)
             Ok i ->
               if i > 0 then
-                UndoRedo.commit model.floor (Floor.changeRealWidth i)
+                let
+                  newFloor =
+                    UndoRedo.commit model.floor (Floor.changeRealWidth i)
+                  effects =
+                    saveFloorEffects (UndoRedo.data newFloor)
+                in
+                  (newFloor, effects)
               else
-                model.floor
+                (model.floor, Effects.none)
         newModel =
           { model |
             floor = newFloor
           , inputFloorRealWidth = width
           }
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     InputFloorRealHeight height ->
       let
-        newFloor =
+        (newFloor, effects) =
           case String.toInt height of
-            Err s -> model.floor
+            Err s -> (model.floor, Effects.none)
             Ok i ->
               if i > 0 then
-                UndoRedo.commit model.floor (Floor.changeRealHeight i)
+                let
+                  newFloor =
+                    UndoRedo.commit model.floor (Floor.changeRealHeight i)
+                  effects =
+                    saveFloorEffects (UndoRedo.data newFloor)
+                in
+                  (newFloor, effects)
               else
-                model.floor
+                (model.floor, Effects.none)
         newModel =
           { model |
             floor = newFloor
           , inputFloorRealHeight = height
           }
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     Rotate id ->
       let
         newFloor =
@@ -602,6 +645,12 @@ update action model =
           }
       in
         (newModel, Effects.none)
+    Publish ->
+      let
+        floor = UndoRedo.data model.floor
+        effects = publishFloorEffects floor
+      in
+        (model, effects)
     Error e ->
       let
         newModel =
@@ -614,11 +663,28 @@ saveFloorEffects floor =
   let
     firstTask =
       case floor.imageSource of
-        Floor.LocalFile id fileList url ->
-          API.saveEditingImage id fileList
+        Floor.LocalFile id file url ->
+          API.saveEditingImage id file
         _ ->
           Task.succeed ()
     secondTask = API.saveEditingFloor floor
+  in
+    fromTask
+      (Error << APIError)
+      (always FloorSaved)
+      (firstTask `Task.andThen` (always secondTask))
+
+
+publishFloorEffects : Floor -> Effects Action
+publishFloorEffects floor =
+  let
+    firstTask =
+      case floor.imageSource of
+        Floor.LocalFile id file url ->
+          API.saveEditingImage id file
+        _ ->
+          Task.succeed ()
+    secondTask = API.publishEditingFloor floor
   in
     fromTask
       (Error << APIError)
@@ -802,6 +868,13 @@ selectedEquipments model =
     findEquipmentById (UndoRedo.data model.floor).equipments id
   ) model.selectedEquipments
 
+
+screenToImageWithOffset : Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int)
+screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
+    ( Scale.screenToImage scale screenX - offsetX
+    , Scale.screenToImage scale screenY - offsetY
+    )
+
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
   case model.editMode of
@@ -815,17 +888,13 @@ stampCandidates model =
         (x2, y2) =
           Maybe.withDefault (0, 0) model.pos
         (x2', y2') =
-          ( Scale.screenToImage model.scale x2 - offsetX
-          , Scale.screenToImage model.scale y2 - offsetY
-          )
+          screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
       in
         case model.draggingContext of
-          StampScreenPos (x1, y1) ->
+          StampFromScreenPos (x1, y1) ->
             let
               (x1', y1') =
-                ( Scale.screenToImage model.scale x1 - offsetX
-                , Scale.screenToImage model.scale y1 - offsetY
-                )
+                screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
             in
               stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
           _ ->
@@ -837,5 +906,23 @@ stampCandidates model =
               [ ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
               ]
     _ -> []
+
+temporaryPen : Model -> (Int, Int) -> (String, String, (Int, Int, Int, Int))
+temporaryPen model from =
+  let
+    (offsetX, offsetY) = model.offset
+    (left, top) =
+      fitToGrid model.gridSize <|
+        screenToImageWithOffset model.scale from (offsetX, offsetY)
+    (right, bottom) =
+      fitToGrid model.gridSize <|
+        screenToImageWithOffset model.scale (Maybe.withDefault (left, top) model.pos) (offsetX, offsetY)
+    width = right - left
+    height = bottom - top
+    color = "#fff" -- TODO
+    name = ""
+  in
+    (color, name, (left, top, width, height))
+
 
 --

@@ -1,11 +1,12 @@
-module View(view) where
+module View.View(view) where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 -- import Html.Lazy exposing (..)
 import Maybe
 import Signal exposing (Address, forwardTo)
-import Styles
+import View.Styles as Styles
+import View.Icons as Icons
 -- import Debug
 
 import Util.UndoRedo as UndoRedo
@@ -18,7 +19,7 @@ import EquipmentsOperation exposing (..)
 import Util.ListUtil exposing (..)
 import Prototypes exposing (Prototype, StampCandidate)
 
-import Icons
+
 
 headerView : Address Action -> Model -> Html
 headerView address model =
@@ -166,6 +167,7 @@ subView address model =
     ]
     [ card <| penView address model
     , card <| propertyView address model
+    , card <| floorView address model
     , card <| debugView address model
     ]
 
@@ -182,20 +184,23 @@ penView address model =
     prototypes =
       Prototypes.prototypes model.prototypes
   in
-    [ fileLoadButton (forwardTo address LoadFile)
-    , floorNameInputView address model
-    , floorRealSizeInputView address model
-    , modeSelectionView address model
+    [ modeSelectionView address model
     , prototypePreviewView address prototypes (model.editMode == Stamp)
     ]
 
 floorNameInputView : Address Action -> Model -> Html
 floorNameInputView address model =
-    input
-    ([ Html.Attributes.id "floor-name-input"
-    , type' "text"
-    ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
-    []
+  let
+    floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
+    nameInput =
+      input
+      ([ Html.Attributes.id "floor-name-input"
+      , type' "text"
+      , style Styles.floorNameInput
+      ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
+      []
+  in
+    div [] [ floorNameLabel, nameInput ]
 
 floorRealSizeInputView : Address Action -> Model -> Html
 floorRealSizeInputView address model =
@@ -218,8 +223,10 @@ floorRealSizeInputView address model =
       , style Styles.realSizeInput
       ] ++ (inputAttributes address InputFloorRealHeight (always NoOp) (model.inputFloorRealHeight) False))
       []
+    widthLabel = label [ style Styles.widthHeightLabel ] [ text "Width(m)" ]
+    heightLabel = label [ style Styles.widthHeightLabel ] [ text "Height(m)" ]
   in
-    div [] [ widthInput, heightInput ]
+    div [] [widthLabel, widthInput, heightLabel, heightInput ]
 
 
 modeSelectionView : Address Action -> Model -> Html
@@ -346,6 +353,11 @@ canvasView address model =
         _ -> text ""
 
     temporaryStamps' = temporaryStampsView model
+    temporaryPen' =
+      case model.draggingContext of
+        PenFromScreenPos (x, y) ->
+          temporaryPenView model (x, y)
+        _ -> text ""
 
     (offsetX, offsetY) = model.offset
 
@@ -363,7 +375,7 @@ canvasView address model =
     div
       [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
       ]
-      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ temporaryStamps')
+      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
 
 prototypePreviewView : Address Action -> List (Prototype, Bool) -> Bool -> Html
 prototypePreviewView address prototypes stampMode =
@@ -419,6 +431,23 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       scale
       True -- disableTransition
 
+temporaryPenView : Model -> (Int, Int) -> Html
+temporaryPenView model from =
+  let
+    (color, name, (left, top, width, height)) =
+      temporaryPen model from
+  in
+    equipmentView'
+      ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
+      (left, top, width, height)
+      color
+      name --name
+      False -- selected
+      False -- alpha
+      [] -- eventHandlers
+      model.scale
+      True -- disableTransition
+
 temporaryStampsView : Model -> List Html
 temporaryStampsView model =
   List.map
@@ -441,6 +470,21 @@ colorPropertyView address model =
   in
     ul [ style (Styles.ul ++ [("display", "flex")]) ]
       (List.map viewForEach model.colorPalette)
+
+publishButtonView : Address Action -> Model -> Html
+publishButtonView address model =
+  button
+    [ onClick' (forwardTo address (always Publish))
+    , style Styles.publishButton ]
+    [ text "Publish" ]
+
+floorView : Address Action -> Model -> List Html
+floorView address model =
+    [ fileLoadButton (forwardTo address LoadFile) Styles.imageLoadButton "Load Image"
+    , floorNameInputView address model
+    , floorRealSizeInputView address model
+    , publishButtonView address model
+    ]
 
 view : Address Action -> Model -> Html
 view address model =

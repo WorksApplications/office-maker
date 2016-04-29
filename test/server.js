@@ -2,11 +2,12 @@ var fs = require('fs-extra');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var rimraf = require('rimraf');
+
+var publicDir = __dirname + '/public';
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(publicDir));
 
 var floors = {};
 
@@ -14,7 +15,7 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;
   var floor = floors[id];
   console.log('get: ' + id);
-  // console.log(floor);
+  console.log(floor);
   if(floor) {
     res.send(floor);
   } else {
@@ -34,6 +35,21 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
   res.send('');
 });
 
+// publish
+app.post('/api/v1/floor/:id', function (req, res) {
+  var id = req.params.id;
+  var newFloor = req.body;
+  console.log(req.body);
+  if(id !== newFloor.id) {
+    throw "invalid! : " + [id, newFloor.id];
+  }
+  floors[id] = newFloor;
+  console.log('published floor: ' + id);
+  // console.log(newFloor);
+  res.send('');
+});
+
+
 app.put('/api/v1/image/:id', function (req, res) {
   var id = req.params.id;
   console.log(id);
@@ -43,7 +59,7 @@ app.put('/api/v1/image/:id', function (req, res) {
   });
   req.on('end', function() {
     var image = Buffer.concat(all);
-    fs.writeFile('public/images/' + id, image, function(e) {
+    fs.writeFile(publicDir + '/images/' + id, image, function(e) {
       if(e) {
         res.status(500).send('' + e);
       } else {
@@ -53,7 +69,7 @@ app.put('/api/v1/image/:id', function (req, res) {
   })
 });
 
-fs.emptyDirSync('public/images');
+fs.emptyDirSync(publicDir + '/images');
 app.listen(3000, function () {
   console.log('mock server listening on port 3000.');
 });

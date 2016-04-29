@@ -27,7 +27,7 @@ CAUTION: This product is under construction.
 |GET| /api/v1/floor/:id/version/:version||||✓|✓|✓|
 |GET| /api/v1/floor/:id/edit|||fetch latest unpublished version||✓|✓|
 |PUT| /api/v1/floor/:id/edit|Floor||update latest unpublished version||✓|✓|
-|PUSH| /api/v1/floor/:id|||publish latest unpublished version|||✓|
+|POST| /api/v1/floor/:id|||publish latest unpublished version|||✓|
 |DELETE| /api/v1/floor/:id||||||✓|
 |PUT| /api/v1/image/:id|Image|||||✓|
 
@@ -63,10 +63,10 @@ chcp 65001
 ```
 which will change encoding to UTF-8.
 
-### Testing with mock server
+### Running tasks with mock server
 
 ```
-node test/server.js
+node watch
 ```
 
 ## License

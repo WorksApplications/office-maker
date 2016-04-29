@@ -1,4 +1,4 @@
-module API(saveEditingFloor, getEditingFloor, getFloor, saveEditingImage, Floor, Error) where
+module API(saveEditingFloor, publishEditingFloor, getEditingFloor, getFloor, saveEditingImage, Error) where
 
 import Equipments exposing (..)
 import Floor exposing (ImageSource(..))
@@ -7,26 +7,12 @@ import Json.Encode exposing (object, list, encode, string, int, null, Value)
 import Json.Decode as Decode exposing ((:=), object8, object7, Decoder)
 import Task exposing (Task)
 import Floor
-import Util.HttpUtil as HttpUtil
-import Util.HtmlUtil exposing (FileList)
+import Util.HttpUtil as HttpUtil exposing (..)
+import Util.File exposing (File)
 
 type alias Floor = Floor.Model
 
 type alias Error = Http.Error
-
-put : Decoder value -> String -> Http.Body -> Task Http.Error value
-put decoder url body =
-  let request =
-    { verb = "PUT"
-    , headers =
-        [("Content-Type", "application/json; charset=utf-8")]
-    , url = url
-    , body = body
-    }
-  in
-    Http.fromJson decoder (Http.send Http.defaultSettings request)
-
-
 
 encodeEquipment : Equipment -> Value
 encodeEquipment (Desk id (x, y, width, height) color name) =
@@ -56,6 +42,9 @@ encodeFloor floor =
       , ("equipments", list <| List.map encodeEquipment floor.equipments)
       , ("width", int floor.width)
       , ("height", int floor.height)
+      , ("realSize", case floor.realSize of
+          Just (w, h) -> list [ int w, int h ]
+          Nothing -> null)
       , ("src", src)
       ]
 
@@ -71,25 +60,31 @@ decodeEquipment =
     ("color" := Decode.string)
     ("name" := Decode.string)
 
+listToTuple2 : List a -> Maybe (a, a)
+listToTuple2 list =
+  case list of
+    a :: b :: _ -> Just (a, b)
+    _ -> Nothing
+
+
 decodeFloor : Decoder Floor
 decodeFloor =
-  object8
-    (\id name equipments width height realWidth realHeight src ->
+  object7
+    (\id name equipments width height realSize src ->
       { id = id
       , name = name
       , equipments = equipments
       , width = width
       , height = height
       , imageSource = Maybe.withDefault None (Maybe.map URL src)
-      , realSize = realWidth `Maybe.andThen` (\w -> realHeight `Maybe.andThen` (\h -> Just (w, h)))
+      , realSize = Maybe.andThen realSize listToTuple2
       }) -- TODO
     ("id" := Decode.string)
     ("name" := Decode.string)
     ("equipments" := Decode.list decodeEquipment)
     ("width" := Decode.int)
     ("height" := Decode.int)
-    (Decode.maybe ("realWidth" := Decode.int))
-    (Decode.maybe ("realHeight" := Decode.int))
+    (Decode.maybe ("realSize" := Decode.list Decode.int))
     (Decode.maybe ("src" := Decode.string))
 
 serializeFloor : Floor -> String
@@ -98,9 +93,16 @@ serializeFloor floor =
 
 saveEditingFloor : Floor -> Task Error ()
 saveEditingFloor floor =
-    put
+    putJson
       (Decode.map (always ()) Decode.value)
       ("/api/v1/floor/" ++ floor.id ++ "/edit")
+      (Http.string <| serializeFloor floor)
+
+publishEditingFloor : Floor -> Task Error ()
+publishEditingFloor floor =
+    postJson
+      (Decode.map (always ()) Decode.value)
+      ("/api/v1/floor/" ++ floor.id)
       (Http.string <| serializeFloor floor)
 
 getEditingFloor : String -> Task Error Floor
@@ -115,8 +117,9 @@ getFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ id)
 
-saveEditingImage : Id -> FileList -> Task a ()
-saveEditingImage id filelist =
-    HttpUtil.putFile
+saveEditingImage : Id -> File -> Task a ()
+saveEditingImage id file =
+    HttpUtil.sendFile
+      "PUT"
       ("/api/v1/image/" ++ id)
-      filelist
+      file
