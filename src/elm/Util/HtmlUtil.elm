@@ -50,15 +50,15 @@ onMouseMove' address =
   onWithOptions
     "mousemove" { stopPropagation = True, preventDefault = True } decodeClientXY (Signal.message address)
 
-onMouseEnter' : Address MouseEvent -> Attribute
-onMouseEnter' address =
+onMouseEnter' : Address a -> a -> Attribute
+onMouseEnter' address e =
   onWithOptions
-    "mouseenter" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+    "mouseenter" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
-onMouseLeave' : Address MouseEvent -> Attribute
-onMouseLeave' address =
+onMouseLeave' : Address a -> a -> Attribute
+onMouseLeave' address e =
   onWithOptions
-    "mouseleave" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+    "mouseleave" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
 onMouseUp' : Address a -> a -> Attribute
 onMouseUp' address e =
@@ -72,9 +72,9 @@ onDblClick' : Address a -> a -> Attribute
 onDblClick' address e =
   onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
-onClick' : Address MouseEvent -> Attribute
-onClick' address =
-  onWithOptions "click" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onClick' : Address a -> a -> Attribute
+onClick' address e =
+  onWithOptions "click" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
 onInput' : Address String -> Attribute
 onInput' address =

@@ -236,19 +236,19 @@ modeSelectionView address model =
     selection =
       div
         [ style (Styles.selection (model.editMode == Select) ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode Select))
+        , onClick' address (ChangeMode Select)
         ]
         [ Icons.selectMode (model.editMode == Select) ]
     pen =
       div
         [ style (Styles.selection (model.editMode == Pen) ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode Pen))
+        , onClick' address (ChangeMode Pen)
         ]
         [ Icons.penMode (model.editMode == Pen) ]
     stamp =
       div
         [ style (Styles.selection (model.editMode == Stamp) ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode Stamp))
+        , onClick' address (ChangeMode Stamp)
         ]
         [ Icons.stampMode (model.editMode == Stamp) ]
   in
@@ -282,8 +282,8 @@ canvasContainerView address model =
     , onMouseMove' (forwardTo address MoveOnCanvas)
     , onMouseDown' address MouseDownOnCanvas
     , onMouseUp' address MouseUpOnCanvas
-    , onMouseEnter' (forwardTo address (always EnterCanvas))
-    , onMouseLeave' (forwardTo address (always LeaveCanvas))
+    , onMouseEnter' address EnterCanvas
+    , onMouseLeave' address LeaveCanvas
     , onMouseWheel address MouseWheel
     ]
     [ canvasView address model
@@ -402,7 +402,7 @@ prototypePreviewView address prototypes stampMode =
         in
           div
             [ style (position :: Styles.prototypePreviewScroll)
-            , onClick' (forwardTo address (always <| if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next))
+            , onClick' address (if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next)
             ]
             [ text label ]
         )
@@ -475,7 +475,7 @@ colorPropertyView address model =
 publishButtonView : Address Action -> Model -> Html
 publishButtonView address model =
   button
-    [ onClick' (forwardTo address (always Publish))
+    [ onClick' address Publish
     , style Styles.publishButton ]
     [ text "Publish" ]
 
