@@ -12,33 +12,11 @@ import Task exposing (Task)
 type Error =
   IdNotFound String | Unexpected String
 
-type alias MouseEvent =
-  { clientX : Int
-  , clientY : Int
-  , layerX : Int
-  , layerY : Int
-  , ctrlKey : Bool
-  , shiftKey : Bool
-  }
-
-decodeMousePosition : Decoder MouseEvent
-decodeMousePosition =
-  object6
-    (\clientX clientY layerX layerY ctrl shift ->
-      { clientX = clientX
-      , clientY = clientY
-      , layerX = layerX
-      , layerY = layerY
-      , ctrlKey = ctrl
-      , shiftKey = shift
-      }
-    )
+decodeClientXY : Decoder (Int, Int)
+decodeClientXY =
+  object2 (,)
     ("clientX" := int)
     ("clientY" := int)
-    ("layerX" := int)
-    ("layerY" := int)
-    ("ctrlKey" := bool)
-    ("shiftKey" := bool)
 
 decodeKeyCode : Decoder Int
 decodeKeyCode =
@@ -50,7 +28,6 @@ focus id =
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
-
 
 blur : String -> Task Error ()
 blur id =
@@ -71,28 +48,28 @@ onMouseMove' address =
 onMouseEnter' : Address a -> a -> Attribute
 onMouseEnter' address e =
   onWithOptions
-    "mouseenter" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
+    "mouseenter" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
 onMouseLeave' : Address a -> a -> Attribute
 onMouseLeave' address e =
   onWithOptions
-    "mouseleave" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
+    "mouseleave" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
 onMouseUp' : Address a -> a -> Attribute
 onMouseUp' address e =
-  on "mouseup" decodeMousePosition (always <| Signal.message address e)
+  on "mouseup" value (always <| Signal.message address e)
 
 onMouseDown' : Address a -> a -> Attribute
 onMouseDown' address e =
-  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
+  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
 onDblClick' : Address a -> a -> Attribute
 onDblClick' address e =
-  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
+  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
 onClick' : Address a -> a -> Attribute
 onClick' address e =
-  onWithOptions "click" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
+  onWithOptions "click" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
 onInput' : Address String -> Attribute
 onInput' address =
@@ -116,7 +93,7 @@ onKeyDown'' address =
 
 onContextMenu' : Address a -> a -> Attribute
 onContextMenu' address e =
-  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
+  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
 onMouseWheel : Address a -> (Float -> a) -> Attribute
 onMouseWheel address toAction =
@@ -128,10 +105,6 @@ onMouseWheel address toAction =
 mouseDownDefence : Address a -> a -> Attribute
 mouseDownDefence address e =
   onMouseDown' address e
-
-decodeClientXY : Decoder (Int, Int)
-decodeClientXY =
-  Json.Decode.map (\e -> (e.clientX, e.clientY)) decodeMousePosition
 
 
 decodeWheelEvent : Json.Decode.Decoder Float
