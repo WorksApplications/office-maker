@@ -120,7 +120,7 @@ type Action = NoOp
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
-  | MouseUpOnCanvas MouseEvent
+  | MouseUpOnCanvas
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
   | StartEditEquipment Id
@@ -257,14 +257,15 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    MouseUpOnCanvas e ->
+    MouseUpOnCanvas ->
       let
+        (clientX, clientY) = model.pos
         (model', effects) =
           case model.draggingContext of
             MoveEquipment id (x, y) ->
               let
                 newModel =
-                  updateByMoveEquipmentEnd id (x, y) (e.clientX, e.clientY - 37) e.ctrlKey e.shiftKey model
+                  updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
                 effects =
                   saveFloorEffects (UndoRedo.data newModel.floor)
               in
@@ -276,8 +277,8 @@ update action model =
                     Just (x, y, _, _) ->
                       let
                         (w, h) =
-                          ( Scale.screenToImage model.scale e.clientX - x
-                          , Scale.screenToImage model.scale e.clientY - 37 - y
+                          ( Scale.screenToImage model.scale clientX - x
+                          , Scale.screenToImage model.scale clientY - y
                           )
                       in
                         Just (x, y, w, h)
@@ -797,8 +798,8 @@ updateByKeyAction action model =
       (model, Effects.none)
 
 
-updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Bool -> Bool -> Model -> Model
-updateByMoveEquipmentEnd id (x0, y0) (x1, y1) ctrlKey shiftKey model =
+updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> Model
+updateByMoveEquipmentEnd id (x0, y0) (x1, y1) model =
   let
     shift = Scale.screenToImageForPosition model.scale (x1 - x0, y1 - y0)
   in
@@ -806,7 +807,7 @@ updateByMoveEquipmentEnd id (x0, y0) (x1, y1) ctrlKey shiftKey model =
       { model |
         floor = UndoRedo.commit model.floor (Floor.move model.selectedEquipments model.gridSize shift)
       }
-    else if not ctrlKey && not shiftKey then
+    else if not model.keys.ctrl && not model.keys.shift then
       { model |
         selectedEquipments = [id]
       }

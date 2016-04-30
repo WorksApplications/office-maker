@@ -60,9 +60,9 @@ onMouseLeave' address =
   onWithOptions
     "mouseleave" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
 
-onMouseUp' : Address MouseEvent -> Attribute
-onMouseUp' address =
-  on "mouseup" decodeMousePosition (Signal.message address)
+onMouseUp' : Address a -> a -> Attribute
+onMouseUp' address e =
+  on "mouseup" decodeMousePosition (always <| Signal.message address e)
 
 onMouseDown' : Address a -> a -> Attribute
 onMouseDown' address e =

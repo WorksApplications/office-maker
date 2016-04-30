@@ -281,7 +281,7 @@ canvasContainerView address model =
       ))
     , onMouseMove' (forwardTo address MoveOnCanvas)
     , onMouseDown' address MouseDownOnCanvas
-    , onMouseUp' (forwardTo address (MouseUpOnCanvas))
+    , onMouseUp' address MouseUpOnCanvas
     , onMouseEnter' (forwardTo address (always EnterCanvas))
     , onMouseLeave' (forwardTo address (always LeaveCanvas))
     , onMouseWheel address MouseWheel
