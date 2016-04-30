@@ -96,9 +96,9 @@ onKeyDown'' : Address KeyboardEvent -> Attribute
 onKeyDown'' address =
   on "keydown" decodeKeyboardEvent (Signal.message address)
 
-onContextMenu' : Address MouseEvent -> Attribute
-onContextMenu' address =
-  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onContextMenu' : Address a -> a -> Attribute
+onContextMenu' address e =
+  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
 onMouseWheel : Address a -> (MouseWheelEvent -> a) -> Attribute
 onMouseWheel address toAction =

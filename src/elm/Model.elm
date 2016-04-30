@@ -128,7 +128,7 @@ type Action = NoOp
   | SelectColor String
   | InputName Id String
   | KeydownOnNameInput KeyboardEvent
-  | ShowContextMenuOnEquipment Id MouseEvent
+  | ShowContextMenuOnEquipment Id
   | SelectIsland Id
   | WindowDimensions (Int, Int)
   | MouseWheel MouseWheelEvent
@@ -450,11 +450,12 @@ update action model =
             (model, Effects.none)
       in
         (newModel, effects)
-    ShowContextMenuOnEquipment id e ->
+    ShowContextMenuOnEquipment id ->
       let
+        (clientX, clientY) = model.pos
         newModel =
           { model |
-            contextMenu = Equipment (e.clientX, e.clientY) id
+            contextMenu = Equipment (clientX, clientY) id
           }
       in
         (newModel, Effects.none)

@@ -36,7 +36,7 @@ contextMenuView address model =
       text ""
     Equipment (x, y) id ->
       div
-        [ style (Styles.contextMenu (x, y) (fst model.windowDimensions, snd model.windowDimensions) 2)
+        [ style (Styles.contextMenu (x, y + 37) (fst model.windowDimensions, snd model.windowDimensions) 2) -- TODO
         ] -- TODO
         [ contextMenuItemView address (SelectIsland id) "Select Island"
         , contextMenuItemView address (RegisterPrototype id) "Register as stamp"
@@ -71,7 +71,7 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
           if contextMenuDisabled then
             []
           else
-            [ onContextMenu' (forwardTo address (ShowContextMenuOnEquipment id)) ]
+            [ onContextMenu' address (ShowContextMenuOnEquipment id) ]
         eventHandlers =
           contextMenu ++
             [ onMouseDown' address (MouseDownOnEquipment id)
