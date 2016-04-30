@@ -346,7 +346,7 @@ update action model =
             Select ->
               let
                 (x, y) = fitToGrid model.gridSize <|
-                  Scale.screenToImageForPosition model.scale (clientX, clientY) -- TODO was layerX, layerY
+                  screenToImageWithOffset model.scale (clientX, clientY) model.offset
               in
                 Just (x, y, model.gridSize, model.gridSize)
             _ -> model.selectorRect
