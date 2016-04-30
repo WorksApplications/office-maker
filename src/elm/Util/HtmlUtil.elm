@@ -66,11 +66,11 @@ onMouseUp' address =
 
 onMouseDown' : Address a -> a -> Attribute
 onMouseDown' address e =
-  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } decodeMousePosition (\_ -> Signal.message address e)
+  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
-onDblClick' : Address MouseEvent -> Attribute
-onDblClick' address =
-  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onDblClick' : Address a -> a -> Attribute
+onDblClick' address e =
+  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
 onClick' : Address MouseEvent -> Attribute
 onClick' address =

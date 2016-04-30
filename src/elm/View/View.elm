@@ -75,7 +75,7 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
         eventHandlers =
           contextMenu ++
             [ onMouseDown' address (MouseDownOnEquipment id)
-            , onDblClick' (forwardTo address (StartEditEquipment id))
+            , onDblClick' address (StartEditEquipment id)
             ]
       in
         equipmentView'

@@ -123,7 +123,7 @@ type Action = NoOp
   | MouseUpOnCanvas MouseEvent
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
-  | StartEditEquipment Id MouseEvent
+  | StartEditEquipment Id
   | KeysAction Keys.Action
   | SelectColor String
   | InputName Id String
@@ -367,7 +367,7 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    StartEditEquipment id e ->
+    StartEditEquipment id ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just e ->
           let
