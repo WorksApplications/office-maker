@@ -131,7 +131,7 @@ type Action = NoOp
   | ShowContextMenuOnEquipment Id
   | SelectIsland Id
   | WindowDimensions (Int, Int)
-  | MouseWheel MouseWheelEvent
+  | MouseWheel Float
   | ChangeMode EditMode
   | LoadFile FileList
   | GotDataURL String File String
@@ -486,10 +486,11 @@ update action model =
           { model | keys = Keys.update action model.keys }
       in
         updateByKeyAction action model'
-    MouseWheel e ->
+    MouseWheel value ->
       let
+        (clientX, clientY) = model.pos
         newScale =
-            if e.value < 0 then
+            if value < 0 then
               Scale.update Scale.ScaleUp model.scale
             else
               Scale.update Scale.ScaleDown model.scale
@@ -499,8 +500,8 @@ update action model =
           model.offset
         newOffset =
           let
-            x = Scale.screenToImage model.scale e.clientX
-            y = Scale.screenToImage model.scale (e.clientY - 37) --TODO header hight
+            x = Scale.screenToImage model.scale clientX
+            y = Scale.screenToImage model.scale (clientY - 37) --TODO header hight
           in
           ( floor (toFloat (x - floor (ratio * (toFloat (x - offsetX)))) / ratio)
           , floor (toFloat (y - floor (ratio * (toFloat (y - offsetY)))) / ratio)

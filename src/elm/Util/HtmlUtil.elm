@@ -15,15 +15,6 @@ type Error =
 
 type alias KeyboardEvent = HtmlEvent.KeyboardEvent
 type alias MouseEvent = HtmlEvent.MouseEvent
-type alias MouseWheelEvent =
-  { clientX : Int
-  , clientY : Int
-  , layerX : Int
-  , layerY : Int
-  , ctrlKey : Bool
-  , shiftKey : Bool
-  , value : Float
-  }
 
 
 focus : String -> Task Error ()
@@ -100,7 +91,7 @@ onContextMenu' : Address a -> a -> Attribute
 onContextMenu' address e =
   onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } decodeMousePosition (always <| Signal.message address e)
 
-onMouseWheel : Address a -> (MouseWheelEvent -> a) -> Attribute
+onMouseWheel : Address a -> (Float -> a) -> Attribute
 onMouseWheel address toAction =
   let
     handler v = Signal.message address (toAction v)
@@ -134,30 +125,13 @@ decodeMousePosition =
     ("ctrlKey" := bool)
     ("shiftKey" := bool)
 
-decodeWheelEvent : Json.Decode.Decoder MouseWheelEvent
+decodeWheelEvent : Json.Decode.Decoder Float
 decodeWheelEvent =
-  (object7
-    (\clientX clientY layerX layerY ctrl shift value ->
-      { clientX = clientX
-      , clientY = clientY
-      , layerX = layerX
-      , layerY = layerY
-      , ctrlKey = ctrl
-      , shiftKey = shift
-      , value = value
-      }
-    )
-    ("clientX" := int)
-    ("clientY" := int)
-    ("layerX" := int)
-    ("layerY" := int)
-    ("ctrlKey" := bool)
-    ("shiftKey" := bool)
     (oneOf
       [ at [ "deltaY" ] float
       , at [ "wheelDelta" ] float |> map (\v -> -v)
-      ]))
-    `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
+      ])
+    `andThen` (\value -> if value /= 0 then succeed value else fail "Wheel of 0")
 
 fileLoadButton : Address FileList -> List (String, String) -> String -> Html
 fileLoadButton address styles text =
