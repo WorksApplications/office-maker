@@ -141,7 +141,7 @@ nameInputView address model =
     Nothing ->
       text ""
 
-inputAttributes : Address Action -> (String -> Action) -> (KeyboardEvent -> Action) -> String -> Bool -> List Attribute
+inputAttributes : Address Action -> (String -> Action) -> (Int -> Action) -> String -> Bool -> List Attribute
 inputAttributes address toInputAction toKeydownAction value' defence =
   [ onInput' (forwardTo address toInputAction) -- TODO cannot input japanese
   , onKeyDown'' (forwardTo address toKeydownAction)

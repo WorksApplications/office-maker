@@ -1,6 +1,5 @@
 module Util.HtmlUtil where
 
-import Util.HtmlEvent as HtmlEvent exposing (..)
 import Native.HtmlUtil
 import Signal exposing (Address)
 import Html exposing (Html, Attribute)
@@ -13,9 +12,37 @@ import Task exposing (Task)
 type Error =
   IdNotFound String | Unexpected String
 
-type alias KeyboardEvent = HtmlEvent.KeyboardEvent
-type alias MouseEvent = HtmlEvent.MouseEvent
+type alias MouseEvent =
+  { clientX : Int
+  , clientY : Int
+  , layerX : Int
+  , layerY : Int
+  , ctrlKey : Bool
+  , shiftKey : Bool
+  }
 
+decodeMousePosition : Decoder MouseEvent
+decodeMousePosition =
+  object6
+    (\clientX clientY layerX layerY ctrl shift ->
+      { clientX = clientX
+      , clientY = clientY
+      , layerX = layerX
+      , layerY = layerY
+      , ctrlKey = ctrl
+      , shiftKey = shift
+      }
+    )
+    ("clientX" := int)
+    ("clientY" := int)
+    ("layerX" := int)
+    ("layerY" := int)
+    ("ctrlKey" := bool)
+    ("shiftKey" := bool)
+
+decodeKeyCode : Decoder Int
+decodeKeyCode =
+  at [ "keyCode" ] int
 
 focus : String -> Task Error ()
 focus id =
@@ -79,13 +106,13 @@ onChange' address =
 -- onKeyUp' address =
 --   on "keyup" decodeKeyboardEvent (Signal.message address)
 
-onKeyDown' : Address KeyboardEvent -> Attribute
+onKeyDown' : Address Int -> Attribute
 onKeyDown' address =
-  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyboardEvent (Signal.message address)
+  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyCode (Signal.message address)
 
-onKeyDown'' : Address KeyboardEvent -> Attribute
+onKeyDown'' : Address Int -> Attribute
 onKeyDown'' address =
-  on "keydown" decodeKeyboardEvent (Signal.message address)
+  on "keydown" decodeKeyCode (Signal.message address)
 
 onContextMenu' : Address a -> a -> Attribute
 onContextMenu' address e =
@@ -106,24 +133,6 @@ decodeClientXY : Decoder (Int, Int)
 decodeClientXY =
   Json.Decode.map (\e -> (e.clientX, e.clientY)) decodeMousePosition
 
-decodeMousePosition : Decoder MouseEvent
-decodeMousePosition =
-  object6
-    (\clientX clientY layerX layerY ctrl shift ->
-      { clientX = clientX
-      , clientY = clientY
-      , layerX = layerX
-      , layerY = layerY
-      , ctrlKey = ctrl
-      , shiftKey = shift
-      }
-    )
-    ("clientX" := int)
-    ("clientY" := int)
-    ("layerX" := int)
-    ("layerY" := int)
-    ("ctrlKey" := bool)
-    ("shiftKey" := bool)
 
 decodeWheelEvent : Json.Decode.Decoder Float
 decodeWheelEvent =

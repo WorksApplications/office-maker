@@ -127,7 +127,7 @@ type Action = NoOp
   | KeysAction Keys.Action
   | SelectColor String
   | InputName Id String
-  | KeydownOnNameInput KeyboardEvent
+  | KeydownOnNameInput Int
   | ShowContextMenuOnEquipment Id
   | SelectIsland Id
   | WindowDimensions (Int, Int)
@@ -404,10 +404,10 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    KeydownOnNameInput e ->
+    KeydownOnNameInput keyCode ->
       let
         (newModel, effects) =
-          if e.keyCode == 13 && not e.ctrlKey then
+          if keyCode == 13 && not model.keys.ctrl then
             let
               newModel =
                 case model.editingEquipment of
@@ -436,7 +436,7 @@ update action model =
                     model
             in
               (newModel, Effects.none)
-          else if e.keyCode == 13 then
+          else if keyCode == 13 then
             let
               newModel =
                 { model |
