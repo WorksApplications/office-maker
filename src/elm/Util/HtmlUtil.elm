@@ -1,6 +1,5 @@
 module Util.HtmlUtil where
 
-import Util.HtmlEvent as HtmlEvent exposing (..)
 import Native.HtmlUtil
 import Signal exposing (Address)
 import Html exposing (Html, Attribute)
@@ -13,18 +12,15 @@ import Task exposing (Task)
 type Error =
   IdNotFound String | Unexpected String
 
-type alias KeyboardEvent = HtmlEvent.KeyboardEvent
-type alias MouseEvent = HtmlEvent.MouseEvent
-type alias MouseWheelEvent =
-  { clientX : Int
-  , clientY : Int
-  , layerX : Int
-  , layerY : Int
-  , ctrlKey : Bool
-  , shiftKey : Bool
-  , value : Float
-  }
+decodeClientXY : Decoder (Int, Int)
+decodeClientXY =
+  object2 (,)
+    ("clientX" := int)
+    ("clientY" := int)
 
+decodeKeyCode : Decoder Int
+decodeKeyCode =
+  at [ "keyCode" ] int
 
 focus : String -> Task Error ()
 focus id =
@@ -32,7 +28,6 @@ focus id =
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
-
 
 blur : String -> Task Error ()
 blur id =
@@ -45,36 +40,36 @@ locationHash : Signal String
 locationHash =
   Native.HtmlUtil.locationHash
 
-onMouseMove' : Address MouseEvent -> Attribute
+onMouseMove' : Address (Int, Int) -> Attribute
 onMouseMove' address =
   onWithOptions
-    "mousemove" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+    "mousemove" { stopPropagation = True, preventDefault = True } decodeClientXY (Signal.message address)
 
-onMouseEnter' : Address MouseEvent -> Attribute
-onMouseEnter' address =
+onMouseEnter' : Address a -> a -> Attribute
+onMouseEnter' address e =
   onWithOptions
-    "mouseenter" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+    "mouseenter" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
-onMouseLeave' : Address MouseEvent -> Attribute
-onMouseLeave' address =
+onMouseLeave' : Address a -> a -> Attribute
+onMouseLeave' address e =
   onWithOptions
-    "mouseleave" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+    "mouseleave" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
-onMouseUp' : Address MouseEvent -> Attribute
-onMouseUp' address =
-  on "mouseup" decodeMousePosition (Signal.message address)
+onMouseUp' : Address a -> a -> Attribute
+onMouseUp' address e =
+  on "mouseup" value (always <| Signal.message address e)
 
-onMouseDown' : Address MouseEvent -> Attribute
-onMouseDown' address =
-  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onMouseDown' : Address a -> a -> Attribute
+onMouseDown' address e =
+  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
-onDblClick' : Address MouseEvent -> Attribute
-onDblClick' address =
-  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onDblClick' : Address a -> a -> Attribute
+onDblClick' address e =
+  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
-onClick' : Address MouseEvent -> Attribute
-onClick' address =
-  onWithOptions "click" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onClick' : Address a -> a -> Attribute
+onClick' address e =
+  onWithOptions "click" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
 onInput' : Address String -> Attribute
 onInput' address =
@@ -88,19 +83,19 @@ onChange' address =
 -- onKeyUp' address =
 --   on "keyup" decodeKeyboardEvent (Signal.message address)
 
-onKeyDown' : Address KeyboardEvent -> Attribute
+onKeyDown' : Address Int -> Attribute
 onKeyDown' address =
-  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyboardEvent (Signal.message address)
+  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyCode (Signal.message address)
 
-onKeyDown'' : Address KeyboardEvent -> Attribute
+onKeyDown'' : Address Int -> Attribute
 onKeyDown'' address =
-  on "keydown" decodeKeyboardEvent (Signal.message address)
+  on "keydown" decodeKeyCode (Signal.message address)
 
-onContextMenu' : Address MouseEvent -> Attribute
-onContextMenu' address =
-  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } decodeMousePosition (Signal.message address)
+onContextMenu' : Address a -> a -> Attribute
+onContextMenu' address e =
+  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
 
-onMouseWheel : Address a -> (MouseWheelEvent -> a) -> Attribute
+onMouseWheel : Address a -> (Float -> a) -> Attribute
 onMouseWheel address toAction =
   let
     handler v = Signal.message address (toAction v)
@@ -108,53 +103,17 @@ onMouseWheel address toAction =
     onWithOptions "wheel" { stopPropagation = True, preventDefault = True } decodeWheelEvent handler
 
 mouseDownDefence : Address a -> a -> Attribute
-mouseDownDefence address noOp =
-  onMouseDown' (Signal.forwardTo address (always noOp))
+mouseDownDefence address e =
+  onMouseDown' address e
 
 
-decodeMousePosition : Decoder MouseEvent
-decodeMousePosition =
-  object6
-    (\clientX clientY layerX layerY ctrl shift ->
-      { clientX = clientX
-      , clientY = clientY
-      , layerX = layerX
-      , layerY = layerY
-      , ctrlKey = ctrl
-      , shiftKey = shift
-      }
-    )
-    ("clientX" := int)
-    ("clientY" := int)
-    ("layerX" := int)
-    ("layerY" := int)
-    ("ctrlKey" := bool)
-    ("shiftKey" := bool)
-
-decodeWheelEvent : Json.Decode.Decoder MouseWheelEvent
+decodeWheelEvent : Json.Decode.Decoder Float
 decodeWheelEvent =
-  (object7
-    (\clientX clientY layerX layerY ctrl shift value ->
-      { clientX = clientX
-      , clientY = clientY
-      , layerX = layerX
-      , layerY = layerY
-      , ctrlKey = ctrl
-      , shiftKey = shift
-      , value = value
-      }
-    )
-    ("clientX" := int)
-    ("clientY" := int)
-    ("layerX" := int)
-    ("layerY" := int)
-    ("ctrlKey" := bool)
-    ("shiftKey" := bool)
     (oneOf
       [ at [ "deltaY" ] float
       , at [ "wheelDelta" ] float |> map (\v -> -v)
-      ]))
-    `andThen` (\e -> if e.value /= 0 then succeed e else fail "Wheel of 0")
+      ])
+    `andThen` (\value -> if value /= 0 then succeed value else fail "Wheel of 0")
 
 fileLoadButton : Address FileList -> List (String, String) -> String -> Html
 fileLoadButton address styles text =

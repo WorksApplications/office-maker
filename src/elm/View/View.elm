@@ -36,19 +36,19 @@ contextMenuView address model =
       text ""
     Equipment (x, y) id ->
       div
-        [ style (Styles.contextMenu (x, y) (fst model.windowDimensions, snd model.windowDimensions) 2)
+        [ style (Styles.contextMenu (x, y + 37) (fst model.windowDimensions, snd model.windowDimensions) 2) -- TODO
         ] -- TODO
         [ contextMenuItemView address (SelectIsland id) "Select Island"
-        , contextMenuItemView address (always <| RegisterPrototype id) "Register as stamp"
-        , contextMenuItemView address (always <| Rotate id) "Rotate"
+        , contextMenuItemView address (RegisterPrototype id) "Register as stamp"
+        , contextMenuItemView address (Rotate id) "Rotate"
         ]
 
-contextMenuItemView : Address Action -> (MouseEvent -> Action) -> String -> Html
+contextMenuItemView : Address Action -> Action -> String -> Html
 contextMenuItemView address action text' =
   div
     [ class "hovarable"
     , style Styles.contextMenuItem
-    , onMouseDown' (forwardTo address action)
+    , onMouseDown' address action
     ]
     [ text text' ]
 
@@ -71,11 +71,11 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
           if contextMenuDisabled then
             []
           else
-            [ onContextMenu' (forwardTo address (ShowContextMenuOnEquipment id)) ]
+            [ onContextMenu' address (ShowContextMenuOnEquipment id) ]
         eventHandlers =
           contextMenu ++
-            [ onMouseDown' (forwardTo address (MouseDownOnEquipment id))
-            , onDblClick' (forwardTo address (StartEditEquipment id))
+            [ onMouseDown' address (MouseDownOnEquipment id)
+            , onDblClick' address (StartEditEquipment id)
             ]
       in
         equipmentView'
@@ -141,12 +141,12 @@ nameInputView address model =
     Nothing ->
       text ""
 
-inputAttributes : Address Action -> (String -> Action) -> (KeyboardEvent -> Action) -> String -> Bool -> List Attribute
+inputAttributes : Address Action -> (String -> Action) -> (Int -> Action) -> String -> Bool -> List Attribute
 inputAttributes address toInputAction toKeydownAction value' defence =
   [ onInput' (forwardTo address toInputAction) -- TODO cannot input japanese
   , onKeyDown'' (forwardTo address toKeydownAction)
   , value value'
-  ] ++ (if defence then [onMouseDown' (forwardTo address (always NoOp))] else [])
+  ] ++ (if defence then [onMouseDown' address NoOp] else [])
 
 mainView : Address Action -> Model -> Html
 mainView address model =
@@ -236,19 +236,19 @@ modeSelectionView address model =
     selection =
       div
         [ style (Styles.selection (model.editMode == Select) ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode Select))
+        , onClick' address (ChangeMode Select)
         ]
         [ Icons.selectMode (model.editMode == Select) ]
     pen =
       div
         [ style (Styles.selection (model.editMode == Pen) ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode Pen))
+        , onClick' address (ChangeMode Pen)
         ]
         [ Icons.penMode (model.editMode == Pen) ]
     stamp =
       div
         [ style (Styles.selection (model.editMode == Stamp) ++ widthStyle)
-        , onClick' (forwardTo address (always <| ChangeMode Stamp))
+        , onClick' address (ChangeMode Stamp)
         ]
         [ Icons.stampMode (model.editMode == Stamp) ]
   in
@@ -280,10 +280,10 @@ canvasContainerView address model =
           []
       ))
     , onMouseMove' (forwardTo address MoveOnCanvas)
-    , onMouseDown' (forwardTo address (MouseDownOnCanvas))
-    , onMouseUp' (forwardTo address (MouseUpOnCanvas))
-    , onMouseEnter' (forwardTo address (always EnterCanvas))
-    , onMouseLeave' (forwardTo address (always LeaveCanvas))
+    , onMouseDown' address MouseDownOnCanvas
+    , onMouseUp' address MouseUpOnCanvas
+    , onMouseEnter' address EnterCanvas
+    , onMouseLeave' address LeaveCanvas
     , onMouseWheel address MouseWheel
     ]
     [ canvasView address model
@@ -323,9 +323,10 @@ canvasView address model =
       then
         let
           equipments = List.filter isDragged floor.equipments
+          (x, y) = model.pos
           moving =
-            case (model.draggingContext, model.pos) of
-              (MoveEquipment _ (startX, startY), Just (x, y)) -> Just ((startX, startY), (x, y))
+            case model.draggingContext of
+              MoveEquipment _ (startX, startY) -> Just ((startX, startY), (x, y))
               _ -> Nothing
         in
           List.map
@@ -401,7 +402,7 @@ prototypePreviewView address prototypes stampMode =
         in
           div
             [ style (position :: Styles.prototypePreviewScroll)
-            , onClick' (forwardTo address (always <| if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next))
+            , onClick' address (if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next)
             ]
             [ text label ]
         )
@@ -433,20 +434,20 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
 
 temporaryPenView : Model -> (Int, Int) -> Html
 temporaryPenView model from =
-  let
-    (color, name, (left, top, width, height)) =
-      temporaryPen model from
-  in
-    equipmentView'
-      ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
-      (left, top, width, height)
-      color
-      name --name
-      False -- selected
-      False -- alpha
-      [] -- eventHandlers
-      model.scale
-      True -- disableTransition
+  case temporaryPen model from of
+    Just (color, name, (left, top, width, height)) ->
+      equipmentView'
+        ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
+        (left, top, width, height)
+        color
+        name --name
+        False -- selected
+        False -- alpha
+        [] -- eventHandlers
+        model.scale
+        True -- disableTransition
+    Nothing ->
+      text ""
 
 temporaryStampsView : Model -> List Html
 temporaryStampsView model =
@@ -464,7 +465,7 @@ colorPropertyView address model =
     viewForEach color =
       li
         [ style (Styles.colorProperty color (match color))
-        , onMouseDown' (forwardTo address (SelectColor color))
+        , onMouseDown' address (SelectColor color)
         ]
         []
   in
@@ -474,7 +475,7 @@ colorPropertyView address model =
 publishButtonView : Address Action -> Model -> Html
 publishButtonView address model =
   button
-    [ onClick' (forwardTo address (always Publish))
+    [ onClick' address Publish
     , style Styles.publishButton ]
     [ text "Publish" ]
 

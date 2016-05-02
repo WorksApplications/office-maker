@@ -4,7 +4,6 @@ import Native.Keys
 
 import Keyboard
 import Char
-import Util.HtmlEvent exposing (..)
 import Json.Decode exposing (..)
 
 type Action =
@@ -16,6 +15,7 @@ type Action =
   | KeyX Bool
   | KeyY
   | KeyZ
+  | Enter Bool
   | KeyLeftArrow
   | KeyUpArrow
   | KeyRightArrow
@@ -38,21 +38,22 @@ inputs =
   [ Signal.map KeyCtrl Keyboard.ctrl
   , Signal.map KeyShift Keyboard.shift
   , Signal.map KeyDel (Keyboard.isDown 46)
+  , Signal.map Enter (Keyboard.isDown 13)
   , Signal.map KeyC (Keyboard.isDown (Char.toCode 'C'))
   , Signal.map KeyV (Keyboard.isDown (Char.toCode 'V'))
   , Signal.map KeyX (Keyboard.isDown (Char.toCode 'X'))
-  , Signal.map (\e ->
-      if e.keyCode == (Char.toCode 'Y') then
+  , Signal.map (\keyCode ->
+      if keyCode == (Char.toCode 'Y') then
         KeyY
-      else if e.keyCode == (Char.toCode 'Z') then
+      else if keyCode == (Char.toCode 'Z') then
         KeyZ
-      else if e.keyCode == 37 then
+      else if keyCode == 37 then
         KeyLeftArrow
-      else if e.keyCode == 38 then
+      else if keyCode == 38 then
         KeyUpArrow
-      else if e.keyCode == 39 then
+      else if keyCode == 39 then
         KeyRightArrow
-      else if e.keyCode == 40 then
+      else if keyCode == 40 then
         KeyDownArrow
       else
         Other
@@ -73,14 +74,10 @@ update action model =
 downs_ : Signal Json.Decode.Value
 downs_ = Native.Keys.downs
 
-downs : Signal KeyboardEvent
+downs : Signal Int
 downs =
   Signal.filterMap (\value ->
-    case Json.Decode.decodeValue decodeKeyboardEvent value of
+    case Json.Decode.decodeValue (at ["keyCode"] int) value of
       Ok e -> Just e
       _ -> Nothing
-  ) initKeyboardEvent downs_
-
-
-initKeyboardEvent : KeyboardEvent
-initKeyboardEvent = { keyCode = -1, ctrlKey = False, shiftKey = False }
+  ) -1 downs_
