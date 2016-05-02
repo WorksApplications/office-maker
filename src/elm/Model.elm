@@ -682,7 +682,7 @@ update action model =
             Just LogoutDone -> { model | user = User.guest }
             _ -> model
       in
-        (newModel, Effects.map (always NoOp) effects)
+        (newModel, Effects.map HeaderAction effects)
 
     Error e ->
       let

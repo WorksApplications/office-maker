@@ -14746,7 +14746,7 @@ Elm.Header.make = function (_elm) {
    var NoOp = {ctor: "NoOp"};
    var LogoutSuccess = {ctor: "LogoutSuccess"};
    var update = function (action) {
-      var _p1 = A2($Debug.log,"action",action);
+      var _p1 = action;
       switch (_p1.ctor)
       {case "NoOp": return {ctor: "_Tuple2"
                            ,_0: $Effects.none
@@ -14786,13 +14786,15 @@ Elm.Header.make = function (_elm) {
                var greetingView = A2($Html.div,
                _U.list([$Html$Attributes.style($View$Styles.greeting)]),
                _U.list([greeting(_p6)]));
-               var children = function () {
+               var children = A2($List._op["::"],
+               greetingView,
+               function () {
                   var _p4 = _p6;
                   switch (_p4.ctor)
-                  {case "Admin": return _U.list([greetingView,logout]);
-                     case "General": return _U.list([greetingView,logout]);
-                     default: return _U.list([greetingView,login,logout]);}
-               }();
+                  {case "Admin": return _U.list([logout]);
+                     case "General": return _U.list([logout]);
+                     default: return _U.list([login]);}
+               }());
                return A2($Html.div,
                _U.list([$Html$Attributes.style($View$Styles.headerMenu)]),
                children);
@@ -15199,7 +15201,7 @@ Elm.Main.make = function (_elm) {
                       ,A2($Html.input,
                       _U.list([$Html$Attributes.style($View$Styles.formInput)
                               ,$Util$HtmlUtil.onInput(A2($Signal.forwardTo,address,InputId))
-                              ,$Html$Attributes.type$("input")
+                              ,$Html$Attributes.type$("text")
                               ,$Html$Attributes.value(model.inputId)]),
                       _U.list([]))]))
               ,A2($Html.div,
@@ -15210,7 +15212,7 @@ Elm.Main.make = function (_elm) {
                       ,A2($Html.input,
                       _U.list([$Html$Attributes.style($View$Styles.formInput)
                               ,$Util$HtmlUtil.onInput(A2($Signal.forwardTo,address,InputPass))
-                              ,$Html$Attributes.type$("input")
+                              ,$Html$Attributes.type$("password")
                               ,$Html$Attributes.value(model.inputPass)]),
                       _U.list([]))]))
               ,A2($Html.input,
