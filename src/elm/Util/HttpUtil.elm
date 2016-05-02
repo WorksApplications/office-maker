@@ -6,6 +6,14 @@ import Util.File as File exposing(File(File))
 import Http
 import Json.Decode exposing (Decoder)
 
+reload : Task a ()
+reload =
+  Native.HttpUtil.reload
+
+goTo : String -> Task a ()
+goTo =
+  Native.HttpUtil.goTo
+
 sendFile : String -> String -> File.File -> Task a ()
 sendFile method url (File file) =
   Native.HttpUtil.sendFile method url file

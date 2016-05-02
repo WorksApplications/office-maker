@@ -1,4 +1,13 @@
-module API(saveEditingFloor, publishEditingFloor, getEditingFloor, getFloor, saveEditingImage, Error) where
+module API (
+      saveEditingFloor
+    , publishEditingFloor
+    , getEditingFloor
+    , getFloor
+    , saveEditingImage
+    , gotoTop
+    , login
+    , Error
+  ) where
 
 import Equipments exposing (..)
 import Floor exposing (ImageSource(..))
@@ -48,6 +57,10 @@ encodeFloor floor =
       , ("src", src)
       ]
 
+encodeLogin : String -> String -> Value
+encodeLogin id pass =
+    object [ ("id", string id), ("pass", string pass) ]
+
 decodeEquipment : Decoder Equipment
 decodeEquipment =
   object7
@@ -91,17 +104,23 @@ serializeFloor : Floor -> String
 serializeFloor floor =
     encode 0 (encodeFloor floor)
 
+
+serializeLogin : String -> String -> String
+serializeLogin id pass =
+    encode 0 (encodeLogin id pass)
+
+
 saveEditingFloor : Floor -> Task Error ()
 saveEditingFloor floor =
     putJson
-      (Decode.map (always ()) Decode.value)
+      (Decode.succeed ())
       ("/api/v1/floor/" ++ floor.id ++ "/edit")
       (Http.string <| serializeFloor floor)
 
 publishEditingFloor : Floor -> Task Error ()
 publishEditingFloor floor =
     postJson
-      (Decode.map (always ()) Decode.value)
+      (Decode.succeed ())
       ("/api/v1/floor/" ++ floor.id)
       (Http.string <| serializeFloor floor)
 
@@ -123,3 +142,15 @@ saveEditingImage id file =
       "PUT"
       ("/api/v1/image/" ++ id)
       file
+
+
+login : String -> String -> Task Error ()
+login id pass =
+    postJson
+      (Decode.succeed ())
+      ("/api/v1/login")
+      (Http.string <| serializeLogin id pass)
+
+gotoTop : Task a ()
+gotoTop =
+  HttpUtil.goTo "/"

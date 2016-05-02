@@ -11,6 +11,7 @@
   "devDependencies": {
     "body-parser": "^1.15.0",
     "express": "^4.13.4",
+    "express-session": "^1.13.0",
     "fs-extra": "^0.28.0",
     "minimatch": "^3.0.0",
     "slash": "^1.0.0",

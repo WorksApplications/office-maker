@@ -2,20 +2,71 @@ var fs = require('fs-extra');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 var publicDir = __dirname + '/public';
 
+var floors = {};
+var users = {
+  admin01: { pass: 'admin01', mail: 'admin01@xxx.com', role: 'admin' },
+  user01 : { pass: 'user01', mail: 'user01@xxx.com', role: 'general' }
+};
+
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 30 * 60 * 1000
+  }
+}));
+
+
+/* Login NOT required */
+
+app.get('/login', function(req, res) {
+  res.sendfile(publicDir + '/login.html');
+});
+app.get('/logout', function(req, res) {
+  req.session.user = null;
+  res.redirect('/login');
+});
+app.post('/api/v1/login', function(req, res) {
+  var id = req.body.id;
+  var pass = req.body.pass;
+  var account = users[id];
+  if(account && (account.pass === pass)) {
+    req.session.user = id;
+    res.send({});
+  } else {
+    res.status(401).send('');
+  }
+});
 app.use(express.static(publicDir));
 
-var floors = {};
+// Login
+app.use('/', function(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    if(req.url.indexOf('/api') === 0) {
+      res.status(401).send('');
+    } else {
+      res.redirect('/login');
+    }
+  }
+});
+
+/* Login required */
 
 app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;
   var floor = floors[id];
   console.log('get: ' + id);
-  console.log(floor);
+  // console.log(floor);
   if(floor) {
     res.send(floor);
   } else {

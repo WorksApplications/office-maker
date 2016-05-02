@@ -40,6 +40,11 @@ locationHash : Signal String
 locationHash =
   Native.HtmlUtil.locationHash
 
+onSubmit' : Address a -> a -> Attribute
+onSubmit' address e =
+  onWithOptions
+    "onsubmit" { stopPropagation = True, preventDefault = False } value (always <| Signal.message address e)
+
 onMouseMove' : Address (Int, Int) -> Attribute
 onMouseMove' address =
   onWithOptions
@@ -70,6 +75,10 @@ onDblClick' address e =
 onClick' : Address a -> a -> Attribute
 onClick' address e =
   onWithOptions "click" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
+
+onInput : Address String -> Attribute
+onInput address =
+  on "input" Html.Events.targetValue (Signal.message address)
 
 onInput' : Address String -> Attribute
 onInput' address =
@@ -114,6 +123,16 @@ decodeWheelEvent =
       , at [ "wheelDelta" ] float |> map (\v -> -v)
       ])
     `andThen` (\value -> if value /= 0 then succeed value else fail "Wheel of 0")
+
+
+form' : Address a -> a -> List Attribute -> List Html -> Html
+form' address action attribtes children =
+  Html.form
+    ([ Html.Attributes.action "javascript:void(0);"
+    , Html.Attributes.method "POST"
+    , Html.Events.onSubmit address action
+    ] ++ attribtes)
+    children
 
 fileLoadButton : Address FileList -> List (String, String) -> String -> Html
 fileLoadButton address styles text =

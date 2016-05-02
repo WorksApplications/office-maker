@@ -7,3 +7,4 @@ data
 repl-temp-*
 *.ods*
 npm-debug.log
+bugs.html
