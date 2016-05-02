@@ -6,6 +6,8 @@ module API (
     , saveEditingImage
     , gotoTop
     , login
+    , goToLogin
+    , goToLogout
     , Error
   ) where
 
@@ -150,6 +152,14 @@ login id pass =
       (Decode.succeed ())
       ("/api/v1/login")
       (Http.string <| serializeLogin id pass)
+
+goToLogin : Task a ()
+goToLogin =
+  HttpUtil.goTo "/login"
+
+goToLogout : Task a ()
+goToLogout =
+  HttpUtil.goTo "/logout"
 
 gotoTop : Task a ()
 gotoTop =

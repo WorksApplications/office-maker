@@ -7,6 +7,7 @@ import Maybe
 import Signal exposing (Address, forwardTo)
 import View.Styles as Styles
 import View.Icons as Icons
+import Header
 -- import Debug
 
 import Util.UndoRedo as UndoRedo
@@ -19,15 +20,6 @@ import EquipmentsOperation exposing (..)
 import Util.ListUtil exposing (..)
 import Prototypes exposing (Prototype, StampCandidate)
 
-
-
-headerView : Address Action -> Model -> Html
-headerView address model =
-  header
-    [ style Styles.header
-    , mouseDownDefence address NoOp ]
-    [ h1 [ style Styles.h1 ] [text "Office Maker"]
-    ]
 
 contextMenuView : Address Action -> Model -> Html
 contextMenuView address model =
@@ -491,7 +483,7 @@ view : Address Action -> Model -> Html
 view address model =
   div
     []
-    [ headerView address model
+    [ Header.view (Just (Signal.forwardTo address HeaderAction, model.user))
     , mainView address model
     , contextMenuView address model
     ]

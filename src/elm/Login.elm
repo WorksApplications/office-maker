@@ -7,6 +7,7 @@ import Task
 import API
 import Effects exposing (Effects)
 
+import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
 
 app : StartApp.App Model
@@ -77,7 +78,8 @@ view : Address Action -> Model -> Html
 view address model =
   div
     []
-    [ h1 [] [ text "Sign in to Office Makaer" ]
+    [ Header.view Nothing
+    , h1 [] [ text "Sign in to Office Makaer" ]
     , div [] [ text (Maybe.withDefault "" model.error) ]
     , loginForm address model
     ]

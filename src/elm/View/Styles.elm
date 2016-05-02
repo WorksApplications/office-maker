@@ -54,6 +54,9 @@ header =
     , ("color", "#eee")
     , ("height", toString headerHeight ++ "px")
     , ("padding-left", "10px")
+    , ("padding-right", "10px")
+    , ("display", "flex")
+    , ("justify-content", "space-between")
     ]
 
 rect : (Int, Int, Int, Int) -> S
@@ -299,4 +302,33 @@ floorNameLabel =
 widthHeightLabel : S
 widthHeightLabel =
   [ ("margin-right", "3px")
+  ]
+
+headerMenu : S
+headerMenu =
+  [ ("display", "flex")
+  , ("justify-content", "flex-end")
+  ]
+
+headerMenuItem : S
+headerMenuItem =
+  noMargin ++
+    [ ("text-align", "center")
+    , ("justify-content", "flex-end")
+    , ("line-height", "37px")
+    ]
+
+greeting : S
+greeting = headerMenuItem ++
+  [ ("margin-right", "50px")
+  ]
+
+login : S
+login = headerMenuItem ++
+  [ ("width", "80px")
+  ]
+
+logout : S
+logout = headerMenuItem ++
+  [ ("width", "80px")
   ]

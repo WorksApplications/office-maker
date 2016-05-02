@@ -15,6 +15,7 @@ import Util.EffectsUtil as EffectsUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
 
+import User exposing (User)
 import Equipments exposing (..)
 import EquipmentsOperation exposing (..)
 import Scale
@@ -22,12 +23,15 @@ import API
 import Prototypes exposing (..)
 import Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 
+import Header
+
 type alias Floor = Floor.Model
 
 type alias Commit = Floor.Action
 
 type alias Model =
   { seed : Seed
+  , user : User
   , pos : (Int, Int)
   , draggingContext : DraggingContext
   , selectedEquipments : List Id
@@ -84,6 +88,7 @@ init : (Int, Int) -> (Int, Int) -> String -> (Model, Effects Action)
 init randomSeed initialSize initialHash =
   (
     { seed = IdGenerator.init randomSeed
+    , user = User.guest
     , pos = (0, 0)
     , draggingContext = None
     , selectedEquipments = []
@@ -143,6 +148,7 @@ type Action = NoOp
   | InputFloorRealHeight String
   | Rotate Id
   | Publish
+  | HeaderAction Header.Action
   | Error Error
 
 debug : Bool
@@ -664,6 +670,8 @@ update action model =
         effects = publishFloorEffects floor
       in
         (model, effects)
+    HeaderAction action ->
+      (model, Effects.map (always NoOp) (Header.update action))
     Error e ->
       let
         newModel =

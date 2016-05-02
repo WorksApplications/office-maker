@@ -14102,6 +14102,8 @@ Elm.API.make = function (_elm) {
    $Util$HttpUtil = Elm.Util.HttpUtil.make(_elm);
    var _op = {};
    var gotoTop = $Util$HttpUtil.goTo("/");
+   var goToLogout = $Util$HttpUtil.goTo("/logout");
+   var goToLogin = $Util$HttpUtil.goTo("/login");
    var saveEditingImage = F2(function (id,file) {
       return A3($Util$HttpUtil.sendFile,
       "PUT",
@@ -14262,7 +14264,485 @@ Elm.API.make = function (_elm) {
                             ,getFloor: getFloor
                             ,saveEditingImage: saveEditingImage
                             ,gotoTop: gotoTop
-                            ,login: login};
+                            ,login: login
+                            ,goToLogin: goToLogin
+                            ,goToLogout: goToLogout};
+};
+Elm.User = Elm.User || {};
+Elm.User.make = function (_elm) {
+   "use strict";
+   _elm.User = _elm.User || {};
+   if (_elm.User.values) return _elm.User.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var Guest = {ctor: "Guest"};
+   var guest = Guest;
+   var General = function (a) {
+      return {ctor: "General",_0: a};
+   };
+   var general = function (name) {    return General(name);};
+   var Admin = function (a) {    return {ctor: "Admin",_0: a};};
+   var admin = function (name) {    return Admin(name);};
+   return _elm.User.values = {_op: _op
+                             ,Admin: Admin
+                             ,General: General
+                             ,Guest: Guest
+                             ,admin: admin
+                             ,general: general
+                             ,guest: guest};
+};
+Elm.View = Elm.View || {};
+Elm.View.Styles = Elm.View.Styles || {};
+Elm.View.Styles.make = function (_elm) {
+   "use strict";
+   _elm.View = _elm.View || {};
+   _elm.View.Styles = _elm.View.Styles || {};
+   if (_elm.View.Styles.values) return _elm.View.Styles.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var headerMenu = _U.list([{ctor: "_Tuple2"
+                             ,_0: "display"
+                             ,_1: "flex"}
+                            ,{ctor: "_Tuple2",_0: "justify-content",_1: "flex-end"}]);
+   var widthHeightLabel = _U.list([{ctor: "_Tuple2"
+                                   ,_0: "margin-right"
+                                   ,_1: "3px"}]);
+   var floorNameLabel = _U.list([{ctor: "_Tuple2"
+                                 ,_0: "margin-right"
+                                 ,_1: "23px"}]);
+   var formControl = _U.list([{ctor: "_Tuple2"
+                              ,_0: "height"
+                              ,_1: "34px"}
+                             ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}
+                             ,{ctor: "_Tuple2",_0: "font-size",_1: "14px"}
+                             ,{ctor: "_Tuple2",_0: "line-height",_1: "1.42857143"}
+                             ,{ctor: "_Tuple2",_0: "padding",_1: "6px 12px"}
+                             ,{ctor: "_Tuple2",_0: "border",_1: "1px solid #ccc"}
+                             ,{ctor: "_Tuple2",_0: "margin-bottom",_1: "6px"}]);
+   var input = A2($Basics._op["++"],
+   formControl,
+   _U.list([{ctor: "_Tuple2",_0: "color",_1: "#555"}
+           ,{ctor: "_Tuple2",_0: "background-color",_1: "#fff"}
+           ,{ctor: "_Tuple2",_0: "margin-right",_1: "12px"}]));
+   var realSizeInput = A2($Basics._op["++"],
+   input,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "50px"}]));
+   var floorNameInput = A2($Basics._op["++"],
+   input,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "177px"}]));
+   var button = A2($Basics._op["++"],
+   formControl,
+   _U.list([{ctor: "_Tuple2",_0: "display",_1: "block"}
+           ,{ctor: "_Tuple2",_0: "text-align",_1: "center"}
+           ,{ctor: "_Tuple2",_0: "background-color",_1: "#eee"}]));
+   var imageLoadButton = A2($Basics._op["++"],
+   button,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "120px"}]));
+   var publishButton = A2($Basics._op["++"],
+   button,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "120px"}]));
+   var prototypePreviewScroll = _U.list([{ctor: "_Tuple2"
+                                         ,_0: "width"
+                                         ,_1: "30px"}
+                                        ,{ctor: "_Tuple2",_0: "height",_1: "30px"}
+                                        ,{ctor: "_Tuple2",_0: "font-size",_1: "large"}
+                                        ,{ctor: "_Tuple2",_0: "font-weight",_1: "bold"}
+                                        ,{ctor: "_Tuple2",_0: "line-height",_1: "30px"}
+                                        ,{ctor: "_Tuple2",_0: "position",_1: "absolute"}
+                                        ,{ctor: "_Tuple2",_0: "top",_1: "104px"}
+                                        ,{ctor: "_Tuple2",_0: "border-radius",_1: "15px"}
+                                        ,{ctor: "_Tuple2",_0: "text-align",_1: "center"}
+                                        ,{ctor: "_Tuple2",_0: "color",_1: "#fff"}
+                                        ,{ctor: "_Tuple2",_0: "background-color",_1: "#ccc"}
+                                        ,{ctor: "_Tuple2",_0: "cursor",_1: "pointer"}]);
+   var prototypePreviewViewInner = function (index) {
+      return _U.list([{ctor: "_Tuple2",_0: "width",_1: "238px"}
+                     ,{ctor: "_Tuple2",_0: "height",_1: "238px"}
+                     ,{ctor: "_Tuple2",_0: "position",_1: "relative"}
+                     ,{ctor: "_Tuple2",_0: "top",_1: "0"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "left"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(index * -238),"px")}
+                     ,{ctor: "_Tuple2",_0: "transition-property",_1: "left"}
+                     ,{ctor: "_Tuple2",_0: "transition-duration",_1: "0.2s"}]);
+   };
+   var prototypePreviewView = function (stampMode) {
+      return _U.list([{ctor: "_Tuple2",_0: "width",_1: "238px"}
+                     ,{ctor: "_Tuple2",_0: "height",_1: "238px"}
+                     ,{ctor: "_Tuple2",_0: "position",_1: "relative"}
+                     ,{ctor: "_Tuple2",_0: "border-style",_1: "solid"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "border-width"
+                      ,_1: stampMode ? "2px" : "1px"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "border-color"
+                      ,_1: stampMode ? "#69e" : "#666"}
+                     ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}
+                     ,{ctor: "_Tuple2",_0: "margin-top",_1: "10px"}
+                     ,{ctor: "_Tuple2",_0: "background-color",_1: "#fff"}
+                     ,{ctor: "_Tuple2",_0: "overflow",_1: "hidden"}]);
+   };
+   var transition = function (disabled) {
+      return disabled ? _U.list([]) : _U.list([{ctor: "_Tuple2"
+                                               ,_0: "transition-property"
+                                               ,_1: "width, height, top, left"}
+                                              ,{ctor: "_Tuple2",_0: "transition-duration",_1: "0.2s"}]);
+   };
+   var selection = function (selected) {
+      return _U.list([{ctor: "_Tuple2",_0: "cursor",_1: "pointer"}
+                     ,{ctor: "_Tuple2",_0: "padding-top",_1: "8px"}
+                     ,{ctor: "_Tuple2",_0: "padding-bottom",_1: "4px"}
+                     ,{ctor: "_Tuple2",_0: "text-align",_1: "center"}
+                     ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}
+                     ,{ctor: "_Tuple2",_0: "margin-right",_1: "-1px"}
+                     ,{ctor: "_Tuple2",_0: "border",_1: "solid 1px #666"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "background-color"
+                      ,_1: selected ? "#69e" : "inherit"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "color"
+                      ,_1: selected ? "#fff" : "inherit"}]);
+   };
+   var shadow = _U.list([{ctor: "_Tuple2"
+                         ,_0: "box-shadow"
+                         ,_1: "0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)"}]);
+   var card = A2($Basics._op["++"],
+   _U.list([{ctor: "_Tuple2",_0: "margin",_1: "5px"}
+           ,{ctor: "_Tuple2",_0: "padding",_1: "5px"}]),
+   shadow);
+   var nameLabel = function (ratio) {
+      return _U.list([{ctor: "_Tuple2"
+                      ,_0: "display"
+                      ,_1: "table-cell"}
+                     ,{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}
+                     ,{ctor: "_Tuple2",_0: "text-align",_1: "center"}
+                     ,{ctor: "_Tuple2",_0: "position",_1: "absolute"}
+                     ,{ctor: "_Tuple2",_0: "cursor",_1: "default"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "font-size"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(ratio),"em")}]);
+   };
+   var canvasContainer = _U.list([{ctor: "_Tuple2"
+                                  ,_0: "position"
+                                  ,_1: "relative"}
+                                 ,{ctor: "_Tuple2",_0: "overflow",_1: "hidden"}
+                                 ,{ctor: "_Tuple2",_0: "background",_1: "#000"}
+                                 ,{ctor: "_Tuple2",_0: "flex",_1: "1"}]);
+   var contextMenuItem = _U.list([{ctor: "_Tuple2"
+                                  ,_0: "padding"
+                                  ,_1: "5px"}]);
+   var colorProperty = F2(function (color,selected) {
+      return _U.list([{ctor: "_Tuple2"
+                      ,_0: "background-color"
+                      ,_1: color}
+                     ,{ctor: "_Tuple2",_0: "cursor",_1: "pointer"}
+                     ,{ctor: "_Tuple2",_0: "width",_1: "24px"}
+                     ,{ctor: "_Tuple2",_0: "height",_1: "24px"}
+                     ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}
+                     ,{ctor: "_Tuple2",_0: "border-style",_1: "solid"}
+                     ,{ctor: "_Tuple2",_0: "margin-right",_1: "2px"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "border-width"
+                      ,_1: selected ? "2px" : "1px"}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "border-color"
+                      ,_1: selected ? "#69e" : "#666"}]);
+   });
+   var rect = function (_p0) {
+      var _p1 = _p0;
+      return _U.list([{ctor: "_Tuple2"
+                      ,_0: "top"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(_p1._1),"px")}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "left"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(_p1._0),"px")}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "width"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(_p1._2),"px")}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "height"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(_p1._3),"px")}]);
+   };
+   var absoluteRect = function (rect$) {
+      return A2($List._op["::"],
+      {ctor: "_Tuple2",_0: "position",_1: "absolute"},
+      rect(rect$));
+   };
+   var canvasView = function (rect) {
+      return A2($Basics._op["++"],
+      absoluteRect(rect),
+      _U.list([{ctor: "_Tuple2",_0: "background-color",_1: "#fff"}
+              ,{ctor: "_Tuple2",_0: "overflow",_1: "hidden"}
+              ,{ctor: "_Tuple2",_0: "font-family",_1: "default"}]));
+   };
+   var headerHeight = 37;
+   var ul = _U.list([{ctor: "_Tuple2"
+                     ,_0: "list-style-type"
+                     ,_1: "none"}
+                    ,{ctor: "_Tuple2",_0: "padding-left",_1: "0"}]);
+   var flex = _U.list([{ctor: "_Tuple2"
+                       ,_0: "display"
+                       ,_1: "flex"}]);
+   var noPadding = _U.list([{ctor: "_Tuple2"
+                            ,_0: "padding"
+                            ,_1: "0"}]);
+   var noMargin = _U.list([{ctor: "_Tuple2"
+                           ,_0: "margin"
+                           ,_1: "0"}]);
+   var h1 = A2($Basics._op["++"],
+   noMargin,
+   _U.list([{ctor: "_Tuple2",_0: "font-size",_1: "1.4em"}
+           ,{ctor: "_Tuple2",_0: "font-weight",_1: "normal"}
+           ,{ctor: "_Tuple2"
+            ,_0: "line-height"
+            ,_1: A2($Basics._op["++"],
+            $Basics.toString(headerHeight),
+            "px")}]));
+   var header = A2($Basics._op["++"],
+   noMargin,
+   _U.list([{ctor: "_Tuple2"
+            ,_0: "background"
+            ,_1: "rgb(100, 180, 85)"}
+           ,{ctor: "_Tuple2",_0: "color",_1: "#eee"}
+           ,{ctor: "_Tuple2"
+            ,_0: "height"
+            ,_1: A2($Basics._op["++"],$Basics.toString(headerHeight),"px")}
+           ,{ctor: "_Tuple2",_0: "padding-left",_1: "10px"}
+           ,{ctor: "_Tuple2",_0: "padding-right",_1: "10px"}
+           ,{ctor: "_Tuple2",_0: "display",_1: "flex"}
+           ,{ctor: "_Tuple2",_0: "justify-content",_1: "space-between"}]));
+   var headerMenuItem = A2($Basics._op["++"],
+   noMargin,
+   _U.list([{ctor: "_Tuple2",_0: "text-align",_1: "center"}
+           ,{ctor: "_Tuple2",_0: "justify-content",_1: "flex-end"}
+           ,{ctor: "_Tuple2",_0: "line-height",_1: "37px"}]));
+   var greeting = A2($Basics._op["++"],
+   headerMenuItem,
+   _U.list([{ctor: "_Tuple2",_0: "margin-right",_1: "50px"}]));
+   var login = A2($Basics._op["++"],
+   headerMenuItem,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "80px"}]));
+   var logout = A2($Basics._op["++"],
+   headerMenuItem,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "80px"}]));
+   var zIndex = {selectedDesk: "100"
+                ,deskInput: "200"
+                ,selectorRect: "300"
+                ,subMenu: "600"
+                ,contextMenu: "800"};
+   var deskInput = function (rect) {
+      return A2($Basics._op["++"],
+      absoluteRect(rect),
+      A2($Basics._op["++"],
+      noPadding,
+      _U.list([{ctor: "_Tuple2",_0: "z-index",_1: zIndex.deskInput}
+              ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}])));
+   };
+   var desk = F4(function (rect,color,selected,alpha) {
+      return A2($Basics._op["++"],
+      absoluteRect(rect),
+      _U.list([{ctor: "_Tuple2"
+               ,_0: "opacity"
+               ,_1: alpha ? "0.5" : "1.0"}
+              ,{ctor: "_Tuple2",_0: "background-color",_1: color}
+              ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}
+              ,{ctor: "_Tuple2"
+               ,_0: "z-index"
+               ,_1: selected ? zIndex.selectedDesk : ""}
+              ,{ctor: "_Tuple2",_0: "border-style",_1: "solid"}
+              ,{ctor: "_Tuple2"
+               ,_0: "border-width"
+               ,_1: selected ? "2px" : "1px"}
+              ,{ctor: "_Tuple2"
+               ,_0: "border-color"
+               ,_1: selected ? "#69e" : "#666"}]));
+   });
+   var selectorRect = function (rect) {
+      return A2($Basics._op["++"],
+      absoluteRect(rect),
+      _U.list([{ctor: "_Tuple2",_0: "z-index",_1: zIndex.selectorRect}
+              ,{ctor: "_Tuple2",_0: "border-style",_1: "solid"}
+              ,{ctor: "_Tuple2",_0: "border-width",_1: "2px"}
+              ,{ctor: "_Tuple2",_0: "border-color",_1: "#69e"}]));
+   };
+   var subMenu = _U.list([{ctor: "_Tuple2"
+                          ,_0: "z-index"
+                          ,_1: zIndex.subMenu}
+                         ,{ctor: "_Tuple2",_0: "width",_1: "320px"}
+                         ,{ctor: "_Tuple2",_0: "overflow",_1: "hidden"}
+                         ,{ctor: "_Tuple2",_0: "background",_1: "#eee"}]);
+   var contextMenu = F3(function (_p3,_p2,rows) {
+      var _p4 = _p3;
+      var _p5 = _p2;
+      var height = rows * 20;
+      var y$ = A2($Basics.min,_p4._1,_p5._1 - height);
+      var width = 200;
+      var x$ = A2($Basics.min,_p4._0,_p5._0 - width);
+      return _U.list([{ctor: "_Tuple2"
+                      ,_0: "width"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(width),"px")}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "left"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(x$),"px")}
+                     ,{ctor: "_Tuple2"
+                      ,_0: "top"
+                      ,_1: A2($Basics._op["++"],$Basics.toString(y$),"px")}
+                     ,{ctor: "_Tuple2",_0: "position",_1: "fixed"}
+                     ,{ctor: "_Tuple2",_0: "z-index",_1: zIndex.contextMenu}
+                     ,{ctor: "_Tuple2",_0: "background-color",_1: "#fff"}
+                     ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}
+                     ,{ctor: "_Tuple2",_0: "border-style",_1: "solid"}
+                     ,{ctor: "_Tuple2",_0: "border-width",_1: "1px"}
+                     ,{ctor: "_Tuple2",_0: "border-color",_1: "#eee"}]);
+   });
+   return _elm.View.Styles.values = {_op: _op
+                                    ,zIndex: zIndex
+                                    ,noMargin: noMargin
+                                    ,noPadding: noPadding
+                                    ,flex: flex
+                                    ,h1: h1
+                                    ,ul: ul
+                                    ,headerHeight: headerHeight
+                                    ,header: header
+                                    ,rect: rect
+                                    ,absoluteRect: absoluteRect
+                                    ,deskInput: deskInput
+                                    ,desk: desk
+                                    ,selectorRect: selectorRect
+                                    ,colorProperty: colorProperty
+                                    ,subMenu: subMenu
+                                    ,contextMenu: contextMenu
+                                    ,contextMenuItem: contextMenuItem
+                                    ,canvasView: canvasView
+                                    ,canvasContainer: canvasContainer
+                                    ,nameLabel: nameLabel
+                                    ,shadow: shadow
+                                    ,card: card
+                                    ,selection: selection
+                                    ,transition: transition
+                                    ,prototypePreviewView: prototypePreviewView
+                                    ,prototypePreviewViewInner: prototypePreviewViewInner
+                                    ,prototypePreviewScroll: prototypePreviewScroll
+                                    ,button: button
+                                    ,imageLoadButton: imageLoadButton
+                                    ,publishButton: publishButton
+                                    ,floorNameInput: floorNameInput
+                                    ,realSizeInput: realSizeInput
+                                    ,input: input
+                                    ,formControl: formControl
+                                    ,floorNameLabel: floorNameLabel
+                                    ,widthHeightLabel: widthHeightLabel
+                                    ,headerMenu: headerMenu
+                                    ,headerMenuItem: headerMenuItem
+                                    ,greeting: greeting
+                                    ,login: login
+                                    ,logout: logout};
+};
+Elm.Header = Elm.Header || {};
+Elm.Header.make = function (_elm) {
+   "use strict";
+   _elm.Header = _elm.Header || {};
+   if (_elm.Header.values) return _elm.Header.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $API = Elm.API.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $User = Elm.User.make(_elm),
+   $View$Styles = Elm.View.Styles.make(_elm);
+   var _op = {};
+   var userName = function (user) {
+      var _p0 = user;
+      switch (_p0.ctor)
+      {case "Admin": return _p0._0;
+         case "General": return _p0._0;
+         default: return "Guest";}
+   };
+   var greeting = function (user) {
+      return $Html.text(A2($Basics._op["++"],
+      "Hello, ",
+      A2($Basics._op["++"],userName(user),".")));
+   };
+   var NoOp = {ctor: "NoOp"};
+   var update = function (action) {
+      var _p1 = action;
+      switch (_p1.ctor)
+      {case "NoOp": return $Effects.none;
+         case "Login": return $Effects.task(A2($Task.map,
+           $Basics.always(NoOp),
+           $API.goToLogin));
+         default: return $Effects.task(A2($Task.map,
+           $Basics.always(NoOp),
+           $API.goToLogout));}
+   };
+   var Logout = {ctor: "Logout"};
+   var Login = {ctor: "Login"};
+   var view = function (maybeContext) {
+      var menu = function () {
+         var _p2 = maybeContext;
+         if (_p2.ctor === "Just") {
+               var _p5 = _p2._0._1;
+               var _p4 = _p2._0._0;
+               var logout = A2($Html.div,
+               _U.list([$Html$Attributes.style($View$Styles.logout)
+                       ,A2($Html$Events.onClick,_p4,Logout)]),
+               _U.list([$Html.text("Sign out")]));
+               var login = A2($Html.div,
+               _U.list([$Html$Attributes.style($View$Styles.login)
+                       ,A2($Html$Events.onClick,_p4,Login)]),
+               _U.list([$Html.text("Sign in")]));
+               var greetingView = A2($Html.div,
+               _U.list([$Html$Attributes.style($View$Styles.greeting)]),
+               _U.list([greeting(_p5)]));
+               var children = function () {
+                  var _p3 = _p5;
+                  switch (_p3.ctor)
+                  {case "Admin": return _U.list([greetingView,logout]);
+                     case "General": return _U.list([greetingView,logout]);
+                     default: return _U.list([greetingView,login,logout]);}
+               }();
+               return A2($Html.div,
+               _U.list([$Html$Attributes.style($View$Styles.headerMenu)]),
+               children);
+            } else {
+               return $Html.text("");
+            }
+      }();
+      return A2($Html.header,
+      _U.list([$Html$Attributes.style($View$Styles.header)]),
+      _U.list([A2($Html.h1,
+              _U.list([$Html$Attributes.style($View$Styles.h1)]),
+              _U.list([$Html.text("Office Maker")]))
+              ,menu]));
+   };
+   return _elm.Header.values = {_op: _op
+                               ,Login: Login
+                               ,Logout: Logout
+                               ,NoOp: NoOp
+                               ,update: update
+                               ,view: view
+                               ,greeting: greeting
+                               ,userName: userName};
 };
 Elm.Native.HtmlUtil = {};
 
@@ -14565,6 +15045,7 @@ Elm.Main.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
+   $Header = Elm.Header.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $List = Elm.List.make(_elm),
@@ -14663,7 +15144,8 @@ Elm.Main.make = function (_elm) {
    var view = F2(function (address,model) {
       return A2($Html.div,
       _U.list([]),
-      _U.list([A2($Html.h1,
+      _U.list([$Header.view($Maybe.Nothing)
+              ,A2($Html.h1,
               _U.list([]),
               _U.list([$Html.text("Sign in to Office Makaer")]))
               ,A2($Html.div,
