@@ -18,7 +18,7 @@ type Event = LogoutDone
 
 update : Action -> (Effects Action, Maybe Event)
 update action =
-  case Debug.log "action" <| action of
+  case action of
     NoOp ->
       (Effects.none, Nothing)
     Login ->
@@ -42,10 +42,12 @@ view maybeContext =
             logout =
               div [ style Styles.logout, onClick address Logout ] [ text "Sign out"]
             children =
-              case user of
-                Admin _ -> [ greetingView, logout ]
-                General _ -> [ greetingView, logout ]
-                Guest -> [ greetingView, login, logout ]
+              greetingView ::
+                ( case user of
+                    Admin _ -> [ logout ]
+                    General _ -> [ logout ]
+                    Guest -> [ login ]
+                )
           in
             div [ style Styles.headerMenu ] children
         Nothing -> text ""

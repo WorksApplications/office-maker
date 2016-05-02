@@ -107,7 +107,7 @@ loginForm address model =
         , input
             [ style Styles.formInput
             , onInput (Signal.forwardTo address InputId)
-            , type' "input"
+            , type' "text"
             , value model.inputId]
             []
         ]
@@ -117,7 +117,7 @@ loginForm address model =
         , input
             [ style Styles.formInput
             , onInput (Signal.forwardTo address InputPass)
-            , type' "input"
+            , type' "password"
             , value model.inputPass]
             []
         ]
