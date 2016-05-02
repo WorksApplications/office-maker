@@ -4,10 +4,10 @@ import Html.Attributes exposing (type', value, action, method, style)
 import StartApp
 import Signal exposing (Signal, Address)
 import Task
-import API
 import Effects exposing (Effects)
 import Http
 
+import Model.API as API
 import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import View.Styles as Styles

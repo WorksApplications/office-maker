@@ -15,13 +15,13 @@ import Util.EffectsUtil as EffectsUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
 
-import User exposing (User)
-import Equipments exposing (..)
-import EquipmentsOperation exposing (..)
-import Scale
-import API
-import Prototypes exposing (..)
-import Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
+import Model.User as User exposing (User)
+import Model.Equipments as Equipments exposing (..)
+import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.Scale as Scale
+import Model.API as API
+import Model.Prototypes as Prototypes exposing (..)
+import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 
 import Header exposing (..)
 

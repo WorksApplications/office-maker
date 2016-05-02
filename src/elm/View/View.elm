@@ -12,14 +12,14 @@ import Header
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
-import Floor
-import Equipments exposing (..)
-import Model exposing (..)
-import Scale
-import EquipmentsOperation exposing (..)
 import Util.ListUtil exposing (..)
-import Prototypes exposing (Prototype, StampCandidate)
 
+import Model exposing (..)
+import Model.Floor as Floor
+import Model.Equipments as Equipments exposing (..)
+import Model.Scale as Scale
+import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 
 contextMenuView : Address Action -> Model -> Html
 contextMenuView address model =

@@ -5,8 +5,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 -- import Util.HtmlUtil exposing (..)
-import User exposing (..)
-import API
+import Model.User as User exposing (..)
+import Model.API as API
 import Task exposing (Task)
 import Effects exposing (Effects)
 

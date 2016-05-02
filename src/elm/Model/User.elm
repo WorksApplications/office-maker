@@ -1,4 +1,4 @@
-module User where
+module Model.User where
 
 type alias Id = String
 

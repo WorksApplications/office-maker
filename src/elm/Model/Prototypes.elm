@@ -1,8 +1,8 @@
-module Prototypes where
+module Model.Prototypes where
 
 import Util.ListUtil exposing (..)
 -- import Equipments exposing (..)
-import EquipmentsOperation exposing (..)
+import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 
 type alias PrototypeId =
   String

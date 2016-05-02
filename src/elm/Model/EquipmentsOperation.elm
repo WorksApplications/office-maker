@@ -1,8 +1,8 @@
-module EquipmentsOperation where
+module Model.EquipmentsOperation where
 
 {- this module does not know Model or Floor -}
 
-import Equipments exposing (..)
+import Model.Equipments as Equipments exposing (..)
 import Util.ListUtil exposing (..)
 
 rect : Equipment -> (Int, Int, Int, Int)
