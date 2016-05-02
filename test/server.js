@@ -39,6 +39,12 @@ app.post('/api/v1/login', function(req, res) {
     res.status(401).send('');
   }
 });
+
+app.post('/api/v1/logout', function(req, res) {
+  req.session.user = null;
+  res.send({});
+});
+
 app.use(express.static(publicDir));
 
 // Login

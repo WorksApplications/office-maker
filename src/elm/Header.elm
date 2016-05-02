@@ -13,18 +13,20 @@ import Effects exposing (Effects)
 import View.Styles as Styles
 -- import View.Icons as Icons
 
-type Action = Login | Logout | NoOp
+type Action = Login | Logout | LogoutSuccess | NoOp
+type Event = LogoutDone
 
-update : Action -> Effects Action
+update : Action -> (Effects Action, Maybe Event)
 update action =
-  case action of
+  case Debug.log "action" <| action of
     NoOp ->
-      Effects.none
+      (Effects.none, Nothing)
     Login ->
-      Effects.task (Task.map (always NoOp) API.goToLogin)
+      (Effects.task (Task.map (always NoOp) API.goToLogin), Nothing)
     Logout ->
-      Effects.task (Task.map (always NoOp) API.goToLogout)
-
+      (Effects.task (Task.map (always LogoutSuccess) API.logout `Task.onError` (\_ -> Task.succeed LogoutSuccess)), Nothing)--TODO
+    LogoutSuccess ->
+      (Effects.none, Just LogoutDone)
 
 view : Maybe (Address Action, User) -> Html
 view maybeContext =

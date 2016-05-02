@@ -12811,9 +12811,7 @@ Elm.Http.make = function (_elm) {
    };
    var fromJson = F2(function (decoder,response) {
       var decode = function (str) {
-         var _p2 = A2($Debug.log,
-         "json",
-         A2($Json$Decode.decodeString,decoder,str));
+         var _p2 = A2($Json$Decode.decodeString,decoder,str);
          if (_p2.ctor === "Ok") {
                return $Task.succeed(_p2._0);
             } else {
@@ -14134,6 +14132,10 @@ Elm.API.make = function (_elm) {
    var gotoTop = $Util$HttpUtil.goTo("/");
    var goToLogout = $Util$HttpUtil.goTo("/logout");
    var goToLogin = $Util$HttpUtil.goTo("/login");
+   var logout = A3($Util$HttpUtil.postJson,
+   $Json$Decode.succeed({ctor: "_Tuple0"}),
+   "/api/v1/logout",
+   $Http.string(""));
    var saveEditingImage = F2(function (id,file) {
       return A3($Util$HttpUtil.sendFile,
       "PUT",
@@ -14305,6 +14307,7 @@ Elm.API.make = function (_elm) {
                             ,saveEditingImage: saveEditingImage
                             ,gotoTop: gotoTop
                             ,login: login
+                            ,logout: logout
                             ,goToLogin: goToLogin
                             ,goToLogout: goToLogout};
 };
@@ -14739,40 +14742,53 @@ Elm.Header.make = function (_elm) {
       "Hello, ",
       A2($Basics._op["++"],userName(user),".")));
    };
+   var LogoutDone = {ctor: "LogoutDone"};
    var NoOp = {ctor: "NoOp"};
+   var LogoutSuccess = {ctor: "LogoutSuccess"};
    var update = function (action) {
-      var _p1 = action;
+      var _p1 = A2($Debug.log,"action",action);
       switch (_p1.ctor)
-      {case "NoOp": return $Effects.none;
-         case "Login": return $Effects.task(A2($Task.map,
-           $Basics.always(NoOp),
-           $API.goToLogin));
-         default: return $Effects.task(A2($Task.map,
-           $Basics.always(NoOp),
-           $API.goToLogout));}
+      {case "NoOp": return {ctor: "_Tuple2"
+                           ,_0: $Effects.none
+                           ,_1: $Maybe.Nothing};
+         case "Login": return {ctor: "_Tuple2"
+                              ,_0: $Effects.task(A2($Task.map,
+                              $Basics.always(NoOp),
+                              $API.goToLogin))
+                              ,_1: $Maybe.Nothing};
+         case "Logout": return {ctor: "_Tuple2"
+                               ,_0: $Effects.task(A2($Task.onError,
+                               A2($Task.map,$Basics.always(LogoutSuccess),$API.logout),
+                               function (_p2) {
+                                  return $Task.succeed(LogoutSuccess);
+                               }))
+                               ,_1: $Maybe.Nothing};
+         default: return {ctor: "_Tuple2"
+                         ,_0: $Effects.none
+                         ,_1: $Maybe.Just(LogoutDone)};}
    };
    var Logout = {ctor: "Logout"};
    var Login = {ctor: "Login"};
    var view = function (maybeContext) {
       var menu = function () {
-         var _p2 = maybeContext;
-         if (_p2.ctor === "Just") {
-               var _p5 = _p2._0._1;
-               var _p4 = _p2._0._0;
+         var _p3 = maybeContext;
+         if (_p3.ctor === "Just") {
+               var _p6 = _p3._0._1;
+               var _p5 = _p3._0._0;
                var logout = A2($Html.div,
                _U.list([$Html$Attributes.style($View$Styles.logout)
-                       ,A2($Html$Events.onClick,_p4,Logout)]),
+                       ,A2($Html$Events.onClick,_p5,Logout)]),
                _U.list([$Html.text("Sign out")]));
                var login = A2($Html.div,
                _U.list([$Html$Attributes.style($View$Styles.login)
-                       ,A2($Html$Events.onClick,_p4,Login)]),
+                       ,A2($Html$Events.onClick,_p5,Login)]),
                _U.list([$Html.text("Sign in")]));
                var greetingView = A2($Html.div,
                _U.list([$Html$Attributes.style($View$Styles.greeting)]),
-               _U.list([greeting(_p5)]));
+               _U.list([greeting(_p6)]));
                var children = function () {
-                  var _p3 = _p5;
-                  switch (_p3.ctor)
+                  var _p4 = _p6;
+                  switch (_p4.ctor)
                   {case "Admin": return _U.list([greetingView,logout]);
                      case "General": return _U.list([greetingView,logout]);
                      default: return _U.list([greetingView,login,logout]);}
@@ -14794,7 +14810,9 @@ Elm.Header.make = function (_elm) {
    return _elm.Header.values = {_op: _op
                                ,Login: Login
                                ,Logout: Logout
+                               ,LogoutSuccess: LogoutSuccess
                                ,NoOp: NoOp
+                               ,LogoutDone: LogoutDone
                                ,update: update
                                ,view: view
                                ,greeting: greeting
@@ -15124,7 +15142,7 @@ Elm.Main.make = function (_elm) {
    var Success = {ctor: "Success"};
    var Error = function (a) {    return {ctor: "Error",_0: a};};
    var update = F2(function (action,model) {
-      var _p0 = A2($Debug.log,"action",action);
+      var _p0 = action;
       switch (_p0.ctor)
       {case "InputId": return {ctor: "_Tuple2"
                               ,_0: _U.update(model,{inputId: _p0._0})

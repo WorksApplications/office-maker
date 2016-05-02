@@ -23,7 +23,7 @@ import API
 import Prototypes exposing (..)
 import Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 
-import Header
+import Header exposing (..)
 
 type alias Floor = Floor.Model
 
@@ -674,7 +674,16 @@ update action model =
       in
         (model, effects)
     HeaderAction action ->
-      (model, Effects.map (always NoOp) (Header.update action))
+      let
+        (effects, maybeEvent) =
+          Header.update action
+        newModel =
+          case maybeEvent of
+            Just LogoutDone -> { model | user = User.guest }
+            _ -> model
+      in
+        (newModel, Effects.map (always NoOp) effects)
+
     Error e ->
       let
         newModel =

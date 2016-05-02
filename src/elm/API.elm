@@ -7,6 +7,7 @@ module API (
     , saveEditingImage
     , gotoTop
     , login
+    , logout
     , goToLogin
     , goToLogout
     , Error
@@ -171,6 +172,13 @@ login id pass =
       (Decode.succeed ())
       ("/api/v1/login")
       (Http.string <| serializeLogin id pass)
+
+logout : Task Error ()
+logout =
+    postJson
+      (Decode.succeed ())
+      ("/api/v1/logout")
+      (Http.string "")
 
 goToLogin : Task a ()
 goToLogin =

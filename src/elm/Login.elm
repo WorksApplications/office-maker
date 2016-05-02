@@ -50,7 +50,7 @@ init =
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
-  case Debug.log "action" action of
+  case action of
     InputId s -> ({model | inputId = s}, Effects.none)
     InputPass s -> ({model | inputPass = s}, Effects.none)
     Submit ->
