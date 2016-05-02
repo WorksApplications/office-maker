@@ -50,7 +50,7 @@ headerHeight = 37
 header : S
 header =
   noMargin ++
-    [ ( "background", "rgb(100, 180, 85)")
+    [ ( "background", "rgb(100,100,120)")
     , ("color", "#eee")
     , ("height", toString headerHeight ++ "px")
     , ("padding-left", "10px")
@@ -241,6 +241,16 @@ prototypePreviewScroll =
   , ("cursor", "pointer")
   ]
 
+formControl : S
+formControl =
+  [ ("height", "34px")
+  , ("width", "100%")
+  , ("box-sizing", "border-box")
+  , ("font-size", "14px")
+  , ("line-height", "1.42857143")
+  , ("padding", "6px 12px")
+  , ("margin-bottom", "6px")
+  ]
 
 button : S
 button =
@@ -248,50 +258,45 @@ button =
     [ ("display", "block")
     , ("text-align", "center")
     , ("background-color", "#eee")
+    , ("width", "100%")
     -- , ("box-shadow", "0 1px 1.5px 0 rgba(0,0,0,.12),0 1px 1px 0 rgba(0,0,0,.24)")
     -- , ("box-shadow", "rgba(0, 0, 0, 0.12) 0px 0.1px 0.0px 0px, rgba(0, 0, 0, 0.24) 0px 0.5px 0.2px 0px")
     ]
 
+defaultButton : S
+defaultButton =
+  button ++
+  [ ("border", "solid 1px #aaa") ]
+
+input : S
+input =
+  formControl ++
+    [ ("color", "#333")
+    , ("background-color", "#fff")
+    , ("box-shadow", "inset 0 1px 2px rgba(0,0,0,0.075)")
+    , ("border", "1px solid #ddd")
+    ]
 
 imageLoadButton : S
 imageLoadButton =
-  button ++
+  defaultButton ++
     [ ("width", "120px")
     ]
 
 publishButton : S
 publishButton =
-  button ++
-    [ ("width", "120px")
-    ]
+  primaryButton
 
 floorNameInput : S
 floorNameInput =
   input ++ [ ("width", "177px")
+  , ("margin-right", "12px")
   ]
 
 realSizeInput : S
 realSizeInput =
   input ++ [ ("width", "50px")
-  ]
-
-input : S
-input =
-  formControl ++
-    [ ("color", "#555")
-    , ("background-color", "#fff")
-    , ("margin-right", "12px")
-    ]
-
-formControl : S
-formControl =
-  [ ("height", "34px")
-  , ("box-sizing", "border-box")
-  , ("font-size", "14px")
-  , ("line-height", "1.42857143")
-  , ("padding", "6px 12px")
-  , ("border", "1px solid #ccc")
-  , ("margin-bottom", "6px")
+  , ("margin-right", "12px")
   ]
 
 floorNameLabel : S
@@ -326,9 +331,43 @@ greeting = headerMenuItem ++
 login : S
 login = headerMenuItem ++
   [ ("width", "80px")
+  , ("cursor", "pointer")
   ]
 
 logout : S
 logout = headerMenuItem ++
   [ ("width", "80px")
+  , ("cursor", "pointer")
   ]
+
+loginContainer : S
+loginContainer =
+  [ ("margin-left", "auto")
+  , ("margin-right", "auto")
+  , ("margin-top", "40px")
+  , ("margin-bottom", "auto")
+  , ("width", "400px")
+  , ("padding", "15px")
+  , ("border", "solid 1px #aaa")
+  ]
+
+formInput : S
+formInput =
+  input ++ [ ("padding", "7px 8px")
+  , ("vertical-align", "middle")
+  , ("font-size", "13px")
+  , ("margin-top", "5px")
+  , ("margin-bottom", "15px")
+  ]
+
+primaryButton : S
+primaryButton =
+  button ++
+    [ ("background-color", "rgb(100, 180, 85)")
+    , ("color", "#fff")
+    , ("border", "solid 1px rgb(100, 180, 85)")
+    ]
+
+loginCaption : S
+loginCaption =
+  []

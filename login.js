@@ -14312,6 +14312,16 @@ Elm.View.Styles.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var loginCaption = _U.list([]);
+   var loginContainer = _U.list([{ctor: "_Tuple2"
+                                 ,_0: "margin-left"
+                                 ,_1: "auto"}
+                                ,{ctor: "_Tuple2",_0: "margin-right",_1: "auto"}
+                                ,{ctor: "_Tuple2",_0: "margin-top",_1: "40px"}
+                                ,{ctor: "_Tuple2",_0: "margin-bottom",_1: "auto"}
+                                ,{ctor: "_Tuple2",_0: "width",_1: "400px"}
+                                ,{ctor: "_Tuple2",_0: "padding",_1: "15px"}
+                                ,{ctor: "_Tuple2",_0: "border",_1: "solid 1px #aaa"}]);
    var headerMenu = _U.list([{ctor: "_Tuple2"
                              ,_0: "display"
                              ,_1: "flex"}
@@ -14325,34 +14335,57 @@ Elm.View.Styles.make = function (_elm) {
    var formControl = _U.list([{ctor: "_Tuple2"
                               ,_0: "height"
                               ,_1: "34px"}
+                             ,{ctor: "_Tuple2",_0: "width",_1: "100%"}
                              ,{ctor: "_Tuple2",_0: "box-sizing",_1: "border-box"}
                              ,{ctor: "_Tuple2",_0: "font-size",_1: "14px"}
                              ,{ctor: "_Tuple2",_0: "line-height",_1: "1.42857143"}
                              ,{ctor: "_Tuple2",_0: "padding",_1: "6px 12px"}
-                             ,{ctor: "_Tuple2",_0: "border",_1: "1px solid #ccc"}
                              ,{ctor: "_Tuple2",_0: "margin-bottom",_1: "6px"}]);
-   var input = A2($Basics._op["++"],
-   formControl,
-   _U.list([{ctor: "_Tuple2",_0: "color",_1: "#555"}
-           ,{ctor: "_Tuple2",_0: "background-color",_1: "#fff"}
-           ,{ctor: "_Tuple2",_0: "margin-right",_1: "12px"}]));
-   var realSizeInput = A2($Basics._op["++"],
-   input,
-   _U.list([{ctor: "_Tuple2",_0: "width",_1: "50px"}]));
-   var floorNameInput = A2($Basics._op["++"],
-   input,
-   _U.list([{ctor: "_Tuple2",_0: "width",_1: "177px"}]));
    var button = A2($Basics._op["++"],
    formControl,
    _U.list([{ctor: "_Tuple2",_0: "display",_1: "block"}
            ,{ctor: "_Tuple2",_0: "text-align",_1: "center"}
-           ,{ctor: "_Tuple2",_0: "background-color",_1: "#eee"}]));
+           ,{ctor: "_Tuple2",_0: "background-color",_1: "#eee"}
+           ,{ctor: "_Tuple2",_0: "width",_1: "100%"}]));
+   var defaultButton = A2($Basics._op["++"],
+   button,
+   _U.list([{ctor: "_Tuple2",_0: "border",_1: "solid 1px #aaa"}]));
    var imageLoadButton = A2($Basics._op["++"],
-   button,
+   defaultButton,
    _U.list([{ctor: "_Tuple2",_0: "width",_1: "120px"}]));
-   var publishButton = A2($Basics._op["++"],
+   var primaryButton = A2($Basics._op["++"],
    button,
-   _U.list([{ctor: "_Tuple2",_0: "width",_1: "120px"}]));
+   _U.list([{ctor: "_Tuple2"
+            ,_0: "background-color"
+            ,_1: "rgb(100, 180, 85)"}
+           ,{ctor: "_Tuple2",_0: "color",_1: "#fff"}
+           ,{ctor: "_Tuple2"
+            ,_0: "border"
+            ,_1: "solid 1px rgb(100, 180, 85)"}]));
+   var publishButton = primaryButton;
+   var input = A2($Basics._op["++"],
+   formControl,
+   _U.list([{ctor: "_Tuple2",_0: "color",_1: "#333"}
+           ,{ctor: "_Tuple2",_0: "background-color",_1: "#fff"}
+           ,{ctor: "_Tuple2"
+            ,_0: "box-shadow"
+            ,_1: "inset 0 1px 2px rgba(0,0,0,0.075)"}
+           ,{ctor: "_Tuple2",_0: "border",_1: "1px solid #ddd"}]));
+   var floorNameInput = A2($Basics._op["++"],
+   input,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "177px"}
+           ,{ctor: "_Tuple2",_0: "margin-right",_1: "12px"}]));
+   var realSizeInput = A2($Basics._op["++"],
+   input,
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "50px"}
+           ,{ctor: "_Tuple2",_0: "margin-right",_1: "12px"}]));
+   var formInput = A2($Basics._op["++"],
+   input,
+   _U.list([{ctor: "_Tuple2",_0: "padding",_1: "7px 8px"}
+           ,{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}
+           ,{ctor: "_Tuple2",_0: "font-size",_1: "13px"}
+           ,{ctor: "_Tuple2",_0: "margin-top",_1: "5px"}
+           ,{ctor: "_Tuple2",_0: "margin-bottom",_1: "15px"}]));
    var prototypePreviewScroll = _U.list([{ctor: "_Tuple2"
                                          ,_0: "width"
                                          ,_1: "30px"}
@@ -14514,7 +14547,7 @@ Elm.View.Styles.make = function (_elm) {
    noMargin,
    _U.list([{ctor: "_Tuple2"
             ,_0: "background"
-            ,_1: "rgb(100, 180, 85)"}
+            ,_1: "rgb(100,100,120)"}
            ,{ctor: "_Tuple2",_0: "color",_1: "#eee"}
            ,{ctor: "_Tuple2"
             ,_0: "height"
@@ -14533,10 +14566,12 @@ Elm.View.Styles.make = function (_elm) {
    _U.list([{ctor: "_Tuple2",_0: "margin-right",_1: "50px"}]));
    var login = A2($Basics._op["++"],
    headerMenuItem,
-   _U.list([{ctor: "_Tuple2",_0: "width",_1: "80px"}]));
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "80px"}
+           ,{ctor: "_Tuple2",_0: "cursor",_1: "pointer"}]));
    var logout = A2($Basics._op["++"],
    headerMenuItem,
-   _U.list([{ctor: "_Tuple2",_0: "width",_1: "80px"}]));
+   _U.list([{ctor: "_Tuple2",_0: "width",_1: "80px"}
+           ,{ctor: "_Tuple2",_0: "cursor",_1: "pointer"}]));
    var zIndex = {selectedDesk: "100"
                 ,deskInput: "200"
                 ,selectorRect: "300"
@@ -14635,20 +14670,25 @@ Elm.View.Styles.make = function (_elm) {
                                     ,prototypePreviewView: prototypePreviewView
                                     ,prototypePreviewViewInner: prototypePreviewViewInner
                                     ,prototypePreviewScroll: prototypePreviewScroll
+                                    ,formControl: formControl
                                     ,button: button
+                                    ,defaultButton: defaultButton
+                                    ,input: input
                                     ,imageLoadButton: imageLoadButton
                                     ,publishButton: publishButton
                                     ,floorNameInput: floorNameInput
                                     ,realSizeInput: realSizeInput
-                                    ,input: input
-                                    ,formControl: formControl
                                     ,floorNameLabel: floorNameLabel
                                     ,widthHeightLabel: widthHeightLabel
                                     ,headerMenu: headerMenu
                                     ,headerMenuItem: headerMenuItem
                                     ,greeting: greeting
                                     ,login: login
-                                    ,logout: logout};
+                                    ,logout: logout
+                                    ,loginContainer: loginContainer
+                                    ,formInput: formInput
+                                    ,primaryButton: primaryButton
+                                    ,loginCaption: loginCaption};
 };
 Elm.Header = Elm.Header || {};
 Elm.Header.make = function (_elm) {
@@ -15054,7 +15094,8 @@ Elm.Main.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $StartApp = Elm.StartApp.make(_elm),
    $Task = Elm.Task.make(_elm),
-   $Util$HtmlUtil = Elm.Util.HtmlUtil.make(_elm);
+   $Util$HtmlUtil = Elm.Util.HtmlUtil.make(_elm),
+   $View$Styles = Elm.View.Styles.make(_elm);
    var _op = {};
    var init = {ctor: "_Tuple2"
               ,_0: {error: $Maybe.Nothing,inputId: "",inputPass: ""}
@@ -15114,9 +15155,8 @@ Elm.Main.make = function (_elm) {
                       _U.list([]),
                       _U.list([$Html.text("Username")]))
                       ,A2($Html.input,
-                      _U.list([$Util$HtmlUtil.onInput(A2($Signal.forwardTo,
-                              address,
-                              InputId))
+                      _U.list([$Html$Attributes.style($View$Styles.formInput)
+                              ,$Util$HtmlUtil.onInput(A2($Signal.forwardTo,address,InputId))
                               ,$Html$Attributes.type$("input")
                               ,$Html$Attributes.value(model.inputId)]),
                       _U.list([]))]))
@@ -15126,32 +15166,36 @@ Elm.Main.make = function (_elm) {
                       _U.list([]),
                       _U.list([$Html.text("Password")]))
                       ,A2($Html.input,
-                      _U.list([$Util$HtmlUtil.onInput(A2($Signal.forwardTo,
-                              address,
-                              InputPass))
+                      _U.list([$Html$Attributes.style($View$Styles.formInput)
+                              ,$Util$HtmlUtil.onInput(A2($Signal.forwardTo,address,InputPass))
                               ,$Html$Attributes.type$("input")
                               ,$Html$Attributes.value(model.inputPass)]),
                       _U.list([]))]))
-              ,A2($Html.div,
-              _U.list([]),
-              _U.list([A2($Html.div,
-                      _U.list([]),
-                      _U.list([$Html.text("Sign in")]))
-                      ,A2($Html.input,
-                      _U.list([$Html$Attributes.type$("submit")]),
-                      _U.list([]))]))]));
+              ,A2($Html.input,
+              _U.list([$Html$Attributes.style(A2($Basics._op["++"],
+                      $View$Styles.primaryButton,
+                      _U.list([{ctor: "_Tuple2",_0: "margin-top",_1: "20px"}
+                              ,{ctor: "_Tuple2",_0: "width",_1: "100%"}])))
+                      ,$Html$Attributes.type$("submit")
+                      ,$Html$Attributes.value("Sign in")]),
+              _U.list([]))]));
    });
-   var view = F2(function (address,model) {
+   var container = F2(function (address,model) {
       return A2($Html.div,
-      _U.list([]),
-      _U.list([$Header.view($Maybe.Nothing)
-              ,A2($Html.h1,
-              _U.list([]),
+      _U.list([$Html$Attributes.style($View$Styles.loginContainer)]),
+      _U.list([A2($Html.h2,
+              _U.list([$Html$Attributes.style($View$Styles.loginCaption)]),
               _U.list([$Html.text("Sign in to Office Makaer")]))
               ,A2($Html.div,
               _U.list([]),
               _U.list([$Html.text(A2($Maybe.withDefault,"",model.error))]))
               ,A2(loginForm,address,model)]));
+   });
+   var view = F2(function (address,model) {
+      return A2($Html.div,
+      _U.list([]),
+      _U.list([$Header.view($Maybe.Nothing)
+              ,A2(container,address,model)]));
    });
    var app = $StartApp.start({init: init
                              ,view: view
@@ -15173,5 +15217,6 @@ Elm.Main.make = function (_elm) {
                              ,init: init
                              ,update: update
                              ,view: view
+                             ,container: container
                              ,loginForm: loginForm};
 };
