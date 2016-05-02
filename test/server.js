@@ -7,11 +7,14 @@ var session = require('express-session');
 var publicDir = __dirname + '/public';
 
 var floors = {};
-var users = {
-  admin01: { pass: 'admin01', mail: 'admin01@xxx.com', role: 'admin' },
-  user01 : { pass: 'user01', mail: 'user01@xxx.com', role: 'general' }
+var passes = {
+  admin01: 'admin01',
+  user01 : 'user01'
 };
-
+var users = {
+  admin01: { name: 'Admin01', mail: 'admin01@xxx.com', role: 'admin' },
+  user01 : { name: 'User01', mail: 'user01@xxx.com', role: 'general' }
+};
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -26,19 +29,10 @@ app.use(session({
 
 
 /* Login NOT required */
-
-app.get('/login', function(req, res) {
-  res.sendfile(publicDir + '/login.html');
-});
-app.get('/logout', function(req, res) {
-  req.session.user = null;
-  res.redirect('/login');
-});
 app.post('/api/v1/login', function(req, res) {
   var id = req.body.id;
   var pass = req.body.pass;
-  var account = users[id];
-  if(account && (account.pass === pass)) {
+  if(passes[id] === pass) {
     req.session.user = id;
     res.send({});
   } else {
@@ -49,18 +43,33 @@ app.use(express.static(publicDir));
 
 // Login
 app.use('/', function(req, res, next) {
-  if (req.session.user) {
-    next();
+  if(!req.session.user && req.url.indexOf('/api') === 0) {
+    res.status(401).send('');
   } else {
-    if(req.url.indexOf('/api') === 0) {
-      res.status(401).send('');
-    } else {
-      res.redirect('/login');
-    }
+    next();
   }
 });
 
 /* Login required */
+
+app.get('/login', function(req, res) {
+  res.sendfile(publicDir + '/login.html');
+});
+
+app.get('/logout', function(req, res) {
+  req.session.user = null;
+  res.redirect('/login');
+});
+
+app.get('/api/v1/auth', function(req, res) {
+  var id = req.session.user;
+  if(id) {
+    var user = users[id];
+    res.send(user);
+  } else {
+    res.send({});
+  }
+});
 
 app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;

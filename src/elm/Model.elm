@@ -120,6 +120,7 @@ init randomSeed initialSize initialHash =
 type Action = NoOp
   | Init
   | HashChange String
+  | AuthLoaded User
   | FloorLoaded Floor
   | FloorSaved
   | MoveOnCanvas (Int, Int)
@@ -172,7 +173,9 @@ update action model =
     HashChange hash ->
       ({ model | hash = hash}, loadFloorEffects hash)
     Init ->
-      (model, loadFloorEffects model.hash)
+      (model, Effects.batch [loadAuthEffects, loadFloorEffects model.hash])
+    AuthLoaded user ->
+      ({ model | user = user }, Effects.none)
     FloorLoaded floor ->
       let
         (realWidth, realHeight) =
@@ -849,6 +852,10 @@ shiftSelectionToward direction model =
             selectedEquipments = toBeSelected
           }
       _ -> model
+
+loadAuthEffects : Effects Action
+loadAuthEffects =
+    EffectsUtil.fromTask (Error << APIError) AuthLoaded API.getAuth
 
 loadFloorEffects : String -> Effects Action
 loadFloorEffects hash =

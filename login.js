@@ -14080,6 +14080,35 @@ Elm.Util.HttpUtil.make = function (_elm) {
                                       ,postJson: postJson
                                       ,putJson: putJson};
 };
+Elm.User = Elm.User || {};
+Elm.User.make = function (_elm) {
+   "use strict";
+   _elm.User = _elm.User || {};
+   if (_elm.User.values) return _elm.User.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var Guest = {ctor: "Guest"};
+   var guest = Guest;
+   var General = function (a) {
+      return {ctor: "General",_0: a};
+   };
+   var general = function (name) {    return General(name);};
+   var Admin = function (a) {    return {ctor: "Admin",_0: a};};
+   var admin = function (name) {    return Admin(name);};
+   return _elm.User.values = {_op: _op
+                             ,Admin: Admin
+                             ,General: General
+                             ,Guest: Guest
+                             ,admin: admin
+                             ,general: general
+                             ,guest: guest};
+};
 Elm.API = Elm.API || {};
 Elm.API.make = function (_elm) {
    "use strict";
@@ -14098,6 +14127,7 @@ Elm.API.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $Task = Elm.Task.make(_elm),
+   $User = Elm.User.make(_elm),
    $Util$File = Elm.Util.File.make(_elm),
    $Util$HttpUtil = Elm.Util.HttpUtil.make(_elm);
    var _op = {};
@@ -14172,6 +14202,15 @@ Elm.API.make = function (_elm) {
       decodeFloor,
       A2($Basics._op["++"],"/api/v1/floor/",id));
    };
+   var decodeUser = $Json$Decode.oneOf(_U.list([A3($Json$Decode.object2,
+                                               F2(function (role,name) {
+                                                  return _U.eq(role,
+                                                  "admin") ? $User.admin(name) : $User.general(name);
+                                               }),
+                                               A2($Json$Decode._op[":="],"role",$Json$Decode.string),
+                                               A2($Json$Decode._op[":="],"name",$Json$Decode.string))
+                                               ,$Json$Decode.succeed($User.guest)]));
+   var getAuth = A2($Http.get,decodeUser,"/api/v1/auth");
    var encodeLogin = F2(function (id,pass) {
       return $Json$Encode.object(_U.list([{ctor: "_Tuple2"
                                           ,_0: "id"
@@ -14258,6 +14297,7 @@ Elm.API.make = function (_elm) {
       $Http.string(serializeFloor(floor)));
    };
    return _elm.API.values = {_op: _op
+                            ,getAuth: getAuth
                             ,saveEditingFloor: saveEditingFloor
                             ,publishEditingFloor: publishEditingFloor
                             ,getEditingFloor: getEditingFloor
@@ -14267,35 +14307,6 @@ Elm.API.make = function (_elm) {
                             ,login: login
                             ,goToLogin: goToLogin
                             ,goToLogout: goToLogout};
-};
-Elm.User = Elm.User || {};
-Elm.User.make = function (_elm) {
-   "use strict";
-   _elm.User = _elm.User || {};
-   if (_elm.User.values) return _elm.User.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var Guest = {ctor: "Guest"};
-   var guest = Guest;
-   var General = function (a) {
-      return {ctor: "General",_0: a};
-   };
-   var general = function (name) {    return General(name);};
-   var Admin = function (a) {    return {ctor: "Admin",_0: a};};
-   var admin = function (name) {    return Admin(name);};
-   return _elm.User.values = {_op: _op
-                             ,Admin: Admin
-                             ,General: General
-                             ,Guest: Guest
-                             ,admin: admin
-                             ,general: general
-                             ,guest: guest};
 };
 Elm.View = Elm.View || {};
 Elm.View.Styles = Elm.View.Styles || {};

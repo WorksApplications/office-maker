@@ -1,5 +1,6 @@
 module API (
-      saveEditingFloor
+      getAuth
+    , saveEditingFloor
     , publishEditingFloor
     , getEditingFloor
     , getFloor
@@ -15,11 +16,12 @@ import Equipments exposing (..)
 import Floor exposing (ImageSource(..))
 import Http
 import Json.Encode exposing (object, list, encode, string, int, null, Value)
-import Json.Decode as Decode exposing ((:=), object8, object7, Decoder)
+import Json.Decode as Decode exposing ((:=), object8, object7, object2, oneOf, Decoder)
 import Task exposing (Task)
 import Floor
 import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
+import User exposing (User)
 
 type alias Floor = Floor.Model
 
@@ -62,6 +64,16 @@ encodeFloor floor =
 encodeLogin : String -> String -> Value
 encodeLogin id pass =
     object [ ("id", string id), ("pass", string pass) ]
+
+decodeUser : Decoder User
+decodeUser =
+  oneOf
+  [ object2
+      (\role name -> if role == "admin" then User.admin name else User.general name)
+      ("role" := Decode.string)
+      ("name" := Decode.string)
+  , Decode.succeed User.guest
+  ]
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
@@ -137,6 +149,13 @@ getFloor id =
     Http.get
       decodeFloor
       ("/api/v1/floor/" ++ id)
+
+getAuth : Task Error User
+getAuth =
+    Http.get
+      decodeUser
+      ("/api/v1/auth")
+
 
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =
