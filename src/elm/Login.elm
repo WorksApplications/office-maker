@@ -6,6 +6,7 @@ import Signal exposing (Signal, Address)
 import Task
 import API
 import Effects exposing (Effects)
+import Http
 
 import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
@@ -31,7 +32,7 @@ type Action =
     InputId String
   | InputPass String
   | Submit
-  | UnAuthorized
+  | Error Http.Error
   | Success
   | NoOp
 
@@ -57,15 +58,19 @@ update action model =
         task =
           API.login model.inputId model.inputPass
             `Task.andThen` (\_ -> Task.succeed Success)
-            `Task.onError` (\e ->
-              let
-                _ = Debug.log "e" e
-              in
-                Task.succeed UnAuthorized)
+            `Task.onError` (\e -> Task.succeed (Error e))
       in
         (model, Effects.task task)
-    UnAuthorized ->
-      ({model | error = Just "unauthorized."}, Effects.none)
+    Error e ->
+      let
+        message =
+          case e of
+            Http.NetworkError ->
+              "network error"
+            _ ->
+              "unauthorized"
+      in
+        ({model | error = Just message}, Effects.none)
     Success ->
       let
         task =
@@ -88,7 +93,7 @@ container address model =
   div
     [ style Styles.loginContainer ]
     [ h2 [ style Styles.loginCaption ] [ text "Sign in to Office Makaer" ]
-    , div [] [ text (Maybe.withDefault "" model.error) ]
+    , div [ style Styles.loginError ] [ text (Maybe.withDefault "" model.error) ]
     , loginForm address model
     ]
 

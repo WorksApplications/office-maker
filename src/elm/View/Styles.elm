@@ -371,3 +371,9 @@ primaryButton =
 loginCaption : S
 loginCaption =
   []
+
+loginError : S
+loginError =
+  [ ("color", "#d45")
+  , ("margin-bottom", "15px")
+  ]

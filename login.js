@@ -14312,6 +14312,10 @@ Elm.View.Styles.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var loginError = _U.list([{ctor: "_Tuple2"
+                             ,_0: "color"
+                             ,_1: "#d45"}
+                            ,{ctor: "_Tuple2",_0: "margin-bottom",_1: "15px"}]);
    var loginCaption = _U.list([]);
    var loginContainer = _U.list([{ctor: "_Tuple2"
                                  ,_0: "margin-left"
@@ -14688,7 +14692,8 @@ Elm.View.Styles.make = function (_elm) {
                                     ,loginContainer: loginContainer
                                     ,formInput: formInput
                                     ,primaryButton: primaryButton
-                                    ,loginCaption: loginCaption};
+                                    ,loginCaption: loginCaption
+                                    ,loginError: loginError};
 };
 Elm.Header = Elm.Header || {};
 Elm.Header.make = function (_elm) {
@@ -15088,6 +15093,7 @@ Elm.Main.make = function (_elm) {
    $Header = Elm.Header.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Http = Elm.Http.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
@@ -15105,7 +15111,7 @@ Elm.Main.make = function (_elm) {
    });
    var NoOp = {ctor: "NoOp"};
    var Success = {ctor: "Success"};
-   var UnAuthorized = {ctor: "UnAuthorized"};
+   var Error = function (a) {    return {ctor: "Error",_0: a};};
    var update = F2(function (action,model) {
       var _p0 = A2($Debug.log,"action",action);
       switch (_p0.ctor)
@@ -15122,13 +15128,20 @@ Elm.Main.make = function (_elm) {
               return $Task.succeed(Success);
            }),
            function (e) {
-              var _p2 = A2($Debug.log,"e",e);
-              return $Task.succeed(UnAuthorized);
+              return $Task.succeed(Error(e));
            });
            return {ctor: "_Tuple2",_0: model,_1: $Effects.task(task)};
-         case "UnAuthorized": return {ctor: "_Tuple2"
-                                     ,_0: _U.update(model,{error: $Maybe.Just("unauthorized.")})
-                                     ,_1: $Effects.none};
+         case "Error": var message = function () {
+              var _p2 = _p0._0;
+              if (_p2.ctor === "NetworkError") {
+                    return "network error";
+                 } else {
+                    return "unauthorized";
+                 }
+           }();
+           return {ctor: "_Tuple2"
+                  ,_0: _U.update(model,{error: $Maybe.Just(message)})
+                  ,_1: $Effects.none};
          case "Success": var task = A2($Task.andThen,
            $API.gotoTop,
            function (_p3) {
@@ -15187,7 +15200,7 @@ Elm.Main.make = function (_elm) {
               _U.list([$Html$Attributes.style($View$Styles.loginCaption)]),
               _U.list([$Html.text("Sign in to Office Makaer")]))
               ,A2($Html.div,
-              _U.list([]),
+              _U.list([$Html$Attributes.style($View$Styles.loginError)]),
               _U.list([$Html.text(A2($Maybe.withDefault,"",model.error))]))
               ,A2(loginForm,address,model)]));
    });
@@ -15210,7 +15223,7 @@ Elm.Main.make = function (_elm) {
                              ,InputId: InputId
                              ,InputPass: InputPass
                              ,Submit: Submit
-                             ,UnAuthorized: UnAuthorized
+                             ,Error: Error
                              ,Success: Success
                              ,NoOp: NoOp
                              ,Model: Model
