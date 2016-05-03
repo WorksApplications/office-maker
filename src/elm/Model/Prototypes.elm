@@ -1,4 +1,4 @@
-module Model.Prototypes where
+module Model.Prototypes exposing (..) -- where
 
 import Util.ListUtil exposing (..)
 -- import Equipments exposing (..)

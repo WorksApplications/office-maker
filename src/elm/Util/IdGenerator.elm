@@ -1,21 +1,13 @@
-module Util.IdGenerator where
+module Util.IdGenerator exposing (..) -- where
 
-import Uuid
-import Random.PCG exposing (initialSeed2, generate)
-
-type alias Seed' = Random.PCG.Seed
-
-type Seed = Seed Seed'
+type Seed = Seed Int
 
 init : (Int, Int) -> Seed
-init randomSeed = Seed ((uncurry initialSeed2) randomSeed)
+init randomSeed = Seed 0
 
 new : Seed -> (String, Seed)
 new (Seed seed) =
-  let
-    (newUuid, newSeed) = generate Uuid.uuidGenerator seed
-  in
-    (Uuid.toString newUuid, Seed newSeed)
+  (toString seed, Seed (seed + 1))
 
 zipWithNewIds : Seed -> List a -> (List (a, String), Seed)
 zipWithNewIds seed list =

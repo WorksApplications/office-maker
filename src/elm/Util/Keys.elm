@@ -1,8 +1,8 @@
-module Util.Keys where
+module Util.Keys exposing (..) -- where
 
 import Native.Keys
 
-import Keyboard
+-- import Keyboard
 import Char
 import Json.Decode exposing (..)
 
@@ -33,32 +33,32 @@ init =
   , shift = False
   }
 
-inputs : List (Signal Action)
-inputs =
-  [ Signal.map KeyCtrl Keyboard.ctrl
-  , Signal.map KeyShift Keyboard.shift
-  , Signal.map KeyDel (Keyboard.isDown 46)
-  , Signal.map Enter (Keyboard.isDown 13)
-  , Signal.map KeyC (Keyboard.isDown (Char.toCode 'C'))
-  , Signal.map KeyV (Keyboard.isDown (Char.toCode 'V'))
-  , Signal.map KeyX (Keyboard.isDown (Char.toCode 'X'))
-  , Signal.map (\keyCode ->
-      if keyCode == (Char.toCode 'Y') then
-        KeyY
-      else if keyCode == (Char.toCode 'Z') then
-        KeyZ
-      else if keyCode == 37 then
-        KeyLeftArrow
-      else if keyCode == 38 then
-        KeyUpArrow
-      else if keyCode == 39 then
-        KeyRightArrow
-      else if keyCode == 40 then
-        KeyDownArrow
-      else
-        Other
-    ) downs
-  ]
+-- inputs : List (Signal Action)
+-- inputs =
+--   [ Signal.map KeyCtrl Keyboard.ctrl
+--   , Signal.map KeyShift Keyboard.shift
+--   , Signal.map KeyDel (Keyboard.isDown 46)
+--   , Signal.map Enter (Keyboard.isDown 13)
+--   , Signal.map KeyC (Keyboard.isDown (Char.toCode 'C'))
+--   , Signal.map KeyV (Keyboard.isDown (Char.toCode 'V'))
+--   , Signal.map KeyX (Keyboard.isDown (Char.toCode 'X'))
+--   , Signal.map (\keyCode ->
+--       if keyCode == (Char.toCode 'Y') then
+--         KeyY
+--       else if keyCode == (Char.toCode 'Z') then
+--         KeyZ
+--       else if keyCode == 37 then
+--         KeyLeftArrow
+--       else if keyCode == 38 then
+--         KeyUpArrow
+--       else if keyCode == 39 then
+--         KeyRightArrow
+--       else if keyCode == 40 then
+--         KeyDownArrow
+--       else
+--         Other
+--     ) downs
+--   ]
 
 update : Action -> Model -> Model
 update action model =
@@ -71,13 +71,13 @@ update action model =
 
 ----
 
-downs_ : Signal Json.Decode.Value
-downs_ = Native.Keys.downs
-
-downs : Signal Int
-downs =
-  Signal.filterMap (\value ->
-    case Json.Decode.decodeValue (at ["keyCode"] int) value of
-      Ok e -> Just e
-      _ -> Nothing
-  ) -1 downs_
+-- downs_ : Signal Json.Decode.Value
+-- downs_ = Native.Keys.downs
+--
+-- downs : Signal Int
+-- downs =
+--   Signal.filterMap (\value ->
+--     case Json.Decode.decodeValue (at ["keyCode"] int) value of
+--       Ok e -> Just e
+--       _ -> Nothing
+--   ) -1 downs_

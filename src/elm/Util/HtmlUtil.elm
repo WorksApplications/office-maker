@@ -1,13 +1,13 @@
-module Util.HtmlUtil where
+module Util.HtmlUtil exposing (..) -- where
 
 import Native.HtmlUtil
-import Signal exposing (Address)
 import Html exposing (Html, Attribute)
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
-import Json.Decode exposing (..)
+import Json.Decode as Decode exposing (..)
 import Util.File exposing (..)
 import Task exposing (Task)
+import Process
 
 type Error =
   IdNotFound String | Unexpected String
@@ -24,99 +24,96 @@ decodeKeyCode =
 
 focus : String -> Task Error ()
 focus id =
-  Task.sleep 100 `Task.andThen` \_ ->
+  Process.sleep 100 `Task.andThen` \_ ->
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
 
 blur : String -> Task Error ()
 blur id =
-  Task.sleep 100 `Task.andThen` \_ ->
+  Process.sleep 100 `Task.andThen` \_ ->
   Task.mapError
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
 
-locationHash : Signal String
-locationHash =
-  Native.HtmlUtil.locationHash
+-- locationHash : Signal String
+-- locationHash =
+--   Native.HtmlUtil.locationHash
 
-onSubmit' : Address a -> a -> Attribute
-onSubmit' address e =
+onSubmit' : a -> Attribute a
+onSubmit' e =
   onWithOptions
-    "onsubmit" { stopPropagation = True, preventDefault = False } value (always <| Signal.message address e)
+    "onsubmit" { stopPropagation = True, preventDefault = False } (Decode.succeed e)
 
-onMouseMove' : Address (Int, Int) -> Attribute
-onMouseMove' address =
+onMouseMove' : Attribute (Int, Int)
+onMouseMove' =
   onWithOptions
-    "mousemove" { stopPropagation = True, preventDefault = True } decodeClientXY (Signal.message address)
+    "mousemove" { stopPropagation = True, preventDefault = True } decodeClientXY
 
-onMouseEnter' : Address a -> a -> Attribute
-onMouseEnter' address e =
+onMouseEnter' : a -> Attribute a
+onMouseEnter' e =
   onWithOptions
-    "mouseenter" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
+    "mouseenter" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onMouseLeave' : Address a -> a -> Attribute
-onMouseLeave' address e =
+onMouseLeave' : a -> Attribute a
+onMouseLeave' e =
   onWithOptions
-    "mouseleave" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
+    "mouseleave" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onMouseUp' : Address a -> a -> Attribute
-onMouseUp' address e =
-  on "mouseup" value (always <| Signal.message address e)
+onMouseUp' : a -> Attribute a
+onMouseUp' e =
+  on "mouseup" (Decode.succeed e)
 
-onMouseDown' : Address a -> a -> Attribute
-onMouseDown' address e =
-  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
+onMouseDown' : a -> Attribute a
+onMouseDown' e =
+  onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onDblClick' : Address a -> a -> Attribute
-onDblClick' address e =
-  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
+onDblClick' : a -> Attribute a
+onDblClick' e =
+  onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onClick' : Address a -> a -> Attribute
-onClick' address e =
-  onWithOptions "click" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
+onClick' : a -> Attribute a
+onClick' e =
+  onWithOptions "click" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onInput : Address String -> Attribute
-onInput address =
-  on "input" Html.Events.targetValue (Signal.message address)
+onInput : Attribute String
+onInput =
+  on "input" Html.Events.targetValue
 
-onInput' : Address String -> Attribute
-onInput' address =
-  onWithOptions "input" { stopPropagation = True, preventDefault = True } Html.Events.targetValue (Signal.message address)
+onInput' : Attribute String
+onInput' =
+  onWithOptions "input" { stopPropagation = True, preventDefault = True } Html.Events.targetValue
 
-onChange' : Address String -> Attribute
-onChange' address =
-  onWithOptions "change" { stopPropagation = True, preventDefault = True } Html.Events.targetValue (Signal.message address)
+onChange' : Attribute String
+onChange' =
+  onWithOptions "change" { stopPropagation = True, preventDefault = True } Html.Events.targetValue
 
 -- onKeyUp' : Address KeyboardEvent -> Attribute
 -- onKeyUp' address =
 --   on "keyup" decodeKeyboardEvent (Signal.message address)
 
-onKeyDown' : Address Int -> Attribute
-onKeyDown' address =
-  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyCode (Signal.message address)
+onKeyDown' : Attribute Int
+onKeyDown' =
+  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyCode
 
-onKeyDown'' : Address Int -> Attribute
-onKeyDown'' address =
-  on "keydown" decodeKeyCode (Signal.message address)
+onKeyDown'' : Attribute Int
+onKeyDown'' =
+  on "keydown" decodeKeyCode
 
-onContextMenu' : Address a -> a -> Attribute
-onContextMenu' address e =
-  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } value (always <| Signal.message address e)
+onContextMenu' : a -> Attribute a
+onContextMenu' e =
+  onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onMouseWheel : Address a -> (Float -> a) -> Attribute
-onMouseWheel address toAction =
-  let
-    handler v = Signal.message address (toAction v)
-  in
-    onWithOptions "wheel" { stopPropagation = True, preventDefault = True } decodeWheelEvent handler
+onMouseWheel : (Float -> a) -> Attribute a
+onMouseWheel toAction =
+  onWithOptions "wheel" { stopPropagation = True, preventDefault = True } (Decode.map toAction decodeWheelEvent)
 
-mouseDownDefence : Address a -> a -> Attribute
-mouseDownDefence address e =
-  onMouseDown' address e
+mouseDownDefence : a -> Attribute a
+mouseDownDefence e =
+  onMouseDown' e
 
 
-decodeWheelEvent : Json.Decode.Decoder Float
+decodeWheelEvent : Decoder Float
 decodeWheelEvent =
     (oneOf
       [ at [ "deltaY" ] float
@@ -125,27 +122,24 @@ decodeWheelEvent =
     `andThen` (\value -> if value /= 0 then succeed value else fail "Wheel of 0")
 
 
-form' : Address a -> a -> List Attribute -> List Html -> Html
-form' address action attribtes children =
+form' : a -> List (Attribute a) -> List (Html a) -> Html a
+form' action attribtes children =
   Html.form
     ([ Html.Attributes.action "javascript:void(0);"
     , Html.Attributes.method "POST"
-    , Html.Events.onSubmit address action
+    , Html.Events.onSubmit action
     ] ++ attribtes)
     children
 
-fileLoadButton : Address FileList -> List (String, String) -> String -> Html
-fileLoadButton address styles text =
+fileLoadButton : List (String, String) -> String -> Html FileList
+fileLoadButton styles text =
   Html.label
     [ Html.Attributes.style styles ]
     [ Html.text text
     , Html.input
         [ Html.Attributes.type' "file"
         , Html.Attributes.style [("display", "none")]
-        , on
-            "change"
-            decodeFile
-            (Signal.message address)
+        , on "change" decodeFile
         ]
         []
     ]

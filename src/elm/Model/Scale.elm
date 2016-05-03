@@ -1,4 +1,4 @@
-module Model.Scale where
+module Model.Scale exposing (..) -- where
 
 type Action = ScaleUp | ScaleDown
 

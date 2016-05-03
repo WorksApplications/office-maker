@@ -1,4 +1,4 @@
-module Model.Floor where
+module Model.Floor exposing (..) -- where
 
 import Model.Equipments as Equipments exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)

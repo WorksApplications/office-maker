@@ -1,4 +1,4 @@
-module View.Icons where
+module View.Icons exposing (..) -- where
 
 import Svg exposing (Svg)
 import Color exposing (white, black, gray)

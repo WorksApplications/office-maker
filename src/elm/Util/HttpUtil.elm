@@ -1,4 +1,4 @@
-module Util.HttpUtil where
+module Util.HttpUtil exposing (..) -- where
 
 import Task exposing(..)
 import Native.HttpUtil

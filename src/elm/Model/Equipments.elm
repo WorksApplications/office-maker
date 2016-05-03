@@ -1,4 +1,4 @@
-module Model.Equipments (Id, Equipment(..), init, copy, position) where
+module Model.Equipments exposing (Id, Equipment(..), init, copy, position) -- where
 
 type alias Id = String
 

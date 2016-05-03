@@ -1,4 +1,4 @@
-module View.View(view) where
+module View.View exposing(view) -- where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

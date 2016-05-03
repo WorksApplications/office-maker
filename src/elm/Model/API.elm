@@ -1,4 +1,4 @@
-module Model.API (
+module Model.API exposing (
       getAuth
     , saveEditingFloor
     , publishEditingFloor
@@ -11,7 +11,7 @@ module Model.API (
     , goToLogin
     , goToLogout
     , Error
-  ) where
+  ) -- where
 
 import Http
 import Json.Encode exposing (object, list, encode, string, int, null, Value)
