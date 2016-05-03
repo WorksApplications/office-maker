@@ -1,40 +1,31 @@
-Elm.Native.HttpUtil = {};
-
-Elm.Native.HttpUtil.make = function(localRuntime) {
-    localRuntime.Native = localRuntime.Native || {};
-    localRuntime.Native.HttpUtil = localRuntime.Native.HttpUtil || {};
-    if (localRuntime.Native.HttpUtil.values) return localRuntime.Native.HttpUtil.values;
-
-    var Task = Elm.Native.Task.make(localRuntime);
-    var Utils = Elm.Native.Utils.make(localRuntime);
-
+var _user$project$Native_HttpUtil = function(localRuntime) {
     function sendFile(method, url, file) {
-      return Task.asyncFunction(function(callback) {
+      return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
         var xhr = new XMLHttpRequest();
         xhr.open(method, url, true);
         xhr.onload = function(e) {
           if (this.status == 200) {
-            callback(Task.succeed(Utils.tuple0))
+            callback(_elm_lang$core$Native_Scheduler.succeed(_elm_lang$core$Native_Utils.Tuple0))
           } else {
-            callback(Task.fail("")) //TODO
+            callback(_elm_lang$core$Native_Scheduler.fail("")) //TODO
           }
         };
         xhr.send(file);
       });
     }
-    var reload = Task.asyncFunction(function(callback) {
+    var reload = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
       location.reload();
-      callback(Task.succeed(Utils.tuple0));
+      callback(_elm_lang$core$Native_Scheduler.succeed(_elm_lang$core$Native_Utils.Tuple0));
     });
     function goTo(url) {
-      return Task.asyncFunction(function(callback) {
+      return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
         location.href = url;
-        callback(Task.succeed(Utils.tuple0));
+        callback(_elm_lang$core$Native_Scheduler.succeed(_elm_lang$core$Native_Utils.Tuple0));
       });
     }
-    return localRuntime.Native.HttpUtil.values = {
+    return {
         sendFile: F3(sendFile),
         reload: reload,
         goTo: goTo
     };
-};
+}();
