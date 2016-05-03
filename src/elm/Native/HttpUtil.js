@@ -22,7 +22,19 @@ Elm.Native.HttpUtil.make = function(localRuntime) {
         xhr.send(file);
       });
     }
+    var reload = Task.asyncFunction(function(callback) {
+      location.reload();
+      callback(Task.succeed(Utils.tuple0));
+    });
+    function goTo(url) {
+      return Task.asyncFunction(function(callback) {
+        location.href = url;
+        callback(Task.succeed(Utils.tuple0));
+      });
+    }
     return localRuntime.Native.HttpUtil.values = {
-        sendFile: F3(sendFile)
+        sendFile: F3(sendFile),
+        reload: reload,
+        goTo: goTo
     };
 };

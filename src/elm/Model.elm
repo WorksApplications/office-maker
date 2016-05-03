@@ -15,12 +15,15 @@ import Util.EffectsUtil as EffectsUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
 
-import Equipments exposing (..)
-import EquipmentsOperation exposing (..)
-import Scale
-import API
-import Prototypes exposing (..)
-import Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
+import Model.User as User exposing (User)
+import Model.Equipments as Equipments exposing (..)
+import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.Scale as Scale
+import Model.API as API
+import Model.Prototypes as Prototypes exposing (..)
+import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
+
+import Header exposing (..)
 
 type alias Floor = Floor.Model
 
@@ -28,7 +31,8 @@ type alias Commit = Floor.Action
 
 type alias Model =
   { seed : Seed
-  , pos : Maybe (Int, Int)
+  , user : User
+  , pos : (Int, Int)
   , draggingContext : DraggingContext
   , selectedEquipments : List Id
   , copiedEquipments : List Equipment
@@ -67,7 +71,8 @@ type DraggingContext =
   | MoveEquipment Id (Int, Int)
   | Selector
   | ShiftOffsetPrevScreenPos
-  | StampScreenPos (Int, Int)
+  | PenFromScreenPos (Int, Int)
+  | StampFromScreenPos (Int, Int)
 
 inputs : List (Signal Action)
 inputs =
@@ -83,7 +88,8 @@ init : (Int, Int) -> (Int, Int) -> String -> (Model, Effects Action)
 init randomSeed initialSize initialHash =
   (
     { seed = IdGenerator.init randomSeed
-    , pos = Nothing
+    , user = User.guest
+    , pos = (0, 0)
     , draggingContext = None
     , selectedEquipments = []
     , copiedEquipments = []
@@ -114,23 +120,24 @@ init randomSeed initialSize initialHash =
 type Action = NoOp
   | Init
   | HashChange String
+  | AuthLoaded User
   | FloorLoaded Floor
   | FloorSaved
-  | MoveOnCanvas MouseEvent
+  | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
-  | MouseUpOnCanvas MouseEvent
-  | MouseDownOnCanvas MouseEvent
-  | MouseDownOnEquipment Id MouseEvent
-  | StartEditEquipment Id MouseEvent
+  | MouseUpOnCanvas
+  | MouseDownOnCanvas
+  | MouseDownOnEquipment Id
+  | StartEditEquipment Id
   | KeysAction Keys.Action
-  | SelectColor String MouseEvent
+  | SelectColor String
   | InputName Id String
-  | KeydownOnNameInput KeyboardEvent
-  | ShowContextMenuOnEquipment Id MouseEvent
-  | SelectIsland Id MouseEvent
+  | KeydownOnNameInput Int
+  | ShowContextMenuOnEquipment Id
+  | SelectIsland Id
   | WindowDimensions (Int, Int)
-  | MouseWheel MouseWheelEvent
+  | MouseWheel Float
   | ChangeMode EditMode
   | LoadFile FileList
   | GotDataURL String File String
@@ -141,6 +148,8 @@ type Action = NoOp
   | InputFloorRealWidth String
   | InputFloorRealHeight String
   | Rotate Id
+  | Publish
+  | HeaderAction Header.Action
   | Error Error
 
 debug : Bool
@@ -164,10 +173,13 @@ update action model =
     HashChange hash ->
       ({ model | hash = hash}, loadFloorEffects hash)
     Init ->
-      (model, loadFloorEffects model.hash)
+      (model, Effects.batch [loadAuthEffects, loadFloorEffects model.hash])
+    AuthLoaded user ->
+      ({ model | user = user }, Effects.none)
     FloorLoaded floor ->
       let
-        (realWidth, realHeight) = Floor.realSize floor
+        (realWidth, realHeight) =
+          Floor.realSize floor
         newModel =
           { model |
             floor = UndoRedo.init { data = floor, update = Floor.update }
@@ -184,16 +196,18 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    MoveOnCanvas e ->
+    MoveOnCanvas (clientX, clientY) ->
       let
-        (x, y) = (e.clientX, e.clientY - 37)
+        (x, y) = (clientX, clientY - 37)
         model' =
           { model |
-            pos = Just (x, y)
+            pos = (x, y)
           }
+        (prevX, prevY) =
+          model.pos
         newModel =
-          case (model.draggingContext, model.pos) of
-            (ShiftOffsetPrevScreenPos, Just (prevX, prevY)) ->
+          case model.draggingContext of
+            ShiftOffsetPrevScreenPos ->
               { model' |
                 offset =
                   let
@@ -221,16 +235,17 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    MouseDownOnEquipment lastTouchedId e ->
+    MouseDownOnEquipment lastTouchedId ->
       let
+        (clientX, clientY) = model.pos
         newModel =
           { model |
             selectedEquipments =
-              if e.ctrlKey then
+              if model.keys.ctrl then
                 if List.member lastTouchedId model.selectedEquipments
                 then List.filter ((/=) lastTouchedId) model.selectedEquipments
                 else lastTouchedId :: model.selectedEquipments
-              else if e.shiftKey then
+              else if model.keys.shift then
                 let
                   allEquipments =
                     (UndoRedo.data model.floor).equipments
@@ -246,19 +261,20 @@ update action model =
                 if List.member lastTouchedId model.selectedEquipments
                 then model.selectedEquipments
                 else [lastTouchedId]
-          , draggingContext = MoveEquipment lastTouchedId (e.clientX, e.clientY - 37)
+          , draggingContext = MoveEquipment lastTouchedId (clientX, clientY)
           , selectorRect = Nothing
           }
       in
         (newModel, Effects.none)
-    MouseUpOnCanvas e ->
+    MouseUpOnCanvas ->
       let
+        (clientX, clientY) = model.pos
         (model', effects) =
           case model.draggingContext of
             MoveEquipment id (x, y) ->
               let
                 newModel =
-                  updateByMoveEquipmentEnd id (x, y) (e.clientX, e.clientY - 37) e.ctrlKey e.shiftKey model
+                  updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
                 effects =
                   saveFloorEffects (UndoRedo.data newModel.floor)
               in
@@ -270,14 +286,14 @@ update action model =
                     Just (x, y, _, _) ->
                       let
                         (w, h) =
-                          ( Scale.screenToImage model.scale e.clientX - x
-                          , Scale.screenToImage model.scale e.clientY - 37 - y
+                          ( Scale.screenToImage model.scale clientX - x
+                          , Scale.screenToImage model.scale clientY - y
                           )
                       in
                         Just (x, y, w, h)
                     _ -> model.selectorRect
               }, Effects.none)
-            StampScreenPos _ ->
+            StampFromScreenPos _ ->
               let
                 (candidatesWithNewIds, newSeed) =
                   IdGenerator.zipWithNewIds model.seed (stampCandidates model)
@@ -294,6 +310,28 @@ update action model =
                   seed = newSeed
                 , floor = newFloor
                 }, effects)
+            PenFromScreenPos (x, y) ->
+              let
+                (newFloor, newSeed, effects) =
+                  case temporaryPen model (x, y) of
+                    Just (color, name, (left, top, width, height)) ->
+                      let
+                        (newId, newSeed) =
+                          IdGenerator.new model.seed
+                        newFloor =
+                          UndoRedo.commit model.floor (Floor.create [(newId, (left, top, width, height), color, name)])
+                      in
+                        ( newFloor
+                        , newSeed
+                        , saveFloorEffects (UndoRedo.data newFloor)
+                        )
+                    Nothing ->
+                      (model.floor, model.seed, Effects.none)
+              in
+                ({ model |
+                  seed = newSeed
+                , floor = newFloor
+                }, effects)
             _ -> (model, Effects.none)
         newModel =
           { model' |
@@ -301,7 +339,7 @@ update action model =
           }
       in
         (newModel, effects)
-    MouseDownOnCanvas e ->
+    MouseDownOnCanvas ->
       let
         model' =
           case model.editingEquipment of
@@ -310,22 +348,23 @@ update action model =
                 floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
               }
             Nothing -> model
-
+        (clientX, clientY) =
+          model.pos
         selectorRect =
           case model.editMode of
             Select ->
               let
                 (x, y) = fitToGrid model.gridSize <|
-                  Scale.screenToImageForPosition model.scale (e.layerX, e.layerY)
+                  screenToImageWithOffset model.scale (clientX, clientY) model.offset
               in
                 Just (x, y, model.gridSize, model.gridSize)
             _ -> model.selectorRect
-
         draggingContext =
           case model.editMode of
             Stamp ->
-              StampScreenPos (e.clientX, e.clientY - 37)
-            Pen -> None -- TODO
+              StampFromScreenPos (clientX, clientY)
+            Pen ->
+              PenFromScreenPos (clientX, clientY)
             Select -> ShiftOffsetPrevScreenPos
 
         newModel =
@@ -338,7 +377,7 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    StartEditEquipment id e ->
+    StartEditEquipment id ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just e ->
           let
@@ -351,7 +390,7 @@ update action model =
             (newModel, focusEffect "name-input")
         Nothing ->
           (model, Effects.none)
-    SelectColor color e ->
+    SelectColor color ->
       let
         newModel =
           { model |
@@ -374,10 +413,10 @@ update action model =
           }
       in
         (newModel, Effects.none)
-    KeydownOnNameInput e ->
+    KeydownOnNameInput keyCode ->
       let
         (newModel, effects) =
-          if e.keyCode == 13 && not e.ctrlKey then
+          if keyCode == 13 && not model.keys.ctrl then
             let
               newModel =
                 case model.editingEquipment of
@@ -406,7 +445,7 @@ update action model =
                     model
             in
               (newModel, Effects.none)
-          else if e.keyCode == 13 then
+          else if keyCode == 13 then
             let
               newModel =
                 { model |
@@ -421,15 +460,16 @@ update action model =
             (model, Effects.none)
       in
         (newModel, effects)
-    ShowContextMenuOnEquipment id e ->
+    ShowContextMenuOnEquipment id ->
       let
+        (clientX, clientY) = model.pos
         newModel =
           { model |
-            contextMenu = Equipment (e.clientX, e.clientY) id
+            contextMenu = Equipment (clientX, clientY) id
           }
       in
         (newModel, Effects.none)
-    SelectIsland id e ->
+    SelectIsland id ->
       let
         newModel =
           case findEquipmentById (UndoRedo.data model.floor).equipments id of
@@ -455,10 +495,11 @@ update action model =
           { model | keys = Keys.update action model.keys }
       in
         updateByKeyAction action model'
-    MouseWheel e ->
+    MouseWheel value ->
       let
+        (clientX, clientY) = model.pos
         newScale =
-            if e.value < 0 then
+            if value < 0 then
               Scale.update Scale.ScaleUp model.scale
             else
               Scale.update Scale.ScaleDown model.scale
@@ -468,8 +509,8 @@ update action model =
           model.offset
         newOffset =
           let
-            x = Scale.screenToImage model.scale e.clientX
-            y = Scale.screenToImage model.scale (e.clientY - 37) --TODO header hight
+            x = Scale.screenToImage model.scale clientX
+            y = Scale.screenToImage model.scale (clientY - 37) --TODO header hight
           in
           ( floor (toFloat (x - floor (ratio * (toFloat (x - offsetX)))) / ratio)
           , floor (toFloat (y - floor (ratio * (toFloat (y - offsetY)))) / ratio)
@@ -528,7 +569,10 @@ update action model =
     PrototypesAction action ->
       let
         newModel =
-          { model | prototypes = Prototypes.update action model.prototypes }
+          { model |
+            prototypes = Prototypes.update action model.prototypes
+          , editMode = Stamp -- TODO if event == select
+          }
       in
         (newModel, Effects.none)
     RegisterPrototype id ->
@@ -568,38 +612,50 @@ update action model =
         (newModel, effects)
     InputFloorRealWidth width ->
       let
-        newFloor =
+        (newFloor, effects) =
           case String.toInt width of
-            Err s -> model.floor
+            Err s -> (model.floor, Effects.none)
             Ok i ->
               if i > 0 then
-                UndoRedo.commit model.floor (Floor.changeRealWidth i)
+                let
+                  newFloor =
+                    UndoRedo.commit model.floor (Floor.changeRealWidth i)
+                  effects =
+                    saveFloorEffects (UndoRedo.data newFloor)
+                in
+                  (newFloor, effects)
               else
-                model.floor
+                (model.floor, Effects.none)
         newModel =
           { model |
             floor = newFloor
           , inputFloorRealWidth = width
           }
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     InputFloorRealHeight height ->
       let
-        newFloor =
+        (newFloor, effects) =
           case String.toInt height of
-            Err s -> model.floor
+            Err s -> (model.floor, Effects.none)
             Ok i ->
               if i > 0 then
-                UndoRedo.commit model.floor (Floor.changeRealHeight i)
+                let
+                  newFloor =
+                    UndoRedo.commit model.floor (Floor.changeRealHeight i)
+                  effects =
+                    saveFloorEffects (UndoRedo.data newFloor)
+                in
+                  (newFloor, effects)
               else
-                model.floor
+                (model.floor, Effects.none)
         newModel =
           { model |
             floor = newFloor
           , inputFloorRealHeight = height
           }
       in
-        (newModel, Effects.none)
+        (newModel, effects)
     Rotate id ->
       let
         newFloor =
@@ -611,6 +667,23 @@ update action model =
           }
       in
         (newModel, Effects.none)
+    Publish ->
+      let
+        floor = UndoRedo.data model.floor
+        effects = publishFloorEffects floor
+      in
+        (model, effects)
+    HeaderAction action ->
+      let
+        (effects, maybeEvent) =
+          Header.update action
+        newModel =
+          case maybeEvent of
+            Just LogoutDone -> { model | user = User.guest }
+            _ -> model
+      in
+        (newModel, Effects.map HeaderAction effects)
+
     Error e ->
       let
         newModel =
@@ -628,6 +701,23 @@ saveFloorEffects floor =
         _ ->
           Task.succeed ()
     secondTask = API.saveEditingFloor floor
+  in
+    fromTask
+      (Error << APIError)
+      (always FloorSaved)
+      (firstTask `Task.andThen` (always secondTask))
+
+
+publishFloorEffects : Floor -> Effects Action
+publishFloorEffects floor =
+  let
+    firstTask =
+      case floor.imageSource of
+        Floor.LocalFile id file url ->
+          API.saveEditingImage id file
+        _ ->
+          Task.succeed ()
+    secondTask = API.publishEditingFloor floor
   in
     fromTask
       (Error << APIError)
@@ -729,8 +819,8 @@ updateByKeyAction action model =
       (model, Effects.none)
 
 
-updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Bool -> Bool -> Model -> Model
-updateByMoveEquipmentEnd id (x0, y0) (x1, y1) ctrlKey shiftKey model =
+updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> Model
+updateByMoveEquipmentEnd id (x0, y0) (x1, y1) model =
   let
     shift = Scale.screenToImageForPosition model.scale (x1 - x0, y1 - y0)
   in
@@ -738,7 +828,7 @@ updateByMoveEquipmentEnd id (x0, y0) (x1, y1) ctrlKey shiftKey model =
       { model |
         floor = UndoRedo.commit model.floor (Floor.move model.selectedEquipments model.gridSize shift)
       }
-    else if not ctrlKey && not shiftKey then
+    else if not model.keys.ctrl && not model.keys.shift then
       { model |
         selectedEquipments = [id]
       }
@@ -771,6 +861,10 @@ shiftSelectionToward direction model =
             selectedEquipments = toBeSelected
           }
       _ -> model
+
+loadAuthEffects : Effects Action
+loadAuthEffects =
+    EffectsUtil.fromTask (Error << APIError) AuthLoaded API.getAuth
 
 loadFloorEffects : String -> Effects Action
 loadFloorEffects hash =
@@ -811,6 +905,13 @@ selectedEquipments model =
     findEquipmentById (UndoRedo.data model.floor).equipments id
   ) model.selectedEquipments
 
+
+screenToImageWithOffset : Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int)
+screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
+    ( Scale.screenToImage scale screenX - offsetX
+    , Scale.screenToImage scale screenY - offsetY
+    )
+
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
   case model.editMode of
@@ -822,19 +923,15 @@ stampCandidates model =
           prototype
         (offsetX, offsetY) = model.offset
         (x2, y2) =
-          Maybe.withDefault (0, 0) model.pos
+          model.pos
         (x2', y2') =
-          ( Scale.screenToImage model.scale x2 - offsetX
-          , Scale.screenToImage model.scale y2 - offsetY
-          )
+          screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
       in
         case model.draggingContext of
-          StampScreenPos (x1, y1) ->
+          StampFromScreenPos (x1, y1) ->
             let
               (x1', y1') =
-                ( Scale.screenToImage model.scale x1 - offsetX
-                , Scale.screenToImage model.scale y1 - offsetY
-                )
+                screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
             in
               stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
           _ ->
@@ -846,5 +943,26 @@ stampCandidates model =
               [ ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
               ]
     _ -> []
+
+temporaryPen : Model -> (Int, Int) -> Maybe (String, String, (Int, Int, Int, Int))
+temporaryPen model from =
+  let
+    (offsetX, offsetY) = model.offset
+    (left, top) =
+      fitToGrid model.gridSize <|
+        screenToImageWithOffset model.scale from (offsetX, offsetY)
+    (right, bottom) =
+      fitToGrid model.gridSize <|
+        screenToImageWithOffset model.scale model.pos (offsetX, offsetY)
+    width = right - left
+    height = bottom - top
+    color = "#fff" -- TODO
+    name = ""
+  in
+    if width > 0 && height > 0 then
+      Just (color, name, (left, top, width, height))
+    else
+      Nothing
+
 
 --

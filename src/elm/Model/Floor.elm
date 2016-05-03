@@ -1,7 +1,7 @@
-module Floor where
+module Model.Floor where
 
-import Equipments exposing (..)
-import EquipmentsOperation exposing (..)
+import Model.Equipments as Equipments exposing (..)
+import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Util.File exposing (..)
 
 type alias Id = String

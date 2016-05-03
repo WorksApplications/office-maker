@@ -33,7 +33,7 @@ function taskServer(cb) {
 }
 function run() {
   taskBuild(function() {
-    taskServer(function(){
+    taskServer(function() {
       setTimeout(run, 300);
     });
   });

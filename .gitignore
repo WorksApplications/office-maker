@@ -1,9 +1,12 @@
 elm-stuff
 node_modules
 index.js
+login.js
+elm.js
 test/public
 *.ttf
 data
 repl-temp-*
 *.ods*
 npm-debug.log
+bugs.html

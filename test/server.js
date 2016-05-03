@@ -2,14 +2,80 @@ var fs = require('fs-extra');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 var publicDir = __dirname + '/public';
 
+var floors = {};
+var passes = {
+  admin01: 'admin01',
+  user01 : 'user01'
+};
+var users = {
+  admin01: { name: 'Admin01', mail: 'admin01@xxx.com', role: 'admin' },
+  user01 : { name: 'User01', mail: 'user01@xxx.com', role: 'general' }
+};
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 30 * 60 * 1000
+  }
+}));
+
+
+/* Login NOT required */
+app.post('/api/v1/login', function(req, res) {
+  var id = req.body.id;
+  var pass = req.body.pass;
+  if(passes[id] === pass) {
+    req.session.user = id;
+    res.send({});
+  } else {
+    res.status(401).send('');
+  }
+});
+
+app.post('/api/v1/logout', function(req, res) {
+  req.session.user = null;
+  res.send({});
+});
+
 app.use(express.static(publicDir));
 
-var floors = {};
+// Login
+app.use('/', function(req, res, next) {
+  if(!req.session.user && req.url.indexOf('/api') === 0) {
+    res.status(401).send('');
+  } else {
+    next();
+  }
+});
+
+/* Login required */
+
+app.get('/login', function(req, res) {
+  res.sendfile(publicDir + '/login.html');
+});
+
+app.get('/logout', function(req, res) {
+  req.session.user = null;
+  res.redirect('/login');
+});
+
+app.get('/api/v1/auth', function(req, res) {
+  var id = req.session.user;
+  if(id) {
+    var user = users[id];
+    res.send(user);
+  } else {
+    res.send({});
+  }
+});
 
 app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;
@@ -34,6 +100,21 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
   // console.log(newFloor);
   res.send('');
 });
+
+// publish
+app.post('/api/v1/floor/:id', function (req, res) {
+  var id = req.params.id;
+  var newFloor = req.body;
+  console.log(req.body);
+  if(id !== newFloor.id) {
+    throw "invalid! : " + [id, newFloor.id];
+  }
+  floors[id] = newFloor;
+  console.log('published floor: ' + id);
+  // console.log(newFloor);
+  res.send('');
+});
+
 
 app.put('/api/v1/image/:id', function (req, res) {
   var id = req.params.id;
