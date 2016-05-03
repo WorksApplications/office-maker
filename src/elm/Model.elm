@@ -8,8 +8,7 @@ import String
 import Process
 
 import Util.UndoRedo as UndoRedo
-import Util.Keys as Keys exposing (..)
--- import Util.Keys2 as Keys2
+import Util.Keys as Keys
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
@@ -79,13 +78,9 @@ subscriptions model =
   Sub.batch
     [ Routing.hashchanges HashChange
     , Window.resizes (\e -> WindowDimensions (e.width, e.height))
-    -- , Keys2.downs KeyCodeAction
+    , Keys.downs (KeyCodeAction True)
+    , Keys.ups (KeyCodeAction False)
     ]
-  -- <|
-  --   (List.map (Signal.map KeysAction) Keys.inputs) ++
-  --   [ Signal.map WindowDimensions (Window.dimensions)
-  --   , Signal.map HashChange HtmlUtil.locationHash
-  --   ]
 
 gridSize : Int
 gridSize = 8 -- 2^N
@@ -102,7 +97,7 @@ init randomSeed initialSize initialHash =
     , editingEquipment = Nothing
     , gridSize = gridSize
     , selectorRect = Nothing
-    , keys = Keys.init
+    , keys = Keys.init'
     , editMode = Select
     , colorPalette =
         ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
@@ -136,7 +131,8 @@ type Action = NoOp
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
   | StartEditEquipment Id
-  | KeysAction Keys.Action
+  -- | KeysAction Keys.Action
+  | KeyCodeAction Bool Int
   | SelectColor String
   | InputName Id String
   | KeydownOnNameInput Int
@@ -495,12 +491,13 @@ update action model =
               model
       in
         (newModel, Cmd.none)
-    KeysAction action ->
+    KeyCodeAction isDown keyCode ->
       let
+        (keys, event) = Keys.update isDown keyCode model.keys
         model' =
-          { model | keys = Keys.update action model.keys }
+          { model | keys = keys }
       in
-        updateByKeyAction action model'
+        updateByKeyEvent event model'
     MouseWheel value ->
       let
         (clientX, clientY) = model.pos
@@ -730,10 +727,10 @@ publishFloorEffects floor =
       (always FloorSaved)
       (firstTask `Task.andThen` (always secondTask))
 
-updateByKeyAction : Keys.Action -> Model -> (Model, Cmd Action)
-updateByKeyAction action model =
-  case (model.keys.ctrl, action) of
-    (True, KeyC True) ->
+updateByKeyEvent : Keys.Event -> Model -> (Model, Cmd Action)
+updateByKeyEvent event model =
+  case (model.keys.ctrl, event) of
+    (True, Keys.C) ->
       let
         newModel =
           { model |
@@ -741,7 +738,7 @@ updateByKeyAction action model =
           }
       in
         (newModel, Cmd.none)
-    (True, KeyV True) ->
+    (True, Keys.V) ->
       let
         base =
           case model.selectorRect of
@@ -763,7 +760,7 @@ updateByKeyAction action model =
           }
       in
         (newModel, Cmd.none)
-    (True, KeyX True) ->
+    (True, Keys.X) ->
       let
         newModel =
           { model |
@@ -773,7 +770,7 @@ updateByKeyAction action model =
           }
       in
         (newModel, Cmd.none)
-    (True, KeyY) ->
+    (True, Keys.Y) ->
       let
         newModel =
           { model |
@@ -781,7 +778,7 @@ updateByKeyAction action model =
           }
       in
         (newModel, Cmd.none)
-    (True, KeyZ) ->
+    (True, Keys.Z) ->
       let
         newModel =
           { model |
@@ -789,31 +786,31 @@ updateByKeyAction action model =
           }
       in
         (newModel, Cmd.none)
-    (_, KeyUpArrow) ->
+    (_, Keys.UpArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Up model
       in
         (newModel, Cmd.none)
-    (_, KeyDownArrow) ->
+    (_, Keys.DownArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Down model
       in
         (newModel, Cmd.none)
-    (_, KeyLeftArrow) ->
+    (_, Keys.LeftArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Left model
       in
         (newModel, Cmd.none)
-    (_, KeyRightArrow) ->
+    (_, Keys.RightArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Right model
       in
         (newModel, Cmd.none)
-    (_, KeyDel True) ->
+    (_, Keys.Del) ->
       let
         newModel =
           { model |
