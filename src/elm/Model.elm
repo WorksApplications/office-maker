@@ -9,6 +9,7 @@ import Process
 
 import Util.UndoRedo as UndoRedo
 import Util.Keys as Keys
+import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
@@ -38,7 +39,7 @@ type alias Model =
   , editingEquipment : Maybe (Id, String)
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
-  , keys : Keys.Model
+  , keys : ShortCut.Model
   , editMode : EditMode
   , colorPalette : List String
   , contextMenu : ContextMenu
@@ -97,7 +98,7 @@ init randomSeed initialSize initialHash =
     , editingEquipment = Nothing
     , gridSize = gridSize
     , selectorRect = Nothing
-    , keys = Keys.init'
+    , keys = ShortCut.init
     , editMode = Select
     , colorPalette =
         ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
@@ -131,7 +132,6 @@ type Action = NoOp
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
   | StartEditEquipment Id
-  -- | KeysAction Keys.Action
   | KeyCodeAction Bool Int
   | SelectColor String
   | InputName Id String
@@ -493,7 +493,7 @@ update action model =
         (newModel, Cmd.none)
     KeyCodeAction isDown keyCode ->
       let
-        (keys, event) = Keys.update isDown keyCode model.keys
+        (keys, event) = ShortCut.update isDown keyCode model.keys
         model' =
           { model | keys = keys }
       in
@@ -727,10 +727,10 @@ publishFloorEffects floor =
       (always FloorSaved)
       (firstTask `Task.andThen` (always secondTask))
 
-updateByKeyEvent : Keys.Event -> Model -> (Model, Cmd Action)
+updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Action)
 updateByKeyEvent event model =
   case (model.keys.ctrl, event) of
-    (True, Keys.C) ->
+    (True, ShortCut.C) ->
       let
         newModel =
           { model |
@@ -738,7 +738,7 @@ updateByKeyEvent event model =
           }
       in
         (newModel, Cmd.none)
-    (True, Keys.V) ->
+    (True, ShortCut.V) ->
       let
         base =
           case model.selectorRect of
@@ -760,7 +760,7 @@ updateByKeyEvent event model =
           }
       in
         (newModel, Cmd.none)
-    (True, Keys.X) ->
+    (True, ShortCut.X) ->
       let
         newModel =
           { model |
@@ -770,7 +770,7 @@ updateByKeyEvent event model =
           }
       in
         (newModel, Cmd.none)
-    (True, Keys.Y) ->
+    (True, ShortCut.Y) ->
       let
         newModel =
           { model |
@@ -778,7 +778,7 @@ updateByKeyEvent event model =
           }
       in
         (newModel, Cmd.none)
-    (True, Keys.Z) ->
+    (True, ShortCut.Z) ->
       let
         newModel =
           { model |
@@ -786,31 +786,31 @@ updateByKeyEvent event model =
           }
       in
         (newModel, Cmd.none)
-    (_, Keys.UpArrow) ->
+    (_, ShortCut.UpArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Up model
       in
         (newModel, Cmd.none)
-    (_, Keys.DownArrow) ->
+    (_, ShortCut.DownArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Down model
       in
         (newModel, Cmd.none)
-    (_, Keys.LeftArrow) ->
+    (_, ShortCut.LeftArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Left model
       in
         (newModel, Cmd.none)
-    (_, Keys.RightArrow) ->
+    (_, ShortCut.RightArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Right model
       in
         (newModel, Cmd.none)
-    (_, Keys.Del) ->
+    (_, ShortCut.Del) ->
       let
         newModel =
           { model |
