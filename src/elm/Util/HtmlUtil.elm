@@ -36,10 +36,6 @@ blur id =
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
 
--- locationHash : Signal String
--- locationHash =
---   Native.HtmlUtil.locationHash
-
 onSubmit' : a -> Attribute a
 onSubmit' e =
   onWithOptions

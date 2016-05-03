@@ -22,15 +22,8 @@ var _user$project$Native_HtmlUtil = function(localRuntime) {
       });
     }
 
-    // var locationHash = Signal.input('locationHash', window.location.hash);
-    // window.addEventListener('hashchange', function() {
-    //   var hash = window.location.hash;
-    //   localRuntime.notify(locationHash.id, hash);
-    // });
-
     return {
         focus: focus,
-        blur: blur,
-        // locationHash: locationHash
+        blur: blur
     };
 }();

@@ -3,12 +3,12 @@ module View.View exposing(view) -- where
 import Html exposing (..)
 import Html.App
 import Html.Attributes exposing (..)
--- import Html.Lazy exposing (..)
+-- import Html.Events
 import Maybe
 import View.Styles as Styles
 import View.Icons as Icons
 import Header
--- import Debug
+
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
@@ -67,6 +67,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
         eventHandlers =
           contextMenu ++
             [ onMouseDown' (MouseDownOnEquipment id)
+            -- , Html.Events.onDoubleClick (StartEditEquipment id)
             , onDblClick' (StartEditEquipment id)
             ]
       in
