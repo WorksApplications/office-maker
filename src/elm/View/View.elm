@@ -1,10 +1,10 @@
 module View.View exposing(view) -- where
 
 import Html exposing (..)
+import Html.App
 import Html.Attributes exposing (..)
 -- import Html.Lazy exposing (..)
 import Maybe
-import Signal exposing (Address, forwardTo)
 import View.Styles as Styles
 import View.Icons as Icons
 import Header
@@ -21,8 +21,8 @@ import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 
-contextMenuView : Address Action -> Model -> Html
-contextMenuView address model =
+contextMenuView : Model -> Html Action
+contextMenuView model =
   case model.contextMenu of
     NoContextMenu ->
       text ""
@@ -30,23 +30,23 @@ contextMenuView address model =
       div
         [ style (Styles.contextMenu (x, y + 37) (fst model.windowDimensions, snd model.windowDimensions) 2) -- TODO
         ] -- TODO
-        [ contextMenuItemView address (SelectIsland id) "Select Island"
-        , contextMenuItemView address (RegisterPrototype id) "Register as stamp"
-        , contextMenuItemView address (Rotate id) "Rotate"
+        [ contextMenuItemView (SelectIsland id) "Select Island"
+        , contextMenuItemView (RegisterPrototype id) "Register as stamp"
+        , contextMenuItemView (Rotate id) "Rotate"
         ]
 
-contextMenuItemView : Address Action -> Action -> String -> Html
-contextMenuItemView address action text' =
+contextMenuItemView : Action -> String -> Html Action
+contextMenuItemView action text' =
   div
     [ class "hovarable"
     , style Styles.contextMenuItem
-    , onMouseDown' address action
+    , onMouseDown' action
     ]
     [ text text' ]
 
 
-equipmentView : Address Action -> Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html
-equipmentView address model moving selected alpha equipment contextMenuDisabled disableTransition =
+equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Action
+equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
     Desk id (left, top, width, height) color name ->
       let
@@ -63,11 +63,11 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
           if contextMenuDisabled then
             []
           else
-            [ onContextMenu' address (ShowContextMenuOnEquipment id) ]
+            [ onContextMenu' (ShowContextMenuOnEquipment id) ]
         eventHandlers =
           contextMenu ++
-            [ onMouseDown' address (MouseDownOnEquipment id)
-            , onDblClick' address (StartEditEquipment id)
+            [ onMouseDown' (MouseDownOnEquipment id)
+            , onDblClick' (StartEditEquipment id)
             ]
       in
         equipmentView'
@@ -81,7 +81,7 @@ equipmentView address model moving selected alpha equipment contextMenuDisabled 
           model.scale
           disableTransition
 
-equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List Html.Attribute -> Scale.Model -> Bool -> Html
+equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Html msg
 equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition =
   let
     screenRect =
@@ -92,11 +92,11 @@ equipmentView' key' rect color name selected alpha eventHandlers scale disableTr
         Styles.transition disableTransition
   in
     div
-      ( eventHandlers ++ [ key key', style styles ] )
+      ( eventHandlers ++ [ {- key key', -} style styles ] )
       [ equipmentLabelView scale disableTransition name
       ]
 
-equipmentLabelView : Scale.Model -> Bool -> String -> Html
+equipmentLabelView : Scale.Model -> Bool -> String -> Html msg
 equipmentLabelView scale disableTransition name =
   let
     styles =
@@ -113,8 +113,8 @@ transitionDisabled : Model -> Bool
 transitionDisabled model =
   not model.scaling
 
-nameInputView : Address Action -> Model -> Html
-nameInputView address model =
+nameInputView : Model -> Html Action
+nameInputView model =
   case model.editingEquipment of
     Just (id, name) ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
@@ -127,61 +127,61 @@ nameInputView address model =
             textarea
               ([ Html.Attributes.id "name-input"
               , style styles
-              ] ++ (inputAttributes address (InputName id) KeydownOnNameInput name True))
+              ] ++ (inputAttributes (InputName id) KeydownOnNameInput name True))
               [text name]
         Nothing -> text ""
     Nothing ->
       text ""
 
-inputAttributes : Address Action -> (String -> Action) -> (Int -> Action) -> String -> Bool -> List Attribute
-inputAttributes address toInputAction toKeydownAction value' defence =
-  [ onInput' (forwardTo address toInputAction) -- TODO cannot input japanese
-  , onKeyDown'' (forwardTo address toKeydownAction)
+inputAttributes : (String -> Action) -> (Int -> Action) -> String -> Bool -> List (Attribute Action)
+inputAttributes toInputAction toKeydownAction value' defence =
+  [ onInput' toInputAction -- TODO cannot input japanese
+  , onKeyDown'' toKeydownAction
   , value value'
-  ] ++ (if defence then [onMouseDown' address NoOp] else [])
+  ] ++ (if defence then [onMouseDown' NoOp] else [])
 
-mainView : Address Action -> Model -> Html
-mainView address model =
+mainView : Model -> Html Action
+mainView model =
   let
     (windowWidth, windowHeight) = model.windowDimensions
     height = windowHeight - Styles.headerHeight
   in
     main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
-      [ canvasContainerView address model
-      , subView address model
+      [ canvasContainerView model
+      , subView model
       ]
 
-subView : Address Action -> Model -> Html
-subView address model =
+subView : Model -> Html Action
+subView model =
   div
     [ style (Styles.subMenu)
     -- , mouseDownDefence address NoOp
     ]
-    [ card <| penView address model
-    , card <| propertyView address model
-    , card <| floorView address model
-    , card <| debugView address model
+    [ card <| penView model
+    , card <| propertyView model
+    , card <| floorView model
+    , card <| debugView model
     ]
 
-card : List Html -> Html
+card : List (Html msg) -> Html msg
 card children =
   div
     [ {-style Styles.card-}
     style [("margin-bottom", "20px"), ("padding", "20px")]
     ] children
 
-penView : Address Action -> Model -> List Html
-penView address model =
+penView : Model -> List (Html Action)
+penView model =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
   in
-    [ modeSelectionView address model
-    , prototypePreviewView address prototypes (model.editMode == Stamp)
+    [ modeSelectionView model
+    , prototypePreviewView prototypes (model.editMode == Stamp)
     ]
 
-floorNameInputView : Address Action -> Model -> Html
-floorNameInputView address model =
+floorNameInputView : Model -> Html Action
+floorNameInputView model =
   let
     floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
     nameInput =
@@ -189,13 +189,13 @@ floorNameInputView address model =
       ([ Html.Attributes.id "floor-name-input"
       , type' "text"
       , style Styles.floorNameInput
-      ] ++ (inputAttributes address InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
+      ] ++ (inputAttributes InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
       []
   in
     div [] [ floorNameLabel, nameInput ]
 
-floorRealSizeInputView : Address Action -> Model -> Html
-floorRealSizeInputView address model =
+floorRealSizeInputView : Model -> Html Action
+floorRealSizeInputView model =
   let
     floor = UndoRedo.data model.floor
     useReal = True--TODO
@@ -205,7 +205,7 @@ floorRealSizeInputView address model =
       , type' "text"
       , disabled (not useReal)
       , style Styles.realSizeInput
-      ] ++ (inputAttributes address InputFloorRealWidth (always NoOp) (model.inputFloorRealWidth) False))
+      ] ++ (inputAttributes InputFloorRealWidth (always NoOp) (model.inputFloorRealWidth) False))
       []
     heightInput =
       input
@@ -213,7 +213,7 @@ floorRealSizeInputView address model =
       , type' "text"
       , disabled (not useReal)
       , style Styles.realSizeInput
-      ] ++ (inputAttributes address InputFloorRealHeight (always NoOp) (model.inputFloorRealHeight) False))
+      ] ++ (inputAttributes InputFloorRealHeight (always NoOp) (model.inputFloorRealHeight) False))
       []
     widthLabel = label [ style Styles.widthHeightLabel ] [ text "Width(m)" ]
     heightLabel = label [ style Styles.widthHeightLabel ] [ text "Height(m)" ]
@@ -221,39 +221,39 @@ floorRealSizeInputView address model =
     div [] [widthLabel, widthInput, heightLabel, heightInput ]
 
 
-modeSelectionView : Address Action -> Model -> Html
-modeSelectionView address model =
+modeSelectionView : Model -> Html Action
+modeSelectionView model =
   let
     widthStyle = [("width", "80px")]
     selection =
       div
         [ style (Styles.selection (model.editMode == Select) ++ widthStyle)
-        , onClick' address (ChangeMode Select)
+        , onClick' (ChangeMode Select)
         ]
         [ Icons.selectMode (model.editMode == Select) ]
     pen =
       div
         [ style (Styles.selection (model.editMode == Pen) ++ widthStyle)
-        , onClick' address (ChangeMode Pen)
+        , onClick' (ChangeMode Pen)
         ]
         [ Icons.penMode (model.editMode == Pen) ]
     stamp =
       div
         [ style (Styles.selection (model.editMode == Stamp) ++ widthStyle)
-        , onClick' address (ChangeMode Stamp)
+        , onClick' (ChangeMode Stamp)
         ]
         [ Icons.stampMode (model.editMode == Stamp) ]
   in
     div [ style (Styles.flex ++ [("margin-top", "10px")]) ] [selection, pen, stamp]
 
-propertyView : Address Action -> Model -> List Html
-propertyView address model =
+propertyView : Model -> List (Html Action)
+propertyView model =
     [ text "Properties"
-    , colorPropertyView address model
+    , colorPropertyView model
     ]
 
-debugView : Address Action -> Model -> List Html
-debugView address model =
+debugView : Model -> List (Html Action)
+debugView model =
     [ text (toString <| List.map idOf <| model.copiedEquipments)
     , br [] []
     , text (toString model.keys.ctrl)
@@ -262,8 +262,8 @@ debugView address model =
     , br [] []
     ]
 
-canvasContainerView : Address Action -> Model -> Html
-canvasContainerView address model =
+canvasContainerView : Model -> Html Action
+canvasContainerView model =
   div
     [ style (Styles.canvasContainer ++
       ( if model.editMode == Stamp then
@@ -271,18 +271,18 @@ canvasContainerView address model =
         else
           []
       ))
-    , onMouseMove' (forwardTo address MoveOnCanvas)
-    , onMouseDown' address MouseDownOnCanvas
-    , onMouseUp' address MouseUpOnCanvas
-    , onMouseEnter' address EnterCanvas
-    , onMouseLeave' address LeaveCanvas
-    , onMouseWheel address MouseWheel
+    , onMouseMove' MoveOnCanvas
+    , onMouseDown' MouseDownOnCanvas
+    , onMouseUp' MouseUpOnCanvas
+    , onMouseEnter' EnterCanvas
+    , onMouseLeave' LeaveCanvas
+    , onMouseWheel MouseWheel
     ]
-    [ canvasView address model
+    [ canvasView model
     ]
 
-canvasView : Address Action -> Model -> Html
-canvasView address model =
+canvasView : Model -> Html Action
+canvasView model =
   let
     floor = UndoRedo.data model.floor
     disableTransition = transitionDisabled model
@@ -297,7 +297,6 @@ canvasView address model =
       List.map
         (\equipment ->
           equipmentView
-            address
             model
             Nothing
             (isSelected model equipment)
@@ -324,7 +323,6 @@ canvasView address model =
           List.map
             (\equipment ->
               equipmentView
-                address
                 model
                 moving
                 (isSelected model equipment)
@@ -368,10 +366,10 @@ canvasView address model =
     div
       [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
       ]
-      ((image :: (nameInputView address model) :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
+      ((image :: (nameInputView model) :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
 
-prototypePreviewView : Address Action -> List (Prototype, Bool) -> Bool -> Html
-prototypePreviewView address prototypes stampMode =
+prototypePreviewView : List (Prototype, Bool) -> Bool -> Html Action
+prototypePreviewView prototypes stampMode =
   let
     width = 238 -- TODO
     height = 238 -- TODO
@@ -394,7 +392,7 @@ prototypePreviewView address prototypes stampMode =
         in
           div
             [ style (position :: Styles.prototypePreviewScroll)
-            , onClick' address (if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next)
+            , onClick' (if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next)
             ]
             [ text label ]
         )
@@ -411,7 +409,7 @@ prototypePreviewView address prototypes stampMode =
       [ style (Styles.prototypePreviewView stampMode) ]
       ( inner :: buttons )
 
-temporaryStampView : Scale.Model -> Bool -> StampCandidate -> Html
+temporaryStampView : Scale.Model -> Bool -> StampCandidate -> Html msg
 temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
     equipmentView'
       ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight)
@@ -424,7 +422,7 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       scale
       True -- disableTransition
 
-temporaryPenView : Model -> (Int, Int) -> Html
+temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
   case temporaryPen model from of
     Just (color, name, (left, top, width, height)) ->
@@ -441,14 +439,14 @@ temporaryPenView model from =
     Nothing ->
       text ""
 
-temporaryStampsView : Model -> List Html
+temporaryStampsView : Model -> List (Html msg)
 temporaryStampsView model =
   List.map
     (temporaryStampView model.scale False)
     (stampCandidates model)
 
-colorPropertyView : Address Action -> Model -> Html
-colorPropertyView address model =
+colorPropertyView : Model -> Html Action
+colorPropertyView model =
   let
     match color =
       case colorProperty (selectedEquipments model) of
@@ -457,35 +455,35 @@ colorPropertyView address model =
     viewForEach color =
       li
         [ style (Styles.colorProperty color (match color))
-        , onMouseDown' address (SelectColor color)
+        , onMouseDown' (SelectColor color)
         ]
         []
   in
     ul [ style (Styles.ul ++ [("display", "flex")]) ]
       (List.map viewForEach model.colorPalette)
 
-publishButtonView : Address Action -> Model -> Html
-publishButtonView address model =
+publishButtonView : Model -> Html Action
+publishButtonView model =
   button
-    [ onClick' address Publish
+    [ onClick' Publish
     , style Styles.publishButton ]
     [ text "Publish" ]
 
-floorView : Address Action -> Model -> List Html
-floorView address model =
-    [ fileLoadButton (forwardTo address LoadFile) Styles.imageLoadButton "Load Image"
-    , floorNameInputView address model
-    , floorRealSizeInputView address model
-    , publishButtonView address model
+floorView : Model -> List (Html Action)
+floorView model =
+    [ fileLoadButton Styles.imageLoadButton "Load Image" |> Html.App.map LoadFile
+    , floorNameInputView model
+    , floorRealSizeInputView model
+    , publishButtonView model
     ]
 
-view : Address Action -> Model -> Html
-view address model =
+view : Model -> Html Action
+view model =
   div
     []
-    [ Header.view (Just (Signal.forwardTo address HeaderAction, model.user))
-    , mainView address model
-    , contextMenuView address model
+    [ Header.view (Just model.user) |> Html.App.map HeaderAction
+    , mainView model
+    , contextMenuView model
     ]
 
 --

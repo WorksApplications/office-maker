@@ -45,10 +45,10 @@ onSubmit' e =
   onWithOptions
     "onsubmit" { stopPropagation = True, preventDefault = False } (Decode.succeed e)
 
-onMouseMove' : Attribute (Int, Int)
-onMouseMove' =
+onMouseMove' : ((Int, Int) -> a) -> Attribute a
+onMouseMove' f =
   onWithOptions
-    "mousemove" { stopPropagation = True, preventDefault = True } decodeClientXY
+    "mousemove" { stopPropagation = True, preventDefault = True } (Decode.map f decodeClientXY)
 
 onMouseEnter' : a -> Attribute a
 onMouseEnter' e =
@@ -76,29 +76,29 @@ onClick' : a -> Attribute a
 onClick' e =
   onWithOptions "click" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onInput : Attribute String
-onInput =
-  on "input" Html.Events.targetValue
+onInput : (String -> a) -> Attribute a
+onInput f =
+  on "input" (Decode.map f Html.Events.targetValue)
 
-onInput' : Attribute String
-onInput' =
-  onWithOptions "input" { stopPropagation = True, preventDefault = True } Html.Events.targetValue
+onInput' : (String -> a) -> Attribute a
+onInput' f =
+  onWithOptions "input" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
-onChange' : Attribute String
-onChange' =
-  onWithOptions "change" { stopPropagation = True, preventDefault = True } Html.Events.targetValue
+onChange' : (String -> a) -> Attribute a
+onChange' f =
+  onWithOptions "change" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
 -- onKeyUp' : Address KeyboardEvent -> Attribute
 -- onKeyUp' address =
 --   on "keyup" decodeKeyboardEvent (Signal.message address)
 
-onKeyDown' : Attribute Int
-onKeyDown' =
-  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } decodeKeyCode
+onKeyDown' : (Int -> a) -> Attribute a
+onKeyDown' f =
+  onWithOptions "keydown" { stopPropagation = True, preventDefault = True } (Decode.map f decodeKeyCode)
 
-onKeyDown'' : Attribute Int
-onKeyDown'' =
-  on "keydown" decodeKeyCode
+onKeyDown'' : (Int -> a) -> Attribute a
+onKeyDown'' f =
+  on "keydown" (Decode.map f decodeKeyCode)
 
 onContextMenu' : a -> Attribute a
 onContextMenu' e =

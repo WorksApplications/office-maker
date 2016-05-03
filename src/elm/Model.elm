@@ -72,12 +72,14 @@ type DraggingContext =
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
 
--- inputs : List (Signal Action)
--- inputs =
---   (List.map (Signal.map KeysAction) Keys.inputs) ++
---   [ Signal.map WindowDimensions (Window.dimensions)
---   , Signal.map HashChange HtmlUtil.locationHash
---   ]
+subscriptions : Model -> Sub Action
+subscriptions model =
+  Sub.batch []
+  -- <|
+  --   (List.map (Signal.map KeysAction) Keys.inputs) ++
+  --   [ Signal.map WindowDimensions (Window.dimensions)
+  --   , Signal.map HashChange HtmlUtil.locationHash
+  --   ]
 
 gridSize : Int
 gridSize = 8 -- 2^N
