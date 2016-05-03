@@ -3,15 +3,17 @@ module Model exposing (..) -- where
 import Maybe
 import Task
 import Debug
--- import Window
+import Window
 import String
 import Process
 
 import Util.UndoRedo as UndoRedo
 import Util.Keys as Keys exposing (..)
+-- import Util.Keys2 as Keys2
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
+import Util.Routing as Routing
 
 import Model.User as User exposing (User)
 import Model.Equipments as Equipments exposing (..)
@@ -74,7 +76,11 @@ type DraggingContext =
 
 subscriptions : Model -> Sub Action
 subscriptions model =
-  Sub.batch []
+  Sub.batch
+    [ Routing.hashchanges HashChange
+    , Window.resizes (\e -> WindowDimensions (e.width, e.height))
+    -- , Keys2.downs KeyCodeAction
+    ]
   -- <|
   --   (List.map (Signal.map KeysAction) Keys.inputs) ++
   --   [ Signal.map WindowDimensions (Window.dimensions)
