@@ -1,5 +1,7 @@
 module Model.API exposing (
       getAuth
+    , search
+    , getFloors
     , saveEditingFloor
     , publishEditingFloor
     , getEditingFloor
@@ -147,6 +149,12 @@ getEditingFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ id ++ "/edit")
 
+getFloors : Task Error (List Floor)
+getFloors =
+    Http.get
+      (Decode.list decodeFloor)
+      ("/api/v1/floors")
+
 getFloor : String -> Task Error Floor
 getFloor id =
     Http.get
@@ -159,6 +167,11 @@ getAuth =
       decodeUser
       ("/api/v1/auth")
 
+search : String -> Task Error (List Equipment)
+search query =
+    Http.get
+      (Decode.list decodeEquipment)
+      ("/api/v1/search/" ++ query)
 
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =

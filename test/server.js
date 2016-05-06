@@ -76,7 +76,28 @@ app.get('/api/v1/auth', function(req, res) {
     res.send({});
   }
 });
-
+app.get('/api/v1/floors', function (req, res) {
+  var floors = Object.keys(floors).map(function(id) {
+    return floors[id];
+  });
+  res.send(floors);
+});
+app.get('/api/v1/search/:query', function (req, res) {
+  var query = req.params.query;
+  var floors = Object.keys(floors).map(function(id) {
+    return floors[id];
+  });
+  var results = floors.reduce(function(memo, floor) {
+    return floor.equipments.reduce(function(memo, e) {
+      if(e.name.indexOf(query) >= 0) {
+        return memo.concat([[e, floor.id]]);
+      } else {
+        return memo;
+      }
+    }, memo);
+  }, []);
+  res.send(results);
+});
 app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;
   var floor = floors[id];

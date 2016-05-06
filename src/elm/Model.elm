@@ -24,6 +24,7 @@ import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 
 import Header exposing (..)
+import SearchBox
 
 type alias Floor = Floor.Model
 
@@ -53,6 +54,7 @@ type alias Model =
   , hash : String
   , inputFloorRealWidth : String
   , inputFloorRealHeight : String
+  , searchBox : SearchBox.Model
   }
 
 type Error =
@@ -81,6 +83,7 @@ subscriptions model =
     , Window.resizes (\e -> WindowDimensions (e.width, e.height))
     , Keys.downs (KeyCodeAction True)
     , Keys.ups (KeyCodeAction False)
+    , SearchBox.subscriptions SearchBoxMsg
     ]
 
 gridSize : Int
@@ -114,6 +117,7 @@ init randomSeed initialSize initialHash =
     , hash = initialHash
     , inputFloorRealWidth = ""
     , inputFloorRealHeight = ""
+    , searchBox = SearchBox.init
     }
   , Task.perform (always NoOp) identity (Task.succeed Init)
   )
@@ -152,6 +156,7 @@ type Action = NoOp
   | Rotate Id
   | Publish
   | HeaderAction Header.Action
+  | SearchBoxMsg SearchBox.Msg
   | Error Error
 
 debug : Bool
@@ -686,7 +691,14 @@ update action model =
             _ -> model
       in
         (newModel, Cmd.map HeaderAction effects)
-
+    SearchBoxMsg msg ->
+      let
+        (searchBox, cmd, maybeEvent) =
+          SearchBox.update msg model.searchBox
+        newModel =
+          { model | searchBox = searchBox }
+      in
+        (newModel, Cmd.map SearchBoxMsg cmd)
     Error e ->
       let
         newModel =

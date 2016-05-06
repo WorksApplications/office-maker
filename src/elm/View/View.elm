@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Maybe
 import View.Styles as Styles
 import View.Icons as Icons
+import SearchBox
 import Header
 
 
@@ -161,8 +162,19 @@ subView model =
     [ card <| penView model
     , card <| propertyView model
     , card <| floorView model
+    , card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
+    , card <| List.map (text << toString) model.searchBox.results
     , card <| debugView model
     ]
+
+-- subView : Model -> Html Action
+-- subView model =
+--   div
+--     [ style (Styles.subMenu)
+--     ]
+--     [ card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
+--     , card <| List.map (text << toString) model.searchBox.results
+--     ]
 
 card : List (Html msg) -> Html msg
 card children =

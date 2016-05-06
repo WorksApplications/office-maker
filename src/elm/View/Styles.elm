@@ -377,3 +377,9 @@ loginError =
   [ ("color", "#d45")
   , ("margin-bottom", "15px")
   ]
+
+searchBox : S
+searchBox =
+  [ ("background-color", "white")
+  , ("color", "#000")
+  ]
