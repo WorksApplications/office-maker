@@ -15,6 +15,7 @@ CAUTION: This product is under construction.
 
 |Method|URL|Req Body|Res Body|Description|Guest|General|Admin|
 |:--|:--|:--|:--|:--|:--|:--|:--|
+|GET| /api/v1/search/:query||||✓|✓|✓|
 |GET| /api/v1/users||||✓|✓|✓|
 |GET| /api/v1/users/missing||||✓|✓|✓|
 |GET| /api/v1/user/:user||||✓|✓|✓|
