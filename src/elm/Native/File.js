@@ -1,30 +1,22 @@
-Elm.Native.File = {};
-
-Elm.Native.File.make = function(localRuntime) {
-    localRuntime.Native = localRuntime.Native || {};
-    localRuntime.Native.File = localRuntime.Native.File || {};
-    if (localRuntime.Native.File.values) return localRuntime.Native.File.values;
-
-    var Task = Elm.Native.Task.make(localRuntime);
-    var Utils = Elm.Native.Utils.make(localRuntime);
+var _user$project$Native_File = function(localRuntime) {
 
     function readAsDataURL(file) {
-      return Task.asyncFunction(function(callback) {
+      return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
         var reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function() {
           var dataUrl = reader.result;
-          callback(Task.succeed(dataUrl));
+          callback(_elm_lang$core$Native_Scheduler.succeed(dataUrl));
         };
         reader.onerror = function() {
-          callback(Task.succeed(""));//TODO
+          callback(_elm_lang$core$Native_Scheduler.succeed(""));//TODO
         };
       });
     }
     function getSizeOfImage(dataUrl) {
       var image = new Image();
       image.src = dataUrl;
-      return Utils.Tuple2(image.width, image.height);
+      return _elm_lang$core$Native_Utils.Tuple2(image.width, image.height);
     }
     function length(fileList) {
       return fileList.length;
@@ -32,10 +24,10 @@ Elm.Native.File.make = function(localRuntime) {
     function getAt(i, fileList) {
       return fileList[i];
     }
-    return localRuntime.Native.File.values = {
+    return {
         readAsDataURL: readAsDataURL,
         getSizeOfImage: getSizeOfImage,
         length: length,
         getAt: F2(getAt)
     };
-};
+}();

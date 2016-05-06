@@ -9,10 +9,10 @@
 	</head>
 	<body>
 		<script>
-			var main = Elm.fullscreen(Elm.Main, {
+			var main = Elm.Main.fullscreen({
 				initialSize : [window.innerWidth, window.innerHeight],
 				initialHash : window.location.hash,
-				randomSeed : [Math.floor(Math.random()*0xFFFFFFFF), Math.floor(Math.random()*0xFFFFFFFF)]
+				randomSeed : [0,0]//[Math.floor(Math.random()*0xFFFFFFFF), Math.floor(Math.random()*0xFFFFFFFF)]
 			});
 		</script>
 	</body>

@@ -1,4 +1,4 @@
-module View.Styles where
+module View.Styles exposing (..) -- where
 
 --import Html.Attributes exposing (Attributes, style)
 

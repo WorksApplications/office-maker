@@ -1,25 +1,20 @@
-import Html exposing (Html)
-import StartApp
-import Signal exposing (Signal, Address)
-import Task
-import Effects exposing (Effects)
+module Main exposing (..) -- where
+
+import Html.App as App exposing (..)
 import Model
 import View.View as View
 
-app : StartApp.App Model.Model
-app = StartApp.start
-  { init = Model.init randomSeed initialSize initialHash
-  , view = View.view
-  , update = Model.update
-  , inputs = Model.inputs
+type alias Flags =
+  { initialSize : (Int, Int)
+  , initialHash : String
+  , randomSeed : (Int, Int)
   }
 
-main : Signal Html
-main = app.html
-
-port tasks : Signal (Task.Task Effects.Never ())
-port tasks = app.tasks
-
-port initialSize : (Int, Int)
-port initialHash : String
-port randomSeed : (Int, Int)
+main : Program Flags
+main =
+  App.programWithFlags
+    { init = \flags -> Model.init flags.randomSeed flags.initialSize flags.initialHash
+    , view = View.view
+    , update =  Model.update
+    , subscriptions = Model.subscriptions
+    }
