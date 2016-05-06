@@ -1,30 +1,23 @@
 import Html exposing (Html, text, div, input, form, h2)
+import Html.App as App
 import Html.Attributes exposing (type', value, action, method, style)
 
-import StartApp
-import Signal exposing (Signal, Address)
 import Task
-import API
-import Effects exposing (Effects)
 import Http
 
+import Model.API as API
 import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import View.Styles as Styles
 
-app : StartApp.App Model
-app = StartApp.start
-  { init = init
-  , view = view
-  , update = update
-  , inputs = []
-  }
-
-main : Signal Html
-main = app.html
-
-port tasks : Signal (Task.Task Effects.Never ())
-port tasks = app.tasks
+main : Program Never
+main =
+  App.program
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = \_ -> Sub.none
+    }
 
 --------
 
@@ -42,25 +35,23 @@ type alias Model =
   , inputPass : String
   }
 
-init : (Model, Effects Action)
+init : (Model, Cmd Action)
 init =
   ( { error = Nothing, inputId = "", inputPass = "" }
-  , Effects.none
+  , Cmd.none
   )
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> (Model, Cmd Action)
 update action model =
   case action of
-    InputId s -> ({model | inputId = s}, Effects.none)
-    InputPass s -> ({model | inputPass = s}, Effects.none)
+    InputId s -> ({model | inputId = s}, Cmd.none)
+    InputPass s -> ({model | inputPass = s}, Cmd.none)
     Submit ->
       let
         task =
           API.login model.inputId model.inputPass
-            `Task.andThen` (\_ -> Task.succeed Success)
-            `Task.onError` (\e -> Task.succeed (Error e))
       in
-        (model, Effects.task task)
+        (model, Task.perform Error (always Success) task)
     Error e ->
       let
         message =
@@ -70,43 +61,43 @@ update action model =
             _ ->
               "unauthorized"
       in
-        ({model | error = Just message}, Effects.none)
+        ({model | error = Just message}, Cmd.none)
     Success ->
       let
         task =
-          API.gotoTop `Task.andThen` (\_ -> Task.succeed NoOp)
+          API.gotoTop
       in
-        (model, Effects.task task)
+        (model, Task.perform (always NoOp) (always NoOp) task)
     NoOp ->
-      (model, Effects.none)
+      (model, Cmd.none)
 
-view : Address Action -> Model -> Html
-view address model =
+view : Model -> Html Action
+view model =
   div
     []
-    [ Header.view Nothing
-    , container address model
+    [ Header.view Nothing |> App.map (always NoOp)
+    , container model
     ]
 
-container : Address Action -> Model -> Html
-container address model =
+container : Model -> Html Action
+container model =
   div
     [ style Styles.loginContainer ]
     [ h2 [ style Styles.loginCaption ] [ text "Sign in to Office Makaer" ]
     , div [ style Styles.loginError ] [ text (Maybe.withDefault "" model.error) ]
-    , loginForm address model
+    , loginForm model
     ]
 
-loginForm : Address Action -> Model -> Html
-loginForm address model =
-  HtmlUtil.form' address Submit
+loginForm : Model -> Html Action
+loginForm model =
+  HtmlUtil.form' Submit
     []
     [ div
         []
         [ div [] [ text "Username" ]
         , input
             [ style Styles.formInput
-            , onInput (Signal.forwardTo address InputId)
+            , onInput InputId
             , type' "text"
             , value model.inputId]
             []
@@ -116,9 +107,10 @@ loginForm address model =
         [ div [] [ text "Password" ]
         , input
             [ style Styles.formInput
-            , onInput (Signal.forwardTo address InputPass)
+            , onInput InputPass
             , type' "password"
-            , value model.inputPass]
+            , value model.inputPass
+            ]
             []
         ]
     , input

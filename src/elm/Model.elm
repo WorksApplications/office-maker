@@ -1,27 +1,27 @@
-module Model (..) where
+module Model exposing (..) -- where
 
 import Maybe
-import Signal exposing (Signal, Address, forwardTo)
 import Task
-import Effects exposing (Effects)
 import Debug
 import Window
 import String
+import Process
 
 import Util.UndoRedo as UndoRedo
-import Util.Keys as Keys exposing (..)
+import Util.Keys as Keys
+import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
-import Util.EffectsUtil as EffectsUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
+import Util.Routing as Routing
 
-import User exposing (User)
-import Equipments exposing (..)
-import EquipmentsOperation exposing (..)
-import Scale
-import API
-import Prototypes exposing (..)
-import Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
+import Model.User as User exposing (User)
+import Model.Equipments as Equipments exposing (..)
+import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.Scale as Scale
+import Model.API as API
+import Model.Prototypes as Prototypes exposing (..)
+import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 
 import Header exposing (..)
 
@@ -39,7 +39,7 @@ type alias Model =
   , editingEquipment : Maybe (Id, String)
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
-  , keys : Keys.Model
+  , keys : ShortCut.Model
   , editMode : EditMode
   , colorPalette : List String
   , contextMenu : ContextMenu
@@ -74,17 +74,19 @@ type DraggingContext =
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
 
-inputs : List (Signal Action)
-inputs =
-  (List.map (Signal.map KeysAction) Keys.inputs) ++
-  [ Signal.map WindowDimensions (Window.dimensions)
-  , Signal.map HashChange HtmlUtil.locationHash
-  ]
+subscriptions : Model -> Sub Action
+subscriptions model =
+  Sub.batch
+    [ Routing.hashchanges HashChange
+    , Window.resizes (\e -> WindowDimensions (e.width, e.height))
+    , Keys.downs (KeyCodeAction True)
+    , Keys.ups (KeyCodeAction False)
+    ]
 
 gridSize : Int
 gridSize = 8 -- 2^N
 
-init : (Int, Int) -> (Int, Int) -> String -> (Model, Effects Action)
+init : (Int, Int) -> (Int, Int) -> String -> (Model, Cmd Action)
 init randomSeed initialSize initialHash =
   (
     { seed = IdGenerator.init randomSeed
@@ -96,7 +98,7 @@ init randomSeed initialSize initialHash =
     , editingEquipment = Nothing
     , gridSize = gridSize
     , selectorRect = Nothing
-    , keys = Keys.init
+    , keys = ShortCut.init
     , editMode = Select
     , colorPalette =
         ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
@@ -113,7 +115,7 @@ init randomSeed initialSize initialHash =
     , inputFloorRealWidth = ""
     , inputFloorRealHeight = ""
     }
-  , Effects.task (Task.succeed Init)
+  , Task.perform (always NoOp) identity (Task.succeed Init)
   )
 --
 
@@ -130,7 +132,7 @@ type Action = NoOp
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
   | StartEditEquipment Id
-  | KeysAction Keys.Action
+  | KeyCodeAction Bool Int
   | SelectColor String
   | InputName Id String
   | KeydownOnNameInput Int
@@ -165,17 +167,17 @@ debugAction action =
   else
     action
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> (Model, Cmd Action)
 update action model =
   case debugAction action of
     NoOp ->
-      (model, Effects.none)
+      (model, Cmd.none)
     HashChange hash ->
       ({ model | hash = hash}, loadFloorEffects hash)
     Init ->
-      (model, Effects.batch [loadAuthEffects, loadFloorEffects model.hash])
+      (model, Cmd.batch [loadAuthEffects, loadFloorEffects model.hash])
     AuthLoaded user ->
-      ({ model | user = user }, Effects.none)
+      ({ model | user = user }, Cmd.none)
     FloorLoaded floor ->
       let
         (realWidth, realHeight) =
@@ -187,7 +189,7 @@ update action model =
           , inputFloorRealHeight = toString realHeight
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     FloorSaved ->
       let
         newModel =
@@ -195,7 +197,7 @@ update action model =
             floor = UndoRedo.commit model.floor Floor.useURL
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     MoveOnCanvas (clientX, clientY) ->
       let
         (x, y) = (clientX, clientY - 37)
@@ -221,9 +223,9 @@ update action model =
               }
             _ -> model'
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     EnterCanvas ->
-      (model, Effects.none)
+      (model, Cmd.none)
     LeaveCanvas ->
       let
         newModel =
@@ -234,7 +236,7 @@ update action model =
                 _ -> model.draggingContext
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     MouseDownOnEquipment lastTouchedId ->
       let
         (clientX, clientY) = model.pos
@@ -265,7 +267,7 @@ update action model =
           , selectorRect = Nothing
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     MouseUpOnCanvas ->
       let
         (clientX, clientY) = model.pos
@@ -292,7 +294,7 @@ update action model =
                       in
                         Just (x, y, w, h)
                     _ -> model.selectorRect
-              }, Effects.none)
+              }, Cmd.none)
             StampFromScreenPos _ ->
               let
                 (candidatesWithNewIds, newSeed) =
@@ -326,13 +328,13 @@ update action model =
                         , saveFloorEffects (UndoRedo.data newFloor)
                         )
                     Nothing ->
-                      (model.floor, model.seed, Effects.none)
+                      (model.floor, model.seed, Cmd.none)
               in
                 ({ model |
                   seed = newSeed
                 , floor = newFloor
                 }, effects)
-            _ -> (model, Effects.none)
+            _ -> (model, Cmd.none)
         newModel =
           { model' |
             draggingContext = None
@@ -376,7 +378,7 @@ update action model =
           , draggingContext = draggingContext
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     StartEditEquipment id ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just e ->
@@ -389,7 +391,7 @@ update action model =
           in
             (newModel, focusEffect "name-input")
         Nothing ->
-          (model, Effects.none)
+          (model, Cmd.none)
     SelectColor color ->
       let
         newModel =
@@ -397,7 +399,7 @@ update action model =
             floor = UndoRedo.commit model.floor (Floor.changeEquipmentColor model.selectedEquipments color)
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     InputName id name ->
       let
         newModel =
@@ -412,7 +414,7 @@ update action model =
                 Nothing -> Nothing
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     KeydownOnNameInput keyCode ->
       let
         (newModel, effects) =
@@ -444,7 +446,7 @@ update action model =
                   Nothing ->
                     model
             in
-              (newModel, Effects.none)
+              (newModel, Cmd.none)
           else if keyCode == 13 then
             let
               newModel =
@@ -455,9 +457,9 @@ update action model =
                       Nothing -> Nothing
                 }
             in
-              (newModel, Effects.none)
+              (newModel, Cmd.none)
           else
-            (model, Effects.none)
+            (model, Cmd.none)
       in
         (newModel, effects)
     ShowContextMenuOnEquipment id ->
@@ -468,7 +470,7 @@ update action model =
             contextMenu = Equipment (clientX, clientY) id
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     SelectIsland id ->
       let
         newModel =
@@ -488,13 +490,14 @@ update action model =
             Nothing ->
               model
       in
-        (newModel, Effects.none)
-    KeysAction action ->
+        (newModel, Cmd.none)
+    KeyCodeAction isDown keyCode ->
       let
+        (keys, event) = ShortCut.update isDown keyCode model.keys
         model' =
-          { model | keys = Keys.update action model.keys }
+          { model | keys = keys }
       in
-        updateByKeyAction action model'
+        updateByKeyEvent event model'
     MouseWheel value ->
       let
         (clientX, clientY) = model.pos
@@ -522,7 +525,7 @@ update action model =
           , scaling = True
           }
         effects =
-          fromTaskWithNoError (always ScaleEnd) (Task.sleep 200.0)
+          Task.perform (always NoOp) (always ScaleEnd) (Process.sleep 200.0)
       in
         (newModel, effects)
     ScaleEnd ->
@@ -530,19 +533,19 @@ update action model =
         newModel =
           { model | scaling = False }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     WindowDimensions (w, h) ->
       let
         newModel =
           { model | windowDimensions = (w, h) }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     ChangeMode mode ->
       let
         newModel =
           { model | editMode = mode }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     LoadFile fileList ->
       case File.getAt 0 fileList of
         Just file ->
@@ -552,11 +555,11 @@ update action model =
             newModel =
               { model | seed = newSeed }
             effects =
-              fromTask (Error << FileError) (GotDataURL id file) (readAsDataURL file)
+              Task.perform (Error << FileError) (GotDataURL id file) (readAsDataURL file)
           in
             (model, effects)
         Nothing ->
-          (model, Effects.none)
+          (model, Cmd.none)
 
     GotDataURL id file dataURL ->
       let
@@ -574,7 +577,7 @@ update action model =
           , editMode = Stamp -- TODO if event == select
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     RegisterPrototype id ->
       let
         equipment =
@@ -599,7 +602,7 @@ update action model =
             Nothing ->
               model'
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     InputFloorName name ->
       let
         newFloor =
@@ -614,7 +617,7 @@ update action model =
       let
         (newFloor, effects) =
           case String.toInt width of
-            Err s -> (model.floor, Effects.none)
+            Err s -> (model.floor, Cmd.none)
             Ok i ->
               if i > 0 then
                 let
@@ -625,7 +628,7 @@ update action model =
                 in
                   (newFloor, effects)
               else
-                (model.floor, Effects.none)
+                (model.floor, Cmd.none)
         newModel =
           { model |
             floor = newFloor
@@ -637,7 +640,7 @@ update action model =
       let
         (newFloor, effects) =
           case String.toInt height of
-            Err s -> (model.floor, Effects.none)
+            Err s -> (model.floor, Cmd.none)
             Ok i ->
               if i > 0 then
                 let
@@ -648,7 +651,7 @@ update action model =
                 in
                   (newFloor, effects)
               else
-                (model.floor, Effects.none)
+                (model.floor, Cmd.none)
         newModel =
           { model |
             floor = newFloor
@@ -666,7 +669,7 @@ update action model =
           , contextMenu = NoContextMenu
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     Publish ->
       let
         floor = UndoRedo.data model.floor
@@ -682,16 +685,16 @@ update action model =
             Just LogoutDone -> { model | user = User.guest }
             _ -> model
       in
-        (newModel, Effects.map HeaderAction effects)
+        (newModel, Cmd.map HeaderAction effects)
 
     Error e ->
       let
         newModel =
           { model | errors = e :: model.errors }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
 
-saveFloorEffects : Floor -> Effects Action
+saveFloorEffects : Floor -> Cmd Action
 saveFloorEffects floor =
   let
     firstTask =
@@ -702,13 +705,13 @@ saveFloorEffects floor =
           Task.succeed ()
     secondTask = API.saveEditingFloor floor
   in
-    fromTask
+    Task.perform
       (Error << APIError)
       (always FloorSaved)
       (firstTask `Task.andThen` (always secondTask))
 
 
-publishFloorEffects : Floor -> Effects Action
+publishFloorEffects : Floor -> Cmd Action
 publishFloorEffects floor =
   let
     firstTask =
@@ -719,23 +722,23 @@ publishFloorEffects floor =
           Task.succeed ()
     secondTask = API.publishEditingFloor floor
   in
-    fromTask
+    Task.perform
       (Error << APIError)
       (always FloorSaved)
       (firstTask `Task.andThen` (always secondTask))
 
-updateByKeyAction : Keys.Action -> Model -> (Model, Effects Action)
-updateByKeyAction action model =
-  case (model.keys.ctrl, action) of
-    (True, KeyC True) ->
+updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Action)
+updateByKeyEvent event model =
+  case (model.keys.ctrl, event) of
+    (True, ShortCut.C) ->
       let
         newModel =
           { model |
             copiedEquipments = selectedEquipments model
           }
       in
-        (newModel, Effects.none)
-    (True, KeyV True) ->
+        (newModel, Cmd.none)
+    (True, ShortCut.V) ->
       let
         base =
           case model.selectorRect of
@@ -756,8 +759,8 @@ updateByKeyAction action model =
           , selectorRect = Nothing
           }
       in
-        (newModel, Effects.none)
-    (True, KeyX True) ->
+        (newModel, Cmd.none)
+    (True, ShortCut.X) ->
       let
         newModel =
           { model |
@@ -766,57 +769,57 @@ updateByKeyAction action model =
           , selectedEquipments = []
           }
       in
-        (newModel, Effects.none)
-    (True, KeyY) ->
+        (newModel, Cmd.none)
+    (True, ShortCut.Y) ->
       let
         newModel =
           { model |
             floor = UndoRedo.redo model.floor
           }
       in
-        (newModel, Effects.none)
-    (True, KeyZ) ->
+        (newModel, Cmd.none)
+    (True, ShortCut.Z) ->
       let
         newModel =
           { model |
             floor = UndoRedo.undo model.floor
           }
       in
-        (newModel, Effects.none)
-    (_, KeyUpArrow) ->
+        (newModel, Cmd.none)
+    (_, ShortCut.UpArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Up model
       in
-        (newModel, Effects.none)
-    (_, KeyDownArrow) ->
+        (newModel, Cmd.none)
+    (_, ShortCut.DownArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Down model
       in
-        (newModel, Effects.none)
-    (_, KeyLeftArrow) ->
+        (newModel, Cmd.none)
+    (_, ShortCut.LeftArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Left model
       in
-        (newModel, Effects.none)
-    (_, KeyRightArrow) ->
+        (newModel, Cmd.none)
+    (_, ShortCut.RightArrow) ->
       let
         newModel =
           shiftSelectionToward EquipmentsOperation.Right model
       in
-        (newModel, Effects.none)
-    (_, KeyDel True) ->
+        (newModel, Cmd.none)
+    (_, ShortCut.Del) ->
       let
         newModel =
           { model |
             floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
           }
       in
-        (newModel, Effects.none)
+        (newModel, Cmd.none)
     _ ->
-      (model, Effects.none)
+      (model, Cmd.none)
 
 
 updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> Model
@@ -862,11 +865,11 @@ shiftSelectionToward direction model =
           }
       _ -> model
 
-loadAuthEffects : Effects Action
+loadAuthEffects : Cmd Action
 loadAuthEffects =
-    EffectsUtil.fromTask (Error << APIError) AuthLoaded API.getAuth
+    Task.perform (Error << APIError) AuthLoaded API.getAuth
 
-loadFloorEffects : String -> Effects Action
+loadFloorEffects : String -> Cmd Action
 loadFloorEffects hash =
   let
     floorId =
@@ -877,16 +880,16 @@ loadFloorEffects hash =
       else
         Task.succeed (Floor.init "-1")
   in
-    fromTaskWithNoError FloorLoaded task
+    Task.perform (always NoOp) FloorLoaded task
 
 
-focusEffect : String -> Effects Action
+focusEffect : String -> Cmd Action
 focusEffect id =
-  fromTask (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
+  Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
 
-blurEffect : String -> Effects Action
+blurEffect : String -> Cmd Action
 blurEffect id =
-  fromTask (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
+  Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
 
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =

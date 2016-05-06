@@ -1,4 +1,4 @@
-module User where
+module Model.User exposing (..) -- where
 
 type alias Id = String
 

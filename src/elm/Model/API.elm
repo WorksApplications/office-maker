@@ -1,4 +1,4 @@
-module API (
+module Model.API exposing (
       getAuth
     , saveEditingFloor
     , publishEditingFloor
@@ -11,18 +11,20 @@ module API (
     , goToLogin
     , goToLogout
     , Error
-  ) where
+  ) -- where
 
-import Equipments exposing (..)
-import Floor exposing (ImageSource(..))
 import Http
 import Json.Encode exposing (object, list, encode, string, int, null, Value)
 import Json.Decode as Decode exposing ((:=), object8, object7, object2, oneOf, Decoder)
 import Task exposing (Task)
-import Floor
+
 import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
-import User exposing (User)
+
+import Model.Floor as Floor
+import Model.User as User exposing (User)
+import Model.Equipments as Equipments exposing (..)
+import Model.Floor as Floor exposing (ImageSource(..))
 
 type alias Floor = Floor.Model
 

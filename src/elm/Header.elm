@@ -1,14 +1,12 @@
-module Header where
+module Header exposing (..) -- where
 
-import Signal exposing (Address, forwardTo)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 -- import Util.HtmlUtil exposing (..)
-import User exposing (..)
-import API
+import Model.User as User exposing (..)
+import Model.API as API
 import Task exposing (Task)
-import Effects exposing (Effects)
 
 import View.Styles as Styles
 -- import View.Icons as Icons
@@ -16,31 +14,31 @@ import View.Styles as Styles
 type Action = Login | Logout | LogoutSuccess | NoOp
 type Event = LogoutDone
 
-update : Action -> (Effects Action, Maybe Event)
+update : Action -> (Cmd Action, Maybe Event)
 update action =
   case action of
     NoOp ->
-      (Effects.none, Nothing)
+      (Cmd.none, Nothing)
     Login ->
-      (Effects.task (Task.map (always NoOp) API.goToLogin), Nothing)
+      (Task.perform (always NoOp) (always NoOp) API.goToLogin, Nothing)
     Logout ->
-      (Effects.task (Task.map (always LogoutSuccess) API.logout `Task.onError` (\_ -> Task.succeed LogoutSuccess)), Nothing)--TODO
+      (Task.perform (always LogoutSuccess) (always LogoutSuccess) API.logout, Nothing)--TODO
     LogoutSuccess ->
-      (Effects.none, Just LogoutDone)
+      (Cmd.none, Just LogoutDone)
 
-view : Maybe (Address Action, User) -> Html
+view : Maybe User -> Html Action
 view maybeContext =
   let
     menu =
       case maybeContext of
-        Just (address, user) ->
+        Just user ->
           let
             greetingView =
               div [ style Styles.greeting ] [ greeting user ]
             login =
-              div [ style Styles.login, onClick address Login ] [ text "Sign in"]
+              div [ style Styles.login, onClick Login ] [ text "Sign in"]
             logout =
-              div [ style Styles.logout, onClick address Logout ] [ text "Sign out"]
+              div [ style Styles.logout, onClick Logout ] [ text "Sign out"]
             children =
               greetingView ::
                 ( case user of
@@ -58,7 +56,7 @@ view maybeContext =
       , menu
       ]
 
-greeting : User -> Html
+greeting : User -> Html msg
 greeting user =
   text ("Hello, " ++ userName user ++ ".")
 

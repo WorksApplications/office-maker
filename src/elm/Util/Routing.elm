@@ -1,6 +1,5 @@
-effect module Util.Keys where { subscription = MySub } exposing
-  ( downs
-  , ups
+effect module Util.Routing where { subscription = MySub } exposing
+  ( hashchanges
   )
 
 import Dict
@@ -9,25 +8,20 @@ import Json.Decode as Json exposing ((:=))
 import Process
 import Task exposing (Task)
 
-
-ups : (Int -> msg) -> Sub msg
-ups tagger =
-  subscription (MySub "keyup" tagger)
-
-downs : (Int -> msg) -> Sub msg
-downs tagger =
-  subscription (MySub "keydown" tagger)
+hashchanges : (String -> msg) -> Sub msg
+hashchanges tagger =
+  subscription (MySub "hashchange" tagger)
 
 
-keyCode : Json.Decoder Int
-keyCode =
-  Json.at [ "keyCode" ] Json.int
+decodeHash : Json.Decoder String
+decodeHash =
+  Json.at [ "newURL" ] Json.string
 
 
 -- SUBSCRIPTIONS
 
 type MySub msg
-  = MySub String (Int -> msg)
+  = MySub String (String -> msg)
 
 
 subMap : (a -> b) -> MySub a -> MySub b
@@ -42,7 +36,7 @@ type alias State msg =
 
 
 type alias Watcher msg =
-  { taggers : List (Int -> msg)
+  { taggers : List (String -> msg)
   , pid : Process.Id
   }
 
@@ -52,7 +46,7 @@ type alias Watcher msg =
 
 
 type alias SubDict msg =
-  Dict.Dict String (List (Int -> msg))
+  Dict.Dict String (List (String -> msg))
 
 
 categorize : List (MySub msg) -> SubDict msg
@@ -92,7 +86,7 @@ init =
 
 type alias Msg =
   { category : String
-  , keyCode : Int
+  , hash : String
   }
 
 
@@ -117,7 +111,7 @@ onEffects router newSubs oldState =
       task
         `Task.andThen` \state ->
 
-      Process.spawn (Dom.onDocument category keyCode (Platform.sendToSelf router << Msg category))
+      Process.spawn (Dom.onWindow category decodeHash (Platform.sendToSelf router << Msg category))
         `Task.andThen` \pid ->
 
       Task.succeed
@@ -133,7 +127,7 @@ onEffects router newSubs oldState =
 
 
 onSelfMsg : Platform.Router msg Msg -> Msg -> State msg -> Task Never (State msg)
-onSelfMsg router {category,keyCode} state =
+onSelfMsg router {category,hash} state =
   case Dict.get category state of
     Nothing ->
       Task.succeed state
@@ -141,7 +135,7 @@ onSelfMsg router {category,keyCode} state =
     Just {taggers} ->
       let
         send tagger =
-          Platform.sendToApp router (tagger keyCode)
+          Platform.sendToApp router (tagger hash)
       in
         Task.sequence (List.map send taggers)
           `Task.andThen` \_ ->
