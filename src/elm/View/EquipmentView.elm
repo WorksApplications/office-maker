@@ -19,6 +19,8 @@ equipmentView' key' rect color name selected alpha eventHandlers scale disableTr
     div
       ( eventHandlers ++ [ {- key key', -} style styles ] )
       [ equipmentLabelView scale disableTransition name
+      -- , text key'
+      -- , br [] []
       , text (if isSelectedResult then "selected" else "")
       ]
 

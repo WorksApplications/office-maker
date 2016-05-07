@@ -1,11 +1,11 @@
 module Model.API exposing (
       getAuth
     , search
-    , getFloors
     , saveEditingFloor
     , publishEditingFloor
     , getEditingFloor
     , getFloor
+    , getFloorsInfo
     , saveEditingImage
     , gotoTop
     , login
@@ -153,8 +153,8 @@ getEditingFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ id ++ "/edit")
 
-getFloors : Task Error (List Floor)
-getFloors =
+getFloorsInfo : Task Error (List Floor)
+getFloorsInfo =
     Http.get
       (Decode.list decodeFloor)
       ("/api/v1/floors")

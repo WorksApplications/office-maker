@@ -10,6 +10,7 @@ import View.Icons as Icons
 import SearchBox
 import Header
 import View.EquipmentView exposing (..)
+import View.FloorsInfoView as FloorsInfoView
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
@@ -128,7 +129,8 @@ mainView model =
     height = windowHeight - Styles.headerHeight
   in
     main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
-      [ canvasContainerView model
+      [ FloorsInfoView.view (UndoRedo.data model.floor).id model.floorsInfo
+      , canvasContainerView model
       , subView model
       ]
 
@@ -142,7 +144,7 @@ subView model =
     -- , card <| propertyView model
     -- , card <| floorView model
     , card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
-    , card <| [ SearchBox.resultsView (\e id -> nameOf e ++ "(" ++ id ++ ")" ) model.searchBox |> Html.App.map SearchBoxMsg ]
+    , card <| [ SearchBox.resultsView (\e id -> nameOf e {- ++ "(" ++ idOf e ++ ")" -} ) model.searchBox |> Html.App.map SearchBoxMsg ]
     , card <| debugView model
     ]
 

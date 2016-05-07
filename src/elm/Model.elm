@@ -45,6 +45,7 @@ type alias Model =
   , colorPalette : List String
   , contextMenu : ContextMenu
   , floor : UndoRedo.Model Floor Commit
+  , floorsInfo : List Floor
   , windowDimensions : (Int, Int)
   , scale : Scale.Model
   , offset : (Int, Int)
@@ -107,6 +108,7 @@ init randomSeed initialSize initialHash =
         ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
         , "#bbb", "#fff", "rgba(255,255,255,0.5)"] --TODO
     , contextMenu = NoContextMenu
+    , floorsInfo = []
     , floor = UndoRedo.init { data = Floor.init "-1", update = Floor.update }
     , windowDimensions = initialSize
     , scale = Scale.init
@@ -128,6 +130,7 @@ type Action = NoOp
   | Init
   | HashChange String
   | AuthLoaded User
+  | FloorsInfoLoaded (List Floor)
   | FloorLoaded Floor
   | FloorSaved
   | MoveOnCanvas (Int, Int)
@@ -181,9 +184,11 @@ update action model =
     HashChange hash ->
       ({ model | hash = hash}, loadFloorEffects hash)
     Init ->
-      (model, Cmd.batch [loadAuthEffects, loadFloorEffects model.hash])
+      (model, Cmd.batch [loadAuthEffects, loadFloorsInfoEffects, loadFloorEffects model.hash])
     AuthLoaded user ->
       ({ model | user = user }, Cmd.none)
+    FloorsInfoLoaded floors ->
+      ({ model | floorsInfo = floors }, Cmd.none)
     FloorLoaded floor ->
       let
         (realWidth, realHeight) =
@@ -914,11 +919,15 @@ loadAuthEffects : Cmd Action
 loadAuthEffects =
     Task.perform (Error << APIError) AuthLoaded API.getAuth
 
+loadFloorsInfoEffects : Cmd Action
+loadFloorsInfoEffects =
+    Task.perform (Error << APIError) FloorsInfoLoaded API.getFloorsInfo
+
 loadFloorEffects : String -> Cmd Action
 loadFloorEffects hash =
   let
     floorId =
-      String.dropLeft 1 hash
+      Debug.log "floorId" <| String.dropLeft 1 hash
     task =
       if String.length floorId > 0 then
         API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))

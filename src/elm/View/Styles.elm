@@ -8,6 +8,7 @@ zIndex :
   { selectedDesk : String
   , deskInput : String
   , selectorRect : String
+  , floorInfo : String
   , subMenu : String
   , contextMenu : String
   }
@@ -15,6 +16,7 @@ zIndex =
   { selectedDesk = "100"
   , deskInput = "200"
   , selectorRect = "300"
+  , floorInfo = "500"
   , subMenu = "600"
   , contextMenu = "800"
   }
@@ -41,8 +43,10 @@ h1 =
 
 ul : S
 ul =
-  [ ("list-style-type", "none")
-  , ("padding-left", "0") ]
+  noMargin ++
+    [ ("list-style-type", "none")
+    , ("padding-left", "0")
+    ]
 
 headerHeight : Int
 headerHeight = 37
@@ -391,4 +395,19 @@ searchResultItem : S
 searchResultItem =
     [ ("padding", "5px")
     , ("cursor", "pointer")
+    ]
+
+floorsInfoView : S
+floorsInfoView =
+    [ ("position", "absolute")
+    , ("display", "flex")
+    , ("z-index", zIndex.floorInfo)
+    ]
+
+floorsInfoViewItem : Bool -> S
+floorsInfoViewItem selected =
+    [ ("background-color", if selected then "#eee" else "white")
+    , ("padding", "8px 12px")
+    , ("border-right", "solid 1px #ddd")
+    , ("border-bottom", "solid 1px #ddd")
     ]
