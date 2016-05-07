@@ -22,7 +22,7 @@ import Model.Equipments as Equipments exposing (..)
 import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
-
+import Model.User as User
 
 
 contextMenuView : Model -> Html Action
@@ -143,9 +143,12 @@ subView model =
       else
         subViewForSearch model
     tabs =
-      [ subViewTab (ChangeEditing False) 0 "search" (not model.isEditing)
-      , subViewTab (ChangeEditing True) 1 "edit" (model.isEditing)
-      ]
+      if User.isAdmin model.user then
+        [ subViewTab (ChangeEditing False) 0 "search" (not model.isEditing)
+        , subViewTab (ChangeEditing True) 1 "edit" (model.isEditing)
+        ]
+      else
+        []
   in
     div
       [ style (Styles.subView)
