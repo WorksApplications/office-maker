@@ -380,6 +380,9 @@ loginError =
 
 searchBox : S
 searchBox =
-  [ ("background-color", "white")
-  , ("color", "#000")
-  ]
+  input ++
+    [ ("background-color", "white")
+    , ("color", "#000")
+    , ("border-radius", "17px")
+    , ("outline", "none")
+    ]

@@ -5,6 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events
 import Model.Equipments as Equipments exposing (..)
+import Model.EquipmentsOperation exposing (..)
 import Model.API as API
 
 import Util.HtmlUtil exposing (..)
@@ -16,12 +17,12 @@ type Msg =
   | Input String
   | Results (List (Equipment, String))
   | Submit
-  | SelectResultMsg
+  | SelectResult String
   | Error API.Error
 
 
 type Event =
-  OnError String | OnResults | SelectResult
+  OnError String | OnResults | OnSelectResult String
 
 type alias Model =
   { query : String
@@ -58,10 +59,15 @@ update msg model =
         newModel = { model | results = results }
       in
         (newModel, Cmd.none, Just OnResults)
-    SelectResultMsg ->
-        (model, Cmd.none, Just SelectResult)
+    SelectResult id ->
+        (model, Cmd.none, Just (OnSelectResult id))
     Error httpError ->
         (model, Cmd.none, Just (OnError "http error")) --TODO
+
+equipmentsInFloor : String -> Model -> List Equipment
+equipmentsInFloor floorId model =
+  List.filterMap (\(e, id) -> if id == floorId then Just e else Nothing) model.results
+
 
 view : Model -> Html Msg
 view model =
@@ -81,7 +87,7 @@ resultsView : (Equipment -> String -> String) -> Model -> Html Msg
 resultsView format model =
   let
     each (e, floorId) =
-      li [ Html.Events.onClick SelectResultMsg ] [ text (format e floorId) ]
+      li [ Html.Events.onClick (SelectResult (idOf e)) ] [ text (format e floorId) ]
   in
     ul
       []

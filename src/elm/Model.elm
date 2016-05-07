@@ -55,6 +55,7 @@ type alias Model =
   , inputFloorRealWidth : String
   , inputFloorRealHeight : String
   , searchBox : SearchBox.Model
+  , selectedResult : Maybe Id
   }
 
 type Error =
@@ -117,6 +118,7 @@ init randomSeed initialSize initialHash =
     , inputFloorRealWidth = ""
     , inputFloorRealHeight = ""
     , searchBox = SearchBox.init
+    , selectedResult = Nothing
     }
   , Task.perform (always NoOp) identity (Task.succeed Init)
   )
@@ -694,16 +696,48 @@ update action model =
       let
         (searchBox, cmd, maybeEvent) =
           SearchBox.update msg model.searchBox
-        newModel =
+
+        model' =
           { model | searchBox = searchBox }
+
+        selectedResult =
+          case maybeEvent of
+            Just SearchBox.OnResults ->
+              case SearchBox.equipmentsInFloor (UndoRedo.data model.floor).id model.searchBox of
+                head :: [] ->
+                   Just (idOf head)
+                _ -> Nothing
+            Just (SearchBox.OnSelectResult id) ->
+              Just id
+            _ ->
+              Nothing
+
+        model'' =
+          { model' |
+            selectedResult = selectedResult
+          }
+
+        newModel =
+          case selectedResult of
+            Just id -> adjustPositionByFocus id model''
+            Nothing -> model''
+
       in
-        (newModel, Cmd.map SearchBoxMsg cmd)
+        (newModel, Cmd.map SearchBoxMsg cmd )
     Error e ->
       let
         newModel =
           { model | errors = e :: model.errors }
       in
         (newModel, Cmd.none)
+
+
+
+adjustPositionByFocus : Id -> Model -> Model
+adjustPositionByFocus focused model = model
+
+
+
 
 saveFloorEffects : Floor -> Cmd Action
 saveFloorEffects floor =
