@@ -3,26 +3,29 @@ module SearchBox exposing (..) -- where
 import Task
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events
 import Model.Equipments as Equipments exposing (..)
 import Model.API as API
 
 import Util.HtmlUtil exposing (..)
-import Util.Keys as Keys
+-- import Util.Keys as Keys
 import View.Styles as Styles
 
 type Msg =
     NoOp
   | Input String
-  | Results (List Equipment)
+  | Results (List (Equipment, String))
+  | Submit
+  | SelectResultMsg
   | Error API.Error
-  | KeyDown Int
+
 
 type Event =
-  OnError String | OnResults
+  OnError String | OnResults | SelectResult
 
 type alias Model =
   { query : String
-  , results : List Equipment
+  , results : List (Equipment, String)
   }
 
 init : Model
@@ -33,7 +36,7 @@ init =
 
 update : Msg -> Model -> (Model, Cmd Msg, Maybe Event)
 update msg model =
-  case Debug.log "searchbox" msg of
+  case {-Debug.log "searchbox"-} msg of
     NoOp ->
       (model, Cmd.none, Nothing)
     Input query ->
@@ -41,10 +44,10 @@ update msg model =
         newModel = { model | query = query }
       in
         (newModel, Cmd.none, Nothing)
-    KeyDown keyCode ->
+    Submit ->
       let
         cmd =
-          if keyCode == 13 && model.query /= "" then
+          if model.query /= "" then
             Task.perform (always NoOp) Results (API.search model.query)
           else
             Cmd.none
@@ -55,20 +58,31 @@ update msg model =
         newModel = { model | results = results }
       in
         (newModel, Cmd.none, Just OnResults)
+    SelectResultMsg ->
+        (model, Cmd.none, Just SelectResult)
     Error httpError ->
         (model, Cmd.none, Just (OnError "http error")) --TODO
 
-subscriptions : (Msg -> a) -> Sub a
-subscriptions f =
-  Sub.map f <| Keys.downs KeyDown
-
 view : Model -> Html Msg
 view model =
-  input
-    [ type' "input"
-    , placeholder "Search"
-    , style Styles.searchBox
-    , value model.query
-    , onInput Input
+  form' Submit
+    [ ]
+    [ input
+      [ type' "input"
+      , placeholder "Search"
+      , style Styles.searchBox
+      , value model.query
+      , onInput Input
+      ]
+      []
     ]
-    []
+
+resultsView : (Equipment -> String -> String) -> Model -> Html Msg
+resultsView format model =
+  let
+    each (e, floorId) =
+      li [ Html.Events.onClick SelectResultMsg ] [ text (format e floorId) ]
+  in
+    ul
+      []
+      (List.map each model.results)

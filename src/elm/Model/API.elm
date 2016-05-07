@@ -92,6 +92,10 @@ decodeEquipment =
     ("color" := Decode.string)
     ("name" := Decode.string)
 
+decodeSearchResult : Decoder (List (Equipment, String))
+decodeSearchResult =
+  Decode.list (Decode.tuple2 (,) decodeEquipment Decode.string)
+
 listToTuple2 : List a -> Maybe (a, a)
 listToTuple2 list =
   case list of
@@ -167,10 +171,10 @@ getAuth =
       decodeUser
       ("/api/v1/auth")
 
-search : String -> Task Error (List Equipment)
+search : String -> Task Error (List (Equipment, String))
 search query =
     Http.get
-      (Decode.list decodeEquipment)
+      (decodeSearchResult)
       ("/api/v1/search/" ++ query)
 
 saveEditingImage : Id -> File -> Task a ()

@@ -160,10 +160,10 @@ subView model =
     -- , mouseDownDefence address NoOp
     ]
     [ card <| penView model
-    , card <| propertyView model
-    , card <| floorView model
+    -- , card <| propertyView model
+    -- , card <| floorView model
     , card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
-    , card <| List.map (text << toString) model.searchBox.results
+    , card <| [ SearchBox.resultsView (\e id -> nameOf e ++ "(" ++ id ++ ")" ) model.searchBox |> Html.App.map SearchBoxMsg ]
     , card <| debugView model
     ]
 

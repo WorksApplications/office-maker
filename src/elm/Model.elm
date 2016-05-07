@@ -83,7 +83,6 @@ subscriptions model =
     , Window.resizes (\e -> WindowDimensions (e.width, e.height))
     , Keys.downs (KeyCodeAction True)
     , Keys.ups (KeyCodeAction False)
-    , SearchBox.subscriptions SearchBoxMsg
     ]
 
 gridSize : Int
