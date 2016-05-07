@@ -7,10 +7,15 @@ type User =
   | General String
   | Guest
 
-
 admin : String -> User
 admin name =
   Admin name
+
+isAdmin : User -> Bool
+isAdmin user =
+  case user of
+    Admin _ -> True
+    _ -> False
 
 general : String -> User
 general name =

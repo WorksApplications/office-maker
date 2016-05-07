@@ -57,6 +57,7 @@ type alias Model =
   , inputFloorRealHeight : String
   , searchBox : SearchBox.Model
   , selectedResult : Maybe Id
+  , isEditing : Bool
   }
 
 type Error =
@@ -121,6 +122,7 @@ init randomSeed initialSize initialHash =
     , inputFloorRealHeight = ""
     , searchBox = SearchBox.init
     , selectedResult = Nothing
+    , isEditing = False
     }
   , Task.perform (always NoOp) identity (Task.succeed Init)
   )
@@ -161,6 +163,7 @@ type Action = NoOp
   | Publish
   | HeaderAction Header.Action
   | SearchBoxMsg SearchBox.Msg
+  | ChangeEditing Bool
   | Error Error
 
 debug : Bool
@@ -729,6 +732,12 @@ update action model =
 
       in
         (newModel, Cmd.map SearchBoxMsg cmd )
+    ChangeEditing isEditing ->
+      let
+        newModel =
+          { model | isEditing = isEditing }
+      in
+        (newModel, Cmd.none)
     Error e ->
       let
         newModel =
@@ -736,13 +745,8 @@ update action model =
       in
         (newModel, Cmd.none)
 
-
-
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model
-
-
-
 
 saveFloorEffects : Floor -> Cmd Action
 saveFloorEffects floor =

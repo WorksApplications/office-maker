@@ -9,7 +9,7 @@ zIndex :
   , deskInput : String
   , selectorRect : String
   , floorInfo : String
-  , subMenu : String
+  , subView : String
   , contextMenu : String
   }
 zIndex =
@@ -17,7 +17,7 @@ zIndex =
   , deskInput = "200"
   , selectorRect = "300"
   , floorInfo = "500"
-  , subMenu = "600"
+  , subView = "600"
   , contextMenu = "800"
   }
 
@@ -113,12 +113,13 @@ colorProperty color selected =
   , ("border-color", if selected  then "#69e" else "#666")
   ]
 
-subMenu : S
-subMenu =
-    [ ("z-index", zIndex.subMenu)
-    , ("width", "320px") -- TODO was 300px
-    , ("overflow", "hidden")
+subView : S
+subView =
+    [ ("z-index", zIndex.subView)
+    , ("width", "320px")
+    -- , ("overflow", "hidden")
     , ("background", "#eee")
+    , ("position", "relative")
     ]
 
 contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
@@ -410,4 +411,18 @@ floorsInfoViewItem selected =
     , ("padding", "8px 12px")
     , ("border-right", "solid 1px #ddd")
     , ("border-bottom", "solid 1px #ddd")
+    ]
+
+subViewTab : Int -> Bool -> S
+subViewTab index active =
+    [ ("position", "absolute")
+    , ("top", (toString (10 + index * 130)) ++ "px")
+    , ("left", "-30px")
+    , ("width", "30px")
+    , ("height", "120px")
+    , ("background-color", if active then "#eee" else "#eee")
+    , ("z-index", zIndex.subView)
+    , ("cursor", "pointer")
+    , ("border-radius", "8px 0 0 8px")
+    , ("box-shadow", if active then "" else "inset -4px 0 4px rgba(0,0,0,0.03)")
     ]

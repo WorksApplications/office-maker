@@ -3,7 +3,7 @@ module View.View exposing(view) -- where
 import Html exposing (..)
 import Html.App
 import Html.Attributes exposing (..)
--- import Html.Events
+import Html.Events exposing (..)
 import Maybe
 import View.Styles as Styles
 import View.Icons as Icons
@@ -136,26 +136,44 @@ mainView model =
 
 subView : Model -> Html Action
 subView model =
-  div
-    [ style (Styles.subMenu)
-    -- , mouseDownDefence address NoOp
-    ]
+  let
+    children =
+      if model.isEditing then
+        subViewForEdit model
+      else
+        subViewForSearch model
+    tabs =
+      [ subViewTab (ChangeEditing False) 0 "search" (not model.isEditing)
+      , subViewTab (ChangeEditing True) 1 "edit" (model.isEditing)
+      ]
+  in
+    div
+      [ style (Styles.subView)
+      ]
+      (tabs ++ children)
+
+subViewForEdit : Model -> List (Html Action)
+subViewForEdit model =
     [ card <| penView model
-    -- , card <| propertyView model
-    -- , card <| floorView model
-    , card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
-    , card <| [ SearchBox.resultsView (\e id -> nameOf e {- ++ "(" ++ idOf e ++ ")" -} ) model.searchBox |> Html.App.map SearchBoxMsg ]
+    , card <| propertyView model
+    , card <| floorView model
     , card <| debugView model
     ]
 
--- subView : Model -> Html Action
--- subView model =
---   div
---     [ style (Styles.subMenu)
---     ]
---     [ card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
---     , card <| List.map (text << toString) model.searchBox.results
---     ]
+subViewForSearch : Model -> List (Html Action)
+subViewForSearch model =
+    [ card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
+    , card <| [ SearchBox.resultsView (\e id -> nameOf e {- ++ "(" ++ idOf e ++ ")" -} ) model.searchBox |> Html.App.map SearchBoxMsg ]
+    ]
+
+
+subViewTab : msg -> Int -> String -> Bool -> Html msg
+subViewTab msg index name active =
+  div
+    [ style (Styles.subViewTab index active)
+    , onClick msg
+    ]
+    [ text name ]
 
 card : List (Html msg) -> Html msg
 card children =
