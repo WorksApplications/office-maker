@@ -87,8 +87,12 @@ resultsView : (Equipment -> String -> String) -> Model -> Html Msg
 resultsView format model =
   let
     each (e, floorId) =
-      li [ Html.Events.onClick (SelectResult (idOf e)) ] [ text (format e floorId) ]
+      li
+        [ Html.Events.onClick (SelectResult (idOf e))
+        , style Styles.searchResultItem
+        ]
+        [ text (format e floorId) ]
   in
     ul
-      []
+      [ style Styles.ul ]
       (List.map each model.results)

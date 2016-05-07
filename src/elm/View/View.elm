@@ -9,7 +9,7 @@ import View.Styles as Styles
 import View.Icons as Icons
 import SearchBox
 import Header
-
+import View.EquipmentView exposing (..)
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
@@ -21,6 +21,8 @@ import Model.Equipments as Equipments exposing (..)
 import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
+
+
 
 contextMenuView : Model -> Html Action
 contextMenuView model =
@@ -71,6 +73,10 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             -- , Html.Events.onDoubleClick (StartEditEquipment id)
             , onDblClick' (StartEditEquipment id)
             ]
+        isSelectedResult =
+          case model.selectedResult of
+            Just id_ -> id == id_
+            Nothing -> False
       in
         equipmentView'
           (id ++ toString movingBool)
@@ -82,34 +88,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           eventHandlers
           model.scale
           disableTransition
-
-equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Html msg
-equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition =
-  let
-    screenRect =
-      Scale.imageToScreenForRect scale rect
-    styles =
-      Styles.desk screenRect color selected alpha ++
-        [("display", "table")] ++
-        Styles.transition disableTransition
-  in
-    div
-      ( eventHandlers ++ [ {- key key', -} style styles ] )
-      [ equipmentLabelView scale disableTransition name
-      ]
-
-equipmentLabelView : Scale.Model -> Bool -> String -> Html msg
-equipmentLabelView scale disableTransition name =
-  let
-    styles =
-      Styles.nameLabel (1.0 / (toFloat <| Scale.screenToImage scale 1)) ++  --TODO
-        Styles.transition disableTransition
-  in
-    pre
-      [ style styles ]
-      [ text name ]
-
-
+          isSelectedResult
 
 transitionDisabled : Model -> Bool
 transitionDisabled model =
@@ -434,6 +413,7 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       [] -- eventHandlers
       scale
       True -- disableTransition
+      False
 
 temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
@@ -449,6 +429,7 @@ temporaryPenView model from =
         [] -- eventHandlers
         model.scale
         True -- disableTransition
+        False
     Nothing ->
       text ""
 

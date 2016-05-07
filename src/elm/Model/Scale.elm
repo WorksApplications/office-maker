@@ -48,6 +48,10 @@ imageToScreen : Model -> Int -> Int
 imageToScreen model screenLength =
   screenLength // (2 ^ model.scaleDown)
 
+imageToScreenRatio : Model -> Float
+imageToScreenRatio model =
+  1.0 / (2 ^ (toFloat model.scaleDown))
+
 ratio : Model -> Model -> Float
 ratio old new =
   (toFloat (2 ^ old.scaleDown)) / (toFloat (2 ^ new.scaleDown))

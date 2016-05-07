@@ -386,3 +386,9 @@ searchBox =
     , ("border-radius", "17px")
     , ("outline", "none")
     ]
+
+searchResultItem : S
+searchResultItem =
+    [ ("padding", "5px")
+    , ("cursor", "pointer")
+    ]
