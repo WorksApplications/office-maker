@@ -52,7 +52,7 @@ contextMenuItemView action text' =
 equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Action
 equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
-    Desk id (left, top, width, height) color name ->
+    Desk id (left, top, width, height) color name personId ->
       let
         movingBool = moving /= Nothing
         (x, y) =
@@ -100,7 +100,7 @@ nameInputView model =
   case model.editingEquipment of
     Just (id, name) ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
-        Just (Desk id rect color _) ->
+        Just (Desk id rect _ _ _) ->
           let
             styles =
               Styles.deskInput (Scale.imageToScreenForRect model.scale rect) ++

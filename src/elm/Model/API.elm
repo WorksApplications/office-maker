@@ -33,7 +33,7 @@ type alias Floor = Floor.Model
 type alias Error = Http.Error
 
 encodeEquipment : Equipment -> Value
-encodeEquipment (Desk id (x, y, width, height) color name) =
+encodeEquipment (Desk id (x, y, width, height) color name personId) =
   object
     [ ("id", string id)
     , ("type", string "desk")
@@ -43,6 +43,11 @@ encodeEquipment (Desk id (x, y, width, height) color name) =
     , ("height", int height)
     , ("color", string color)
     , ("name", string name)
+    , ("personId"
+      , case personId of
+          Just id -> string id
+          Nothing -> null
+      )
     ]
 
 encodeFloor : Floor -> Value
@@ -82,8 +87,8 @@ decodeUser =
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
-  object7
-    (\id x y width height color name -> Desk id (x, y, width, height) color name)
+  object8
+    (\id x y width height color name personId -> Desk id (x, y, width, height) color name personId)
     ("id" := Decode.string)
     ("x" := Decode.int)
     ("y" := Decode.int)
@@ -91,6 +96,7 @@ decodeEquipment =
     ("height" := Decode.int)
     ("color" := Decode.string)
     ("name" := Decode.string)
+    ("personId" := Decode.maybe Decode.string)
 
 decodeSearchResult : Decoder (List (Equipment, String))
 decodeSearchResult =

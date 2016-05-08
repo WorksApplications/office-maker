@@ -5,7 +5,6 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events
 import Model.Equipments as Equipments exposing (..)
-import Model.EquipmentsOperation exposing (..)
 import Model.API as API
 
 import Util.HtmlUtil exposing (..)

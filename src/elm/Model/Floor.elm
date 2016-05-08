@@ -86,7 +86,7 @@ update action model =
     Create candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name) =
-          Equipments.init newId (x, y, w, h) color name
+          Equipments.init newId (x, y, w, h) color name Nothing
       in
         addEquipments
           (List.map create candidateWithNewIds)
@@ -104,7 +104,7 @@ update action model =
         (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
         model
     Rotate id ->
-      setEquipments (partiallyChange EquipmentsOperation.rotate [id] (equipments model)) model
+      setEquipments (partiallyChange Equipments.rotate [id] (equipments model)) model
     ChangeEquipmentColor ids color ->
       let
         newEquipments =
