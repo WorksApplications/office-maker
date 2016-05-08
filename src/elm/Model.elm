@@ -6,9 +6,9 @@ import Debug
 import Window
 import String
 import Process
+import Keyboard
 
 import Util.UndoRedo as UndoRedo
-import Util.Keys as Keys
 import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -84,8 +84,8 @@ subscriptions model =
   Sub.batch
     [ Routing.hashchanges HashChange
     , Window.resizes (\e -> WindowDimensions (e.width, e.height))
-    , Keys.downs (KeyCodeAction True)
-    , Keys.ups (KeyCodeAction False)
+    , Keyboard.downs (KeyCodeAction True)
+    , Keyboard.ups (KeyCodeAction False)
     ]
 
 gridSize : Int
