@@ -12,6 +12,7 @@ module Model.API exposing (
     , logout
     , goToLogin
     , goToLogout
+    , personCandidate
     , Error
   ) -- where
 
@@ -182,6 +183,12 @@ search query =
     Http.get
       (decodeSearchResult)
       ("/api/v1/search/" ++ query)
+
+personCandidate : String -> Task Error (List String)
+personCandidate name =
+    Http.get
+      (Decode.list Decode.string)
+      ("/api/v1/candidate/" ++ name)
 
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =

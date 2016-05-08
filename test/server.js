@@ -107,6 +107,20 @@ app.get('/api/v1/search/:query', function (req, res) {
   }, []);
   res.send(results);
 });
+app.get('/api/v1/candidate/:name', function (req, res) {
+  var name = req.params.name;
+  var users_ = Object.keys(users).map(function(id) {
+    return users[id];
+  });
+  var results = users_.reduce(function(memo, user) {
+    if(user.name.indexOf(name) >= 0) {
+      return memo.concat([user.id]);
+    } else {
+      return memo;
+    }
+  }, []);
+  res.send(results);
+});
 app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;
   var floor = floors[id];

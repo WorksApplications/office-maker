@@ -16,6 +16,7 @@ import Util.File as File exposing (..)
 import Util.Routing as Routing
 
 import Model.User as User exposing (User)
+import Model.Person as Person
 import Model.Equipments as Equipments exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Scale as Scale
@@ -164,6 +165,7 @@ type Action = NoOp
   | HeaderAction Header.Action
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
+  | UpdatePersonCandidate Id (List Person.Id)
   | Error Error
 
 debug : Bool
@@ -433,34 +435,11 @@ update action model =
       let
         (newModel, effects) =
           if keyCode == 13 && not model.keys.ctrl then
-            let
-              newModel =
-                case model.editingEquipment of
-                  Just (id, name) ->
-                    let
-                      allEquipments = (UndoRedo.data model.floor).equipments
-                      editingEquipment =
-                        case findEquipmentById allEquipments id of
-                          Just equipment ->
-                            let
-                              island' =
-                                island
-                                  [equipment]
-                                  (List.filter (\e -> (idOf e) /= id) allEquipments)
-                            in
-                              case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
-                                Just equipment -> Just (idOf equipment, nameOf equipment)
-                                Nothing -> Nothing
-                          Nothing -> Nothing
-                    in
-                      { model |
-                        floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
-                      , editingEquipment = editingEquipment
-                      }
-                  Nothing ->
-                    model
-            in
-              (newModel, Cmd.none)
+            case model.editingEquipment of
+              Just (id, name) ->
+                updateOnFinishNameInput id name model
+              Nothing ->
+                (model, Cmd.none)
           else if keyCode == 13 then
             let
               newModel =
@@ -738,6 +717,16 @@ update action model =
           { model | isEditing = isEditing }
       in
         (newModel, Cmd.none)
+    UpdatePersonCandidate equipmentId ids ->
+      let
+        newFloor =
+          UndoRedo.commit
+            model.floor
+            (Floor.changeUserCandidate equipmentId ids)
+        newModel =
+          { model | floor = newFloor }
+      in
+        (newModel, Cmd.none)
     Error e ->
       let
         newModel =
@@ -745,8 +734,45 @@ update action model =
       in
         (newModel, Cmd.none)
 
+updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Action)
+updateOnFinishNameInput id name model =
+  let
+    allEquipments = (UndoRedo.data model.floor).equipments
+    (editingEquipment, cmd) =
+      case findEquipmentById allEquipments id of
+        Just equipment ->
+          let
+            island' =
+              island
+                [equipment]
+                (List.filter (\e -> (idOf e) /= id) allEquipments)
+            cmd =
+              case Equipments.relatedPerson equipment of
+                Just personId ->
+                  Cmd.none
+                Nothing ->
+                  Task.perform
+                    (Error << APIError)
+                    (UpdatePersonCandidate id)
+                    (API.personCandidate name)
+            newEditingEquipment =
+              case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
+                Just equipment -> Just (idOf equipment, nameOf equipment)
+                Nothing -> Nothing
+          in
+            (newEditingEquipment, cmd)
+        Nothing -> (Nothing, Cmd.none)
+    newModel =
+      { model |
+        floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
+      , editingEquipment = editingEquipment
+      }
+  in
+    (newModel, cmd)
+
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model
+
 
 saveFloorEffects : Floor -> Cmd Action
 saveFloorEffects floor =

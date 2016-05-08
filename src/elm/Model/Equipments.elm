@@ -46,4 +46,13 @@ rect (Desk _ rect _ _ _) = rect
 rotate : Equipment -> Equipment
 rotate (Desk id (x, y, width, height) color name personId) =
   (Desk id (x, y, height, width) color name personId)
+
+setPerson : Maybe Person.Id -> Equipment -> Equipment
+setPerson personId (Desk id rect color name _) =
+  (Desk id rect color name personId)
+
+relatedPerson : Equipment -> Maybe Person.Id
+relatedPerson (Desk _ _ _ _ personId) = personId
+
+
 --
