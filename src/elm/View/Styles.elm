@@ -426,3 +426,18 @@ subViewTab index active =
     , ("border-radius", "8px 0 0 8px")
     , ("box-shadow", if active then "" else "inset -4px 0 4px rgba(0,0,0,0.03)")
     ]
+
+personMatchingInfo : S
+personMatchingInfo =
+    [ ("border-radius", "10px")
+    , ("width", "20px")
+    , ("height", "20px")
+    ]
+
+personMatched : S
+personMatched =
+    personMatchingInfo ++ [ ("background-color", "#6a6") ]
+
+personNotMatched : S
+personNotMatched =
+    personMatchingInfo ++ [ ("background-color", "#ccc") ]
