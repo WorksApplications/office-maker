@@ -2,7 +2,7 @@ module View.Icons exposing (..) -- where
 
 import Svg exposing (Svg)
 import Color exposing (Color, white, black, gray)
-import Material.Icons.Navigation exposing (check)
+import Material.Icons.Navigation exposing (check, close)
 -- import Material.Icons.Notification exposing (priority_high) -- TODO
 
 import Material.Icons.Editor exposing (mode_edit, border_all)
@@ -28,6 +28,10 @@ personMatched =
 personNotMatched : Svg msg
 personNotMatched =
   priority_high white 18
+
+popupClose : Svg msg
+popupClose =
+  close white 18
 
 -- TODO PR to elm-material-icons
 

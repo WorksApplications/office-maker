@@ -7,6 +7,7 @@ import Window
 import String
 import Process
 import Keyboard
+import Dict exposing (Dict)
 
 import Util.UndoRedo as UndoRedo
 import Util.ShortCut as ShortCut
@@ -16,7 +17,7 @@ import Util.File as File exposing (..)
 import Util.Routing as Routing
 
 import Model.User as User exposing (User)
-import Model.Person as Person
+import Model.Person as Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Scale as Scale
@@ -59,6 +60,7 @@ type alias Model =
   , searchBox : SearchBox.Model
   , selectedResult : Maybe Id
   , isEditing : Bool
+  , personInfo : Dict String Person
   }
 
 type Error =
@@ -124,6 +126,7 @@ init randomSeed initialSize initialHash =
     , searchBox = SearchBox.init
     , selectedResult = Nothing
     , isEditing = False
+    , personInfo = Dict.empty
     }
   , Task.perform (always NoOp) identity (Task.succeed Init)
   )

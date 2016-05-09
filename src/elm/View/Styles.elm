@@ -441,3 +441,49 @@ personMatched =
 personNotMatched : S
 personNotMatched =
     personMatchingInfo ++ [ ("background-color", "#ccc") ]
+
+popup : (Int, Int) -> S
+popup (fromX, fromY) =
+  [ ("padding", "10px")
+  , ("background-color", "#fff")
+  , ("position", "relative")
+  , ("width", "200px")
+  , ("height", "80px")
+  ] ++ shadow
+
+popupClose : S
+popupClose =
+  [ ("position", "absolute")
+  , ("top", "5px")
+  , ("right", "5px")
+  ]
+
+
+popupPersonImage : S
+popupPersonImage =
+  [ ("position", "absolute")
+  , ("top", "15px")
+  , ("right", "15px")
+  ]
+
+popupPersonNo : S
+popupPersonNo =
+  [ ("position", "absolute")
+  , ("fon-size", "small")
+  , ("top", "5px")
+  ]
+
+popupPersonName : S
+popupPersonName =
+  [ ("position", "absolute")
+  , ("fon-size", "larger")
+  , ("font-weight", "bold")
+  , ("top", "15px")
+  ]
+
+popupPersonOrg : S
+popupPersonOrg =
+  [ ("position", "absolute")
+  , ("fon-size", "small")
+  , ("top", "50px")
+  ]

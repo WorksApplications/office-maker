@@ -1,10 +1,13 @@
 module View.View exposing(view) -- where
 
+import Dict
+import Maybe
+
 import Html exposing (..)
 import Html.App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Maybe
+
 import View.Styles as Styles
 import View.Icons as Icons
 import SearchBox
@@ -74,10 +77,9 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             -- , Html.Events.onDoubleClick (StartEditEquipment id)
             , onDblClick' (StartEditEquipment id)
             ]
-        isSelectedResult =
-          case model.selectedResult of
-            Just id_ -> id == id_
-            Nothing -> False
+        personInfo =
+          model.selectedResult `Maybe.andThen` \id ->
+            Dict.get id model.personInfo
         personMatched = personId /= Nothing
       in
         equipmentView'
@@ -90,7 +92,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           eventHandlers
           model.scale
           disableTransition
-          isSelectedResult
+          personInfo
           personMatched
 
 transitionDisabled : Model -> Bool
@@ -438,7 +440,7 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       [] -- eventHandlers
       scale
       True -- disableTransition
-      False
+      Nothing
       False -- personMatched
 
 temporaryPenView : Model -> (Int, Int) -> Html msg
@@ -455,7 +457,7 @@ temporaryPenView model from =
         [] -- eventHandlers
         model.scale
         True -- disableTransition
-        False
+        Nothing
         False -- personMatched
     Nothing ->
       text ""
