@@ -694,14 +694,14 @@ update action model =
         selectedResult =
           case maybeEvent of
             Just SearchBox.OnResults ->
-              case SearchBox.equipmentsInFloor (UndoRedo.data model.floor).id model.searchBox of
+              case SearchBox.equipmentsInFloor (UndoRedo.data model.floor).id model'.searchBox of
                 head :: [] ->
                    Just (idOf head)
                 _ -> Nothing
             Just (SearchBox.OnSelectResult id) ->
               Just id
             _ ->
-              Nothing
+              model'.selectedResult
 
         model'' =
           { model' |
@@ -731,7 +731,7 @@ update action model =
             (Floor.changeUserCandidate equipmentId ids)
         newModel =
           { model |
-            personInfo = addAll (.id) people model.personInfo
+            personInfo = Debug.log "personInfoDict" <| addAll (.id) people model.personInfo
           , floor = newFloor
           }
       in
@@ -772,13 +772,14 @@ updateOnFinishNameInput id name model =
           in
             (newEditingEquipment, cmd)
         Nothing -> (Nothing, Cmd.none)
+    newFloor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
     newModel =
       { model |
-        floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
+        floor = newFloor
       , editingEquipment = editingEquipment
       }
   in
-    (newModel, cmd)
+    (newModel, Cmd.batch [cmd, saveFloorEffects (UndoRedo.data newFloor)])
 
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model

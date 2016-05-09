@@ -4,7 +4,4 @@ import Json.Decode exposing (Decoder, maybe, oneOf, succeed, (:=))
 
 (?=) : String -> (Decoder a) -> (Decoder (Maybe a))
 (?=) key decorder =
-  oneOf
-      [ key := maybe decorder
-      , succeed Nothing
-      ]
+  maybe (key := decorder)
