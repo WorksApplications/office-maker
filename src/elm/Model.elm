@@ -810,6 +810,15 @@ publishFloorEffects floor =
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Action)
 updateByKeyEvent event model =
   case (model.keys.ctrl, event) of
+    (True, ShortCut.A) ->
+      let
+        newModel =
+          { model |
+            selectedEquipments =
+              List.map idOf <| Floor.equipments (UndoRedo.data model.floor)
+          }
+      in
+        (newModel, Cmd.none)
     (True, ShortCut.C) ->
       let
         newModel =
@@ -898,6 +907,26 @@ updateByKeyEvent event model =
           }
       in
         (newModel, Cmd.none)
+    (_, ShortCut.Other 9) -> --TODO waiting for fix double-click
+      let
+        floor = UndoRedo.data model.floor
+      in
+        case model.selectedEquipments of
+          id :: _ ->
+            case findEquipmentById floor.equipments id of
+              Just e ->
+                let
+                  newModel =
+                    { model |
+                      editingEquipment = Just (idOf e, nameOf e)
+                    , contextMenu = NoContextMenu
+                    }
+                in
+                  (newModel, focusEffect "name-input")
+              Nothing ->
+                (model, Cmd.none)
+          _ ->
+            (model, Cmd.none)
     _ ->
       (model, Cmd.none)
 

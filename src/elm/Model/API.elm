@@ -186,7 +186,7 @@ search query =
 
 personCandidate : String -> Task Error (List String)
 personCandidate name =
-    Http.get
+    getJsonWithNoCache
       (Decode.list Decode.string)
       ("/api/v1/candidate/" ++ name)
 

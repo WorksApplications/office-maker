@@ -14,6 +14,7 @@ type Event =
   | A
   | C
   | F
+  | P
   | S
   | V
   | X
@@ -51,6 +52,7 @@ update isDown keyCode model =
       else if keyCode == (Char.toCode 'C') then C
       else if keyCode == (Char.toCode 'F') then F
       else if keyCode == (Char.toCode 'S') then S
+      else if keyCode == (Char.toCode 'P') then P
       else if keyCode == (Char.toCode 'V') then V
       else if keyCode == (Char.toCode 'X') then X
       else if keyCode == (Char.toCode 'Y') then Y

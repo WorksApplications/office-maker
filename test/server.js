@@ -12,8 +12,8 @@ var passes = {
   user01 : 'user01'
 };
 var users = {
-  admin01: { name: 'Admin01', mail: 'admin01@xxx.com', role: 'admin' },
-  user01 : { name: 'User01', mail: 'user01@xxx.com', role: 'general' }
+  admin01: { id:'admin01', org: 'Sample Co.,Ltd', name: 'Admin01', mail: 'admin01@xxx.com', role: 'admin' },
+  user01 : { id:'user01', org: 'Sample Co.,Ltd', name: 'User01', mail: 'user01@xxx.com', role: 'general' }
 };
 
 app.use(bodyParser.json());
@@ -113,7 +113,7 @@ app.get('/api/v1/candidate/:name', function (req, res) {
     return users[id];
   });
   var results = users_.reduce(function(memo, user) {
-    if(user.name.indexOf(name) >= 0) {
+    if(user.name.toLowerCase().indexOf(name.toLowerCase()) >= 0) {
       return memo.concat([user.id]);
     } else {
       return memo;

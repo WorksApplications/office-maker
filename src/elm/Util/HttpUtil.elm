@@ -30,6 +30,21 @@ sendJson verb decoder url body =
   in
     Http.fromJson decoder (Http.send Http.defaultSettings request)
 
+getJsonWithNoCache : Decoder value -> String -> Task Http.Error value
+getJsonWithNoCache decoder url =
+  let request =
+    { verb = "GET"
+    , headers =
+        [ ("Content-Type", "application/json; charset=utf-8")
+        , ("Pragma", "no-cache")
+        , ("Cache-Control", "no-cache")
+        , ("If-Modified-Since", "Thu, 01 Jun 1970 00:00:00 GMT")]
+    , url = url
+    , body = Http.empty
+    }
+  in
+    Http.fromJson decoder (Http.send Http.defaultSettings request)
+
 postJson : Decoder value -> String -> Http.Body -> Task Http.Error value
 postJson = sendJson "POST"
 

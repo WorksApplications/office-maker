@@ -6,8 +6,8 @@ import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale
 
-equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Bool -> Html msg
-equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition isSelectedResult =
+equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Bool -> Bool -> Html msg
+equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition isSelectedResult personMatched =
   let
     screenRect =
       Scale.imageToScreenForRect scale rect
@@ -19,15 +19,15 @@ equipmentView' key' rect color name selected alpha eventHandlers scale disableTr
     div
       ( eventHandlers ++ [ {- key key', -} style styles ] )
       [ equipmentLabelView scale disableTransition name
-      , personMatchingView name True -- TODO
+      , personMatchingView name personMatched
       , text (if isSelectedResult then "selected" else "")
       ]
 
 personMatchingView : String -> Bool -> Html msg
-personMatchingView name matched =
-  if name /= "" && matched then
+personMatchingView name personMatched =
+  if name /= "" && personMatched then
     div [ style Styles.personMatched ] [ Icons.personMatched ]
-  else if name /= "" && not matched then
+  else if name /= "" && not personMatched then
     div [ style Styles.personNotMatched ] [ Icons.personNotMatched ]
   else
     text ""

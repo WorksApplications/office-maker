@@ -78,6 +78,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           case model.selectedResult of
             Just id_ -> id == id_
             Nothing -> False
+        personMatched = personId /= Nothing
       in
         equipmentView'
           (id ++ toString movingBool)
@@ -90,6 +91,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           model.scale
           disableTransition
           isSelectedResult
+          personMatched
 
 transitionDisabled : Model -> Bool
 transitionDisabled model =
@@ -437,6 +439,7 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       scale
       True -- disableTransition
       False
+      False -- personMatched
 
 temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
@@ -453,6 +456,7 @@ temporaryPenView model from =
         model.scale
         True -- disableTransition
         False
+        False -- personMatched
     Nothing ->
       text ""
 
