@@ -6,9 +6,9 @@ import Debug
 import Window
 import String
 import Process
+import Keyboard
 
 import Util.UndoRedo as UndoRedo
-import Util.Keys as Keys
 import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -16,6 +16,7 @@ import Util.File as File exposing (..)
 import Util.Routing as Routing
 
 import Model.User as User exposing (User)
+import Model.Person as Person
 import Model.Equipments as Equipments exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Scale as Scale
@@ -45,6 +46,7 @@ type alias Model =
   , colorPalette : List String
   , contextMenu : ContextMenu
   , floor : UndoRedo.Model Floor Commit
+  , floorsInfo : List Floor
   , windowDimensions : (Int, Int)
   , scale : Scale.Model
   , offset : (Int, Int)
@@ -55,6 +57,8 @@ type alias Model =
   , inputFloorRealWidth : String
   , inputFloorRealHeight : String
   , searchBox : SearchBox.Model
+  , selectedResult : Maybe Id
+  , isEditing : Bool
   }
 
 type Error =
@@ -81,9 +85,8 @@ subscriptions model =
   Sub.batch
     [ Routing.hashchanges HashChange
     , Window.resizes (\e -> WindowDimensions (e.width, e.height))
-    , Keys.downs (KeyCodeAction True)
-    , Keys.ups (KeyCodeAction False)
-    , SearchBox.subscriptions SearchBoxMsg
+    , Keyboard.downs (KeyCodeAction True)
+    , Keyboard.ups (KeyCodeAction False)
     ]
 
 gridSize : Int
@@ -107,6 +110,7 @@ init randomSeed initialSize initialHash =
         ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
         , "#bbb", "#fff", "rgba(255,255,255,0.5)"] --TODO
     , contextMenu = NoContextMenu
+    , floorsInfo = []
     , floor = UndoRedo.init { data = Floor.init "-1", update = Floor.update }
     , windowDimensions = initialSize
     , scale = Scale.init
@@ -118,6 +122,8 @@ init randomSeed initialSize initialHash =
     , inputFloorRealWidth = ""
     , inputFloorRealHeight = ""
     , searchBox = SearchBox.init
+    , selectedResult = Nothing
+    , isEditing = False
     }
   , Task.perform (always NoOp) identity (Task.succeed Init)
   )
@@ -127,6 +133,7 @@ type Action = NoOp
   | Init
   | HashChange String
   | AuthLoaded User
+  | FloorsInfoLoaded (List Floor)
   | FloorLoaded Floor
   | FloorSaved
   | MoveOnCanvas (Int, Int)
@@ -157,6 +164,8 @@ type Action = NoOp
   | Publish
   | HeaderAction Header.Action
   | SearchBoxMsg SearchBox.Msg
+  | ChangeEditing Bool
+  | UpdatePersonCandidate Id (List Person.Id)
   | Error Error
 
 debug : Bool
@@ -180,9 +189,11 @@ update action model =
     HashChange hash ->
       ({ model | hash = hash}, loadFloorEffects hash)
     Init ->
-      (model, Cmd.batch [loadAuthEffects, loadFloorEffects model.hash])
+      (model, Cmd.batch [loadAuthEffects, loadFloorsInfoEffects, loadFloorEffects model.hash])
     AuthLoaded user ->
       ({ model | user = user }, Cmd.none)
+    FloorsInfoLoaded floors ->
+      ({ model | floorsInfo = floors }, Cmd.none)
     FloorLoaded floor ->
       let
         (realWidth, realHeight) =
@@ -424,34 +435,11 @@ update action model =
       let
         (newModel, effects) =
           if keyCode == 13 && not model.keys.ctrl then
-            let
-              newModel =
-                case model.editingEquipment of
-                  Just (id, name) ->
-                    let
-                      allEquipments = (UndoRedo.data model.floor).equipments
-                      editingEquipment =
-                        case findEquipmentById allEquipments id of
-                          Just equipment ->
-                            let
-                              island' =
-                                island
-                                  [equipment]
-                                  (List.filter (\e -> (idOf e) /= id) allEquipments)
-                            in
-                              case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
-                                Just equipment -> Just (idOf equipment, nameOf equipment)
-                                Nothing -> Nothing
-                          Nothing -> Nothing
-                    in
-                      { model |
-                        floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
-                      , editingEquipment = editingEquipment
-                      }
-                  Nothing ->
-                    model
-            in
-              (newModel, Cmd.none)
+            case model.editingEquipment of
+              Just (id, name) ->
+                updateOnFinishNameInput id name model
+              Nothing ->
+                (model, Cmd.none)
           else if keyCode == 13 then
             let
               newModel =
@@ -695,16 +683,96 @@ update action model =
       let
         (searchBox, cmd, maybeEvent) =
           SearchBox.update msg model.searchBox
-        newModel =
+
+        model' =
           { model | searchBox = searchBox }
+
+        selectedResult =
+          case maybeEvent of
+            Just SearchBox.OnResults ->
+              case SearchBox.equipmentsInFloor (UndoRedo.data model.floor).id model.searchBox of
+                head :: [] ->
+                   Just (idOf head)
+                _ -> Nothing
+            Just (SearchBox.OnSelectResult id) ->
+              Just id
+            _ ->
+              Nothing
+
+        model'' =
+          { model' |
+            selectedResult = selectedResult
+          }
+
+        newModel =
+          case selectedResult of
+            Just id -> adjustPositionByFocus id model''
+            Nothing -> model''
+
       in
-        (newModel, Cmd.map SearchBoxMsg cmd)
+        (newModel, Cmd.map SearchBoxMsg cmd )
+    ChangeEditing isEditing ->
+      let
+        newModel =
+          { model | isEditing = isEditing }
+      in
+        (newModel, Cmd.none)
+    UpdatePersonCandidate equipmentId ids ->
+      let
+        newFloor =
+          UndoRedo.commit
+            model.floor
+            (Floor.changeUserCandidate equipmentId ids)
+        newModel =
+          { model | floor = newFloor }
+      in
+        (newModel, Cmd.none)
     Error e ->
       let
         newModel =
           { model | errors = e :: model.errors }
       in
         (newModel, Cmd.none)
+
+updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Action)
+updateOnFinishNameInput id name model =
+  let
+    allEquipments = (UndoRedo.data model.floor).equipments
+    (editingEquipment, cmd) =
+      case findEquipmentById allEquipments id of
+        Just equipment ->
+          let
+            island' =
+              island
+                [equipment]
+                (List.filter (\e -> (idOf e) /= id) allEquipments)
+            cmd =
+              case Equipments.relatedPerson equipment of
+                Just personId ->
+                  Cmd.none
+                Nothing ->
+                  Task.perform
+                    (Error << APIError)
+                    (UpdatePersonCandidate id)
+                    (API.personCandidate name)
+            newEditingEquipment =
+              case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
+                Just equipment -> Just (idOf equipment, nameOf equipment)
+                Nothing -> Nothing
+          in
+            (newEditingEquipment, cmd)
+        Nothing -> (Nothing, Cmd.none)
+    newModel =
+      { model |
+        floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
+      , editingEquipment = editingEquipment
+      }
+  in
+    (newModel, cmd)
+
+adjustPositionByFocus : Id -> Model -> Model
+adjustPositionByFocus focused model = model
+
 
 saveFloorEffects : Floor -> Cmd Action
 saveFloorEffects floor =
@@ -881,11 +949,15 @@ loadAuthEffects : Cmd Action
 loadAuthEffects =
     Task.perform (Error << APIError) AuthLoaded API.getAuth
 
+loadFloorsInfoEffects : Cmd Action
+loadFloorsInfoEffects =
+    Task.perform (Error << APIError) FloorsInfoLoaded API.getFloorsInfo
+
 loadFloorEffects : String -> Cmd Action
 loadFloorEffects hash =
   let
     floorId =
-      String.dropLeft 1 hash
+      Debug.log "floorId" <| String.dropLeft 1 hash
     task =
       if String.length floorId > 0 then
         API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))

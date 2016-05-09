@@ -48,13 +48,22 @@ app.post('/api/v1/logout', function(req, res) {
 app.use(express.static(publicDir));
 
 // Login
-app.use('/', function(req, res, next) {
-  if(!req.session.user && req.url.indexOf('/api') === 0) {
-    res.status(401).send('');
+// app.use('/', function(req, res, next) {
+//   if(!req.session.user && req.url.indexOf('/api') === 0) {
+//     res.status(401).send('');
+//   } else {
+//     next();
+//   }
+// });
+
+function role(req) {
+  if(!req.session.user) {
+    return "guest"
   } else {
-    next();
+    return req.session.user.role;
   }
-});
+}
+
 
 /* Login required */
 
@@ -77,17 +86,17 @@ app.get('/api/v1/auth', function(req, res) {
   }
 });
 app.get('/api/v1/floors', function (req, res) {
-  var floors = Object.keys(floors).map(function(id) {
+  var floors_ = Object.keys(floors).map(function(id) {
     return floors[id];
   });
-  res.send(floors);
+  res.send(floors_);
 });
 app.get('/api/v1/search/:query', function (req, res) {
   var query = req.params.query;
-  var floors = Object.keys(floors).map(function(id) {
+  var floors_ = Object.keys(floors).map(function(id) {
     return floors[id];
   });
-  var results = floors.reduce(function(memo, floor) {
+  var results = floors_.reduce(function(memo, floor) {
     return floor.equipments.reduce(function(memo, e) {
       if(e.name.indexOf(query) >= 0) {
         return memo.concat([[e, floor.id]]);
@@ -95,6 +104,20 @@ app.get('/api/v1/search/:query', function (req, res) {
         return memo;
       }
     }, memo);
+  }, []);
+  res.send(results);
+});
+app.get('/api/v1/candidate/:name', function (req, res) {
+  var name = req.params.name;
+  var users_ = Object.keys(users).map(function(id) {
+    return users[id];
+  });
+  var results = users_.reduce(function(memo, user) {
+    if(user.name.indexOf(name) >= 0) {
+      return memo.concat([user.id]);
+    } else {
+      return memo;
+    }
   }, []);
   res.send(results);
 });
@@ -111,6 +134,10 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
 });
 
 app.put('/api/v1/floor/:id/edit', function (req, res) {
+  // if(role(req) !== 'admin') {
+  //   res.status(401).send('');
+  //   return;
+  // }
   var id = req.params.id;
   var newFloor = req.body;
   if(id !== newFloor.id) {
@@ -124,6 +151,10 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
 
 // publish
 app.post('/api/v1/floor/:id', function (req, res) {
+  if(role(req) !== 'admin') {
+    res.status(401).send('');
+    return;
+  }
   var id = req.params.id;
   var newFloor = req.body;
   console.log(req.body);
@@ -138,6 +169,10 @@ app.post('/api/v1/floor/:id', function (req, res) {
 
 
 app.put('/api/v1/image/:id', function (req, res) {
+  if(role(req) !== 'admin') {
+    res.status(401).send('');
+    return;
+  }
   var id = req.params.id;
   console.log(id);
   var all = [];

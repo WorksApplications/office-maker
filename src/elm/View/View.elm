@@ -3,13 +3,14 @@ module View.View exposing(view) -- where
 import Html exposing (..)
 import Html.App
 import Html.Attributes exposing (..)
--- import Html.Events
+import Html.Events exposing (..)
 import Maybe
 import View.Styles as Styles
 import View.Icons as Icons
 import SearchBox
 import Header
-
+import View.EquipmentView exposing (..)
+import View.FloorsInfoView as FloorsInfoView
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
@@ -21,6 +22,8 @@ import Model.Equipments as Equipments exposing (..)
 import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
+import Model.User as User
+
 
 contextMenuView : Model -> Html Action
 contextMenuView model =
@@ -49,7 +52,7 @@ contextMenuItemView action text' =
 equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Action
 equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
-    Desk id (left, top, width, height) color name ->
+    Desk id (left, top, width, height) color name personId ->
       let
         movingBool = moving /= Nothing
         (x, y) =
@@ -71,6 +74,10 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             -- , Html.Events.onDoubleClick (StartEditEquipment id)
             , onDblClick' (StartEditEquipment id)
             ]
+        isSelectedResult =
+          case model.selectedResult of
+            Just id_ -> id == id_
+            Nothing -> False
       in
         equipmentView'
           (id ++ toString movingBool)
@@ -82,34 +89,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           eventHandlers
           model.scale
           disableTransition
-
-equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Html msg
-equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition =
-  let
-    screenRect =
-      Scale.imageToScreenForRect scale rect
-    styles =
-      Styles.desk screenRect color selected alpha ++
-        [("display", "table")] ++
-        Styles.transition disableTransition
-  in
-    div
-      ( eventHandlers ++ [ {- key key', -} style styles ] )
-      [ equipmentLabelView scale disableTransition name
-      ]
-
-equipmentLabelView : Scale.Model -> Bool -> String -> Html msg
-equipmentLabelView scale disableTransition name =
-  let
-    styles =
-      Styles.nameLabel (1.0 / (toFloat <| Scale.screenToImage scale 1)) ++  --TODO
-        Styles.transition disableTransition
-  in
-    pre
-      [ style styles ]
-      [ text name ]
-
-
+          isSelectedResult
 
 transitionDisabled : Model -> Bool
 transitionDisabled model =
@@ -120,7 +100,7 @@ nameInputView model =
   case model.editingEquipment of
     Just (id, name) ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
-        Just (Desk id rect color _) ->
+        Just (Desk id rect _ _ _) ->
           let
             styles =
               Styles.deskInput (Scale.imageToScreenForRect model.scale rect) ++
@@ -149,32 +129,54 @@ mainView model =
     height = windowHeight - Styles.headerHeight
   in
     main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
-      [ canvasContainerView model
+      [ FloorsInfoView.view (UndoRedo.data model.floor).id model.floorsInfo
+      , canvasContainerView model
       , subView model
       ]
 
 subView : Model -> Html Action
 subView model =
-  div
-    [ style (Styles.subMenu)
-    -- , mouseDownDefence address NoOp
-    ]
+  let
+    children =
+      if model.isEditing then
+        subViewForEdit model
+      else
+        subViewForSearch model
+    tabs =
+      if User.isAdmin model.user then
+        [ subViewTab (ChangeEditing False) 0 "search" (not model.isEditing)
+        , subViewTab (ChangeEditing True) 1 "edit" (model.isEditing)
+        ]
+      else
+        []
+  in
+    div
+      [ style (Styles.subView)
+      ]
+      (tabs ++ children)
+
+subViewForEdit : Model -> List (Html Action)
+subViewForEdit model =
     [ card <| penView model
     , card <| propertyView model
     , card <| floorView model
-    , card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
-    , card <| List.map (text << toString) model.searchBox.results
     , card <| debugView model
     ]
 
--- subView : Model -> Html Action
--- subView model =
---   div
---     [ style (Styles.subMenu)
---     ]
---     [ card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
---     , card <| List.map (text << toString) model.searchBox.results
---     ]
+subViewForSearch : Model -> List (Html Action)
+subViewForSearch model =
+    [ card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
+    , card <| [ SearchBox.resultsView (\e id -> nameOf e {- ++ "(" ++ idOf e ++ ")" -} ) model.searchBox |> Html.App.map SearchBoxMsg ]
+    ]
+
+
+subViewTab : msg -> Int -> String -> Bool -> Html msg
+subViewTab msg index name active =
+  div
+    [ style (Styles.subViewTab index active)
+    , onClick msg
+    ]
+    [ text name ]
 
 card : List (Html msg) -> Html msg
 card children =
@@ -434,6 +436,7 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       [] -- eventHandlers
       scale
       True -- disableTransition
+      False
 
 temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
@@ -449,6 +452,7 @@ temporaryPenView model from =
         [] -- eventHandlers
         model.scale
         True -- disableTransition
+        False
     Nothing ->
       text ""
 

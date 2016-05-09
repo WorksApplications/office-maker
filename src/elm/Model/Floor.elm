@@ -43,6 +43,7 @@ type Action =
   | ChangeRealWidth Int
   | ChangeRealHeight Int
   | UseURL
+  | ChangeUserCandidate String (List String)
 
 create : (List (Id, (Int, Int, Int, Int), String, String)) -> Action
 create = Create
@@ -80,13 +81,16 @@ changeRealHeight = ChangeRealHeight
 useURL : Action
 useURL = UseURL
 
+changeUserCandidate : String -> List String -> Action
+changeUserCandidate = ChangeUserCandidate
+
 update : Action -> Model -> Model
 update action model =
   case action of
     Create candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name) =
-          Equipments.init newId (x, y, w, h) color name
+          Equipments.init newId (x, y, w, h) color name Nothing
       in
         addEquipments
           (List.map create candidateWithNewIds)
@@ -104,7 +108,7 @@ update action model =
         (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
         model
     Rotate id ->
-      setEquipments (partiallyChange EquipmentsOperation.rotate [id] (equipments model)) model
+      setEquipments (partiallyChange Equipments.rotate [id] (equipments model)) model
     ChangeEquipmentColor ids color ->
       let
         newEquipments =
@@ -150,6 +154,16 @@ update action model =
             _ ->
               model.imageSource
       }
+    ChangeUserCandidate equipmentId ids ->
+      let
+        newEquipments =
+          case ids of
+            head :: [] ->
+              partiallyChange (Equipments.setPerson (Just head)) [equipmentId] (equipments model)
+            _ ->
+              partiallyChange (Equipments.setPerson Nothing) [equipmentId] (equipments model)
+      in
+        setEquipments newEquipments model
 
 {- 10cm -> 8px -}
 realToPixel : Int -> Int

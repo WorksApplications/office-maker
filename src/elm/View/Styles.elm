@@ -8,14 +8,16 @@ zIndex :
   { selectedDesk : String
   , deskInput : String
   , selectorRect : String
-  , subMenu : String
+  , floorInfo : String
+  , subView : String
   , contextMenu : String
   }
 zIndex =
   { selectedDesk = "100"
   , deskInput = "200"
   , selectorRect = "300"
-  , subMenu = "600"
+  , floorInfo = "500"
+  , subView = "600"
   , contextMenu = "800"
   }
 
@@ -41,8 +43,10 @@ h1 =
 
 ul : S
 ul =
-  [ ("list-style-type", "none")
-  , ("padding-left", "0") ]
+  noMargin ++
+    [ ("list-style-type", "none")
+    , ("padding-left", "0")
+    ]
 
 headerHeight : Int
 headerHeight = 37
@@ -109,12 +113,13 @@ colorProperty color selected =
   , ("border-color", if selected  then "#69e" else "#666")
   ]
 
-subMenu : S
-subMenu =
-    [ ("z-index", zIndex.subMenu)
-    , ("width", "320px") -- TODO was 300px
-    , ("overflow", "hidden")
+subView : S
+subView =
+    [ ("z-index", zIndex.subView)
+    , ("width", "320px")
+    -- , ("overflow", "hidden")
     , ("background", "#eee")
+    , ("position", "relative")
     ]
 
 contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
@@ -380,6 +385,59 @@ loginError =
 
 searchBox : S
 searchBox =
-  [ ("background-color", "white")
-  , ("color", "#000")
-  ]
+  input ++
+    [ ("background-color", "white")
+    , ("color", "#000")
+    , ("border-radius", "17px")
+    , ("outline", "none")
+    ]
+
+searchResultItem : S
+searchResultItem =
+    [ ("padding", "5px")
+    , ("cursor", "pointer")
+    ]
+
+floorsInfoView : S
+floorsInfoView =
+    [ ("position", "absolute")
+    , ("display", "flex")
+    , ("z-index", zIndex.floorInfo)
+    ]
+
+floorsInfoViewItem : Bool -> S
+floorsInfoViewItem selected =
+    [ ("background-color", if selected then "#eee" else "white")
+    , ("padding", "8px 12px")
+    , ("border-right", "solid 1px #ddd")
+    , ("border-bottom", "solid 1px #ddd")
+    ]
+
+subViewTab : Int -> Bool -> S
+subViewTab index active =
+    [ ("position", "absolute")
+    , ("top", (toString (10 + index * 130)) ++ "px")
+    , ("left", "-30px")
+    , ("width", "30px")
+    , ("height", "120px")
+    , ("background-color", if active then "#eee" else "#eee")
+    , ("z-index", zIndex.subView)
+    , ("cursor", "pointer")
+    , ("border-radius", "8px 0 0 8px")
+    , ("box-shadow", if active then "" else "inset -4px 0 4px rgba(0,0,0,0.03)")
+    ]
+
+personMatchingInfo : S
+personMatchingInfo =
+    [ ("border-radius", "10px")
+    , ("width", "20px")
+    , ("height", "20px")
+    ]
+
+personMatched : S
+personMatched =
+    personMatchingInfo ++ [ ("background-color", "#6a6") ]
+
+personNotMatched : S
+personNotMatched =
+    personMatchingInfo ++ [ ("background-color", "#ccc") ]

@@ -5,9 +5,6 @@ module Model.EquipmentsOperation exposing (..) -- where
 import Model.Equipments as Equipments exposing (..)
 import Util.ListUtil exposing (..)
 
-rect : Equipment -> (Int, Int, Int, Int)
-rect (Desk _ rect _ _) = rect
-
 rectFloat : Equipment -> (Float, Float, Float, Float)
 rectFloat e =
   let
@@ -295,15 +292,11 @@ partiallyChange f ids equipments =
     if List.member (idOf e) ids then f e else e
   ) equipments
 
-rotate : Equipment -> Equipment
-rotate (Desk id (x, y, width, height) color name) =
-  (Desk id (x, y, height, width) color name)
-
 moveEquipments : Int -> (Int, Int) -> List Id -> List Equipment -> List Equipment
 moveEquipments gridSize (dx, dy) ids equipments =
-  partiallyChange (\(Desk id (x, y, width, height) color name) ->
+  partiallyChange (\(Desk id (x, y, width, height) color name personId) ->
     let (newX, newY) = fitToGrid gridSize (x + dx, y + dy)
-    in Desk id (newX, newY, width, height) color name
+    in Desk id (newX, newY, width, height) color name personId
   ) ids equipments
 
 findEquipmentById : List Equipment -> Id -> Maybe Equipment
@@ -313,21 +306,6 @@ findEquipmentById equipments id =
 fitToGrid : Int -> (Int, Int) -> (Int, Int)
 fitToGrid gridSize (x, y) =
   (x // gridSize * gridSize, y // gridSize * gridSize)
-
-changeColor : String -> Equipment -> Equipment
-changeColor color (Desk id rect _ name) = Desk id rect color name
-
-changeName : String -> Equipment -> Equipment
-changeName name (Desk id rect color _) = Desk id rect color name
-
-idOf : Equipment -> Id
-idOf (Desk id _ _ _) = id
-
-nameOf : Equipment -> String
-nameOf (Desk _ _ _ name) = name
-
-colorOf : Equipment -> String
-colorOf (Desk _ _ color _) = color
 
 commitInputName : (Id, String) -> List Equipment -> List Equipment
 commitInputName (id, name) equipments =

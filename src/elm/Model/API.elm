@@ -1,17 +1,18 @@
 module Model.API exposing (
       getAuth
     , search
-    , getFloors
     , saveEditingFloor
     , publishEditingFloor
     , getEditingFloor
     , getFloor
+    , getFloorsInfo
     , saveEditingImage
     , gotoTop
     , login
     , logout
     , goToLogin
     , goToLogout
+    , personCandidate
     , Error
   ) -- where
 
@@ -33,7 +34,7 @@ type alias Floor = Floor.Model
 type alias Error = Http.Error
 
 encodeEquipment : Equipment -> Value
-encodeEquipment (Desk id (x, y, width, height) color name) =
+encodeEquipment (Desk id (x, y, width, height) color name personId) =
   object
     [ ("id", string id)
     , ("type", string "desk")
@@ -43,6 +44,11 @@ encodeEquipment (Desk id (x, y, width, height) color name) =
     , ("height", int height)
     , ("color", string color)
     , ("name", string name)
+    , ("personId"
+      , case personId of
+          Just id -> string id
+          Nothing -> null
+      )
     ]
 
 encodeFloor : Floor -> Value
@@ -82,8 +88,8 @@ decodeUser =
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
-  object7
-    (\id x y width height color name -> Desk id (x, y, width, height) color name)
+  object8
+    (\id x y width height color name personId -> Desk id (x, y, width, height) color name personId)
     ("id" := Decode.string)
     ("x" := Decode.int)
     ("y" := Decode.int)
@@ -91,6 +97,11 @@ decodeEquipment =
     ("height" := Decode.int)
     ("color" := Decode.string)
     ("name" := Decode.string)
+    ("personId" := Decode.maybe Decode.string)
+
+decodeSearchResult : Decoder (List (Equipment, String))
+decodeSearchResult =
+  Decode.list (Decode.tuple2 (,) decodeEquipment Decode.string)
 
 listToTuple2 : List a -> Maybe (a, a)
 listToTuple2 list =
@@ -149,8 +160,8 @@ getEditingFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ id ++ "/edit")
 
-getFloors : Task Error (List Floor)
-getFloors =
+getFloorsInfo : Task Error (List Floor)
+getFloorsInfo =
     Http.get
       (Decode.list decodeFloor)
       ("/api/v1/floors")
@@ -167,11 +178,17 @@ getAuth =
       decodeUser
       ("/api/v1/auth")
 
-search : String -> Task Error (List Equipment)
+search : String -> Task Error (List (Equipment, String))
 search query =
     Http.get
-      (Decode.list decodeEquipment)
+      (decodeSearchResult)
       ("/api/v1/search/" ++ query)
+
+personCandidate : String -> Task Error (List String)
+personCandidate name =
+    Http.get
+      (Decode.list Decode.string)
+      ("/api/v1/candidate/" ++ name)
 
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =

@@ -2,6 +2,7 @@ effect module Util.Routing where { subscription = MySub } exposing
   ( hashchanges
   )
 
+import String
 import Dict
 import Dom.LowLevel as Dom
 import Json.Decode as Json exposing ((:=))
@@ -15,7 +16,11 @@ hashchanges tagger =
 
 decodeHash : Json.Decoder String
 decodeHash =
-  Json.at [ "newURL" ] Json.string
+  Json.map (\url ->
+    case String.split "#" url of
+      head :: hash :: _ -> "#" ++ hash
+      _ -> ""
+    ) (Json.at [ "newURL" ] Json.string)
 
 
 -- SUBSCRIPTIONS
