@@ -1,5 +1,5 @@
 module BugReport exposing (..) -- where
-
+{-
 import Html exposing (div, text)
 import Html.App exposing (beginnerProgram)
 import Html.Events exposing (onMouseDown, onClick)
@@ -25,48 +25,41 @@ update msg model =
       "changed"
     Click ->
       "clicked"
+-}
 
 
-{-
-
-
-
-module BugReport exposing (..) -- where
-
-import Html exposing (div, hr, text)
+import Html exposing (div, text, button)
+import Html.Attributes exposing (style)
 import Html.App exposing (beginnerProgram)
-import Html.Attributes exposing (name, style)
-import Html.Events exposing (onMouseDown, onMouseUp, onClick, onDoubleClick, onWithOptions)
-import Json.Decode as Json
-
+import Html.Events exposing (onMouseDown, onClick)
 
 main =
   beginnerProgram { model = "init", view = view, update = update }
 
--- onWithOptions "click" { preventDefault = True, stopPropagation = True } (Json.succeed Click)
-
 view model =
-  div []
-    ((if model == "down" then [ div [] [text ""] ] else []) ++
-    [ div
-      [ onMouseDown MouseDown
-      -- , onMouseUp MouseUp
-      , onClick Click
-      ] [ text "click me" ]
-    , div [] [ text model ]
-    ])
+  let
+    children1 =
+      if model == "clicked" then
+        [ div
+            [ style [("padding-left", "100px")] ]
+            [ text "this element's padding-left must be 100px" ] ]
+      else
+        []
 
+    children2 =
+      [ div
+          [ style [("padding", "20px")]
+          , onClick Click
+          ]
+          [ text "click me" ]
+      ]
+  in
+    div [] (children1 ++ children2)
+    -- div [] (children2 ++ children1) -- this is OK
 
-type Msg = MouseDown | MouseUp | Click
+type Msg = Click
 
 update msg model =
-  case Debug.log "msg" msg of
-    MouseDown ->
-      "down"
-    MouseUp ->
-      "up"
+  case msg of
     Click ->
       "clicked"
-
-
--}

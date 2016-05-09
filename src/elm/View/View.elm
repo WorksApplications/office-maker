@@ -174,18 +174,19 @@ subView model =
         subViewForEdit model
       else
         subViewForSearch model
-    tabs =
+    tabs = Debug.log "tabs" <|
       if User.isAdmin model.user then
-        [ subViewTab (ChangeEditing False) 0 "search" (not model.isEditing)
-        , subViewTab (ChangeEditing True) 1 "edit" (model.isEditing)
+        [ subViewTab (ChangeEditing False) 0 Icons.searchTab (not model.isEditing)
+        , subViewTab (ChangeEditing True) 1 Icons.editTab (model.isEditing)
         ]
       else
-        []
+        [ ]
   in
+    Debug.log "div" <|
     div
       [ style (Styles.subView)
       ]
-      (tabs ++ children)
+      (children ++ tabs) --TODO if swapping, padding-left disappears...
 
 subViewForEdit : Model -> List (Html Action)
 subViewForEdit model =
@@ -202,13 +203,13 @@ subViewForSearch model =
     ]
 
 
-subViewTab : msg -> Int -> String -> Bool -> Html msg
-subViewTab msg index name active =
+subViewTab : msg -> Int -> Html msg -> Bool -> Html msg
+subViewTab msg index icon active =
   div
     [ style (Styles.subViewTab index active)
     , onClick msg
     ]
-    [ text name ]
+    [ icon ]
 
 card : List (Html msg) -> Html msg
 card children =
@@ -306,7 +307,7 @@ debugView model =
     , text (toString model.keys.ctrl)
     , br [] []
     , text (toString model.offset)
-    , br [] []
+    -- , div [ style (Styles.subViewTab 0 False )] [ text "debug"]
     ]
 
 canvasContainerView : Model -> Html Action

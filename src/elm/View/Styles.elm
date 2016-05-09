@@ -424,6 +424,8 @@ subViewTab index active =
     , ("left", "-30px")
     , ("width", "30px")
     , ("height", "120px")
+    , ("padding-left", "6px")
+    , ("line-height", "120px")
     , ("background-color", if active then "#eee" else "#eee")
     , ("z-index", zIndex.subView)
     , ("cursor", "pointer")
