@@ -18,14 +18,16 @@ module Model.API exposing (
 
 import Http
 import Json.Encode exposing (object, list, encode, string, int, null, Value)
-import Json.Decode as Decode exposing ((:=), object8, object7, object2, oneOf, Decoder)
+import Json.Decode as Decode exposing ((:=), object8, object7, object4, object2, oneOf, Decoder)
 import Task exposing (Task)
 
 import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
+import Util.DecodeUtil exposing (..)
 
 import Model.Floor as Floor
 import Model.User as User exposing (User)
+import Model.Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
 import Model.Floor as Floor exposing (ImageSource(..))
 
@@ -85,6 +87,15 @@ decodeUser =
       ("name" := Decode.string)
   , Decode.succeed User.guest
   ]
+
+decodePerson : Decoder Person
+decodePerson =
+  object4
+      (\id name org image -> { id = id, name = name, org = org, image = image})
+      ("id" := Decode.string)
+      ("name" := Decode.string)
+      ("org" := Decode.string)
+      ("image" ?= Decode.string)
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
@@ -184,10 +195,10 @@ search query =
       (decodeSearchResult)
       ("/api/v1/search/" ++ query)
 
-personCandidate : String -> Task Error (List String)
+personCandidate : String -> Task Error (List Person)
 personCandidate name =
     getJsonWithNoCache
-      (Decode.list Decode.string)
+      (Decode.list decodePerson)
       ("/api/v1/candidate/" ++ name)
 
 saveEditingImage : Id -> File -> Task a ()
