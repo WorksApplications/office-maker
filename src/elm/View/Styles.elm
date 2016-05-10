@@ -425,12 +425,13 @@ subViewTab index active =
     , ("width", "30px")
     , ("height", "120px")
     , ("padding-left", "6px")
-    , ("line-height", "120px")
+    , ("line-height", "135px")
     , ("background-color", if active then "#eee" else "#eee")
     , ("z-index", zIndex.subView)
     , ("cursor", "pointer")
     , ("border-radius", "8px 0 0 8px")
     , ("box-shadow", if active then "" else "inset -4px 0 4px rgba(0,0,0,0.03)")
+    , ("box-sizing", "border-box")
     ]
 
 personMatchingInfo : S
