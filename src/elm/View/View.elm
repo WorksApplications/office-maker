@@ -174,15 +174,14 @@ subView model =
         subViewForEdit model
       else
         subViewForSearch model
-    tabs = Debug.log "tabs" <|
+    tabs =
       if User.isAdmin model.user then
         [ subViewTab (ChangeEditing False) 0 Icons.searchTab (not model.isEditing)
         , subViewTab (ChangeEditing True) 1 Icons.editTab (model.isEditing)
         ]
       else
-        [ ]
+        []
   in
-    Debug.log "div" <|
     div
       [ style (Styles.subView)
       ]
@@ -529,10 +528,13 @@ colorPropertyView model =
 
 publishButtonView : Model -> Html Action
 publishButtonView model =
-  button
-    [ onClick' Publish
-    , style Styles.publishButton ]
-    [ text "Publish" ]
+  if User.isAdmin model.user then
+    button
+      [ onClick' Publish
+      , style Styles.publishButton ]
+      [ text "Publish" ]
+  else
+    text ""
 
 floorView : Model -> List (Html Action)
 floorView model =

@@ -1,6 +1,6 @@
 import Html exposing (Html, text, div, input, form, h2)
 import Html.App as App
-import Html.Attributes exposing (type', value, action, method, style)
+import Html.Attributes exposing (type', value, action, method, style, autofocus)
 
 import Task
 import Http
@@ -99,7 +99,9 @@ loginForm model =
             [ style Styles.formInput
             , onInput InputId
             , type' "text"
-            , value model.inputId]
+            , value model.inputId
+            , autofocus True
+            ]
             []
         ]
     , div

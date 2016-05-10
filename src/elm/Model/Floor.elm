@@ -14,6 +14,7 @@ type alias Model =
   , height : Int
   , realSize : Maybe (Int, Int)
   , imageSource : ImageSource
+  , public : Bool
   }
 
 type ImageSource =
@@ -28,6 +29,7 @@ init id =
     , height = 600
     , realSize = Nothing
     , imageSource = None
+    , public = False
     }
 
 type Action =

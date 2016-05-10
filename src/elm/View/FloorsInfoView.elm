@@ -13,7 +13,7 @@ view currentFloorId floors =
   let
     each floor =
       li
-        [ style (Styles.floorsInfoViewItem (currentFloorId == floor.id))
+        [ style (Styles.floorsInfoViewItem (currentFloorId == floor.id) floor.public)
         ]
         [ a [ href ("#" ++ floor.id) ] [ text floor.name ]
         ]

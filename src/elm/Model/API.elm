@@ -17,7 +17,7 @@ module Model.API exposing (
   ) -- where
 
 import Http
-import Json.Encode exposing (object, list, encode, string, int, null, Value)
+import Json.Encode exposing (object, list, encode, string, int, bool, null, Value)
 import Json.Decode as Decode exposing ((:=), object8, object7, object4, object2, oneOf, Decoder)
 import Task exposing (Task)
 
@@ -72,6 +72,7 @@ encodeFloor floor =
           Just (w, h) -> list [ int w, int h ]
           Nothing -> null)
       , ("src", src)
+      , ("public", bool floor.public)
       ]
 
 encodeLogin : String -> String -> Value
@@ -123,8 +124,8 @@ listToTuple2 list =
 
 decodeFloor : Decoder Floor
 decodeFloor =
-  object7
-    (\id name equipments width height realSize src ->
+  object8
+    (\id name equipments width height realSize src public ->
       { id = id
       , name = name
       , equipments = equipments
@@ -132,6 +133,7 @@ decodeFloor =
       , height = height
       , imageSource = Maybe.withDefault None (Maybe.map URL src)
       , realSize = Maybe.andThen realSize listToTuple2
+      , public = Maybe.withDefault False public
       }) -- TODO
     ("id" := Decode.string)
     ("name" := Decode.string)
@@ -140,6 +142,8 @@ decodeFloor =
     ("height" := Decode.int)
     (Decode.maybe ("realSize" := Decode.list Decode.int))
     (Decode.maybe ("src" := Decode.string))
+    (Decode.maybe ("public" := Decode.bool))
+
 
 serializeFloor : Floor -> String
 serializeFloor floor =
@@ -171,11 +175,11 @@ getEditingFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ id ++ "/edit")
 
-getFloorsInfo : Task Error (List Floor)
-getFloorsInfo =
+getFloorsInfo : Bool -> Task Error (List Floor)
+getFloorsInfo withPrivate =
     Http.get
       (Decode.list decodeFloor)
-      ("/api/v1/floors")
+      ("/api/v1/floors" ++ (if withPrivate then "?all=true" else ""))
 
 getFloor : String -> Task Error Floor
 getFloor id =

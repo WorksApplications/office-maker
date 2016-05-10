@@ -23,6 +23,9 @@ zIndex =
   , contextMenu = "800"
   }
 
+selectColor : String
+selectColor = "#69e"
+
 noMargin : S
 noMargin =
   [ ( "margin", "0") ]
@@ -99,7 +102,7 @@ selectorRect rect =
   (absoluteRect rect) ++ [("z-index", zIndex.selectorRect)
   , ("border-style", "solid")
   , ("border-width", "2px")
-  , ("border-color", "#69e")
+  , ("border-color", selectColor)
   ]
 
 colorProperty : String -> Bool -> S
@@ -195,7 +198,7 @@ selection selected =
   , ("box-sizing", "border-box")
   , ("margin-right", "-1px")
   , ("border", "solid 1px #666")
-  , ("background-color", if selected then "#69e" else "inherit")
+  , ("background-color", if selected then selectColor else "inherit")
   , ("color", if selected then "#fff" else "inherit")
   -- , ("font-weight", if selected then "bold" else "inherit")
   ]
@@ -214,7 +217,7 @@ prototypePreviewView stampMode =
   , ("position", "relative")
   , ("border-style", "solid")
   , ("border-width", if stampMode then "2px" else "1px")
-  , ("border-color", if stampMode then "#69e" else "#666")
+  , ("border-color", if stampMode then selectColor else "#666")
   , ("box-sizing", "border-box")
   , ("margin-top", "10px")
   , ("background-color", "#fff")
@@ -407,14 +410,17 @@ floorsInfoView =
     , ("z-index", zIndex.floorInfo)
     ]
 
-floorsInfoViewItem : Bool -> S
-floorsInfoViewItem selected =
-    [ ("background-color", if selected then "#eee" else "white")
+floorsInfoViewItem : Bool -> Bool -> S
+floorsInfoViewItem selected public =
+    [ ("background-color", if public then "#fff" else "#aaa")
     , ("padding", "8px 12px")
-    , ("border-right", "solid 1px #ddd")
-    , ("border-bottom", "solid 1px #ddd")
+    , ("border-right", if selected then "solid 2px " ++ selectColor else "solid 1px #ddd")
+    , ("border-bottom", if selected then "solid 2px " ++ selectColor else "solid 1px #ddd")
+    , ("border-top", if selected then "solid 2px " ++ selectColor else "none")
+    , ("border-left", if selected then "solid 2px " ++ selectColor else "none")
     , ("min-width", "60px")
     , ("text-align", "center")
+    , ("box-sizing", "border-box")
     ]
 
 subViewTab : Int -> Bool -> S

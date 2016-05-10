@@ -17,6 +17,10 @@ isAdmin user =
     Admin _ -> True
     _ -> False
 
+isGuest : User -> Bool
+isGuest user =
+  user == Guest
+
 general : String -> User
 general name =
   General name

@@ -1,3 +1,4 @@
+var url = require('url');
 var fs = require('fs-extra');
 var express = require('express');
 var app = express();
@@ -64,6 +65,13 @@ function role(req) {
   }
 }
 
+function isValidFloor(floor) {
+  if(!floor.name.trim()) {
+    return false;
+  }
+  return true;
+}
+
 
 /* Login required */
 
@@ -86,9 +94,19 @@ app.get('/api/v1/auth', function(req, res) {
   }
 });
 app.get('/api/v1/floors', function (req, res) {
+  var query = url.parse(req.url, true).query;
+  if(role(req) === 'guest' && query.all) {
+    res.status(401).send('');
+    return;
+  }
+  var filterFunc = query.all ? function() {
+    return true;
+  } : function(floor) {
+    return floor.public;
+  }
   var floors_ = Object.keys(floors).map(function(id) {
     return floors[id];
-  });
+  }).filter(filterFunc);
   res.send(floors_);
 });
 app.get('/api/v1/search/:query', function (req, res) {
@@ -134,15 +152,21 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
 });
 
 app.put('/api/v1/floor/:id/edit', function (req, res) {
-  // if(role(req) !== 'admin') {
-  //   res.status(401).send('');
-  //   return;
-  // }
+  if(role(req) === 'guest') {
+    res.status(401).send('');
+    return;
+  }
   var id = req.params.id;
   var newFloor = req.body;
   if(id !== newFloor.id) {
-    throw "invalid!";
+    res.status(400).send('');
+    return;
   }
+  if(!isValidFloor(newFloor)) {
+    res.status(400).send('');
+    return;
+  }
+
   floors[id] = newFloor;
   console.log('saved floor: ' + id);
   // console.log(newFloor);
@@ -157,10 +181,15 @@ app.post('/api/v1/floor/:id', function (req, res) {
   }
   var id = req.params.id;
   var newFloor = req.body;
-  console.log(req.body);
   if(id !== newFloor.id) {
-    throw "invalid! : " + [id, newFloor.id];
+    res.status(400).send('');
+    return;
   }
+  if(!isValidFloor(newFloor)) {
+    res.status(400).send('');
+    return;
+  }
+  newFloor.public = true;
   floors[id] = newFloor;
   console.log('published floor: ' + id);
   // console.log(newFloor);
@@ -174,7 +203,6 @@ app.put('/api/v1/image/:id', function (req, res) {
     return;
   }
   var id = req.params.id;
-  console.log(id);
   var all = [];
   req.on('data', function(data) {
     all.push(data);

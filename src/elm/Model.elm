@@ -193,9 +193,13 @@ update action model =
     HashChange hash ->
       ({ model | hash = hash}, loadFloorEffects hash)
     Init ->
-      (model, Cmd.batch [loadAuthEffects, loadFloorsInfoEffects, loadFloorEffects model.hash])
+      (model, Cmd.batch [loadAuthEffects, loadFloorEffects model.hash])
     AuthLoaded user ->
-      ({ model | user = user }, Cmd.none)
+      let
+        requestPrivateFloors =
+          not (User.isGuest user)
+      in
+        ({ model | user = user }, loadFloorsInfoEffects requestPrivateFloors)
     FloorsInfoLoaded floors ->
       ({ model | floorsInfo = floors }, Cmd.none)
     FloorLoaded floor ->
@@ -772,7 +776,8 @@ updateOnFinishNameInput id name model =
           in
             (newEditingEquipment, cmd)
         Nothing -> (Nothing, Cmd.none)
-    newFloor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
+    newFloor =  --TODO if name really changed
+      UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
     newModel =
       { model |
         floor = newFloor
@@ -989,9 +994,9 @@ loadAuthEffects : Cmd Action
 loadAuthEffects =
     Task.perform (Error << APIError) AuthLoaded API.getAuth
 
-loadFloorsInfoEffects : Cmd Action
-loadFloorsInfoEffects =
-    Task.perform (Error << APIError) FloorsInfoLoaded API.getFloorsInfo
+loadFloorsInfoEffects : Bool -> Cmd Action
+loadFloorsInfoEffects withPrivate =
+    Task.perform (Error << APIError) FloorsInfoLoaded (API.getFloorsInfo withPrivate)
 
 loadFloorEffects : String -> Cmd Action
 loadFloorEffects hash =
