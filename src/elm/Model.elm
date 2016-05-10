@@ -695,10 +695,13 @@ update action model =
         model' =
           { model | searchBox = searchBox }
 
+        results =
+          SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
+          
         selectedResult =
           case maybeEvent of
             Just SearchBox.OnResults ->
-              case SearchBox.equipmentsInFloor (UndoRedo.data model.floor).id model'.searchBox of
+              case results of
                 head :: [] ->
                    Just (idOf head)
                 _ -> Nothing
@@ -706,6 +709,8 @@ update action model =
               Just id
             _ ->
               model'.selectedResult
+
+        --TODO fetch all person related desks here
 
         model'' =
           { model' |
@@ -727,7 +732,6 @@ update action model =
         (newModel, Cmd.none)
     UpdatePersonCandidate equipmentId people ->
       let
-        _ = Debug.log "people" people
         ids = List.map (.id) people
         newFloor =
           UndoRedo.commit
@@ -735,7 +739,8 @@ update action model =
             (Floor.changeUserCandidate equipmentId ids)
         newModel =
           { model |
-            personInfo = Debug.log "personInfoDict" <| addAll (.id) people model.personInfo
+            personInfo =
+              addAll (.id) people model.personInfo
           , floor = newFloor
           }
       in
