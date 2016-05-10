@@ -5,9 +5,10 @@ import Color exposing (Color, white, black, gray)
 import Material.Icons.Navigation exposing (check, close)
 -- import Material.Icons.Notification exposing (priority_high) -- TODO
 
+import Material.Icons.Action exposing (search)
 import Material.Icons.Editor exposing (mode_edit, border_all)
 import Material.Icons.Image exposing (crop_square)
-import Material.Icons.Internal  exposing (icon)
+import Material.Icons.Internal exposing (icon)
 
 selectMode : Bool -> Svg msg
 selectMode selected =
@@ -32,6 +33,14 @@ personNotMatched =
 popupClose : Svg msg
 popupClose =
   close white 18
+
+searchTab : Svg msg
+searchTab =
+  search (Color.rgb 140 140 140) 20
+
+editTab : Svg msg
+editTab =
+  mode_edit (Color.rgb 140 140 140) 20
 
 -- TODO PR to elm-material-icons
 

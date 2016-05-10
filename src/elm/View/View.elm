@@ -26,7 +26,7 @@ import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
-
+import Model.Person as Person exposing (Person)
 
 contextMenuView : Model -> Html Action
 contextMenuView model =
@@ -77,9 +77,16 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             -- , Html.Events.onDoubleClick (StartEditEquipment id)
             , onDblClick' (StartEditEquipment id)
             ]
+        floor = UndoRedo.data model.floor
         personInfo =
-          model.selectedResult `Maybe.andThen` \id ->
-            Dict.get id model.personInfo
+          model.selectedResult `Maybe.andThen` \id' ->
+            if id' == id then
+              findEquipmentById floor.equipments id `Maybe.andThen` \equipment ->
+              Equipments.relatedPerson equipment `Maybe.andThen` \personId ->
+              Dict.get personId model.personInfo
+            else
+              Nothing
+
         personMatched = personId /= Nothing
       in
         equipmentView'
@@ -94,6 +101,27 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           disableTransition
           personInfo
           personMatched
+
+popup : Model -> Equipment -> Person -> Html msg
+popup model equipment person =
+  let
+    url =
+      Maybe.withDefault "images/default.png" person.image
+    (offsetX, offsetY) = model.offset
+    (x, y, w, h) =
+      rect equipment
+    (screenX, screenY) =
+      Scale.imageToScreenForPosition model.scale (offsetX + x + w//2, offsetY + y)
+  in
+    div
+      [ style (Styles.popup (screenX, screenY)) ]
+      [ div [ style Styles.popupClose ] [ Icons.popupClose ]
+      , img [ style Styles.popupPersonImage, src url ] []
+      -- , div [ style Styles.popupPersonNo ] [ text person.no ]
+      , div [ style Styles.popupPersonName ] [ text person.name ]
+      , div [ style Styles.popupPersonOrg ] [ text person.org ]
+      ]
+
 
 transitionDisabled : Model -> Bool
 transitionDisabled model =
@@ -146,18 +174,19 @@ subView model =
         subViewForEdit model
       else
         subViewForSearch model
-    tabs =
+    tabs = Debug.log "tabs" <|
       if User.isAdmin model.user then
-        [ subViewTab (ChangeEditing False) 0 "search" (not model.isEditing)
-        , subViewTab (ChangeEditing True) 1 "edit" (model.isEditing)
+        [ subViewTab (ChangeEditing False) 0 Icons.searchTab (not model.isEditing)
+        , subViewTab (ChangeEditing True) 1 Icons.editTab (model.isEditing)
         ]
       else
-        []
+        [ ]
   in
+    Debug.log "div" <|
     div
       [ style (Styles.subView)
       ]
-      (tabs ++ children)
+      (children ++ tabs) --TODO if swapping, padding-left disappears...
 
 subViewForEdit : Model -> List (Html Action)
 subViewForEdit model =
@@ -174,13 +203,13 @@ subViewForSearch model =
     ]
 
 
-subViewTab : msg -> Int -> String -> Bool -> Html msg
-subViewTab msg index name active =
+subViewTab : msg -> Int -> Html msg -> Bool -> Html msg
+subViewTab msg index icon active =
   div
     [ style (Styles.subViewTab index active)
     , onClick msg
     ]
-    [ text name ]
+    [ icon ]
 
 card : List (Html msg) -> Html msg
 card children =
@@ -277,28 +306,41 @@ debugView model =
     , br [] []
     , text (toString model.keys.ctrl)
     , br [] []
-    , text (toString model.editingEquipment)
-    , br [] []
+    , text (toString model.offset)
+    -- , div [ style (Styles.subViewTab 0 False )] [ text "debug"]
     ]
 
 canvasContainerView : Model -> Html Action
 canvasContainerView model =
-  div
-    [ style (Styles.canvasContainer ++
-      ( if model.editMode == Stamp then
-          [] -- [("cursor", "none")]
-        else
-          []
-      ))
-    , onMouseMove' MoveOnCanvas
-    , onMouseDown' MouseDownOnCanvas
-    , onMouseUp' MouseUpOnCanvas
-    , onMouseEnter' EnterCanvas
-    , onMouseLeave' LeaveCanvas
-    , onMouseWheel MouseWheel
-    ]
-    [ canvasView model
-    ]
+  let
+    floor = UndoRedo.data model.floor
+    popup' =
+      Maybe.withDefault (text "") <|
+      model.selectedResult `Maybe.andThen` \id ->
+      findEquipmentById floor.equipments id `Maybe.andThen` \e ->
+      Equipments.relatedPerson e `Maybe.andThen` \personId ->
+      Dict.get personId model.personInfo `Maybe.andThen` \person ->
+      Just (popup model e person)
+
+
+  in
+    div
+      [ style (Styles.canvasContainer ++
+        ( if model.editMode == Stamp then
+            [] -- [("cursor", "none")]
+          else
+            []
+        ))
+      , onMouseMove' MoveOnCanvas
+      , onMouseDown' MouseDownOnCanvas
+      , onMouseUp' MouseUpOnCanvas
+      , onMouseEnter' EnterCanvas
+      , onMouseLeave' LeaveCanvas
+      , onMouseWheel MouseWheel
+      ]
+      [ canvasView model
+      , popup'
+      ]
 
 canvasView : Model -> Html Action
 canvasView model =
