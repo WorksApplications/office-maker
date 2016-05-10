@@ -24,6 +24,11 @@ screenToImageForPosition model (screenX, screenY) =
   ( screenToImage model screenX
   , screenToImage model screenY)
 
+imageToScreenForPosition : Model -> (Int, Int) -> (Int, Int)
+imageToScreenForPosition model (imageX, imageY) =
+  ( imageToScreen model imageX
+  , imageToScreen model imageY)
+
 imageToScreenForRect : Model -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
 imageToScreenForRect model (x, y, w, h) =
   ( imageToScreen model x

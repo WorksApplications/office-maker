@@ -15,6 +15,7 @@ import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
 import Util.Routing as Routing
+import Util.DictUtil exposing (..)
 
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
@@ -168,7 +169,7 @@ type Action = NoOp
   | HeaderAction Header.Action
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
-  | UpdatePersonCandidate Id (List Person.Id)
+  | UpdatePersonCandidate Id (List Person)
   | Error Error
 
 debug : Bool
@@ -693,14 +694,14 @@ update action model =
         selectedResult =
           case maybeEvent of
             Just SearchBox.OnResults ->
-              case SearchBox.equipmentsInFloor (UndoRedo.data model.floor).id model.searchBox of
+              case SearchBox.equipmentsInFloor (UndoRedo.data model.floor).id model'.searchBox of
                 head :: [] ->
                    Just (idOf head)
                 _ -> Nothing
             Just (SearchBox.OnSelectResult id) ->
               Just id
             _ ->
-              Nothing
+              model'.selectedResult
 
         model'' =
           { model' |
@@ -720,14 +721,19 @@ update action model =
           { model | isEditing = isEditing }
       in
         (newModel, Cmd.none)
-    UpdatePersonCandidate equipmentId ids ->
+    UpdatePersonCandidate equipmentId people ->
       let
+        _ = Debug.log "people" people
+        ids = List.map (.id) people
         newFloor =
           UndoRedo.commit
             model.floor
             (Floor.changeUserCandidate equipmentId ids)
         newModel =
-          { model | floor = newFloor }
+          { model |
+            personInfo = Debug.log "personInfoDict" <| addAll (.id) people model.personInfo
+          , floor = newFloor
+          }
       in
         (newModel, Cmd.none)
     Error e ->
@@ -736,6 +742,7 @@ update action model =
           { model | errors = e :: model.errors }
       in
         (newModel, Cmd.none)
+
 
 updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Action)
 updateOnFinishNameInput id name model =
@@ -765,13 +772,14 @@ updateOnFinishNameInput id name model =
           in
             (newEditingEquipment, cmd)
         Nothing -> (Nothing, Cmd.none)
+    newFloor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
     newModel =
       { model |
-        floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name) --TODO if name really changed
+        floor = newFloor
       , editingEquipment = editingEquipment
       }
   in
-    (newModel, cmd)
+    (newModel, Cmd.batch [cmd, saveFloorEffects (UndoRedo.data newFloor)])
 
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model

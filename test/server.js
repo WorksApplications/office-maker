@@ -114,7 +114,7 @@ app.get('/api/v1/candidate/:name', function (req, res) {
   });
   var results = users_.reduce(function(memo, user) {
     if(user.name.toLowerCase().indexOf(name.toLowerCase()) >= 0) {
-      return memo.concat([user.id]);
+      return memo.concat([user]);
     } else {
       return memo;
     }

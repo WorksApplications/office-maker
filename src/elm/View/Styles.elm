@@ -9,6 +9,7 @@ zIndex :
   , deskInput : String
   , selectorRect : String
   , floorInfo : String
+  , popup : String
   , subView : String
   , contextMenu : String
   }
@@ -17,6 +18,7 @@ zIndex =
   , deskInput = "200"
   , selectorRect = "300"
   , floorInfo = "500"
+  , popup = "550"
   , subView = "600"
   , contextMenu = "800"
   }
@@ -411,6 +413,8 @@ floorsInfoViewItem selected =
     , ("padding", "8px 12px")
     , ("border-right", "solid 1px #ddd")
     , ("border-bottom", "solid 1px #ddd")
+    , ("min-width", "60px")
+    , ("text-align", "center")
     ]
 
 subViewTab : Int -> Bool -> S
@@ -420,6 +424,8 @@ subViewTab index active =
     , ("left", "-30px")
     , ("width", "30px")
     , ("height", "120px")
+    , ("padding-left", "6px")
+    , ("line-height", "120px")
     , ("background-color", if active then "#eee" else "#eee")
     , ("z-index", zIndex.subView)
     , ("cursor", "pointer")
@@ -443,12 +449,16 @@ personNotMatched =
     personMatchingInfo ++ [ ("background-color", "#ccc") ]
 
 popup : (Int, Int) -> S
-popup (fromX, fromY) =
-  [ ("padding", "10px")
+popup (x, y) =
+  [ ("box-sizing", "border-box")
+  , ("padding", "10px")
   , ("background-color", "#fff")
-  , ("position", "relative")
+  , ("position", "absolute")
   , ("width", "200px")
   , ("height", "80px")
+  , ("left", toString (x - 100) ++ "px")
+  , ("top", toString (y - 90) ++ "px")
+  , ("z-index", zIndex.popup)
   ] ++ shadow
 
 popupClose : S
