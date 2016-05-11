@@ -8,7 +8,7 @@ import Material.Icons.Navigation exposing (check, close)
 import Material.Icons.Action exposing (search)
 import Material.Icons.Editor exposing (mode_edit, border_all)
 import Material.Icons.Image exposing (crop_square)
-import Material.Icons.Internal exposing (icon)
+-- import Material.Icons.Internal exposing (icon)
 
 selectMode : Bool -> Svg msg
 selectMode selected =
@@ -28,7 +28,8 @@ personMatched =
 
 personNotMatched : Svg msg
 personNotMatched =
-  priority_high white 18
+  check white 18
+  -- priority_high white 18
 
 popupClose : Svg msg
 popupClose =
@@ -44,6 +45,6 @@ editTab =
 
 -- TODO PR to elm-material-icons
 
-priority_high : Color -> Int -> Svg msg
-priority_high =
-  icon "M10 3h4v12h-4z"
+-- priority_high : Color -> Int -> Svg msg
+-- priority_high =
+--   icon "M10 3h4v12h-4z"
