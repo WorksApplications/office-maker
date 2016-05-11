@@ -139,7 +139,7 @@ type Action = NoOp
   | AuthLoaded User
   | FloorsInfoLoaded (List Floor)
   | FloorLoaded Floor
-  | FloorSaved
+  | FloorSaved Bool
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
@@ -191,15 +191,20 @@ update action model =
     NoOp ->
       (model, Cmd.none)
     HashChange hash ->
-      ({ model | hash = hash}, loadFloorEffects hash)
+      ({ model | hash = hash}, loadFloorEffects (not <| User.isGuest model.user) hash)
     Init ->
-      (model, Cmd.batch [loadAuthEffects, loadFloorEffects model.hash])
+      (model, Cmd.batch [loadAuthEffects])
     AuthLoaded user ->
       let
         requestPrivateFloors =
           not (User.isGuest user)
       in
-        ({ model | user = user }, loadFloorsInfoEffects requestPrivateFloors)
+        ( { model | user = user }
+        , Cmd.batch
+            [ loadFloorsInfoEffects requestPrivateFloors
+            , loadFloorEffects (not <| User.isGuest user) model.hash
+            ]
+        )
     FloorsInfoLoaded floors ->
       ({ model | floorsInfo = floors }, Cmd.none)
     FloorLoaded floor ->
@@ -214,11 +219,11 @@ update action model =
           }
       in
         (newModel, Cmd.none)
-    FloorSaved ->
+    FloorSaved isPublish ->
       let
         newModel =
           { model |
-            floor = UndoRedo.commit model.floor Floor.useURL
+            floor = UndoRedo.commit model.floor (Floor.onSaved isPublish)
           }
       in
         (newModel, Cmd.none)
@@ -697,7 +702,7 @@ update action model =
 
         results =
           SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
-          
+
         selectedResult =
           case maybeEvent of
             Just SearchBox.OnResults ->
@@ -808,7 +813,7 @@ saveFloorEffects floor =
   in
     Task.perform
       (Error << APIError)
-      (always FloorSaved)
+      (always (FloorSaved False))
       (firstTask `Task.andThen` (always secondTask))
 
 
@@ -825,7 +830,7 @@ publishFloorEffects floor =
   in
     Task.perform
       (Error << APIError)
-      (always FloorSaved)
+      (always (FloorSaved True))
       (firstTask `Task.andThen` (always secondTask))
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Action)
@@ -1003,14 +1008,18 @@ loadFloorsInfoEffects : Bool -> Cmd Action
 loadFloorsInfoEffects withPrivate =
     Task.perform (Error << APIError) FloorsInfoLoaded (API.getFloorsInfo withPrivate)
 
-loadFloorEffects : String -> Cmd Action
-loadFloorEffects hash =
+loadFloorEffects : Bool -> String -> Cmd Action
+loadFloorEffects forEdit hash =
   let
     floorId =
-      Debug.log "floorId" <| String.dropLeft 1 hash
+      -- Debug.log "floorId" <|
+        String.dropLeft 1 hash
     task =
       if String.length floorId > 0 then
-        API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
+        if forEdit then
+          API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
+        else
+          API.getFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
       else
         Task.succeed (Floor.init "-1")
   in

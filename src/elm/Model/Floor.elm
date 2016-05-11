@@ -44,7 +44,7 @@ type Action =
   | SetLocalFile String File String
   | ChangeRealWidth Int
   | ChangeRealHeight Int
-  | UseURL
+  | OnSaved Bool
   | ChangeUserCandidate String (List String)
 
 create : (List (Id, (Int, Int, Int, Int), String, String)) -> Action
@@ -80,8 +80,8 @@ changeRealWidth = ChangeRealWidth
 changeRealHeight : Int -> Action
 changeRealHeight = ChangeRealHeight
 
-useURL : Action
-useURL = UseURL
+onSaved : Bool -> Action
+onSaved = OnSaved
 
 changeUserCandidate : String -> List String -> Action
 changeUserCandidate = ChangeUserCandidate
@@ -147,7 +147,7 @@ update action model =
           realSize = newRealSize
         -- , useReal = True
         }
-    UseURL ->
+    OnSaved isPublish ->
       { model |
         imageSource =
           case model.imageSource of
@@ -155,6 +155,7 @@ update action model =
               URL id
             _ ->
               model.imageSource
+      , public = isPublish
       }
     ChangeUserCandidate equipmentId ids ->
       let

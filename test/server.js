@@ -61,7 +61,7 @@ function role(req) {
   if(!req.session.user) {
     return "guest"
   } else {
-    return req.session.user.role;
+    return users[req.session.user].role;
   }
 }
 
@@ -93,28 +93,36 @@ app.get('/api/v1/auth', function(req, res) {
     res.send({});
   }
 });
+function getFloor(withPrivate, id) {
+  if(withPrivate) {
+    return floors[id][0];
+  } else {
+    if(floors[id]) {
+      return floors[id][0].public ? floors[id][0] : floors[id][1];
+    } else {
+      return null;
+    }
+  }
+}
+function getFloors(withPrivate) {
+  return Object.keys(floors).map(function(id) {
+    return getFloor(withPrivate, id);
+  }).filter(function(floor) {
+    return !!floor;
+  });
+}
 app.get('/api/v1/floors', function (req, res) {
-  var query = url.parse(req.url, true).query;
-  if(role(req) === 'guest' && query.all) {
+  var options = url.parse(req.url, true).query;
+  if(role(req) === 'guest' && options.all) {
     res.status(401).send('');
     return;
   }
-  var filterFunc = query.all ? function() {
-    return true;
-  } : function(floor) {
-    return floor.public;
-  }
-  var floors_ = Object.keys(floors).map(function(id) {
-    return floors[id];
-  }).filter(filterFunc);
-  res.send(floors_);
+  res.send(getFloors(options.all));
 });
 app.get('/api/v1/search/:query', function (req, res) {
+  var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  var floors_ = Object.keys(floors).map(function(id) {
-    return floors[id];
-  });
-  var results = floors_.reduce(function(memo, floor) {
+  var results = getFloors(options.all).reduce(function(memo, floor) {
     return floor.equipments.reduce(function(memo, e) {
       if(e.name.indexOf(query) >= 0) {
         return memo.concat([[e, floor.id]]);
@@ -141,16 +149,24 @@ app.get('/api/v1/candidate/:name', function (req, res) {
 });
 app.get('/api/v1/floor/:id/edit', function (req, res) {
   var id = req.params.id;
-  var floor = floors[id];
   console.log('get: ' + id);
-  // console.log(floor);
+  var floor = getFloor(true, id);
   if(floor) {
     res.send(floor);
   } else {
     res.status(404).send('not found by id: ' + id);
   }
 });
-
+app.get('/api/v1/floor/:id', function (req, res) {
+  var id = req.params.id;
+  console.log('get: ' + id);
+  var floor = getFloor(false, id);
+  if(floor) {
+    res.send(floor);
+  } else {
+    res.status(404).send('not found by id: ' + id);
+  }
+});
 app.put('/api/v1/floor/:id/edit', function (req, res) {
   if(role(req) === 'guest') {
     res.status(401).send('');
@@ -166,8 +182,16 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
     res.status(400).send('');
     return;
   }
-
-  floors[id] = newFloor;
+  newFloor.public = false;
+  if(floors[id]) {
+    if(floors[id][0].public) {
+      floors[id].unshift(newFloor);
+    } else {
+      floors[id][0] = newFloor;
+    }
+  } else {
+    floors[id] = [newFloor];
+  }
   console.log('saved floor: ' + id);
   // console.log(newFloor);
   res.send('');
@@ -176,6 +200,7 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
 // publish
 app.post('/api/v1/floor/:id', function (req, res) {
   if(role(req) !== 'admin') {
+    console.log('unauthorized: ' + role(req));
     res.status(401).send('');
     return;
   }
@@ -190,7 +215,7 @@ app.post('/api/v1/floor/:id', function (req, res) {
     return;
   }
   newFloor.public = true;
-  floors[id] = newFloor;
+  floors[id].unshift(newFloor);
   console.log('published floor: ' + id);
   // console.log(newFloor);
   res.send('');
