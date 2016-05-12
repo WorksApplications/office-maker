@@ -4,17 +4,19 @@
   "description": "Office Maker\r ----",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test/api-test.js"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "body-parser": "^1.15.0",
+    "chai": "^3.5.0",
     "deep-diff": "^0.3.4",
     "express": "^4.13.4",
     "express-session": "^1.13.0",
     "fs-extra": "^0.28.0",
     "minimatch": "^3.0.0",
+    "mocha": "^2.4.5",
     "request": "^2.72.0",
     "slash": "^1.0.0",
     "watch": "^0.17.1"

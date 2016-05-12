@@ -28,7 +28,6 @@ app.use(session({
   }
 }));
 
-
 /* Login NOT required */
 app.post('/api/v1/login', function(req, res) {
   var id = req.body.id;
@@ -47,15 +46,6 @@ app.post('/api/v1/logout', function(req, res) {
 });
 
 app.use(express.static(publicDir));
-
-// Login
-// app.use('/', function(req, res, next) {
-//   if(!req.session.user && req.url.indexOf('/api') === 0) {
-//     res.status(401).send('');
-//   } else {
-//     next();
-//   }
-// });
 
 function role(req) {
   if(!req.session.user) {
@@ -95,7 +85,7 @@ app.get('/api/v1/auth', function(req, res) {
 });
 function getFloor(withPrivate, id) {
   if(withPrivate) {
-    return floors[id][0];
+    return floors[id] ? floors[id][0] : null;
   } else {
     if(floors[id]) {
       return floors[id][0].public ? floors[id][0] : floors[id][1];
@@ -148,6 +138,10 @@ app.get('/api/v1/candidate/:name', function (req, res) {
   res.send(results);
 });
 app.get('/api/v1/floor/:id/edit', function (req, res) {
+  if(role(req) === 'guest') {
+    res.status(401).send('');
+    return;
+  }
   var id = req.params.id;
   console.log('get: ' + id);
   var floor = getFloor(true, id);
@@ -242,6 +236,10 @@ app.put('/api/v1/image/:id', function (req, res) {
       }
     });
   })
+});
+
+process.on('uncaughtException', function(e) {
+  console.log(e);
 });
 
 fs.emptyDirSync(publicDir + '/images');

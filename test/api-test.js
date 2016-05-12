@@ -3,39 +3,79 @@ var url = require( "url" );
 var request = require('request');
 var deepDiff = require('deep-diff');
 var cp = require('child_process');
+var assert = require('chai').assert;
 
-var testCase = withServer(function(done) {
-  var admin = user();
-  var server = host('http://localhost:3000');
-  test([
-    server.send(admin, 'POST', '/api/v1/login', {
-      id: 'admin01',
-      pass: 'admin01'
-    }, noError),
-    server.send(admin, 'GET', '/api/v1/floors', {
-    }, exactJson([])),
-  ], done);
+describe('guest', function () {
+  it('cannot access to edit api', function (done) {
+    withServer(function(done) {
+      var admin = user();
+      var server = host('http://localhost:3000');
+      test([
+        server.send(admin, 'POST', '/api/v1/floor/1', {
+        }, status(401)),
+        server.send(admin, 'PUT', '/api/v1/image/1', {
+        }, status(401)),
+        server.send(admin, 'PUT', '/api/v1/floor/1/edit', {
+        }, status(401)),
+        server.send(admin, 'GET', '/api/v1/floor/1/edit', {
+        }, status(401)),
+        server.send(admin, 'GET', '/api/v1/floors?all=true', {
+        }, status(401)),
+        server.send(admin, 'GET', '/api/v1/floors', {
+        }, exactJson([])),
+      ], done);
+    }, done);
+  });
 });
 
-testCase(function(e) {
-  if(e) {
-    console.log('error')
-    console.log(e);
-  }
-  console.log('done!');
+describe('admin', function () {
+  it('can access to /api/v1/floor/:id/edit', function (done) {
+    withServer(function(done) {
+      var admin = user();
+      var server = host('http://localhost:3000');
+      test([
+        login(server, admin, 'admin01', 'admin01'),
+        server.send(admin, 'PUT', '/api/v1/floor/1/edit', {
+          id: '1',
+          name: 'F1'
+        }, status(200)),
+        server.send(admin, 'GET', '/api/v1/floor/1/edit', {
+        }, status(200)),
+        server.send(admin, 'GET', '/api/v1/floors?all=true', {
+        }, status(200)),
+      ], done);
+    }, done);
+  });
 });
 
-function withServer(test) {
-  return function(done) {
-    var server = cp.spawn('node', ['test/server']);
-    server.stdout.on('data', function (data) {
-      test(function(e) {
+function login(server, user, id, pass) {
+  return server.send(user, 'POST', '/api/v1/login', {
+    id: id,
+    pass: pass
+  }, status(200));
+}
+
+function withServer(test, done) {
+  var started = false;
+  var server = cp.spawn('node', [ __dirname + '/server.js']);
+  server.stdout.on('data', function (data) {
+    // console.log(data.toString());
+    try {
+      started || test(function(e) {
         server.kill();
         done(e);
       });
-    });
-  };
+    } catch(e) {
+      server.kill();
+      done(e);
+    }
+    started = true;
+  });
+  server.stderr.on('data', function (data) {
+    console.error(data.toString());
+  });
 }
+
 function exactJson(expect) {
   return function(error, response, body, done) {
     if(error) {
@@ -49,27 +89,26 @@ function exactJson(expect) {
           done();
         }
       } catch(e) {
-        done(e);
+        done('invalid JSON: ' + body);
       }
     }
-
   };
 }
-function noError(error, response, body, done) {
-  if(error) {
-    done(response);
-  } else {
-    done();
-  }
-}
-
-function ignore(error, response, body, done) {
-  done();
+function status(code) {
+  return function(error, response, body, done) {
+    if(error) {
+      done(error);
+    } else if(response.statusCode !== code) {
+      done(response.statusCode + ' ' + response.request.method + ' ' + response.request.href);
+    } else {
+      done();
+    }
+  };
 }
 
 function test(steps, done) {
   var tail = steps.concat();
-  var head = tail.pop();
+  var head = tail.shift();
   if(head) {
     try {
       head(function(e) {
@@ -90,14 +129,15 @@ function test(steps, done) {
 function host(host) {
   return {
     send: function(user, method, path, form, asssertion) {
-      send(user, method, host + path, form, asssertion);
+      return send(user, method, host + path, form, asssertion);
     }
   }
 }
+
 function send(user, method, url, form, asssertion) {
   return function(cb) {
     user.send(method, url, form, function(error, response, body) {
-      (asssertion || ignore)(error, response, body, cb);
+      (asssertion || status(200))(error, response, body, cb);
     });
   };
 }
@@ -115,8 +155,14 @@ function user() {
       form : form
     };
     request(options, function(error, response, body) {
-      cookie = response.headers["set-cookie"];
-      cb(error, response, body);
+      if(error) {
+        cb(error);
+      } else {
+        if(response.headers["set-cookie"]) {
+          cookie = response.headers["set-cookie"][0]
+        }
+        cb(error, response, body);
+      }
     });
   };
   return {
