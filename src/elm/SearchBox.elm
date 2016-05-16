@@ -25,13 +25,13 @@ type Event =
 
 type alias Model =
   { query : String
-  , results : List (Equipment, String)
+  , results : Maybe (List (Equipment, String))
   }
 
 init : Model
 init =
   { query = ""
-  , results = []
+  , results = Nothing
   }
 
 update : Msg -> Model -> (Model, Cmd Msg, Maybe Event)
@@ -55,7 +55,7 @@ update msg model =
         (model, cmd, Nothing)
     Results results ->
       let
-        newModel = { model | results = results }
+        newModel = { model | results = Just results }
       in
         (newModel, Cmd.none, Just OnResults)
     SelectResult id ->
@@ -65,7 +65,11 @@ update msg model =
 
 equipmentsInFloor : String -> Model -> List Equipment
 equipmentsInFloor floorId model =
-  List.filterMap (\(e, id) -> if id == floorId then Just e else Nothing) model.results
+  case model.results of
+    Nothing ->
+      []
+    Just results ->
+      List.filterMap (\(e, id) -> if id == floorId then Just e else Nothing) results
 
 
 view : Model -> Html Msg
@@ -92,6 +96,12 @@ resultsView format model =
         ]
         [ text (format e floorId) ]
   in
-    ul
-      [ style Styles.ul ]
-      (List.map each model.results)
+    case model.results of
+      Nothing ->
+        text ""
+      Just [] ->
+        div [] [ text "Nothing found." ]
+      Just results ->
+        ul
+          [ style Styles.ul ]
+          (List.map each results)
