@@ -1,13 +1,19 @@
 module Util.IdGenerator exposing (..) -- where
 
-type Seed = Seed Int
+import Util.UUID as UUID
+
+type Seed = Seed UUID.Seed
 
 init : (Int, Int) -> Seed
-init randomSeed = Seed 0
+init (i1, i2) = Seed (UUID.init i1 i2)
 
 new : Seed -> (String, Seed)
 new (Seed seed) =
-  (toString seed, Seed (seed + 1))
+  let
+    (newValue, newSeed) =
+      UUID.step seed
+  in
+    (newValue, Seed newSeed)
 
 zipWithNewIds : Seed -> List a -> (List (a, String), Seed)
 zipWithNewIds seed list =
