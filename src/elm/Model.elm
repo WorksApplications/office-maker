@@ -172,6 +172,8 @@ type Action = NoOp
   | UpdatePersonCandidate Id (List Person)
   | Error Error
 
+type alias Msg = Action
+
 debug : Bool
 debug = False
 

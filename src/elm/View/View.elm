@@ -8,10 +8,11 @@ import Html.App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
-import View.Styles as Styles
-import View.Icons as Icons
 import SearchBox
 import Header
+import View.Styles as Styles
+import View.Icons as Icons
+import View.ErrorView as ErrorView
 import View.EquipmentView exposing (..)
 import View.FloorsInfoView as FloorsInfoView
 
@@ -27,8 +28,6 @@ import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
 import Model.Person as Person exposing (Person)
-import Model.API as API
-import Http
 
 contextMenuView : Model -> Html Action
 contextMenuView model =
@@ -163,7 +162,7 @@ mainView model =
   in
     main' [ style (Styles.mainView windowHeight) ]
       [ FloorsInfoView.view (UndoRedo.data model.floor).id model.floorsInfo
-      , errorView model
+      , ErrorView.view model.error
       , canvasContainerView model
       , subView model
       ]
@@ -545,36 +544,6 @@ floorView model =
     , floorRealSizeInputView model
     , publishButtonView model
     ]
-
-errorView : Model -> Html Action
-errorView model =
-  case model.error of
-    Nothing ->
-      text ""
-    Just e ->
-      let
-        description =
-          case e of
-            APIError e ->
-              describeAPIError e
-            FileError e ->
-              "Unexpected FileError: " ++ toString e
-            HtmlError e ->
-              "Unexpected HtmlError: " ++ toString e
-      in
-        div [ style Styles.error ] [ text description ]
-
-describeAPIError : API.Error -> String
-describeAPIError e =
-  case e of
-    Http.Timeout ->
-      "Timeout"
-    Http.NetworkError ->
-      "NetworkError detected. Please refresh and try again."
-    Http.UnexpectedPayload str ->
-      "UnexpectedPayload" ++ str
-    Http.BadResponse code str ->
-      "Unexpected BadResponse" ++ toString code ++ " " ++ str
 
 view : Model -> Html Action
 view model =
