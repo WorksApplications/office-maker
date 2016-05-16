@@ -4,7 +4,7 @@
   "description": "Office Maker\r ----",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/api-test.js"
+    "test": "mocha test/test.js"
   },
   "author": "",
   "license": "MIT",
