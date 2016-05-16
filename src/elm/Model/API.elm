@@ -13,6 +13,7 @@ module Model.API exposing (
     , goToLogin
     , goToLogout
     , personCandidate
+    , getDiffSource
     , Error
   ) -- where
 
@@ -186,6 +187,21 @@ getFloor id =
     Http.get
       decodeFloor
       ("/api/v1/floor/" ++ id)
+
+getFloorMaybe : String -> Task Error (Maybe Floor)
+getFloorMaybe id =
+  getFloor id
+  `Task.andThen` (\floor -> Task.succeed (Just floor))
+  `Task.onError` \e -> case e of
+    Http.BadResponse 404 _ -> Task.succeed Nothing
+    _ -> Task.fail e
+
+
+getDiffSource : String -> Task Error (Floor, Maybe Floor)
+getDiffSource id =
+  getEditingFloor id
+  `Task.andThen` \current -> getFloorMaybe id
+  `Task.andThen` \prev -> Task.succeed (current, prev)
 
 getAuth : Task Error User
 getAuth =

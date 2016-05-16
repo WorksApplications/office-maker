@@ -15,6 +15,7 @@ import View.Icons as Icons
 import View.ErrorView as ErrorView
 import View.EquipmentView exposing (..)
 import View.FloorsInfoView as FloorsInfoView
+-- import View.DiffView as DiffView
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
@@ -551,6 +552,7 @@ view model =
     []
     [ Header.view (Just model.user) |> Html.App.map HeaderAction
     , mainView model
+    -- , DiffView.view
     , contextMenuView model
     ]
 
