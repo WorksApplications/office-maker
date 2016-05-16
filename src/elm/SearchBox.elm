@@ -12,8 +12,7 @@ import Util.HtmlUtil exposing (..)
 import View.Styles as Styles
 
 type Msg =
-    NoOp
-  | Input String
+    Input String
   | Results (List (Equipment, String))
   | Submit
   | SelectResult String
@@ -21,7 +20,7 @@ type Msg =
 
 
 type Event =
-  OnError String | OnResults | OnSelectResult String
+  OnError API.Error | OnResults | OnSelectResult String
 
 type alias Model =
   { query : String
@@ -37,8 +36,6 @@ init =
 update : Msg -> Model -> (Model, Cmd Msg, Maybe Event)
 update msg model =
   case {-Debug.log "searchbox"-} msg of
-    NoOp ->
-      (model, Cmd.none, Nothing)
     Input query ->
       let
         newModel = { model | query = query }
@@ -48,7 +45,7 @@ update msg model =
       let
         cmd =
           if model.query /= "" then
-            Task.perform (always NoOp) Results (API.search model.query)
+            Task.perform Error Results (API.search model.query)
           else
             Cmd.none
       in
@@ -60,8 +57,8 @@ update msg model =
         (newModel, Cmd.none, Just OnResults)
     SelectResult id ->
         (model, Cmd.none, Just (OnSelectResult id))
-    Error httpError ->
-        (model, Cmd.none, Just (OnError "http error")) --TODO
+    Error apiError ->
+        (model, Cmd.none, Just (OnError apiError))
 
 equipmentsInFloor : String -> Model -> List Equipment
 equipmentsInFloor floorId model =

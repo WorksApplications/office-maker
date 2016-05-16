@@ -54,7 +54,7 @@ type alias Model =
   , offset : (Int, Int)
   , scaling : Bool
   , prototypes : Prototypes.Model
-  , errors : List Error
+  , error : Maybe Error
   , hash : String
   , inputFloorRealWidth : String
   , inputFloorRealHeight : String
@@ -120,7 +120,7 @@ init randomSeed initialSize initialHash =
     , offset = (35, 35)
     , scaling = False
     , prototypes = Prototypes.init
-    , errors = []
+    , error = Nothing
     , hash = initialHash
     , inputFloorRealWidth = ""
     , inputFloorRealHeight = ""
@@ -703,17 +703,20 @@ update action model =
         results =
           SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
 
-        selectedResult =
+        (selectedResult, errEffect) =
           case maybeEvent of
             Just SearchBox.OnResults ->
               case results of
                 head :: [] ->
-                   Just (idOf head)
-                _ -> Nothing
+                   (Just (idOf head), Cmd.none)
+                _ -> (Nothing, Cmd.none)
             Just (SearchBox.OnSelectResult id) ->
-              Just id
+              (Just id, Cmd.none)
+            Just (SearchBox.OnError e) ->
+              Debug.log "SearchBox.OnError" <|
+                (Nothing, Task.perform (always NoOp) (Error << APIError) (Task.succeed e))
             _ ->
-              model'.selectedResult
+              (model'.selectedResult, Cmd.none)
 
         --TODO fetch all person related desks here
 
@@ -728,7 +731,7 @@ update action model =
             Nothing -> model''
 
       in
-        (newModel, Cmd.map SearchBoxMsg cmd )
+        newModel ! [ Cmd.map SearchBoxMsg cmd, errEffect ]
     ChangeEditing isEditing ->
       let
         newModel =
@@ -753,7 +756,7 @@ update action model =
     Error e ->
       let
         newModel =
-          { model | errors = e :: model.errors }
+          { model | error = Just e }
       in
         (newModel, Cmd.none)
 

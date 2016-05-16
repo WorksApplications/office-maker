@@ -9,6 +9,7 @@ zIndex :
   , deskInput : String
   , selectorRect : String
   , floorInfo : String
+  , errorMessage : String
   , popup : String
   , subView : String
   , contextMenu : String
@@ -18,6 +19,7 @@ zIndex =
   , deskInput = "200"
   , selectorRect = "300"
   , floorInfo = "500"
+  , errorMessage = "520"
   , popup = "550"
   , subView = "600"
   , contextMenu = "800"
@@ -25,6 +27,9 @@ zIndex =
 
 selectColor : String
 selectColor = "#69e"
+
+errorTextColor : String
+errorTextColor = "#d45"
 
 noMargin : S
 noMargin =
@@ -384,7 +389,7 @@ loginCaption =
 
 loginError : S
 loginError =
-  [ ("color", "#d45")
+  [ ("color", errorTextColor)
   , ("margin-bottom", "15px")
   ]
 
@@ -504,3 +509,27 @@ popupPersonOrg =
   , ("fon-size", "small")
   , ("top", "50px")
   ]
+
+error : S
+error =
+  [ ("position", "absolute")
+  , ("background-color", "#d45")
+  , ("color", "#fff")
+  , ("width", "100%")
+  , ("z-index", zIndex.errorMessage)
+  , ("padding", "5px 10px")
+  , ("height", "29px")
+  , ("transition", "height")
+  , ("box-sizing", "border-box")
+  ]
+
+mainView : Int -> S
+mainView windowHeight =
+  let
+    height = windowHeight - headerHeight
+  in
+    (flex ++
+      [ ("height", toString height ++ "px")
+      , ("position", "relative")
+      ]
+    )

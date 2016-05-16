@@ -27,6 +27,8 @@ import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
 import Model.Person as Person exposing (Person)
+import Model.API as API
+import Http
 
 contextMenuView : Model -> Html Action
 contextMenuView model =
@@ -158,10 +160,10 @@ mainView : Model -> Html Action
 mainView model =
   let
     (windowWidth, windowHeight) = model.windowDimensions
-    height = windowHeight - Styles.headerHeight
   in
-    main' [ style (Styles.flex ++ [ ("height", toString height ++ "px")]) ]
+    main' [ style (Styles.mainView windowHeight) ]
       [ FloorsInfoView.view (UndoRedo.data model.floor).id model.floorsInfo
+      , errorView model
       , canvasContainerView model
       , subView model
       ]
@@ -543,6 +545,36 @@ floorView model =
     , floorRealSizeInputView model
     , publishButtonView model
     ]
+
+errorView : Model -> Html Action
+errorView model =
+  case model.error of
+    Nothing ->
+      text ""
+    Just e ->
+      let
+        description =
+          case e of
+            APIError e ->
+              describeAPIError e
+            FileError e ->
+              "Unexpected FileError: " ++ toString e
+            HtmlError e ->
+              "Unexpected HtmlError: " ++ toString e
+      in
+        div [ style Styles.error ] [ text description ]
+
+describeAPIError : API.Error -> String
+describeAPIError e =
+  case e of
+    Http.Timeout ->
+      "Timeout"
+    Http.NetworkError ->
+      "NetworkError detected. Please refresh and try again."
+    Http.UnexpectedPayload str ->
+      "UnexpectedPayload" ++ str
+    Http.BadResponse code str ->
+      "Unexpected BadResponse" ++ toString code ++ " " ++ str
 
 view : Model -> Html Action
 view model =
