@@ -101,6 +101,11 @@ function getFloors(withPrivate) {
     return !!floor;
   });
 }
+function ensureFloor(id) {
+  if(!floors[id]) {
+    floors[id] = [];
+  }
+}
 app.get('/api/v1/floors', function (req, res) {
   var options = url.parse(req.url, true).query;
   if(role(req) === 'guest' && options.all) {
@@ -151,6 +156,21 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
     res.status(404).send('not found by id: ' + id);
   }
 });
+app.get('/api/v1/floor/:id/diff', function (req, res) {
+  if(role(req) === 'guest') {
+    res.status(401).send('');
+    return;
+  }
+  var id = req.params.id;
+  console.log('diff: ' + id);
+  var prev = getFloor(false, id);
+  var current = getFloor(true, id);
+  if(current) {
+    res.send([current, prev || null]);
+  } else {
+    res.status(304).send('');
+  }
+});
 app.get('/api/v1/floor/:id', function (req, res) {
   var id = req.params.id;
   console.log('get: ' + id);
@@ -188,7 +208,7 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
   }
   console.log('saved floor: ' + id);
   // console.log(newFloor);
-  res.send('');
+  res.send({});
 });
 
 // publish
@@ -209,12 +229,17 @@ app.post('/api/v1/floor/:id', function (req, res) {
     return;
   }
   newFloor.public = true;
-  floors[id].unshift(newFloor);
+  ensureFloor(id);
+  if(floors[id][0] && !floors[id][0].public) {
+    floors[id][0] = newFloor;
+  } else {
+    floors[id].unshift(newFloor);
+  }
   console.log('published floor: ' + id);
+  console.log(Object.keys(floors).map(function(key) { return key + ' => ' + floors[key].map(function(f) { return f.public }) } ));
   // console.log(newFloor);
-  res.send('');
+  res.send({});
 });
-
 
 app.put('/api/v1/image/:id', function (req, res) {
   if(role(req) !== 'admin') {
