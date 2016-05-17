@@ -158,6 +158,9 @@ serializeLogin id pass =
 
 saveEditingFloor : Floor -> Task Error ()
 saveEditingFloor floor =
+  -- let
+  --   _ = if floor.id == "tmp" then Debug.crash "cannot save tmp" else ""
+  -- in
     putJson
       (Decode.succeed ())
       ("/api/v1/floor/" ++ floor.id ++ "/edit")

@@ -115,7 +115,7 @@ init randomSeed initialSize initialHash =
         , "#bbb", "#fff", "rgba(255,255,255,0.5)"] --TODO
     , contextMenu = NoContextMenu
     , floorsInfo = []
-    , floor = UndoRedo.init { data = Floor.init "-1", update = Floor.update }
+    , floor = UndoRedo.init { data = Floor.init "tmp", update = Floor.update }
     , windowDimensions = initialSize
     , scale = Scale.init
     , offset = (35, 35)
@@ -192,29 +192,67 @@ debugAction action =
   else
     action
 
+saveTemporaryFloorAndLoadIt : User.User -> Cmd Action
+saveTemporaryFloorAndLoadIt user =
+  let
+    name = case user of
+      User.Guest -> "tmp"
+      User.Admin name -> "tmp-" ++ name
+      User.General name -> "tmp-" ++ name
+    newFloor =
+      Floor.init name
+    saveCmd =
+      if User.isGuest user then
+        Cmd.none
+      else
+        saveFloorCmd newFloor
+  in
+    Cmd.batch
+      [ saveCmd
+      , Task.perform (always NoOp) FloorLoaded (Task.succeed newFloor)
+      ]
+
 update : Action -> Model -> (Model, Cmd Action)
 update action model =
   case debugAction action of
     NoOp ->
       model ! []
     HashChange hash ->
-      { model | hash = hash } ! [ loadFloorCmd (not <| User.isGuest model.user) hash ]
+      let
+        floorId = String.dropLeft 1 hash
+        forEdit = not (User.isGuest model.user)
+        loadFloorCmd' =
+          if String.length floorId > 0 then
+            loadFloorCmd forEdit floorId
+          else
+            saveTemporaryFloorAndLoadIt model.user
+      in
+        { model | hash = hash } ! [ loadFloorCmd' ]
     Init ->
       model ! [ loadAuthCmd ]
     AuthLoaded user ->
       let
-        requestPrivateFloors =
-          not (User.isGuest user)
+        requestPrivateFloors = not (User.isGuest user)
+        floorId = String.dropLeft 1 model.hash
+        forEdit = not (User.isGuest model.user)
+        loadFloorCmd' =
+          if String.length floorId > 0 then
+            loadFloorCmd forEdit floorId
+          else
+            saveTemporaryFloorAndLoadIt user
       in
-        { model | user = user }
+        { model |
+          user = user
+        }
         ! [ loadFloorsInfoCmd requestPrivateFloors
-          , loadFloorCmd (not <| User.isGuest user) model.hash
+          , loadFloorCmd'
           ]
 
     FloorsInfoLoaded floors ->
       { model | floorsInfo = floors } ! []
     FloorLoaded floor ->
       let
+        _ = Debug.log "floor.id" floor.id
         (realWidth, realHeight) =
           Floor.realSize floor
         newModel =
@@ -1028,20 +1066,16 @@ loadFloorsInfoCmd : Bool -> Cmd Action
 loadFloorsInfoCmd withPrivate =
     Task.perform (Error << APIError) FloorsInfoLoaded (API.getFloorsInfo withPrivate)
 
+
 loadFloorCmd : Bool -> String -> Cmd Action
-loadFloorCmd forEdit hash =
+loadFloorCmd forEdit floorId =
   let
-    floorId =
-      -- Debug.log "floorId" <|
-        String.dropLeft 1 hash
+    _ = if String.length floorId < 10 then Debug.crash "cannot save tmp" else ""
     task =
-      if String.length floorId > 0 then
-        if forEdit then
-          API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
-        else
-          API.getFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
+      if forEdit then
+        API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
       else
-        Task.succeed (Floor.init "-1")
+        API.getFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
   in
     Task.perform (always NoOp) FloorLoaded task
 
