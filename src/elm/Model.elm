@@ -27,9 +27,10 @@ import Model.Scale as Scale
 import Model.API as API
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
+import Model.Errors as Errors exposing (GlobalError(..))
 
-import Header exposing (..)
 import SearchBox
+import Header exposing (..)
 
 type alias Floor = Floor.Model
 
@@ -56,7 +57,7 @@ type alias Model =
   , offset : (Int, Int)
   , scaling : Bool
   , prototypes : Prototypes.Model
-  , error : Maybe Error
+  , error : GlobalError
   , hash : String
   , inputFloorRealWidth : String
   , inputFloorRealHeight : String
@@ -66,11 +67,6 @@ type alias Model =
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
   }
-
-type Error =
-    APIError API.Error
-  | FileError File.Error
-  | HtmlError HtmlUtil.Error
 
 type ContextMenu =
     NoContextMenu
@@ -123,7 +119,7 @@ init randomSeed initialSize initialHash =
     , offset = (35, 35)
     , scaling = False
     , prototypes = Prototypes.init
-    , error = Nothing
+    , error = NoError
     , hash = initialHash
     , inputFloorRealWidth = ""
     , inputFloorRealHeight = ""
@@ -170,6 +166,7 @@ type Action = NoOp
   | InputFloorRealHeight String
   | Rotate Id
   | Publish
+  | Published Id
   | HeaderAction Header.Action
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
@@ -177,7 +174,7 @@ type Action = NoOp
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
   | ConfirmDiff
-  | Error Error
+  | Error GlobalError
 
 type alias Msg = Action
 
@@ -832,22 +829,33 @@ update action model =
               ( Cmd.batch
                 [ publishFloorCmd (UndoRedo.data newFloor)
                 , Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#" ++ newFloorId))
+                , Task.perform (always NoOp) Published <| Task.succeed newFloorId
                 ]
               , newSeed
               , newFloor
               )
           else
-            (publishFloorCmd floor, model.seed, model.floor)
+            ( Cmd.batch
+              [ publishFloorCmd floor
+              , Task.perform (always NoOp) Published <| Task.succeed floor.id
+              ]
+            , model.seed
+            , model.floor
+            )
       in
         { model |
           diff = Nothing
         , seed = newSeed
         , floor = newFloor
         } ! [ cmd ]
+    Published newFloorId ->
+        { model |
+          error = Success ("Successfully published " ++ newFloorId)
+        } ! [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `Task.andThen` \_ -> Task.succeed NoError) ]
     Error e ->
       let
         newModel =
-          { model | error = Just e }
+          { model | error = e }
       in
         newModel ! []
 

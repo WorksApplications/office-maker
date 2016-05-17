@@ -9,9 +9,9 @@ zIndex :
   , deskInput : String
   , selectorRect : String
   , floorInfo : String
-  , errorMessage : String
   , personDetailPopup : String
   , subView : String
+  , messageBar : String
   , contextMenu : String
   , modalBackground : String
   }
@@ -20,9 +20,9 @@ zIndex =
   , deskInput = "200"
   , selectorRect = "300"
   , floorInfo = "500"
-  , errorMessage = "520"
   , personDetailPopup = "550"
   , subView = "600"
+  , messageBar = "700"
   , contextMenu = "800"
   , modalBackground = "900"
   }
@@ -543,18 +543,40 @@ personDetailPopupPersonOrg =
   , ("top", "50px")
   ]
 
-error : S
-error =
-  [ ("position", "absolute")
-  , ("background-color", "#d45")
-  , ("color", "#fff")
-  , ("width", "100%")
-  , ("z-index", zIndex.errorMessage)
-  , ("padding", "5px 10px")
-  , ("height", "29px")
-  , ("transition", "height")
-  , ("box-sizing", "border-box")
-  ]
+messageBar : S
+messageBar =
+    [ ("position", "absolute")
+    , ("color", "#fff")
+    , ("width", "100%")
+    , ("z-index", zIndex.messageBar)
+    , ("padding", "5px 10px")
+    , ("height", "29px")
+    , ("transition", "height")
+    , ("box-sizing", "border-box")
+    , ("transition", "opacity 0.8s linear")
+    ]
+
+successBar : S
+successBar =
+  messageBar ++
+    [ ("background-color", "#4c5")
+    , ("opacity", "1")
+    ]
+
+errorBar : S
+errorBar =
+  messageBar ++
+    [ ("background-color", "#d45")
+    , ("opacity", "1")
+    ]
+
+noneBar : S
+noneBar =
+  messageBar ++
+    [ ("opacity", "0")
+    , ("pointer-events", "none")
+    , ("background-color", "#4c5")
+    ]
 
 mainView : Int -> S
 mainView windowHeight =

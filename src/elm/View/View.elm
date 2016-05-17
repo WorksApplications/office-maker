@@ -12,7 +12,7 @@ import SearchBox
 import Header
 import View.Styles as Styles
 import View.Icons as Icons
-import View.ErrorView as ErrorView
+import View.MessageBar as MessageBar
 import View.EquipmentView exposing (..)
 import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
@@ -163,7 +163,7 @@ mainView model =
   in
     main' [ style (Styles.mainView windowHeight) ]
       [ FloorsInfoView.view (UndoRedo.data model.floor).id model.floorsInfo
-      , ErrorView.view model.error
+      , MessageBar.view model.error
       , canvasContainerView model
       , subView model
       ]
