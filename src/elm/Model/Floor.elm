@@ -38,6 +38,7 @@ type Action =
   | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
   | Rotate Id
+  | ChangeId Id
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
   | ChangeName String
@@ -61,6 +62,9 @@ delete = Delete
 
 rotate : Id -> Action
 rotate = Rotate
+
+changeId : Id -> Action
+changeId = ChangeId
 
 changeEquipmentColor : (List Id) -> String -> Action
 changeEquipmentColor = ChangeEquipmentColor
@@ -111,6 +115,8 @@ update action model =
         model
     Rotate id ->
       setEquipments (partiallyChange Equipments.rotate [id] (equipments model)) model
+    ChangeId id ->
+      { model | id = id }
     ChangeEquipmentColor ids color ->
       let
         newEquipments =

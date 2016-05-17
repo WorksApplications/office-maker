@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 import Util.UndoRedo as UndoRedo
 import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
+import Util.HttpUtil as HttpUtil
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.File as File exposing (..)
 import Util.Routing as Routing
@@ -805,9 +806,31 @@ update action model =
       let
         floor =
           UndoRedo.data model.floor
-        cmd = publishFloorCmd floor
+        (cmd, newSeed, newFloor) =
+          if String.left 3 floor.id == "tmp" then
+            let
+              (newFloorId, newSeed) =
+                IdGenerator.new model.seed
+              newFloor =
+                UndoRedo.commit
+                  model.floor
+                  (Floor.changeId newFloorId)
+            in
+              ( Cmd.batch
+                [ publishFloorCmd (UndoRedo.data newFloor)
+                , Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#" ++ newFloorId))
+                ]
+              , newSeed
+              , newFloor
+              )
+          else
+            (publishFloorCmd floor, model.seed, model.floor)
       in
-        { model | diff = Nothing } ! [ cmd ]
+        { model |
+          diff = Nothing
+        , seed = newSeed
+        , floor = newFloor
+        } ! [ cmd ]
     Error e ->
       let
         newModel =

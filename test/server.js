@@ -198,6 +198,7 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
 
 // publish
 app.post('/api/v1/floor/:id', function (req, res) {
+
   if(role(req) !== 'admin') {
     console.log('unauthorized: ' + role(req));
     res.status(401).send('');
@@ -207,6 +208,10 @@ app.post('/api/v1/floor/:id', function (req, res) {
   var newFloor = req.body;
   if(id !== newFloor.id) {
     res.status(400).send('');
+    return;
+  }
+  if(!id || id.length !== 36) {// must be UUID
+    res.status(403).send('');
     return;
   }
   if(!isValidFloor(newFloor)) {

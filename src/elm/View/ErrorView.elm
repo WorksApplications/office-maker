@@ -39,9 +39,9 @@ describeAPIError e =
     Http.NetworkError ->
       "NetworkError detected. Please refresh and try again."
     Http.UnexpectedPayload str ->
-      "UnexpectedPayload" ++ str
+      "UnexpectedPayload: " ++ str
     Http.BadResponse code str ->
-      "Unexpected BadResponse" ++ toString code ++ " " ++ str
+      "Unexpected BadResponse: " ++ toString code ++ " " ++ str
 
 
 
