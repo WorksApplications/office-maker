@@ -34,7 +34,7 @@ view options (current, prev) =
     f new (dict, add, modify) =
       case Dict.get (idOf new) dict of
         Just old ->
-          (Dict.remove (idOf new) dict, add, (new, old) :: modify)
+          ( Dict.remove (idOf new) dict, add, diffEquipment new old :: modify)
         Nothing ->
           (dict, new :: add, modify)
 
@@ -49,11 +49,35 @@ view options (current, prev) =
       [ h3 [] [ text "Additions" ]
       , ul [] (List.map (\new -> li [] [ text (idOf new) ] ) add)
       , h3 [] [ text "Modifications" ]
-      , ul [] (List.map (\(new, old) -> li [] [ text (idOf new) ] ) modify)
+      , ul [] (List.map (\d -> li [] [ text (toString d) ] ) modify)
       , h3 [] [ text "Deletions" ]
       , ul [] (List.map (\old -> li [] [ text (idOf old) ] ) delete)
       , buttons options.onClose options.onConfirm
       ]
+
+diffEquipment : Equipment -> Equipment -> List String
+diffEquipment new old =
+  let
+    a =
+      if nameOf new /= nameOf old then
+        Just ("name chaged: " ++ nameOf old ++ " -> " ++ nameOf new)
+      else
+        Nothing
+    b =
+      if rect new /= rect old then
+        Just ("position/size chaged: " ++ toString (rect old) ++ " -> " ++ toString (rect new))
+      else
+        Nothing
+    c =
+      if colorOf new /= colorOf old then
+        Just ("color chaged: " ++ colorOf old ++ " -> " ++ colorOf new)
+      else
+        Nothing
+  in
+    List.filterMap identity [a, b, c]
+
+
+
 
 buttons : msg -> msg -> Html msg
 buttons onClose onConfirm =

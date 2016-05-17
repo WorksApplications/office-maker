@@ -8,6 +8,7 @@ import String
 import Process
 import Keyboard
 import Dict exposing (Dict)
+import Http
 
 import Util.UndoRedo as UndoRedo
 import Util.ShortCut as ShortCut
@@ -223,10 +224,18 @@ update action model =
         floorId = String.dropLeft 1 hash
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
-          if String.length floorId > 0 then
-            loadFloorCmd forEdit floorId
+          if String.length floorId == 36 then
+            -- Debug.log "1" <|
+              loadFloorCmd forEdit floorId
+          else if String.length floorId > 0 then
+            -- Debug.log "2" <|
+              Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#"))
+          else if String.left 4 (UndoRedo.data model.floor).id /= "tmp-" then
+            -- Debug.log "3" <|
+              saveTemporaryFloorAndLoadIt model.user
           else
-            saveTemporaryFloorAndLoadIt model.user
+            -- Debug.log "4" <|
+              Cmd.none
       in
         { model | hash = hash } ! [ loadFloorCmd' ]
     Init ->
@@ -237,10 +246,14 @@ update action model =
         floorId = String.dropLeft 1 model.hash
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
-          if String.length floorId > 0 then
+          if String.length floorId == 36 then
             loadFloorCmd forEdit floorId
           else
             saveTemporaryFloorAndLoadIt user
+            -- Cmd.batch
+            --   [ saveTemporaryFloorAndLoadIt user
+            --   , Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#"))
+            --   ]
       in
         { model |
           user = user
@@ -1093,14 +1106,24 @@ loadFloorsInfoCmd withPrivate =
 loadFloorCmd : Bool -> String -> Cmd Action
 loadFloorCmd forEdit floorId =
   let
-    _ = if String.length floorId < 10 then Debug.crash "cannot save tmp" else ""
+    _ =
+      if String.length floorId /= 36 then
+        Debug.crash "floorId is invalid: " ++ floorId
+      else
+        ""
+    recover404 e =
+      case e of
+        Http.BadResponse 404 _ ->
+          HttpUtil.goTo "#"
+          `Task.andThen` \_ -> Task.succeed (FloorLoaded <| Floor.init floorId)
+        _ -> Task.succeed (Error <| APIError e)
     task =
       if forEdit then
-        API.getEditingFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
+        Task.map FloorLoaded (API.getEditingFloor floorId) `Task.onError` recover404
       else
-        API.getFloor floorId `Task.onError` (\e -> Task.succeed (Floor.init floorId))
+        Task.map FloorLoaded (API.getFloor floorId) `Task.onError` recover404
   in
-    Task.perform (always NoOp) FloorLoaded task
+    Task.perform (always NoOp) identity task
 
 
 focusEffect : String -> Cmd Action
