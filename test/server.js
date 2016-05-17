@@ -156,21 +156,6 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
     res.status(404).send('not found by id: ' + id);
   }
 });
-app.get('/api/v1/floor/:id/diff', function (req, res) {
-  if(role(req) === 'guest') {
-    res.status(401).send('');
-    return;
-  }
-  var id = req.params.id;
-  console.log('diff: ' + id);
-  var prev = getFloor(false, id);
-  var current = getFloor(true, id);
-  if(current) {
-    res.send([current, prev || null]);
-  } else {
-    res.status(304).send('');
-  }
-});
 app.get('/api/v1/floor/:id', function (req, res) {
   var id = req.params.id;
   console.log('get: ' + id);
