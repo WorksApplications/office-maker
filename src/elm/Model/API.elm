@@ -172,19 +172,19 @@ publishEditingFloor floor =
 
 getEditingFloor : String -> Task Error Floor
 getEditingFloor id =
-    Http.get
+    getJsonWithoutCache
       decodeFloor
       ("/api/v1/floor/" ++ id ++ "/edit")
 
 getFloorsInfo : Bool -> Task Error (List Floor)
 getFloorsInfo withPrivate =
-    Http.get
+    getJsonWithoutCache
       (Decode.list decodeFloor)
       ("/api/v1/floors" ++ (if withPrivate then "?all=true" else ""))
 
 getFloor : String -> Task Error Floor
 getFloor id =
-    Http.get
+    getJsonWithoutCache
       decodeFloor
       ("/api/v1/floor/" ++ id)
 
@@ -217,7 +217,7 @@ search query =
 
 personCandidate : String -> Task Error (List Person)
 personCandidate name =
-    getJsonWithNoCache
+    getJsonWithoutCache
       (Decode.list decodePerson)
       ("/api/v1/candidate/" ++ name)
 

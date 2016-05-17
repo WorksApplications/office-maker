@@ -30,8 +30,8 @@ sendJson verb decoder url body =
   in
     Http.fromJson decoder (Http.send Http.defaultSettings request)
 
-getJsonWithNoCache : Decoder value -> String -> Task Http.Error value
-getJsonWithNoCache decoder url =
+getJsonWithoutCache : Decoder value -> String -> Task Http.Error value
+getJsonWithoutCache decoder url =
   let request =
     { verb = "GET"
     , headers =
