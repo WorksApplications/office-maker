@@ -1,5 +1,6 @@
 module Model.Floor exposing (..) -- where
 
+import Date exposing (Date)
 import Model.Equipments as Equipments exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Util.File exposing (..)
@@ -15,6 +16,7 @@ type alias Model =
   , realSize : Maybe (Int, Int)
   , imageSource : ImageSource
   , public : Bool
+  , update : Maybe { by : Id, at : Date }
   }
 
 type ImageSource =
@@ -30,6 +32,7 @@ init id =
     , realSize = Nothing
     , imageSource = None
     , public = False
+    , update = Nothing
     }
 
 type Action =
