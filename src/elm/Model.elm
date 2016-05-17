@@ -62,6 +62,7 @@ type alias Model =
   , selectedResult : Maybe Id
   , isEditing : Bool
   , personInfo : Dict String Person
+  , diff : Maybe (Floor, Maybe Floor)
   }
 
 type Error =
@@ -128,6 +129,7 @@ init randomSeed initialSize initialHash =
     , selectedResult = Nothing
     , isEditing = False
     , personInfo = Dict.empty
+    , diff = Nothing
     }
   , Task.perform (always NoOp) identity (Task.succeed Init)
   )
@@ -170,6 +172,9 @@ type Action = NoOp
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
   | UpdatePersonCandidate Id (List Person)
+  | GotDiffSource (Floor, Maybe Floor)
+  | CloseDiff
+  | ConfirmDiff
   | Error Error
 
 type alias Msg = Action
@@ -681,9 +686,9 @@ update action model =
     Publish ->
       let
         floor = UndoRedo.data model.floor
-        effects = publishFloorEffects floor
+        cmd = Task.perform (Error << APIError) GotDiffSource (API.getDiffSource floor.id)
       in
-        (model, effects)
+        model ! [ cmd ]
     HeaderAction action ->
       let
         (effects, maybeEvent) =
@@ -755,6 +760,17 @@ update action model =
           }
       in
         (newModel, Cmd.none)
+    GotDiffSource diffSource ->
+      { model | diff = Just diffSource } ! []
+    CloseDiff ->
+      { model | diff = Nothing } ! []
+    ConfirmDiff ->
+      let
+        floor =
+          UndoRedo.data model.floor
+        cmd = publishFloorCmd floor
+      in
+        { model | diff = Nothing } ! [ cmd ]
     Error e ->
       let
         newModel =
@@ -822,8 +838,8 @@ saveFloorEffects floor =
       (firstTask `Task.andThen` (always secondTask))
 
 
-publishFloorEffects : Floor -> Cmd Action
-publishFloorEffects floor =
+publishFloorCmd : Floor -> Cmd Msg
+publishFloorCmd floor =
   let
     firstTask =
       case floor.imageSource of

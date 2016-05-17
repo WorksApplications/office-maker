@@ -10,9 +10,10 @@ zIndex :
   , selectorRect : String
   , floorInfo : String
   , errorMessage : String
-  , popup : String
+  , personDetailPopup : String
   , subView : String
   , contextMenu : String
+  , modalBackground : String
   }
 zIndex =
   { selectedDesk = "100"
@@ -20,9 +21,10 @@ zIndex =
   , selectorRect = "300"
   , floorInfo = "500"
   , errorMessage = "520"
-  , popup = "550"
+  , personDetailPopup = "550"
   , subView = "600"
   , contextMenu = "800"
+  , modalBackground = "900"
   }
 
 selectColor : String
@@ -278,6 +280,11 @@ button =
     -- , ("box-shadow", "rgba(0, 0, 0, 0.12) 0px 0.1px 0.0px 0px, rgba(0, 0, 0, 0.24) 0px 0.5px 0.2px 0px")
     ]
 
+buttons : S
+buttons =
+  []
+
+
 defaultButton : S
 defaultButton =
   button ++
@@ -460,51 +467,77 @@ personNotMatched : S
 personNotMatched =
     personMatchingInfo ++ [ ("background-color", "#ccc") ]
 
-popup : (Int, Int) -> S
-popup (x, y) =
-  [ ("box-sizing", "border-box")
-  , ("padding", "10px")
-  , ("background-color", "#fff")
-  , ("position", "absolute")
-  , ("width", "200px")
-  , ("height", "80px")
-  , ("left", toString (x - 100) ++ "px")
-  , ("top", toString (y - 90) ++ "px")
-  , ("z-index", zIndex.popup)
-  ] ++ shadow
+popup : S
+popup =
+    [ ("box-sizing", "border-box")
+    , ("padding", "20px")
+    , ("background-color", "#fff")
+    , ("position", "absolute")
+    ]
 
-popupClose : S
-popupClose =
+modalBackground : S
+modalBackground =
+    [ ("background-color", "rgba(0,0,0,0.5)")
+    , ("position", "fixed")
+    , ("left", "0")
+    , ("right", "0")
+    , ("top", "0")
+    , ("bottom", "0")
+    , ("z-index", zIndex.modalBackground)
+    ]
+
+
+diffPopup : S
+diffPopup =
+  popup ++
+    [ ("left", "20%")
+    , ("right", "20%")
+    , ("top", "10%")
+    , ("bottom", "10%")
+    ] ++ shadow
+
+personDetailPopup : (Int, Int) -> S
+personDetailPopup (x, y) =
+  popup ++
+    [ ("width", "200px")
+    , ("height", "80px")
+    , ("left", toString (x - 100) ++ "px")
+    , ("top", toString (y - 90) ++ "px")
+    , ("z-index", zIndex.personDetailPopup)
+    ] ++ shadow
+
+personDetailPopupClose : S
+personDetailPopupClose =
   [ ("position", "absolute")
   , ("top", "5px")
   , ("right", "5px")
   ]
 
 
-popupPersonImage : S
-popupPersonImage =
+personDetailPopupPersonImage : S
+personDetailPopupPersonImage =
   [ ("position", "absolute")
   , ("top", "15px")
   , ("right", "15px")
   ]
 
-popupPersonNo : S
-popupPersonNo =
+personDetailPopupPersonNo : S
+personDetailPopupPersonNo =
   [ ("position", "absolute")
   , ("fon-size", "small")
   , ("top", "5px")
   ]
 
-popupPersonName : S
-popupPersonName =
+personDetailPopupPersonName : S
+personDetailPopupPersonName =
   [ ("position", "absolute")
   , ("fon-size", "larger")
   , ("font-weight", "bold")
   , ("top", "15px")
   ]
 
-popupPersonOrg : S
-popupPersonOrg =
+personDetailPopupPersonOrg : S
+personDetailPopupPersonOrg =
   [ ("position", "absolute")
   , ("fon-size", "small")
   , ("top", "50px")

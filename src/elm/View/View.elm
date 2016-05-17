@@ -15,7 +15,7 @@ import View.Icons as Icons
 import View.ErrorView as ErrorView
 import View.EquipmentView exposing (..)
 import View.FloorsInfoView as FloorsInfoView
--- import View.DiffView as DiffView
+import View.DiffView as DiffView
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
@@ -116,12 +116,12 @@ popup model equipment person =
       Scale.imageToScreenForPosition model.scale (offsetX + x + w//2, offsetY + y)
   in
     div
-      [ style (Styles.popup (screenX, screenY)) ]
-      [ div [ style Styles.popupClose ] [ Icons.popupClose ]
-      , img [ style Styles.popupPersonImage, src url ] []
+      [ style (Styles.personDetailPopup (screenX, screenY)) ]
+      [ div [ style Styles.personDetailPopupClose ] [ Icons.popupClose ]
+      , img [ style Styles.personDetailPopupPersonImage, src url ] []
       -- , div [ style Styles.popupPersonNo ] [ text person.no ]
-      , div [ style Styles.popupPersonName ] [ text person.name ]
-      , div [ style Styles.popupPersonOrg ] [ text person.org ]
+      , div [ style Styles.personDetailPopupPersonName ] [ text person.name ]
+      , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
       ]
 
 
@@ -552,7 +552,8 @@ view model =
     []
     [ Header.view (Just model.user) |> Html.App.map HeaderAction
     , mainView model
-    -- , DiffView.view
+    , Maybe.withDefault (text "") <|
+        Maybe.map (DiffView.view { onClose = CloseDiff, onConfirm = ConfirmDiff }) model.diff -- TODO
     , contextMenuView model
     ]
 
