@@ -1,5 +1,6 @@
 module Model exposing (..) -- where
 
+import Date exposing (Date)
 import Maybe
 import Task
 import Debug
@@ -38,6 +39,7 @@ type alias Commit = Floor.Action
 
 type alias Model =
   { seed : Seed
+  , visitDate : Date
   , user : User
   , pos : (Int, Int)
   , draggingContext : DraggingContext
@@ -94,10 +96,11 @@ subscriptions model =
 gridSize : Int
 gridSize = 8 -- 2^N
 
-init : (Int, Int) -> (Int, Int) -> String -> (Model, Cmd Action)
-init randomSeed initialSize initialHash =
+init : (Int, Int) -> (Int, Int) -> String -> Float -> (Model, Cmd Action)
+init randomSeed initialSize initialHash visitDate =
   (
     { seed = IdGenerator.init randomSeed
+    , visitDate = Date.fromTime visitDate
     , user = User.guest
     , pos = (0, 0)
     , draggingContext = None

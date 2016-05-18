@@ -17,6 +17,7 @@ module Model.API exposing (
     , Error
   ) -- where
 
+import Date
 import Http
 import Json.Encode exposing (object, list, encode, string, int, bool, null, Value)
 import Json.Decode as Decode exposing ((:=), object8, object7, object4, object2, oneOf, Decoder)
@@ -31,6 +32,8 @@ import Model.User as User exposing (User)
 import Model.Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
 import Model.Floor as Floor exposing (ImageSource(..))
+
+import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, custom)
 
 type alias Floor = Floor.Model
 
@@ -116,35 +119,34 @@ decodeSearchResult : Decoder (List (Equipment, String))
 decodeSearchResult =
   Decode.list (Decode.tuple2 (,) decodeEquipment Decode.string)
 
-listToTuple2 : List a -> Maybe (a, a)
-listToTuple2 list =
-  case list of
-    a :: b :: _ -> Just (a, b)
-    _ -> Nothing
-
-
 decodeFloor : Decoder Floor
 decodeFloor =
-  object8
-    (\id name equipments width height realSize src public ->
+  decode
+    (\id name equipments width height realSize src public updateBy updateAt ->
       { id = id
       , name = name
       , equipments = equipments
       , width = width
       , height = height
       , imageSource = Maybe.withDefault None (Maybe.map URL src)
-      , realSize = Maybe.andThen realSize listToTuple2
-      , public = Maybe.withDefault False public
-      }) -- TODO
-    ("id" := Decode.string)
-    ("name" := Decode.string)
-    ("equipments" := Decode.list decodeEquipment)
-    ("width" := Decode.int)
-    ("height" := Decode.int)
-    (Decode.maybe ("realSize" := Decode.list Decode.int))
-    (Decode.maybe ("src" := Decode.string))
-    (Decode.maybe ("public" := Decode.bool))
+      , realSize = realSize
+      , public = public
+      , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
+      })
+    |> required "id" Decode.string
+    |> required "name" Decode.string
+    |> required "equipments" (Decode.list decodeEquipment)
+    |> required "width" Decode.int
+    |> required "height" Decode.int
+    |> optional' "realSize" (Decode.tuple2 (,) Decode.int Decode.int)
+    |> optional' "src" Decode.string
+    |> optional "public" Decode.bool False
+    |> optional' "updateBy" Decode.string
+    |> optional' "updateAt" Decode.float
 
+optional' : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
+optional' field decoder =
+    custom (field ?= decoder)
 
 serializeFloor : Floor -> String
 serializeFloor floor =
