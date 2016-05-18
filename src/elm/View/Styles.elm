@@ -350,6 +350,13 @@ greeting = headerMenuItem ++
   [ ("margin-right", "50px")
   ]
 
+greetingImage : S
+greetingImage =
+  [ ("height", "24px")
+  , ("margin-top", "6px")
+  , ("box-shadow", "0 0px 5px 3px rgba(255,255,255,0.5)")
+  ]
+
 login : S
 login = headerMenuItem ++
   [ ("width", "80px")

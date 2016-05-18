@@ -58,7 +58,11 @@ view maybeContext =
 
 greeting : User -> Html msg
 greeting user =
-  text ("Hello, " ++ userName user ++ ".")
+  case user of
+    Guest ->
+      text ""
+    _ ->
+      img [ style Styles.greetingImage, src "/images/default.png" ] []
 
 
 userName : User -> String

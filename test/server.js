@@ -13,8 +13,21 @@ var passes = {
   user01 : 'user01'
 };
 var users = {
-  admin01: { id:'admin01', org: 'Sample Co.,Ltd', name: 'Admin01', mail: 'admin01@xxx.com', role: 'admin' },
-  user01 : { id:'user01', org: 'Sample Co.,Ltd', name: 'User01', mail: 'user01@xxx.com', role: 'general' }
+  admin01: {
+    id:'admin01',
+    org: 'Sample Co.,Ltd',
+    name: 'Admin01',
+    mail: 'admin01@xxx.com',
+    image: 'images/admin01.png',
+    role: 'admin'
+  },
+  user01 : {
+    id:'user01',
+    org: 'Sample Co.,Ltd',
+    name: 'User01',
+    mail: 'user01@xxx.com',
+    role: 'general'
+  }
 };
 
 app.use(bodyParser.json());
