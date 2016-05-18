@@ -898,8 +898,13 @@ updateOnFinishNameInput id name model =
                   Cmd.none
                 Nothing ->
                   let
+                    recover404 e =
+                      case e of
+                        Http.BadResponse 404 _ ->
+                          Task.succeed []
+                        _ -> Task.fail e
                     task =
-                      API.personCandidate name `Task.andThen` \people ->
+                      API.personCandidate name `Task.onError` recover404 `Task.andThen` \people ->
                       Task.succeed (RegisterPeople people) `Task.andThen` \_ ->
                       Task.succeed (UpdatePersonCandidate id (List.map .id people))
                   in
