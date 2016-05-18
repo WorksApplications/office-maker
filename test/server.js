@@ -182,6 +182,8 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
     return;
   }
   newFloor.public = false;
+  newFloor.updateBy = req.session.user;
+  newFloor.updateAt = new Date().getTime();
   if(floors[id]) {
     if(floors[id][0].public) {
       floors[id].unshift(newFloor);
@@ -219,6 +221,8 @@ app.post('/api/v1/floor/:id', function (req, res) {
     return;
   }
   newFloor.public = true;
+  newFloor.updateBy = req.session.user;
+  newFloor.updateAt = new Date().getTime();
   ensureFloor(id);
   if(floors[id][0] && !floors[id][0].public) {
     floors[id][0] = newFloor;

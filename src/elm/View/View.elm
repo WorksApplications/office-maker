@@ -2,6 +2,7 @@ module View.View exposing(view) -- where
 
 import Dict
 import Maybe
+import Date
 
 import Html exposing (..)
 import Html.App
@@ -20,6 +21,7 @@ import View.DiffView as DiffView
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
 import Util.ListUtil exposing (..)
+import Util.DateUtil exposing (..)
 
 import Model exposing (..)
 import Model.Floor as Floor
@@ -544,7 +546,28 @@ floorView model =
     , floorNameInputView model
     , floorRealSizeInputView model
     , publishButtonView model
+    , floorUpdateInfoView model
     ]
+
+floorUpdateInfoView : Model -> Html Action
+floorUpdateInfoView model =
+  let
+    floor = UndoRedo.data model.floor
+    date at =
+      if sameDay model.visitDate at then
+        ampm at
+      else
+        toString (monthToInt <| Date.month at)
+        ++ "/"
+        ++ toString (Date.day at)
+        ++ "/"
+        ++ toString (Date.year at)
+  in
+    case floor.update of
+      Just { by, at } ->
+        div [] [ text ("Last Update by " ++ by ++ " at " ++ date at) ]
+      Nothing ->
+        text ""
 
 view : Model -> Html Action
 view model =

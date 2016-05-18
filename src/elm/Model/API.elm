@@ -119,37 +119,34 @@ decodeSearchResult : Decoder (List (Equipment, String))
 decodeSearchResult =
   Decode.list (Decode.tuple2 (,) decodeEquipment Decode.string)
 
-listToTuple2 : List a -> Maybe (a, a)
-listToTuple2 list =
-  case list of
-    a :: b :: _ -> Just (a, b)
-    _ -> Nothing
-
-
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id name equipments width height realSize src public update ->
+    (\id name equipments width height realSize src public updateBy updateAt ->
       { id = id
       , name = name
       , equipments = equipments
       , width = width
       , height = height
       , imageSource = Maybe.withDefault None (Maybe.map URL src)
-      , realSize = Maybe.andThen realSize listToTuple2
-      , public = Maybe.withDefault False public
-      , update = update
+      , realSize = realSize
+      , public = public
+      , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
       })
     |> required "id" Decode.string
     |> required "name" Decode.string
     |> required "equipments" (Decode.list decodeEquipment)
     |> required "width" Decode.int
     |> required "height" Decode.int
-    |> (custom ("realSize" ?= (Decode.list Decode.int)))
-    |> (custom ("src" ?= Decode.string))
-    |> (custom ("public" ?= Decode.bool))
-    |> (custom ("update" ?= (Decode.tuple2 (\by at -> { by = by, at = Date.fromTime at }) Decode.string Decode.float)))
+    |> optional' "realSize" (Decode.tuple2 (,) Decode.int Decode.int)
+    |> optional' "src" Decode.string
+    |> optional "public" Decode.bool False
+    |> optional' "updateBy" Decode.string
+    |> optional' "updateAt" Decode.float
 
+optional' : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
+optional' field decoder =
+    custom (field ?= decoder)
 
 serializeFloor : Floor -> String
 serializeFloor floor =
