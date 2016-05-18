@@ -51,6 +51,7 @@ You need to have [Elm](http://elm-lang.org/) (== 0.17) and [Node.js](https://nod
 ### Install
 
 ```
+elm-package install
 npm install
 ```
 
@@ -70,6 +71,12 @@ which will change encoding to UTF-8.
 
 ```
 node watch
+```
+
+### Test
+
+```
+npm test
 ```
 
 ## License
