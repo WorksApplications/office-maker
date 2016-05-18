@@ -498,8 +498,10 @@ update action model =
           { model |
             floor = UndoRedo.commit model.floor (Floor.changeEquipmentColor model.selectedEquipments color)
           }
+        cmd =
+          saveFloorCmd (UndoRedo.data newModel.floor)
       in
-        newModel ! []
+        newModel ! [ cmd ]
     InputName id name ->
       let
         newModel =
@@ -911,13 +913,15 @@ updateOnFinishNameInput id name model =
         Nothing -> (Nothing, Cmd.none)
     newFloor =  --TODO if name really changed
       UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
+    cmd2 =
+      saveFloorCmd (UndoRedo.data newFloor)
     newModel =
       { model |
         floor = newFloor
       , editingEquipment = editingEquipment
       }
   in
-    (newModel, Cmd.batch [cmd, saveFloorCmd (UndoRedo.data newFloor)])
+    newModel ! [ cmd, cmd2 ]
 
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model

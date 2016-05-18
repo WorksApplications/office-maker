@@ -2,7 +2,6 @@ module View.View exposing(view) -- where
 
 import Dict
 import Maybe
-import Date
 
 import Html exposing (..)
 import Html.App
@@ -554,14 +553,7 @@ floorUpdateInfoView model =
   let
     floor = UndoRedo.data model.floor
     date at =
-      if sameDay model.visitDate at then
-        ampm at
-      else
-        toString (monthToInt <| Date.month at)
-        ++ "/"
-        ++ toString (Date.day at)
-        ++ "/"
-        ++ toString (Date.year at)
+      formatDateOrTime model.visitDate at
   in
     case floor.update of
       Just { by, at } ->
@@ -576,7 +568,7 @@ view model =
     [ Header.view (Just model.user) |> Html.App.map HeaderAction
     , mainView model
     , Maybe.withDefault (text "") <|
-        Maybe.map (DiffView.view { onClose = CloseDiff, onConfirm = ConfirmDiff }) model.diff -- TODO
+        Maybe.map (DiffView.view model.visitDate model.personInfo { onClose = CloseDiff, onConfirm = ConfirmDiff }) model.diff -- TODO
     , contextMenuView model
     ]
 

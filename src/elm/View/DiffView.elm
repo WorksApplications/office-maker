@@ -1,17 +1,19 @@
 module View.DiffView exposing(..) -- where
 
 import Maybe
-import Dict
+import Dict exposing (Dict)
+import Date exposing (Date)
 import Html exposing (..)
--- import Html.App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
+import Util.DateUtil exposing (..)
+
 import View.Styles as Styles
 
--- import Model
 import Model.Equipments as Equipments exposing (..)
 import Model.Floor as Floor
+import Model.Person exposing (Person)
 
 type alias Floor = Floor.Model
 
@@ -20,9 +22,20 @@ type alias Options msg =
   , onConfirm : msg
   }
 
-view : Options msg -> (Floor, Maybe Floor) -> Html msg
-view options (current, prev) =
+view : Date -> Dict String Person -> Options msg -> (Floor, Maybe Floor) -> Html msg
+view visitDate personInfo options (current, prev) =
   let
+    header =
+      case prev of
+        Just { update } ->
+          case update of
+            Just { by , at } ->
+              h2 [] [ text ("Changes from " ++ formatDateOrTime visitDate at) ]
+            Nothing ->
+              Debug.crash "this should never happen"
+        Nothing ->
+          h2 [] [ text "Changes"]
+
     newEquipments =
       Floor.equipments current
     oldEquipments =
@@ -34,7 +47,11 @@ view options (current, prev) =
     f new (dict, add, modify) =
       case Dict.get (idOf new) dict of
         Just old ->
-          ( Dict.remove (idOf new) dict, add, diffEquipment new old :: modify)
+          ( Dict.remove (idOf new) dict, add,
+            case diffEquipment new old of
+              [] -> modify
+              list -> list :: modify
+          )
         Nothing ->
           (dict, new :: add, modify)
 
@@ -46,12 +63,13 @@ view options (current, prev) =
 
   in
     popup options.onClose <|
-      [ h3 [] [ text "Additions" ]
-      , ul [] (List.map (\new -> li [] [ text (idOf new) ] ) add)
-      , h3 [] [ text "Modifications" ]
-      , ul [] (List.map (\d -> li [] [ text (toString d) ] ) modify)
-      , h3 [] [ text "Deletions" ]
-      , ul [] (List.map (\old -> li [] [ text (idOf old) ] ) delete)
+      [ header
+      , if List.isEmpty add then text "" else h3 [] [ text ((toString (List.length add)) ++ " Additions") ]
+      , if List.isEmpty add then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) add)
+      , if List.isEmpty modify then text "" else h3 [] [ text ((toString (List.length modify)) ++ " Modifications") ]
+      , if List.isEmpty modify then text "" else ul [] (List.map (\d -> li [] [ text (toString d) ] ) modify)
+      , if List.isEmpty delete then text "" else h3 [] [ text ((toString (List.length delete)) ++ " Deletions") ]
+      , if List.isEmpty delete then text "" else ul [] (List.map (\old -> li [] [ text (idOf old) ] ) delete)
       , buttons options.onClose options.onConfirm
       ]
 

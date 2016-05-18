@@ -35,16 +35,14 @@ pm = not << am
 
 hourOfAmPm : Int -> Int
 hourOfAmPm hour =
-  if hour < 1 then
-    hour + 12
-  else if hour > 12 then
-    hour + 12
+  if hour > 12 then
+    hour - 12
   else
     hour
 
 ampm : Date -> String
 ampm date =
-  fillZero2 (toString (hourOfAmPm (hour date)))
+  toString (hourOfAmPm (hour date))
   ++ ":"
   ++ fillZero2 (toString (minute date))
   ++ " "
@@ -53,3 +51,19 @@ ampm date =
 fillZero2 : String -> String
 fillZero2 s =
   String.right 2 ("0" ++ s)
+
+
+formatDate : Date -> String
+formatDate date =
+  toString (monthToInt <| Date.month date)
+  ++ "/"
+  ++ toString (Date.day date)
+  ++ "/"
+  ++ toString (Date.year date)
+
+formatDateOrTime : Date -> Date -> String
+formatDateOrTime now date =
+  if sameDay now date then
+    ampm date
+  else
+    formatDate date
