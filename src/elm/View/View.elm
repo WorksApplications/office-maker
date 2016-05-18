@@ -109,7 +109,7 @@ popup : Model -> Equipment -> Person -> Html msg
 popup model equipment person =
   let
     url =
-      Maybe.withDefault "images/default.png" person.image
+      Maybe.withDefault "images/users/default.png" person.image
     (offsetX, offsetY) = model.offset
     (x, y, w, h) =
       rect equipment

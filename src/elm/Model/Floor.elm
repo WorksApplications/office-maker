@@ -235,5 +235,5 @@ src : Model -> Maybe String
 src model =
   case model.imageSource of
     LocalFile id list dataURL -> Just dataURL
-    URL src -> Just ("/images/" ++ src)
+    URL src -> Just ("/images/floors/" ++ src)
     None -> Nothing

@@ -18,7 +18,7 @@ var users = {
     org: 'Sample Co.,Ltd',
     name: 'Admin01',
     mail: 'admin01@xxx.com',
-    image: 'images/admin01.png',
+    image: 'images/users/admin01.png',
     role: 'admin'
   },
   user01 : {
@@ -267,7 +267,7 @@ app.put('/api/v1/image/:id', function (req, res) {
   });
   req.on('end', function() {
     var image = Buffer.concat(all);
-    fs.writeFile(publicDir + '/images/' + id, image, function(e) {
+    fs.writeFile(publicDir + '/images/floors/' + id, image, function(e) {
       if(e) {
         res.status(500).send('' + e);
       } else {
@@ -281,7 +281,7 @@ process.on('uncaughtException', function(e) {
   console.log(e);
 });
 
-fs.emptyDirSync(publicDir + '/images');
+fs.emptyDirSync(publicDir + '/images/floors');
 app.listen(3000, function () {
   console.log('mock server listening on port 3000.');
 });
