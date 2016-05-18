@@ -11,10 +11,10 @@ import Task exposing (Task)
 import View.Styles as Styles
 -- import View.Icons as Icons
 
-type Action = Login | Logout | LogoutSuccess | NoOp
+type Msg = Login | Logout | LogoutSuccess | NoOp
 type Event = LogoutDone
 
-update : Action -> (Cmd Action, Maybe Event)
+update : Msg -> (Cmd Msg, Maybe Event)
 update action =
   case action of
     NoOp ->
@@ -26,7 +26,7 @@ update action =
     LogoutSuccess ->
       (Cmd.none, Just LogoutDone)
 
-view : Maybe User -> Html Action
+view : Maybe User -> Html Msg
 view maybeContext =
   let
     menu =

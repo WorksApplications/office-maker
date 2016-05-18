@@ -35,7 +35,7 @@ init id =
     , update = Nothing
     }
 
-type Action =
+type Msg =
     Create (List (Id, (Int, Int, Int, Int), String, String))
   | Move (List Id) Int (Int, Int)
   | Paste (List (Equipment, Id)) (Int, Int)
@@ -51,49 +51,49 @@ type Action =
   | OnSaved Bool
   | ChangeUserCandidate String (List String)
 
-create : (List (Id, (Int, Int, Int, Int), String, String)) -> Action
+create : (List (Id, (Int, Int, Int, Int), String, String)) -> Msg
 create = Create
 
-move : (List Id) -> Int -> (Int, Int) -> Action
+move : (List Id) -> Int -> (Int, Int) -> Msg
 move = Move
 
-paste : (List (Equipment, Id)) -> (Int, Int) -> Action
+paste : (List (Equipment, Id)) -> (Int, Int) -> Msg
 paste = Paste
 
-delete : (List Id) -> Action
+delete : (List Id) -> Msg
 delete = Delete
 
-rotate : Id -> Action
+rotate : Id -> Msg
 rotate = Rotate
 
-changeId : Id -> Action
+changeId : Id -> Msg
 changeId = ChangeId
 
-changeEquipmentColor : (List Id) -> String -> Action
+changeEquipmentColor : (List Id) -> String -> Msg
 changeEquipmentColor = ChangeEquipmentColor
 
-changeEquipmentName : Id -> String -> Action
+changeEquipmentName : Id -> String -> Msg
 changeEquipmentName = ChangeEquipmentName
 
-changeName : String -> Action
+changeName : String -> Msg
 changeName = ChangeName
 
-setLocalFile : String -> File -> String -> Action
+setLocalFile : String -> File -> String -> Msg
 setLocalFile = SetLocalFile
 
-changeRealWidth : Int -> Action
+changeRealWidth : Int -> Msg
 changeRealWidth = ChangeRealWidth
 
-changeRealHeight : Int -> Action
+changeRealHeight : Int -> Msg
 changeRealHeight = ChangeRealHeight
 
-onSaved : Bool -> Action
+onSaved : Bool -> Msg
 onSaved = OnSaved
 
-changeUserCandidate : String -> List String -> Action
+changeUserCandidate : String -> List String -> Msg
 changeUserCandidate = ChangeUserCandidate
 
-update : Action -> Model -> Model
+update : Msg -> Model -> Model
 update action model =
   case action of
     Create candidateWithNewIds ->

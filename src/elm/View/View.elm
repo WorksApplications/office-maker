@@ -31,7 +31,7 @@ import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
 import Model.Person as Person exposing (Person)
 
-contextMenuView : Model -> Html Action
+contextMenuView : Model -> Html Msg
 contextMenuView model =
   case model.contextMenu of
     NoContextMenu ->
@@ -45,7 +45,7 @@ contextMenuView model =
         , contextMenuItemView (Rotate id) "Rotate"
         ]
 
-contextMenuItemView : Action -> String -> Html Action
+contextMenuItemView : Msg -> String -> Html Msg
 contextMenuItemView action text' =
   div
     [ class "hovarable"
@@ -55,7 +55,7 @@ contextMenuItemView action text' =
     [ text text' ]
 
 
-equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Action
+equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg
 equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
     Desk id (left, top, width, height) color name personId ->
@@ -130,7 +130,7 @@ transitionDisabled : Model -> Bool
 transitionDisabled model =
   not model.scaling
 
-nameInputView : Model -> Html Action
+nameInputView : Model -> Html Msg
 nameInputView model =
   case model.editingEquipment of
     Just (id, name) ->
@@ -150,14 +150,14 @@ nameInputView model =
     Nothing ->
       text ""
 
-inputAttributes : (String -> Action) -> (Int -> Action) -> String -> Bool -> List (Attribute Action)
-inputAttributes toInputAction toKeydownAction value' defence =
-  [ onInput' toInputAction -- TODO cannot input japanese
-  , onKeyDown'' toKeydownAction
+inputAttributes : (String -> Msg) -> (Int -> Msg) -> String -> Bool -> List (Attribute Msg)
+inputAttributes toInputMsg toKeydownMsg value' defence =
+  [ onInput' toInputMsg -- TODO cannot input japanese
+  , onKeyDown'' toKeydownMsg
   , value value'
   ] ++ (if defence then [onMouseDown' NoOp] else [])
 
-mainView : Model -> Html Action
+mainView : Model -> Html Msg
 mainView model =
   let
     (windowWidth, windowHeight) = model.windowDimensions
@@ -169,7 +169,7 @@ mainView model =
       , subView model
       ]
 
-subView : Model -> Html Action
+subView : Model -> Html Msg
 subView model =
   let
     children =
@@ -190,7 +190,7 @@ subView model =
       ]
       (children ++ tabs) --TODO if swapping, padding-left disappears...
 
-subViewForEdit : Model -> List (Html Action)
+subViewForEdit : Model -> List (Html Msg)
 subViewForEdit model =
     [ card <| penView model
     , card <| propertyView model
@@ -198,7 +198,7 @@ subViewForEdit model =
     , card <| debugView model
     ]
 
-subViewForSearch : Model -> List (Html Action)
+subViewForSearch : Model -> List (Html Msg)
 subViewForSearch model =
     [ card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
     , card <| [ SearchBox.resultsView (\e id -> nameOf e {- ++ "(" ++ idOf e ++ ")" -} ) model.searchBox |> Html.App.map SearchBoxMsg ]
@@ -220,7 +220,7 @@ card children =
     style [("margin-bottom", "20px"), ("padding", "20px")]
     ] children
 
-penView : Model -> List (Html Action)
+penView : Model -> List (Html Msg)
 penView model =
   let
     prototypes =
@@ -230,7 +230,7 @@ penView model =
     , prototypePreviewView prototypes (model.editMode == Stamp)
     ]
 
-floorNameInputView : Model -> Html Action
+floorNameInputView : Model -> Html Msg
 floorNameInputView model =
   let
     floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
@@ -244,7 +244,7 @@ floorNameInputView model =
   in
     div [] [ floorNameLabel, nameInput ]
 
-floorRealSizeInputView : Model -> Html Action
+floorRealSizeInputView : Model -> Html Msg
 floorRealSizeInputView model =
   let
     floor = UndoRedo.data model.floor
@@ -271,7 +271,7 @@ floorRealSizeInputView model =
     div [] [widthLabel, widthInput, heightLabel, heightInput ]
 
 
-modeSelectionView : Model -> Html Action
+modeSelectionView : Model -> Html Msg
 modeSelectionView model =
   let
     widthStyle = [("width", "80px")]
@@ -296,13 +296,13 @@ modeSelectionView model =
   in
     div [ style (Styles.flex ++ [("margin-top", "10px")]) ] [selection, pen, stamp]
 
-propertyView : Model -> List (Html Action)
+propertyView : Model -> List (Html Msg)
 propertyView model =
     [ text "Properties"
     , colorPropertyView model
     ]
 
-debugView : Model -> List (Html Action)
+debugView : Model -> List (Html Msg)
 debugView model =
     [ text (toString <| List.map idOf <| model.copiedEquipments)
     , br [] []
@@ -312,7 +312,7 @@ debugView model =
     -- , div [ style (Styles.subViewTab 0 False )] [ text "debug"]
     ]
 
-canvasContainerView : Model -> Html Action
+canvasContainerView : Model -> Html Msg
 canvasContainerView model =
   let
     floor = UndoRedo.data model.floor
@@ -344,7 +344,7 @@ canvasContainerView model =
       , popup'
       ]
 
-canvasView : Model -> Html Action
+canvasView : Model -> Html Msg
 canvasView model =
   let
     floor = UndoRedo.data model.floor
@@ -431,7 +431,7 @@ canvasView model =
       ]
       ((image :: (nameInputView model) :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
 
-prototypePreviewView : List (Prototype, Bool) -> Bool -> Html Action
+prototypePreviewView : List (Prototype, Bool) -> Bool -> Html Msg
 prototypePreviewView prototypes stampMode =
   let
     width = 238 -- TODO
@@ -455,7 +455,7 @@ prototypePreviewView prototypes stampMode =
         in
           div
             [ style (position :: Styles.prototypePreviewScroll)
-            , onClick' (if label == "<" then PrototypesAction Prototypes.prev else PrototypesAction Prototypes.next)
+            , onClick' (if label == "<" then PrototypesMsg Prototypes.prev else PrototypesMsg Prototypes.next)
             ]
             [ text label ]
         )
@@ -512,7 +512,7 @@ temporaryStampsView model =
     (temporaryStampView model.scale False)
     (stampCandidates model)
 
-colorPropertyView : Model -> Html Action
+colorPropertyView : Model -> Html Msg
 colorPropertyView model =
   let
     match color =
@@ -529,7 +529,7 @@ colorPropertyView model =
     ul [ style (Styles.ul ++ [("display", "flex")]) ]
       (List.map viewForEach model.colorPalette)
 
-publishButtonView : Model -> Html Action
+publishButtonView : Model -> Html Msg
 publishButtonView model =
   if User.isAdmin model.user then
     button
@@ -539,7 +539,7 @@ publishButtonView model =
   else
     text ""
 
-floorView : Model -> List (Html Action)
+floorView : Model -> List (Html Msg)
 floorView model =
     [ fileLoadButton Styles.imageLoadButton "Load Image" |> Html.App.map LoadFile
     , floorNameInputView model
@@ -548,7 +548,7 @@ floorView model =
     , floorUpdateInfoView model
     ]
 
-floorUpdateInfoView : Model -> Html Action
+floorUpdateInfoView : Model -> Html Msg
 floorUpdateInfoView model =
   let
     floor = UndoRedo.data model.floor
@@ -561,11 +561,11 @@ floorUpdateInfoView model =
       Nothing ->
         text ""
 
-view : Model -> Html Action
+view : Model -> Html Msg
 view model =
   div
     []
-    [ Header.view (Just model.user) |> Html.App.map HeaderAction
+    [ Header.view (Just model.user) |> Html.App.map HeaderMsg
     , mainView model
     , Maybe.withDefault (text "") <|
         Maybe.map (DiffView.view model.visitDate model.personInfo { onClose = CloseDiff, onConfirm = ConfirmDiff }) model.diff -- TODO

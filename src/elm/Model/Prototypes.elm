@@ -30,17 +30,17 @@ init =
   , selected = 0 -- index
   }
 
-type Action =
+type Msg =
     SelectPrev
   | SelectNext
 
-prev : Action
+prev : Msg
 prev = SelectPrev
 
-next : Action
+next : Msg
 next = SelectNext
 
-update : Action -> Model -> Model
+update : Msg -> Model -> Model
 update action model =
   case action of
     SelectPrev ->

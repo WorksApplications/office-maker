@@ -35,7 +35,7 @@ import Header exposing (..)
 
 type alias Floor = Floor.Model
 
-type alias Commit = Floor.Action
+type alias Commit = Floor.Msg
 
 type alias Model =
   { seed : Seed
@@ -84,19 +84,19 @@ type DraggingContext =
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
 
-subscriptions : Model -> Sub Action
+subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
     [ Routing.hashchanges HashChange
     , Window.resizes (\e -> WindowDimensions (e.width, e.height))
-    , Keyboard.downs (KeyCodeAction True)
-    , Keyboard.ups (KeyCodeAction False)
+    , Keyboard.downs (KeyCodeMsg True)
+    , Keyboard.ups (KeyCodeMsg False)
     ]
 
 gridSize : Int
 gridSize = 8 -- 2^N
 
-init : (Int, Int) -> (Int, Int) -> String -> Float -> (Model, Cmd Action)
+init : (Int, Int) -> (Int, Int) -> String -> Float -> (Model, Cmd Msg)
 init randomSeed initialSize initialHash visitDate =
   (
     { seed = IdGenerator.init randomSeed
@@ -136,7 +136,7 @@ init randomSeed initialSize initialHash visitDate =
   )
 --
 
-type Action = NoOp
+type Msg = NoOp
   | Init
   | HashChange String
   | AuthLoaded User
@@ -150,7 +150,7 @@ type Action = NoOp
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
   | StartEditEquipment Id
-  | KeyCodeAction Bool Int
+  | KeyCodeMsg Bool Int
   | SelectColor String
   | InputName Id String
   | KeydownOnNameInput Int
@@ -162,7 +162,7 @@ type Action = NoOp
   | LoadFile FileList
   | GotDataURL String File String
   | ScaleEnd
-  | PrototypesAction Prototypes.Action
+  | PrototypesMsg Prototypes.Msg
   | RegisterPrototype Id
   | InputFloorName String
   | InputFloorRealWidth String
@@ -170,7 +170,7 @@ type Action = NoOp
   | Rotate Id
   | Publish
   | Published Id
-  | HeaderAction Header.Action
+  | HeaderMsg Header.Msg
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
   | RegisterPeople (List Person)
@@ -180,13 +180,11 @@ type Action = NoOp
   | ConfirmDiff
   | Error GlobalError
 
-type alias Msg = Action
-
 debug : Bool
 debug = False
 
-debugAction : Action -> Action
-debugAction action =
+debugMsg : Msg -> Msg
+debugMsg action =
   if debug then
     case action of
       MoveOnCanvas _ -> action
@@ -195,7 +193,7 @@ debugAction action =
   else
     action
 
-saveTemporaryFloorAndLoadIt : User.User -> Cmd Action
+saveTemporaryFloorAndLoadIt : User.User -> Cmd Msg
 saveTemporaryFloorAndLoadIt user =
   let
     name = case user of
@@ -215,9 +213,9 @@ saveTemporaryFloorAndLoadIt user =
       , Task.perform (always NoOp) FloorLoaded (Task.succeed newFloor)
       ]
 
-update : Action -> Model -> (Model, Cmd Action)
+update : Msg -> Model -> (Model, Cmd Msg)
 update action model =
-  case debugAction action of
+  case debugMsg action of
     NoOp ->
       model ! []
     HashChange hash ->
@@ -570,7 +568,7 @@ update action model =
               model
       in
         newModel ! []
-    KeyCodeAction isDown keyCode ->
+    KeyCodeMsg isDown keyCode ->
       let
         (keys, event) = ShortCut.update isDown keyCode model.keys
         model' =
@@ -648,7 +646,7 @@ update action model =
           saveFloorCmd (UndoRedo.data newModel.floor)
       in
         newModel ! [ cmd ]
-    PrototypesAction action ->
+    PrototypesMsg action ->
       let
         newModel =
           { model |
@@ -755,7 +753,7 @@ update action model =
         cmd = Task.perform (Error << APIError) GotDiffSource (API.getDiffSource floor.id)
       in
         model ! [ cmd ]
-    HeaderAction action ->
+    HeaderMsg action ->
       let
         (cmd, maybeEvent) =
           Header.update action
@@ -764,7 +762,7 @@ update action model =
             Just LogoutDone -> { model | user = User.guest }
             _ -> model
       in
-        newModel ! [ Cmd.map HeaderAction cmd ]
+        newModel ! [ Cmd.map HeaderMsg cmd ]
     SearchBoxMsg msg ->
       let
         (searchBox, cmd, maybeEvent) =
@@ -880,7 +878,7 @@ update action model =
         newModel ! []
 
 
-updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Action)
+updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput id name model =
   let
     allEquipments = (UndoRedo.data model.floor).equipments
@@ -929,7 +927,7 @@ adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model
 
 
-saveFloorCmd : Floor -> Cmd Action
+saveFloorCmd : Floor -> Cmd Msg
 saveFloorCmd floor =
   let
     firstTask =
@@ -962,7 +960,7 @@ publishFloorCmd floor =
       (always (FloorSaved True))
       (firstTask `Task.andThen` (always secondTask))
 
-updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Action)
+updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEvent event model =
   case (model.keys.ctrl, event) of
     (True, ShortCut.A) ->
@@ -1129,16 +1127,16 @@ shiftSelectionToward direction model =
           }
       _ -> model
 
-loadAuthCmd : Cmd Action
+loadAuthCmd : Cmd Msg
 loadAuthCmd =
     Task.perform (Error << APIError) AuthLoaded API.getAuth
 
-loadFloorsInfoCmd : Bool -> Cmd Action
+loadFloorsInfoCmd : Bool -> Cmd Msg
 loadFloorsInfoCmd withPrivate =
     Task.perform (Error << APIError) FloorsInfoLoaded (API.getFloorsInfo withPrivate)
 
 
-loadFloorCmd : Bool -> String -> Cmd Action
+loadFloorCmd : Bool -> String -> Cmd Msg
 loadFloorCmd forEdit floorId =
   let
     _ =
@@ -1161,11 +1159,11 @@ loadFloorCmd forEdit floorId =
     Task.perform (always NoOp) identity task
 
 
-focusEffect : String -> Cmd Action
+focusEffect : String -> Cmd Msg
 focusEffect id =
   Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
 
-blurEffect : String -> Cmd Action
+blurEffect : String -> Cmd Msg
 blurEffect id =
   Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
 
