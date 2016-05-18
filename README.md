@@ -72,6 +72,12 @@ which will change encoding to UTF-8.
 node watch
 ```
 
+### Test
+
+```
+npm test
+```
+
 ## License
 
 [Apache License 2.0](LICENSE)
