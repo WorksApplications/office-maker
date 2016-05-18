@@ -50,7 +50,7 @@ h1 =
   noMargin ++
     [ ( "font-size", "1.4em")
     , ("font-weight", "normal")
-    , ("line-height", toString headerHeight ++ "px")
+    , ("line-height", px headerHeight)
     ]
 
 ul : S
@@ -68,7 +68,7 @@ header =
   noMargin ++
     [ ( "background", "rgb(100,100,120)")
     , ("color", "#eee")
-    , ("height", toString headerHeight ++ "px")
+    , ("height", px headerHeight)
     , ("padding-left", "10px")
     , ("padding-right", "10px")
     , ("display", "flex")
@@ -77,10 +77,10 @@ header =
 
 rect : (Int, Int, Int, Int) -> S
 rect (x, y, w, h) =
-  [ ("top", toString y ++ "px")
-  , ("left", toString x ++ "px")
-  , ("width", toString w ++ "px")
-  , ("height", toString h ++ "px")
+  [ ("top", px y)
+  , ("left", px x)
+  , ("width", px w)
+  , ("height", px h)
   ]
 
 absoluteRect : (Int, Int, Int, Int) -> S
@@ -142,9 +142,9 @@ contextMenu (x, y) (windowWidth, windowHeight) rows =
     x' = min x (windowWidth - width)
     y' = min y (windowHeight - height)
   in
-    [ ("width", toString width ++ "px")
-    , ("left", toString x' ++ "px")
-    , ("top", toString y' ++ "px")
+    [ ("width", px width)
+    , ("left", px x')
+    , ("top", px y')
     , ("position", "fixed")
     , ("z-index", zIndex.contextMenu)
     , ("background-color", "#fff")
@@ -237,7 +237,7 @@ prototypePreviewViewInner index =
   , ("height", "238px")
   , ("position", "relative")
   , ("top", "0")
-  , ("left", toString (index * -238) ++ "px")
+  , ("left", px (index * -238))
   , ("transition-property", "left")
   , ("transition-duration", "0.2s")
   ]
@@ -445,7 +445,7 @@ floorsInfoViewItem selected public =
 subViewTab : Int -> Bool -> S
 subViewTab index active =
     [ ("position", "absolute")
-    , ("top", (toString (10 + index * 130)) ++ "px")
+    , ("top", px (10 + index * 130))
     , ("left", "-30px")
     , ("width", "30px")
     , ("height", "120px")
@@ -505,13 +505,17 @@ diffPopup =
 
 personDetailPopup : (Int, Int) -> S
 personDetailPopup (x, y) =
-  popup ++
-    [ ("width", "200px")
-    , ("height", "80px")
-    , ("left", toString (x - 100) ++ "px")
-    , ("top", toString (y - 90) ++ "px")
-    , ("z-index", zIndex.personDetailPopup)
-    ] ++ shadow
+  let
+    width = 300
+    height = 160
+  in
+    popup ++
+      [ ("width", px width)
+      , ("height", "80px")
+      , ("left", px (x - (width // 2)))
+      , ("top", px (y - (height + 10)))
+      , ("z-index", zIndex.personDetailPopup)
+      ] ++ shadow
 
 personDetailPopupClose : S
 personDetailPopupClose =
@@ -526,6 +530,7 @@ personDetailPopupPersonImage =
   [ ("position", "absolute")
   , ("top", "15px")
   , ("right", "15px")
+  , ("max-width", "60px")
   ]
 
 personDetailPopupPersonNo : S
@@ -591,7 +596,11 @@ mainView windowHeight =
     height = windowHeight - headerHeight
   in
     (flex ++
-      [ ("height", toString height ++ "px")
+      [ ("height", px height)
       , ("position", "relative")
       ]
     )
+
+px : Int -> String
+px num =
+  toString num ++ "px"
