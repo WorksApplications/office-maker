@@ -443,13 +443,13 @@ update action model =
         newModel ! [ cmd ]
     MouseDownOnCanvas ->
       let
-        model' =
+        (model', cmd) =
           case model.editingEquipment of
             Just (id, name) ->
-              { model |
-                floor = UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
-              }
-            Nothing -> model
+              updateOnFinishNameInput id name model
+            Nothing ->
+              (model, Cmd.none)
+
         (clientX, clientY) =
           model.pos
         selectorRect =
@@ -478,7 +478,7 @@ update action model =
           , draggingContext = draggingContext
           }
       in
-        newModel ! []
+        newModel ! [ cmd ]
     StartEditEquipment id ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just e ->
@@ -913,6 +913,7 @@ updateOnFinishNameInput id name model =
         Nothing -> (Nothing, Cmd.none)
     newFloor =  --TODO if name really changed
       UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
+    _ = Debug.log "updateOnFinishNameInput"
     cmd2 =
       saveFloorCmd (UndoRedo.data newFloor)
     newModel =
