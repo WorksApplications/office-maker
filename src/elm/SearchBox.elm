@@ -8,13 +8,13 @@ import Model.Equipments as Equipments exposing (..)
 import Model.API as API
 
 import Util.HtmlUtil exposing (..)
--- import Util.Keys as Keys
+
 import View.Styles as Styles
 
 type Msg =
     Input String
   | Results (List (Equipment, String))
-  | Submit
+  | Submit Bool
   | SelectResult String
   | Error API.Error
 
@@ -41,11 +41,11 @@ update msg model =
         newModel = { model | query = query }
       in
         (newModel, Cmd.none, Nothing)
-    Submit ->
+    Submit withPrivate ->
       let
         cmd =
           if model.query /= "" then
-            Task.perform Error Results (API.search model.query)
+            Task.perform Error Results (API.search withPrivate model.query)
           else
             Cmd.none
       in
@@ -66,12 +66,12 @@ equipmentsInFloor floorId model =
     Nothing ->
       []
     Just results ->
-      List.filterMap (\(e, id) -> if id == floorId then Just e else Nothing) results
+      List.filterMap (\(e, id) -> if id == Debug.log "floorId" floorId then Just e else Nothing) results
 
 
-view : Model -> Html Msg
-view model =
-  form' Submit
+view : Bool -> Model -> Html Msg
+view searchWithPrivate model =
+  form' (Submit searchWithPrivate)
     [ ]
     [ input
       [ type' "input"

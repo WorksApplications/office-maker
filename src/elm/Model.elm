@@ -779,17 +779,25 @@ update action model =
             Just SearchBox.OnResults ->
               case results of
                 head :: [] ->
-                   (Just (idOf head), Cmd.none)
+                  let
+                    cmd =
+                      case Equipments.relatedPerson head of
+                        Just id ->
+                          Task.perform (Error << APIError) identity <|
+                            API.getPerson id `Task.andThen` \person ->
+                              Task.succeed (RegisterPeople [person])
+                        Nothing ->
+                          Cmd.none
+                  in
+                   (Just (idOf head), cmd)
                 _ -> (Nothing, Cmd.none)
             Just (SearchBox.OnSelectResult id) ->
+              -- TODO if result is in this floor, fetch detail of person
               (Just id, Cmd.none)
             Just (SearchBox.OnError e) ->
-              Debug.log "SearchBox.OnError" <|
-                (Nothing, Task.perform (always NoOp) (Error << APIError) (Task.succeed e))
+              (Nothing, Task.perform (always NoOp) (Error << APIError) (Task.succeed e))
             _ ->
               (model'.selectedResult, Cmd.none)
-
-        --TODO fetch all person related desks here
 
         model'' =
           { model' |
@@ -803,6 +811,7 @@ update action model =
 
       in
         newModel ! [ Cmd.map SearchBoxMsg cmd, errEffect ]
+
     ChangeEditing isEditing ->
       let
         newModel =
@@ -912,7 +921,7 @@ updateOnFinishNameInput id name model =
         Nothing -> (Nothing, Cmd.none)
     newFloor =  --TODO if name really changed
       UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
-    _ = Debug.log "updateOnFinishNameInput"
+
     cmd2 =
       saveFloorCmd (UndoRedo.data newFloor)
     newModel =

@@ -200,8 +200,12 @@ subViewForEdit model =
 
 subViewForSearch : Model -> List (Html Msg)
 subViewForSearch model =
-    [ card <| [ SearchBox.view model.searchBox |> Html.App.map SearchBoxMsg ]
-    , card <| [ SearchBox.resultsView (\e id -> nameOf e {- ++ "(" ++ idOf e ++ ")" -} ) model.searchBox |> Html.App.map SearchBoxMsg ]
+  let
+    searchWithPrivate =
+      not <| User.isGuest model.user
+  in
+    [ card <| [ SearchBox.view searchWithPrivate model.searchBox |> Html.App.map SearchBoxMsg ]
+    , card <| [ SearchBox.resultsView (\e id -> nameOf e) model.searchBox |> Html.App.map SearchBoxMsg ]
     ]
 
 
@@ -323,7 +327,6 @@ canvasContainerView model =
       Equipments.relatedPerson e `Maybe.andThen` \personId ->
       Dict.get personId model.personInfo `Maybe.andThen` \person ->
       Just (popup model e person)
-
 
   in
     div

@@ -511,7 +511,7 @@ personDetailPopup (x, y) =
   in
     popup ++
       [ ("width", px width)
-      , ("height", "80px")
+      , ("height", px height)
       , ("left", px (x - (width // 2)))
       , ("top", px (y - (height + 10)))
       , ("z-index", zIndex.personDetailPopup)

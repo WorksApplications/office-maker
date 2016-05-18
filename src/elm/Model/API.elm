@@ -187,9 +187,15 @@ getEditingFloor id =
 
 getFloorsInfo : Bool -> Task Error (List Floor)
 getFloorsInfo withPrivate =
+  let
+    url =
+      Http.url
+        "/api/v1/floors"
+        (if withPrivate then [("all", "true")] else [])
+  in
     getJsonWithoutCache
       (Decode.list decodeFloor)
-      ("/api/v1/floors" ++ (if withPrivate then "?all=true" else ""))
+      url
 
 getFloor : String -> Task Error Floor
 getFloor id =
@@ -218,11 +224,17 @@ getAuth =
       decodeUser
       ("/api/v1/auth")
 
-search : String -> Task Error (List (Equipment, String))
-search query =
+search : Bool -> String -> Task Error (List (Equipment, String))
+search withPrivate query =
+  let
+    url =
+      Http.url
+        ("/api/v1/search/" ++ query)
+        (if withPrivate then [("all", "true")] else [])
+  in
     Http.get
-      (decodeSearchResult)
-      ("/api/v1/search/" ++ query)
+      decodeSearchResult
+      url
 
 personCandidate : String -> Task Error (List Person)
 personCandidate name =
