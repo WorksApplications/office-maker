@@ -50,3 +50,10 @@ postJson = sendJson "POST"
 
 putJson : Decoder value -> String -> Http.Body -> Task Http.Error value
 putJson = sendJson "PUT"
+
+recover404With : a -> (Http.Error -> Task Http.Error a)
+recover404With alt = \e ->
+  case e of
+    Http.BadResponse 404 _ ->
+      Task.succeed alt
+    _ -> Task.fail e

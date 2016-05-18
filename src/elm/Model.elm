@@ -898,13 +898,9 @@ updateOnFinishNameInput id name model =
                   Cmd.none
                 Nothing ->
                   let
-                    recover404 e =
-                      case e of
-                        Http.BadResponse 404 _ ->
-                          Task.succeed []
-                        _ -> Task.fail e
                     task =
-                      API.personCandidate name `Task.onError` recover404 `Task.andThen` \people ->
+                      API.personCandidate name `Task.onError`
+                      HttpUtil.recover404With [] `Task.andThen` \people ->
                       Task.succeed (RegisterPeople people) `Task.andThen` \_ ->
                       Task.succeed (UpdatePersonCandidate id (List.map .id people))
                   in
@@ -1157,10 +1153,10 @@ loadFloorCmd forEdit floorId =
           `Task.andThen` \_ -> Task.succeed (FloorLoaded <| Floor.init floorId)
         _ -> Task.succeed (Error <| APIError e)
     task =
-      if forEdit then
-        Task.map FloorLoaded (API.getEditingFloor floorId) `Task.onError` recover404
-      else
-        Task.map FloorLoaded (API.getFloor floorId) `Task.onError` recover404
+      Task.map
+        FloorLoaded
+        (if forEdit then API.getEditingFloor floorId else API.getFloor floorId)
+      `Task.onError` recover404
   in
     Task.perform (always NoOp) identity task
 
