@@ -14,6 +14,7 @@ module Model.API exposing (
     , goToLogout
     , personCandidate
     , getDiffSource
+    , getPerson
     , Error
   ) -- where
 
@@ -95,17 +96,23 @@ decodeUser =
 
 decodePerson : Decoder Person
 decodePerson =
-  object4
-      (\id name org image -> { id = id, name = name, org = org, image = image})
-      ("id" := Decode.string)
-      ("name" := Decode.string)
-      ("org" := Decode.string)
-      ("image" ?= Decode.string)
+  decode
+    (\id name org mail tel image ->
+      { id = id, name = name, org = org, mail = mail, tel = tel, image = image}
+    )
+    |> required "id" Decode.string
+    |> required "name" Decode.string
+    |> required "org" Decode.string
+    |> optional' "mail" Decode.string
+    |> optional' "tel" Decode.string
+    |> optional' "image" Decode.string
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
   object8
-    (\id x y width height color name personId -> Desk id (x, y, width, height) color name personId)
+    (\id x y width height color name personId ->
+      Desk id (x, y, width, height) color name personId
+    )
     ("id" := Decode.string)
     ("x" := Decode.int)
     ("y" := Decode.int)
@@ -144,9 +151,6 @@ decodeFloor =
     |> optional' "updateBy" Decode.string
     |> optional' "updateAt" Decode.float
 
-optional' : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
-optional' field decoder =
-    custom (field ?= decoder)
 
 serializeFloor : Floor -> String
 serializeFloor floor =
@@ -232,6 +236,12 @@ saveEditingImage id file =
       "PUT"
       ("/api/v1/image/" ++ id)
       file
+
+getPerson : Id -> Task Error Person
+getPerson id =
+    Http.get
+      decodePerson
+      ("/api/v1/people/" ++ id)
 
 
 login : String -> String -> Task Error ()

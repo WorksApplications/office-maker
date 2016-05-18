@@ -173,7 +173,8 @@ type Action = NoOp
   | HeaderAction Header.Action
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
-  | UpdatePersonCandidate Id (List Person)
+  | RegisterPeople (List Person)
+  | UpdatePersonCandidate Id (List Id)
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
   | ConfirmDiff
@@ -266,7 +267,6 @@ update action model =
       { model | floorsInfo = floors } ! []
     FloorLoaded floor ->
       let
-        _ = Debug.log "floor.id" floor.id
         (realWidth, realHeight) =
           Floor.realSize floor
         newModel =
@@ -275,8 +275,21 @@ update action model =
           , inputFloorRealWidth = toString realWidth
           , inputFloorRealHeight = toString realHeight
           }
+        cmd =
+          case floor.update of
+            Nothing -> Cmd.none
+            Just { by } ->
+              case Dict.get by model.personInfo of
+                Just _ -> Cmd.none
+                Nothing ->
+                  let
+                    task =
+                      API.getPerson by `Task.andThen` \person ->
+                        Task.succeed (RegisterPeople [person])
+                  in
+                    Task.perform (Error << APIError) identity task
       in
-        newModel ! []
+        newModel ! [ cmd ]
     FloorSaved isPublish ->
       let
         newModel =
@@ -796,18 +809,20 @@ update action model =
           { model | isEditing = isEditing }
       in
         newModel ! []
-    UpdatePersonCandidate equipmentId people ->
+    RegisterPeople people ->
+      { model |
+        personInfo =
+          addAll (.id) people model.personInfo
+      } ! []
+    UpdatePersonCandidate equipmentId personIds ->
       let
-        ids = List.map (.id) people
         newFloor =
           UndoRedo.commit
             model.floor
-            (Floor.changeUserCandidate equipmentId ids)
+            (Floor.changeUserCandidate equipmentId personIds)
         newModel =
           { model |
-            personInfo =
-              addAll (.id) people model.personInfo
-          , floor = newFloor
+            floor = newFloor
           }
       in
         newModel ! []
@@ -880,10 +895,13 @@ updateOnFinishNameInput id name model =
                 Just personId ->
                   Cmd.none
                 Nothing ->
-                  Task.perform
-                    (Error << APIError)
-                    (UpdatePersonCandidate id)
-                    (API.personCandidate name)
+                  let
+                    task =
+                      API.personCandidate name `Task.andThen` \people ->
+                      Task.succeed (RegisterPeople people) `Task.andThen` \_ ->
+                      Task.succeed (UpdatePersonCandidate id (List.map .id people))
+                  in
+                    Task.perform (Error << APIError) identity task
             newEditingEquipment =
               case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
                 Just equipment -> Just (idOf equipment, nameOf equipment)

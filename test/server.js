@@ -62,27 +62,6 @@ function isValidFloor(floor) {
   return true;
 }
 
-
-/* Login required */
-
-app.get('/login', function(req, res) {
-  res.sendfile(publicDir + '/login.html');
-});
-
-app.get('/logout', function(req, res) {
-  req.session.user = null;
-  res.redirect('/login');
-});
-
-app.get('/api/v1/auth', function(req, res) {
-  var id = req.session.user;
-  if(id) {
-    var user = users[id];
-    res.send(user);
-  } else {
-    res.send({});
-  }
-});
 function getFloor(withPrivate, id) {
   if(withPrivate) {
     return floors[id] ? floors[id][0] : null;
@@ -106,6 +85,34 @@ function ensureFloor(id) {
     floors[id] = [];
   }
 }
+
+/* Login required */
+
+app.get('/login', function(req, res) {
+  res.sendfile(publicDir + '/login.html');
+});
+app.get('/logout', function(req, res) {
+  req.session.user = null;
+  res.redirect('/login');
+});
+app.get('/api/v1/people/:id', function(req, res) {
+  var id = req.params.id;
+  var person = users[id];
+  if(!person) {
+    res.status(404).send('');
+    return;
+  }
+  res.send(person);
+});
+app.get('/api/v1/auth', function(req, res) {
+  var id = req.session.user;
+  if(id) {
+    var user = users[id];
+    res.send(user);
+  } else {
+    res.send({});
+  }
+});
 app.get('/api/v1/floors', function (req, res) {
   var options = url.parse(req.url, true).query;
   if(role(req) === 'guest' && options.all) {
