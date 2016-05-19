@@ -775,32 +775,15 @@ update action model =
             Just SearchBox.OnResults ->
               case results of
                 head :: [] ->
-                  let
-                    cmd =
-                      case Equipments.relatedPerson head of
-                        Just id ->
-                          performAPI identity <|
-                            API.getPerson id `Task.andThen` \person ->
-                              Task.succeed (RegisterPeople [person])
-                        Nothing ->
-                          Cmd.none
-                  in
-                   (Just (idOf head), cmd)
+                   (Just (idOf head), regesterPersonOfEquipment head)
                 _ -> (Nothing, Cmd.none)
             Just (SearchBox.OnSelectResult id) ->
-              -- TODO if result is in this floor, fetch detail of person
               let
                 equipments = Floor.equipments (UndoRedo.data model.floor)
                 cmd =
                   case findEquipmentById equipments id of
                     Just e ->
-                      case Equipments.relatedPerson e of
-                        Just personId ->
-                          performAPI identity <|
-                            API.getPerson personId `Task.andThen` \person ->
-                              Task.succeed (RegisterPeople [person])
-                        Nothing ->
-                          Cmd.none
+                      regesterPersonOfEquipment e
                     Nothing ->
                       Cmd.none
               in
@@ -897,6 +880,17 @@ update action model =
           { model | error = e }
       in
         newModel ! []
+
+
+regesterPersonOfEquipment : Equipment -> Cmd Msg
+regesterPersonOfEquipment e =
+  case Equipments.relatedPerson e of
+    Just personId ->
+      performAPI identity <|
+        API.getPerson personId `Task.andThen` \person ->
+          Task.succeed (RegisterPeople [person])
+    Nothing ->
+      Cmd.none
 
 saveTemporaryFloorAndLoadIt : User.User -> Cmd Msg
 saveTemporaryFloorAndLoadIt user =
