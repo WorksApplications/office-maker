@@ -603,6 +603,5 @@ mainView windowHeight =
 
 searchResultItemIcon : S
 searchResultItemIcon =
-  [ ("display", "inline-block")
-  , ("width", "30px")
+  [ ("width", "30px")
   ]

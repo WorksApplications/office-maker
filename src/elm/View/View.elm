@@ -214,7 +214,7 @@ subViewForSearch model =
             ]
             [ if isPerson then Icons.searchResultItemPerson else text "" ]
       in
-        div [] [ icon, text (nameOf e) ]
+        div [ style Styles.flex ] [ icon, text (nameOf e) ]
   in
     [ card <| [ SearchBox.view SearchBoxMsg searchWithPrivate model.searchBox ]
     , card <| [ SearchBox.resultsView SearchBoxMsg format model.searchBox ]

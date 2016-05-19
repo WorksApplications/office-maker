@@ -789,7 +789,22 @@ update action model =
                 _ -> (Nothing, Cmd.none)
             Just (SearchBox.OnSelectResult id) ->
               -- TODO if result is in this floor, fetch detail of person
-              (Just id, Cmd.none)
+              let
+                equipments = Floor.equipments (UndoRedo.data model.floor)
+                cmd =
+                  case findEquipmentById equipments id of
+                    Just e ->
+                      case Equipments.relatedPerson e of
+                        Just personId ->
+                          performAPI identity <|
+                            API.getPerson personId `Task.andThen` \person ->
+                              Task.succeed (RegisterPeople [person])
+                        Nothing ->
+                          Cmd.none
+                    Nothing ->
+                      Cmd.none
+              in
+                (Just id, cmd)
             Just (SearchBox.OnError e) ->
               (Nothing, performAPI (always NoOp) (Task.fail e))
             _ ->
