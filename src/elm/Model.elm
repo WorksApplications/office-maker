@@ -829,8 +829,9 @@ update action model =
           { model |
             floor = newFloor
           }
+        cmd = saveFloorCmd (UndoRedo.data newModel.floor)
       in
-        newModel ! []
+        newModel ! [ cmd ]
     GotDiffSource diffSource ->
       { model | diff = Just diffSource } ! []
     CloseDiff ->
@@ -1080,8 +1081,9 @@ updateByKeyEvent event model =
           { model |
             floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
           }
+        cmd = saveFloorCmd (UndoRedo.data newModel.floor)
       in
-        (newModel, Cmd.none)
+        (newModel, cmd)
     (_, ShortCut.Other 9) -> --TODO waiting for fix double-click
       let
         floor = UndoRedo.data model.floor

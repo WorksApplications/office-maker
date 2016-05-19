@@ -53,6 +53,7 @@ update msg model =
         (model, cmd, Nothing)
     Results results ->
       let
+        _ = Debug.log "results" results
         newModel = { model | results = Just results }
       in
         (newModel, Cmd.none, Just OnResults)

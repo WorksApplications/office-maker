@@ -193,7 +193,6 @@ app.get('/api/v1/search/:query', function (req, res) {
       }
     }, memo);
   }, []);
-  // console.log(results);
   res.send(results);
 });
 app.get('/api/v1/candidate/:name', function (req, res) {
