@@ -27,14 +27,21 @@ view scale (offsetX, offsetY) equipment person =
       , tel person
       , mail person
       , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
+      , pointer
       ]
+
+pointer : Html msg
+pointer =
+  div [ style Styles.personDetailPopupPointer ] []
 
 tel : Person -> Html msg
 tel person =
   div
     [ style Styles.personDetailPopupPersonTel ]
     [ Icons.personDetailPopupPersonTel
-    , text (Maybe.withDefault "" person.tel)
+    , div
+        [ style Styles.personDetailPopupPersonIconText ]
+        [ text (Maybe.withDefault "" person.tel) ]
     ]
 
 mail : Person -> Html msg
@@ -42,5 +49,7 @@ mail person =
   div
     [ style Styles.personDetailPopupPersonMail ]
     [ Icons.personDetailPopupPersonMail
-    , text (Maybe.withDefault "" person.mail)
+    , div
+        [ style Styles.personDetailPopupPersonIconText ]
+        [ text (Maybe.withDefault "" person.mail) ]
     ]

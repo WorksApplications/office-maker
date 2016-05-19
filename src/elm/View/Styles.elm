@@ -509,13 +509,26 @@ personDetailPopup (x, y) =
     width = 300
     height = 160
   in
-    popup ++
+    popup ++ shadow ++
       [ ("width", px width)
       , ("height", px height)
       , ("left", px (x - (width // 2)))
       , ("top", px (y - (height + 10)))
       , ("z-index", zIndex.personDetailPopup)
-      ] ++ shadow
+      ]
+
+personDetailPopupPointer : S
+personDetailPopupPointer =
+  shadow ++
+    [ ("transform", "rotate(45deg)")
+    , ("width", "20px")
+    , ("height", "20px")
+    , ("position", "absolute")
+    , ("bottom", "-10px")
+    , ("left", px (300 // 2 - 20 // 2))
+    , ("background-color", "#fff")
+    , ("box-shadow", "rgba(0, 0, 0, 0.237255) 2px 2px 5px 0px")
+    ]
 
 personDetailPopupClose : S
 personDetailPopupClose =
@@ -556,18 +569,24 @@ personDetailPopupPersonOrg =
 
 personDetailPopupPersonTel : S
 personDetailPopupPersonTel =
-  flex ++ [ ("position", "absolute")
-  , ("font-size", "small")
-  , ("top", "50px")
-  , ("left", "100px")
-  ]
+  flex ++
+    [ ("position", "absolute")
+    , ("top", "50px")
+    , ("left", "100px")
+    ]
 
 personDetailPopupPersonMail : S
 personDetailPopupPersonMail =
-  flex ++ [ ("position", "absolute")
+  flex ++
+    [ ("position", "absolute")
+    , ("top", "70px")
+    , ("left", "100px")
+    ]
+
+personDetailPopupPersonIconText : S
+personDetailPopupPersonIconText =
+  [ ("margin-left", "5px")
   , ("font-size", "small")
-  , ("top", "70px")
-  , ("left", "100px")
   ]
 
 

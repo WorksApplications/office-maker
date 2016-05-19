@@ -25,7 +25,7 @@ var users = {
     id:'user01',
     org: 'Sample Co.,Ltd',
     name: 'User01',
-    mail: 'user01@xxx.com',
+    tel: '33510',
     role: 'general'
   }
 };
