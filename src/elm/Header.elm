@@ -12,19 +12,19 @@ import View.Styles as Styles
 -- import View.Icons as Icons
 
 type Msg = Login | Logout | LogoutSuccess | NoOp
-type Event = LogoutDone
+type Event = LogoutDone | None
 
-update : Msg -> (Cmd Msg, Maybe Event)
+update : Msg -> (Cmd Msg, Event)
 update action =
   case action of
     NoOp ->
-      (Cmd.none, Nothing)
+      (Cmd.none, None)
     Login ->
-      (Task.perform (always NoOp) (always NoOp) API.goToLogin, Nothing)
+      (Task.perform (always NoOp) (always NoOp) API.goToLogin, None)
     Logout ->
-      (Task.perform (always LogoutSuccess) (always LogoutSuccess) API.logout, Nothing)--TODO
+      (Task.perform (always LogoutSuccess) (always LogoutSuccess) API.logout, None)--TODO
     LogoutSuccess ->
-      (Cmd.none, Just LogoutDone)
+      (Cmd.none, LogoutDone)
 
 view : Maybe User -> Html Msg
 view maybeContext =

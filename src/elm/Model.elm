@@ -677,19 +677,16 @@ update action model =
     InputFloorRealWidth width ->
       let
         (newFloor, cmd) =
-          case String.toInt width of
-            Err s -> (model.floor, Cmd.none)
-            Ok i ->
-              if i > 0 then
-                let
-                  newFloor =
-                    UndoRedo.commit model.floor (Floor.changeRealWidth i)
-                  cmd =
-                    saveFloorCmd (UndoRedo.data newFloor)
-                in
-                  (newFloor, cmd)
-              else
-                (model.floor, Cmd.none)
+          case parsePositiveInt width of
+            Nothing -> (model.floor, Cmd.none)
+            Just i ->
+              let
+                newFloor =
+                  UndoRedo.commit model.floor (Floor.changeRealWidth i)
+                cmd =
+                  saveFloorCmd (UndoRedo.data newFloor)
+              in
+                (newFloor, cmd)
         newModel =
           { model |
             floor = newFloor
@@ -700,19 +697,16 @@ update action model =
     InputFloorRealHeight height ->
       let
         (newFloor, cmd) =
-          case String.toInt height of
-            Err s -> (model.floor, Cmd.none)
-            Ok i ->
-              if i > 0 then
-                let
-                  newFloor =
-                    UndoRedo.commit model.floor (Floor.changeRealHeight i)
-                  cmd =
-                    saveFloorCmd (UndoRedo.data newFloor)
-                in
-                  (newFloor, cmd)
-              else
-                (model.floor, Cmd.none)
+          case parsePositiveInt height of
+            Nothing -> (model.floor, Cmd.none)
+            Just i ->
+              let
+                newFloor =
+                  UndoRedo.commit model.floor (Floor.changeRealHeight i)
+                cmd =
+                  saveFloorCmd (UndoRedo.data newFloor)
+              in
+                (newFloor, cmd)
         newModel =
           { model |
             floor = newFloor
@@ -739,17 +733,17 @@ update action model =
         model ! [ cmd ]
     HeaderMsg action ->
       let
-        (cmd, maybeEvent) =
+        (cmd, event) =
           Header.update action
         newModel =
-          case maybeEvent of
-            Just LogoutDone -> { model | user = User.guest }
-            _ -> model
+          case event of
+            LogoutDone -> { model | user = User.guest }
+            Header.None -> model
       in
         newModel ! [ Cmd.map HeaderMsg cmd ]
     SearchBoxMsg msg ->
       let
-        (searchBox, cmd, maybeEvent) =
+        (searchBox, cmd, event) =
           SearchBox.update msg model.searchBox
 
         model' =
@@ -759,13 +753,13 @@ update action model =
           SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
 
         (selectedResult, errCmd) =
-          case maybeEvent of
-            Just SearchBox.OnResults ->
+          case event of
+            SearchBox.OnResults ->
               case results of
                 head :: [] ->
                    (Just (idOf head), regesterPersonOfEquipment head)
                 _ -> (Nothing, Cmd.none)
-            Just (SearchBox.OnSelectResult id) ->
+            SearchBox.OnSelectResult id ->
               let
                 equipments = Floor.equipments (UndoRedo.data model.floor)
                 cmd =
@@ -776,9 +770,9 @@ update action model =
                       Cmd.none
               in
                 (Just id, cmd)
-            Just (SearchBox.OnError e) ->
+            SearchBox.OnError e ->
               (Nothing, performAPI (always NoOp) (Task.fail e))
-            _ ->
+            SearchBox.None ->
               (model'.selectedResult, Cmd.none)
 
         model'' =
@@ -795,11 +789,7 @@ update action model =
         newModel ! [ Cmd.map SearchBoxMsg cmd, errCmd ]
 
     ChangeEditing isEditing ->
-      let
-        newModel =
-          { model | isEditing = isEditing }
-      in
-        newModel ! []
+      { model | isEditing = isEditing } ! []
     RegisterPeople people ->
       { model |
         personInfo =
@@ -869,6 +859,12 @@ update action model =
       in
         newModel ! []
 
+parsePositiveInt : String -> Maybe Int
+parsePositiveInt s =
+  case String.toInt s of
+    Err s -> Nothing
+    Ok i ->
+      if i > 0 then Just i else Nothing
 
 regesterPersonOfEquipment : Equipment -> Cmd Msg
 regesterPersonOfEquipment e =
@@ -1027,9 +1023,13 @@ updateByKeyEvent event model =
     (_, ShortCut.RightArrow) ->
       shiftSelectionToward EquipmentsOperation.Right model ! []
     (_, ShortCut.Del) ->
-      { model |
-        floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
-      } ! [ saveFloorCmd (UndoRedo.data newModel.floor) ]
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
+          }
+      in
+        newModel ! [ saveFloorCmd (UndoRedo.data newModel.floor) ]
     (_, ShortCut.Other 9) -> --TODO waiting for fix double-click
       let
         floor = UndoRedo.data model.floor

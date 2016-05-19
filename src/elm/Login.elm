@@ -21,7 +21,7 @@ main =
 
 --------
 
-type Action =
+type Msg =
     InputId String
   | InputPass String
   | Submit
@@ -35,13 +35,13 @@ type alias Model =
   , inputPass : String
   }
 
-init : (Model, Cmd Action)
+init : (Model, Cmd Msg)
 init =
   { error = Nothing, inputId = "", inputPass = "" } ! []
 
-update : Action -> Model -> (Model, Cmd Action)
-update action model =
-  case action of
+update : Msg -> Model -> (Model, Cmd Msg)
+update message model =
+  case message of
     InputId s -> { model | inputId = s} ! []
     InputPass s -> { model | inputPass = s} ! []
     Submit ->
@@ -65,7 +65,7 @@ update action model =
     NoOp ->
         model ! []
 
-view : Model -> Html Action
+view : Model -> Html Msg
 view model =
   div
     []
@@ -73,7 +73,7 @@ view model =
     , container model
     ]
 
-container : Model -> Html Action
+container : Model -> Html Msg
 container model =
   div
     [ style Styles.loginContainer ]
@@ -82,7 +82,7 @@ container model =
     , loginForm model
     ]
 
-loginForm : Model -> Html Action
+loginForm : Model -> Html Msg
 loginForm model =
   HtmlUtil.form' Submit
     []
