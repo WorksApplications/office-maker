@@ -62,7 +62,7 @@ greeting user =
     Guest ->
       text ""
     _ ->
-      img [ style Styles.greetingImage, src "/images/default.png" ] []
+      img [ style Styles.greetingImage, src "/images/users/default.png" ] []
 
 
 userName : User -> String

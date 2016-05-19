@@ -16,7 +16,6 @@ import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.HttpUtil as HttpUtil
 import Util.IdGenerator as IdGenerator exposing (Seed)
-import Util.File as File exposing (..)
 import Util.Routing as Routing
 import Util.DictUtil exposing (..)
 
@@ -30,6 +29,7 @@ import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 import Model.Errors as Errors exposing (GlobalError(..))
 
+import FloorProperty
 import SearchBox
 import Header exposing (..)
 
@@ -54,15 +54,14 @@ type alias Model =
   , contextMenu : ContextMenu
   , floor : UndoRedo.Model Floor Commit
   , floorsInfo : List Floor
-  , windowDimensions : (Int, Int)
+  , windowSize : (Int, Int)
   , scale : Scale.Model
   , offset : (Int, Int)
   , scaling : Bool
   , prototypes : Prototypes.Model
   , error : GlobalError
   , hash : String
-  , inputFloorRealWidth : String
-  , inputFloorRealHeight : String
+  , floorProperty : FloorProperty.Model
   , searchBox : SearchBox.Model
   , selectedResult : Maybe Id
   , isEditing : Bool
@@ -88,7 +87,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
     [ Routing.hashchanges HashChange
-    , Window.resizes (\e -> WindowDimensions (e.width, e.height))
+    , Window.resizes (\e -> WindowSize (e.width, e.height))
     , Keyboard.downs (KeyCodeMsg True)
     , Keyboard.ups (KeyCodeMsg False)
     ]
@@ -115,15 +114,14 @@ init randomSeed initialSize initialHash visitDate =
     , contextMenu = NoContextMenu
     , floorsInfo = []
     , floor = UndoRedo.init { data = Floor.init "tmp", update = Floor.update }
-    , windowDimensions = initialSize
+    , windowSize = initialSize
     , scale = Scale.init
     , offset = (35, 35)
     , scaling = False
     , prototypes = Prototypes.init []
     , error = NoError
     , hash = initialHash
-    , inputFloorRealWidth = ""
-    , inputFloorRealHeight = ""
+    , floorProperty = FloorProperty.init "" 0 0
     , searchBox = SearchBox.init
     , selectedResult = Nothing
     , isEditing = False
@@ -156,19 +154,14 @@ type Msg = NoOp
   | KeydownOnNameInput Int
   | ShowContextMenuOnEquipment Id
   | SelectIsland Id
-  | WindowDimensions (Int, Int)
+  | WindowSize (Int, Int)
   | MouseWheel Float
   | ChangeMode EditMode
-  | LoadFile FileList
-  | GotDataURL String File String
   | ScaleEnd
   | PrototypesMsg Prototypes.Msg
   | RegisterPrototype Id
-  | InputFloorName String
-  | InputFloorRealWidth String
-  | InputFloorRealHeight String
+  | FloorPropertyMsg FloorProperty.Msg
   | Rotate Id
-  | Publish
   | Published Id
   | HeaderMsg Header.Msg
   | SearchBoxMsg SearchBox.Msg
@@ -188,7 +181,6 @@ debugMsg action =
   if debug then
     case action of
       MoveOnCanvas _ -> action
-      GotDataURL _ _ _ -> action
       _ -> Debug.log "action" action
   else
     action
@@ -266,8 +258,7 @@ update action model =
         newModel =
           { model |
             floor = UndoRedo.init { data = floor, update = Floor.update }
-          , inputFloorRealWidth = toString realWidth
-          , inputFloorRealHeight = toString realHeight
+          , floorProperty = FloorProperty.init floor.name realWidth realHeight
           }
         cmd =
           case floor.update of
@@ -590,46 +581,11 @@ update action model =
       in
         newModel ! [ cmd ]
     ScaleEnd ->
-      let
-        newModel =
-          { model | scaling = False }
-      in
-        newModel ! []
-    WindowDimensions (w, h) ->
-      let
-        newModel =
-          { model | windowDimensions = (w, h) }
-      in
-        newModel ! []
+        { model | scaling = False } ! []
+    WindowSize (w, h) ->
+        { model | windowSize = (w, h) } ! []
     ChangeMode mode ->
-      let
-        newModel =
-          { model | editMode = mode }
-      in
-        newModel ! []
-    LoadFile fileList ->
-      case File.getAt 0 fileList of
-        Just file ->
-          let
-            (id, newSeed) =
-              IdGenerator.new model.seed
-            newModel =
-              { model | seed = newSeed }
-            cmd =
-              Task.perform (Error << FileError) (GotDataURL id file) (readAsDataURL file)
-          in
-            model ! [ cmd ]
-        Nothing ->
-          model ! []
-
-    GotDataURL id file dataURL ->
-      let
-        newModel =
-          { model | floor = UndoRedo.commit model.floor (Floor.setLocalFile id file dataURL) }
-        cmd =
-          saveFloorCmd (UndoRedo.data newModel.floor)
-      in
-        newModel ! [ cmd ]
+        { model | editMode = mode } ! []
     PrototypesMsg action ->
       let
         newModel =
@@ -664,56 +620,21 @@ update action model =
               model'
       in
         newModel ! []
-    InputFloorName name ->
+    FloorPropertyMsg message ->
       let
-        newFloor =
-          UndoRedo.commit model.floor (Floor.changeName name)
-        cmd =
-          saveFloorCmd (UndoRedo.data newFloor)
-        newModel =
-          { model | floor = newFloor }
-      in
-        newModel ! [ cmd ]
-    InputFloorRealWidth width ->
-      let
-        (newFloor, cmd) =
-          case parsePositiveInt width of
-            Nothing -> (model.floor, Cmd.none)
-            Just i ->
-              let
-                newFloor =
-                  UndoRedo.commit model.floor (Floor.changeRealWidth i)
-                cmd =
-                  saveFloorCmd (UndoRedo.data newFloor)
-              in
-                (newFloor, cmd)
+        (floorProperty, cmd1, event) =
+          FloorProperty.update message model.floorProperty
+        ((newFloor, newSeed), cmd2) =
+          updateFloorByFloorPropertyEvent event model.seed model.floor
+
         newModel =
           { model |
             floor = newFloor
-          , inputFloorRealWidth = width
+          , floorProperty = floorProperty
+          , seed = newSeed
           }
       in
-        newModel ! [ cmd ]
-    InputFloorRealHeight height ->
-      let
-        (newFloor, cmd) =
-          case parsePositiveInt height of
-            Nothing -> (model.floor, Cmd.none)
-            Just i ->
-              let
-                newFloor =
-                  UndoRedo.commit model.floor (Floor.changeRealHeight i)
-                cmd =
-                  saveFloorCmd (UndoRedo.data newFloor)
-              in
-                (newFloor, cmd)
-        newModel =
-          { model |
-            floor = newFloor
-          , inputFloorRealHeight = height
-          }
-      in
-        newModel ! [ cmd ]
+        newModel ! [ Cmd.map FloorPropertyMsg cmd1, cmd2 ]
     Rotate id ->
       let
         newFloor =
@@ -725,12 +646,6 @@ update action model =
           }
       in
         newModel ! []
-    Publish ->
-      let
-        floor = UndoRedo.data model.floor
-        cmd = performAPI GotDiffSource (API.getDiffSource floor.id)
-      in
-        model ! [ cmd ]
     HeaderMsg action ->
       let
         (cmd, event) =
@@ -859,12 +774,51 @@ update action model =
       in
         newModel ! []
 
-parsePositiveInt : String -> Maybe Int
-parsePositiveInt s =
-  case String.toInt s of
-    Err s -> Nothing
-    Ok i ->
-      if i > 0 then Just i else Nothing
+
+
+updateFloorByFloorPropertyEvent : FloorProperty.Event -> Seed -> UndoRedo.Model Floor Commit -> ((UndoRedo.Model Floor Commit, Seed), Cmd Msg)
+updateFloorByFloorPropertyEvent event seed floor =
+    case event of
+      FloorProperty.None ->
+        (floor, seed) ! []
+      FloorProperty.OnNameChange name ->
+        let
+          newFloor =
+            UndoRedo.commit floor (Floor.changeName name)
+          cmd =
+            saveFloorCmd (UndoRedo.data newFloor)
+        in
+          (newFloor, seed) ! [ cmd ]
+      FloorProperty.OnRealSizeChange (w, h) ->
+        let
+          newFloor =
+            UndoRedo.commit floor (Floor.changeRealSize (w, h))
+          cmd =
+            saveFloorCmd (UndoRedo.data newFloor)
+        in
+          (newFloor, seed) ! [ cmd ]
+      FloorProperty.OnFileWithDataURL file dataURL ->
+        let
+          (id, newSeed) =
+            IdGenerator.new seed
+          newFloor =
+            UndoRedo.commit floor (Floor.setLocalFile id file dataURL)
+          cmd =
+            saveFloorCmd (UndoRedo.data floor)
+        in
+          (newFloor, newSeed) ! [ cmd ]
+      FloorProperty.OnPreparePublish ->
+        let
+          cmd =
+            performAPI GotDiffSource (API.getDiffSource (UndoRedo.data floor).id)
+        in
+          (floor, seed) ! [ cmd ]
+      FloorProperty.OnFileLoadFailed err ->
+        let
+          cmd =
+            Task.perform (Error << FileError) (always NoOp) (Task.fail err)
+        in
+          (floor, seed) ! [ cmd ]
 
 regesterPersonOfEquipment : Equipment -> Cmd Msg
 regesterPersonOfEquipment e =

@@ -46,8 +46,7 @@ type Msg =
   | ChangeEquipmentName Id String
   | ChangeName String
   | SetLocalFile String File String
-  | ChangeRealWidth Int
-  | ChangeRealHeight Int
+  | ChangeRealSize (Int, Int)
   | OnSaved Bool
   | ChangeUserCandidate String (List String)
 
@@ -81,11 +80,8 @@ changeName = ChangeName
 setLocalFile : String -> File -> String -> Msg
 setLocalFile = SetLocalFile
 
-changeRealWidth : Int -> Msg
-changeRealWidth = ChangeRealWidth
-
-changeRealHeight : Int -> Msg
-changeRealHeight = ChangeRealHeight
+changeRealSize : (Int, Int) -> Msg
+changeRealSize = ChangeRealSize
 
 onSaved : Bool -> Msg
 onSaved = OnSaved
@@ -134,26 +130,9 @@ update action model =
       { model | name = name }
     SetLocalFile id file dataURL ->
       setLocalFile' id file dataURL model
-    ChangeRealWidth width ->
-      let
-        newRealSize =
-          case model.realSize of
-            Just (w, h) -> Just (width, h)
-            Nothing -> Just (width, pixelToReal model.height)
-      in
+    ChangeRealSize (width, height) ->
         { model |
-          realSize = newRealSize
-        -- , useReal = True
-        }
-    ChangeRealHeight height ->
-      let
-        newRealSize =
-          case model.realSize of
-            Just (w, h) -> Just (w, height)
-            Nothing -> Just (pixelToReal model.width, height)
-      in
-        { model |
-          realSize = newRealSize
+          realSize = Just (width, height)
         -- , useReal = True
         }
     OnSaved isPublish ->

@@ -2,6 +2,7 @@ module Util.HtmlUtil exposing (..) -- where
 
 import Native.HtmlUtil
 import Html exposing (Html, Attribute)
+import Html.App
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode as Decode exposing (..)
@@ -127,8 +128,8 @@ form' action attribtes children =
     ] ++ attribtes)
     children
 
-fileLoadButton : List (String, String) -> String -> Html FileList
-fileLoadButton styles text =
+fileLoadButton : (FileList -> msg) -> List (String, String) -> String -> Html msg
+fileLoadButton tagger styles text =
   Html.label
     [ Html.Attributes.style styles ]
     [ Html.text text
@@ -137,5 +138,5 @@ fileLoadButton styles text =
         , Html.Attributes.style [("display", "none")]
         , on "change" decodeFile
         ]
-        []
+        [] |> Html.App.map tagger
     ]
