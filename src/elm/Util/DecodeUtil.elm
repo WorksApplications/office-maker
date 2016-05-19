@@ -1,11 +1,14 @@
 module Util.DecodeUtil exposing (..) -- where
 
-import Json.Decode exposing (Decoder, maybe, oneOf, succeed, (:=))
+import Json.Decode exposing (Decoder, maybe, succeed, (:=), int, tuple2)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, custom)
 
 (?=) : String -> (Decoder a) -> (Decoder (Maybe a))
 (?=) key decorder =
   maybe (key := decorder)
+
+intSize : Decoder (Int, Int)
+intSize = tuple2 (,) int int
 
 -- for Pipeline
 

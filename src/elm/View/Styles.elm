@@ -1,6 +1,6 @@
 module View.Styles exposing (..) -- where
 
---import Html.Attributes exposing (Attributes, style)
+import Util.StyleUtil exposing (..)
 
 type alias S = List (String, String)
 
@@ -182,7 +182,7 @@ nameLabel ratio =
   , ("text-align", "center")
   , ("position", "absolute")
   , ("cursor", "default")
-  , ("font-size", toString ratio ++ "em") --TODO
+  , ("font-size", em ratio) --TODO
    -- TODO vertical align
   ]
 
@@ -601,6 +601,8 @@ mainView windowHeight =
       ]
     )
 
-px : Int -> String
-px num =
-  toString num ++ "px"
+searchResultItemIcon : S
+searchResultItemIcon =
+  [ ("display", "inline-block")
+  , ("width", "30px")
+  ]

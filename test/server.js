@@ -29,6 +29,12 @@ var users = {
     role: 'general'
   }
 };
+var gridSize = 8;
+var colors = [];
+var prototypes = [
+  { id: "1", color: "#ed9", name: "", size : [gridSize*6, gridSize*10] },
+  { id: "2", color: "#8bd", name: "foo", size : [gridSize*7, gridSize*12] }
+];
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -125,6 +131,46 @@ app.get('/api/v1/auth', function(req, res) {
   } else {
     res.send({});
   }
+});
+app.get('/api/v1/prototypes', function (req, res) {
+  if(role(req) === 'guest') {
+    res.status(401).send('');
+    return;
+  }
+  res.send(prototypes);
+});
+app.put('/api/v1/prototypes', function (req, res) {
+  if(role(req) === 'guest') {
+    res.status(401).send('');
+    return;
+  }
+  var prototypes_ = req.body;
+  if(!prototypes_ || !prototypes_.length) {
+    res.status(403).send('');
+    return;
+  }
+  prototypes = prototypes_;
+  res.send();
+});
+app.get('/api/v1/colors', function (req, res) {
+  if(role(req) === 'guest') {
+    res.status(401).send('');
+    return;
+  }
+  res.send(colors);
+});
+app.put('/api/v1/colors', function (req, res) {
+  if(role(req) === 'guest') {
+    res.status(401).send('');
+    return;
+  }
+  var colors_ = req.body;
+  if(!colors_ || !prototypes_.length) {
+    res.status(403).send('');
+    return;
+  }
+  colors = colors_;
+  res.send();
 });
 app.get('/api/v1/floors', function (req, res) {
   var options = url.parse(req.url, true).query;

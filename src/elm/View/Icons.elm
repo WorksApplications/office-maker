@@ -3,11 +3,12 @@ module View.Icons exposing (..) -- where
 import Svg exposing (Svg)
 import Color exposing (Color, white, black, gray)
 import Material.Icons.Navigation exposing (check, close)
--- import Material.Icons.Notification exposing (priority_high) -- TODO
-
 import Material.Icons.Action exposing (search)
 import Material.Icons.Editor exposing (mode_edit, border_all)
 import Material.Icons.Image exposing (crop_square)
+import Material.Icons.Social exposing (person)
+
+-- import Material.Icons.Notification exposing (priority_high) -- TODO
 -- import Material.Icons.Internal exposing (icon)
 
 selectMode : Bool -> Svg msg
@@ -42,6 +43,11 @@ searchTab =
 editTab : Svg msg
 editTab =
   mode_edit (Color.rgb 140 140 140) 20
+
+searchResultItemPerson : Svg msg
+searchResultItemPerson =
+  person (Color.rgb 140 140 140) 20
+
 
 -- TODO PR to elm-material-icons
 

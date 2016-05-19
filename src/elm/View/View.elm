@@ -203,9 +203,21 @@ subViewForSearch model =
   let
     searchWithPrivate =
       not <| User.isGuest model.user
+
+    format : Equipment -> String -> Html Msg
+    format e id =
+      let
+        isPerson = Equipments.relatedPerson e /= Nothing
+        icon =
+          div
+            [ style Styles.searchResultItemIcon
+            ]
+            [ if isPerson then Icons.searchResultItemPerson else text "" ]
+      in
+        div [] [ icon, text (nameOf e) ]
   in
-    [ card <| [ SearchBox.view searchWithPrivate model.searchBox |> Html.App.map SearchBoxMsg ]
-    , card <| [ SearchBox.resultsView (\e id -> nameOf e) model.searchBox |> Html.App.map SearchBoxMsg ]
+    [ card <| [ SearchBox.view SearchBoxMsg searchWithPrivate model.searchBox ]
+    , card <| [ SearchBox.resultsView SearchBoxMsg format model.searchBox ]
     ]
 
 

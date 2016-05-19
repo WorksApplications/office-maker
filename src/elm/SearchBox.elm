@@ -2,6 +2,7 @@ module SearchBox exposing (..) -- where
 
 import Task
 import Html exposing (..)
+import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events
 import Model.Equipments as Equipments exposing (..)
@@ -69,30 +70,31 @@ equipmentsInFloor floorId model =
       List.filterMap (\(e, id) -> if id == Debug.log "floorId" floorId then Just e else Nothing) results
 
 
-view : Bool -> Model -> Html Msg
-view searchWithPrivate model =
-  form' (Submit searchWithPrivate)
-    [ ]
-    [ input
-      [ type' "input"
-      , placeholder "Search"
-      , style Styles.searchBox
-      , value model.query
-      , onInput Input
-      ]
-      []
-    ]
-
-resultsView : (Equipment -> String -> String) -> Model -> Html Msg
-resultsView format model =
-  let
-    each (e, floorId) =
-      li
-        [ Html.Events.onClick (SelectResult (idOf e))
-        , style Styles.searchResultItem
+view : (Msg -> msg) -> Bool -> Model -> Html msg
+view translateMsg searchWithPrivate model =
+  App.map translateMsg <|
+    form' (Submit searchWithPrivate)
+      [ ]
+      [ input
+        [ type' "input"
+        , placeholder "Search"
+        , style Styles.searchBox
+        , value model.query
+        , onInput Input
         ]
-        [ text (format e floorId) ]
-  in
+        []
+      ]
+
+resultView : (Msg -> msg) -> (Equipment -> String -> Html msg) -> (Equipment, String) -> Html msg
+resultView translateMsg format (e, floorId) =
+    li
+      [ Html.Events.onClick (translateMsg <| SelectResult (idOf e))
+      , style Styles.searchResultItem
+      ]
+      [ format e floorId ]
+
+resultsView : (Msg -> msg) -> (Equipment -> String -> Html msg) -> Model -> Html msg
+resultsView translateMsg format model =
     case model.results of
       Nothing ->
         text ""
@@ -101,4 +103,4 @@ resultsView format model =
       Just results ->
         ul
           [ style Styles.ul ]
-          (List.map each results)
+          (List.map (resultView translateMsg format) results)
