@@ -285,13 +285,9 @@ update action model =
       in
         newModel ! [ cmd ]
     FloorSaved isPublish ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.commit model.floor (Floor.onSaved isPublish)
-          }
-      in
-        newModel ! []
+      { model |
+        floor = UndoRedo.commit model.floor (Floor.onSaved isPublish)
+      } ! []
     MoveOnCanvas (clientX, clientY) ->
       let
         (x, y) = (clientX, clientY - 37)
@@ -321,16 +317,12 @@ update action model =
     EnterCanvas ->
       model ! []
     LeaveCanvas ->
-      let
-        newModel =
-          { model |
-            draggingContext =
-              case model.draggingContext of
-                ShiftOffsetPrevScreenPos -> None
-                _ -> model.draggingContext
-          }
-      in
-        newModel ! []
+      { model |
+        draggingContext =
+          case model.draggingContext of
+            ShiftOffsetPrevScreenPos -> None
+            _ -> model.draggingContext
+      } ! []
     MouseDownOnEquipment lastTouchedId ->
       let
         (clientX, clientY) = model.pos
@@ -476,14 +468,10 @@ update action model =
     StartEditEquipment id ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just e ->
-          let
-            newModel =
-              { model |
-                editingEquipment = Just (idOf e, nameOf e)
-              , contextMenu = NoContextMenu
-              }
-          in
-            (newModel, focusEffect "name-input")
+          { model |
+            editingEquipment = Just (idOf e, nameOf e)
+          , contextMenu = NoContextMenu
+          } ! [ focusCmd "name-input" ]
         Nothing ->
           model ! []
     SelectColor color ->
@@ -770,7 +758,7 @@ update action model =
         results =
           SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
 
-        (selectedResult, errEffect) =
+        (selectedResult, errCmd) =
           case maybeEvent of
             Just SearchBox.OnResults ->
               case results of
@@ -804,7 +792,7 @@ update action model =
             Nothing -> model''
 
       in
-        newModel ! [ Cmd.map SearchBoxMsg cmd, errEffect ]
+        newModel ! [ Cmd.map SearchBoxMsg cmd, errCmd ]
 
     ChangeEditing isEditing ->
       let
@@ -996,22 +984,14 @@ updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEvent event model =
   case (model.keys.ctrl, event) of
     (True, ShortCut.A) ->
-      let
-        newModel =
-          { model |
-            selectedEquipments =
-              List.map idOf <| Floor.equipments (UndoRedo.data model.floor)
-          }
-      in
-        (newModel, Cmd.none)
+      { model |
+        selectedEquipments =
+          List.map idOf <| Floor.equipments (UndoRedo.data model.floor)
+      } ! []
     (True, ShortCut.C) ->
-      let
-        newModel =
-          { model |
-            copiedEquipments = selectedEquipments model
-          }
-      in
-        (newModel, Cmd.none)
+      { model |
+        copiedEquipments = selectedEquipments model
+      } ! []
     (True, ShortCut.V) ->
       let
         base =
@@ -1033,57 +1013,29 @@ updateByKeyEvent event model =
           , selectorRect = Nothing
           }
       in
-        (newModel, Cmd.none)
+        newModel ! []
     (True, ShortCut.X) ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
-          , copiedEquipments = selectedEquipments model
-          , selectedEquipments = []
-          }
-      in
-        (newModel, Cmd.none)
+      { model |
+        floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
+      , copiedEquipments = selectedEquipments model
+      , selectedEquipments = []
+      } ! []
     (True, ShortCut.Y) ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.redo model.floor
-          }
-      in
-        (newModel, Cmd.none)
+      { model |
+        floor = UndoRedo.redo model.floor
+      } ! []
     (True, ShortCut.Z) ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.undo model.floor
-          }
-      in
-        (newModel, Cmd.none)
+      { model |
+        floor = UndoRedo.undo model.floor
+      } ! []
     (_, ShortCut.UpArrow) ->
-      let
-        newModel =
-          shiftSelectionToward EquipmentsOperation.Up model
-      in
-        (newModel, Cmd.none)
+      shiftSelectionToward EquipmentsOperation.Up model ! []
     (_, ShortCut.DownArrow) ->
-      let
-        newModel =
-          shiftSelectionToward EquipmentsOperation.Down model
-      in
-        (newModel, Cmd.none)
+      shiftSelectionToward EquipmentsOperation.Down model ! []
     (_, ShortCut.LeftArrow) ->
-      let
-        newModel =
-          shiftSelectionToward EquipmentsOperation.Left model
-      in
-        (newModel, Cmd.none)
+      shiftSelectionToward EquipmentsOperation.Left model ! []
     (_, ShortCut.RightArrow) ->
-      let
-        newModel =
-          shiftSelectionToward EquipmentsOperation.Right model
-      in
-        (newModel, Cmd.none)
+      shiftSelectionToward EquipmentsOperation.Right model ! []
     (_, ShortCut.Del) ->
       let
         newModel =
@@ -1092,7 +1044,7 @@ updateByKeyEvent event model =
           }
         cmd = saveFloorCmd (UndoRedo.data newModel.floor)
       in
-        (newModel, cmd)
+        newModel ! [ cmd ]
     (_, ShortCut.Other 9) -> --TODO waiting for fix double-click
       let
         floor = UndoRedo.data model.floor
@@ -1108,13 +1060,13 @@ updateByKeyEvent event model =
                     , contextMenu = NoContextMenu
                     }
                 in
-                  (newModel, focusEffect "name-input")
+                  (newModel, focusCmd "name-input")
               Nothing ->
-                (model, Cmd.none)
+                model ! []
           _ ->
-            (model, Cmd.none)
+            model ! []
     _ ->
-      (model, Cmd.none)
+      model ! []
 
 
 updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> Model
@@ -1192,12 +1144,12 @@ loadFloorCmd forEdit floorId =
     Task.perform (always NoOp) identity task
 
 
-focusEffect : String -> Cmd Msg
-focusEffect id =
+focusCmd : String -> Cmd Msg
+focusCmd id =
   Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
 
-blurEffect : String -> Cmd Msg
-blurEffect id =
+blurCmd : String -> Cmd Msg
+blurCmd id =
   Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
 
 isSelected : Model -> Equipment -> Bool
