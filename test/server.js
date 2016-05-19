@@ -30,7 +30,8 @@ var users = {
   }
 };
 var gridSize = 8;
-var colors = [];
+var colors = ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
+, "#bbb", "#fff", "rgba(255,255,255,0.5)"];
 var prototypes = [
   { id: "1", color: "#ed9", name: "", size : [gridSize*6, gridSize*10] },
   { id: "2", color: "#8bd", name: "foo", size : [gridSize*7, gridSize*12] }

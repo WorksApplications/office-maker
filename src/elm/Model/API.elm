@@ -15,7 +15,8 @@ module Model.API exposing (
     , personCandidate
     , getDiffSource
     , getPerson
-    , getSettings
+    , getColors
+    , getPrototypes
     , Error
   ) -- where
 
@@ -83,11 +84,11 @@ getColors =
       decodeColors
       (Http.url "/api/v1/colors" [])
 
-getSettings : Task Error (List Prototype, List String)
-getSettings =
-  getPrototypes
-  `Task.andThen` \prototypes -> getColors
-  `Task.andThen` \colors -> Task.succeed (prototypes, colors)
+-- getSettings : Task Error (List Prototype, List String)
+-- getSettings =
+--   getPrototypes
+--   `Task.andThen` \prototypes -> getColors
+--   `Task.andThen` \colors -> Task.succeed (prototypes, colors)
 
 getFloor : String -> Task Error Floor
 getFloor id =

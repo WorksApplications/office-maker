@@ -8,7 +8,7 @@ type alias PrototypeId =
   String
 
 type alias Prototype =
-  (PrototypeId, String, String, (Int, Int))
+  (PrototypeId, String, String, (Int, Int)) -- id color, name, size
 
 type alias StampCandidate =
   (Prototype, (Int, Int))
@@ -21,12 +21,9 @@ type alias Model =
 gridSize : Int
 gridSize = 8 --TODO
 
-init : Model
-init =
-  { data =
-    [ ("1", "#ed9", "", (gridSize*6, gridSize*10))
-    , ("2", "#8bd", "foo", (gridSize*7, gridSize*12))
-    ] -- TODO: For now, hight bust be larger than width
+init : List Prototype -> Model
+init data =
+  { data = data
   , selected = 0 -- index
   }
 

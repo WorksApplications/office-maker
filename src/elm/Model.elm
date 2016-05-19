@@ -111,9 +111,7 @@ init randomSeed initialSize initialHash visitDate =
     , selectorRect = Nothing
     , keys = ShortCut.init
     , editMode = Select
-    , colorPalette =
-        ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
-        , "#bbb", "#fff", "rgba(255,255,255,0.5)"] --TODO
+    , colorPalette = []
     , contextMenu = NoContextMenu
     , floorsInfo = []
     , floor = UndoRedo.init { data = Floor.init "tmp", update = Floor.update }
@@ -121,7 +119,7 @@ init randomSeed initialSize initialHash visitDate =
     , scale = Scale.init
     , offset = (35, 35)
     , scaling = False
-    , prototypes = Prototypes.init
+    , prototypes = Prototypes.init []
     , error = NoError
     , hash = initialHash
     , inputFloorRealWidth = ""
@@ -142,6 +140,8 @@ type Msg = NoOp
   | AuthLoaded User
   | FloorsInfoLoaded (List Floor)
   | FloorLoaded Floor
+  | ColorsLoaded (List String)
+  | PrototypesLoaded (List Prototype)
   | FloorSaved Bool
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
@@ -253,14 +253,26 @@ update action model =
             --   [ saveTemporaryFloorAndLoadIt user
             --   , Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#"))
             --   ]
+        loadSettingsCmd =
+          if User.isGuest user then
+            Cmd.none
+          else
+            Cmd.batch
+              [ Task.perform (Error << APIError) ColorsLoaded API.getColors
+              , Task.perform (Error << APIError) PrototypesLoaded API.getPrototypes
+              ]
       in
         { model |
           user = user
         }
         ! [ loadFloorsInfoCmd requestPrivateFloors
           , loadFloorCmd'
+          , loadSettingsCmd
           ]
-
+    ColorsLoaded colors ->
+      { model | colorPalette = colors } ! []
+    PrototypesLoaded prototypeList ->
+      { model | prototypes = Prototypes.init prototypeList } ! []
     FloorsInfoLoaded floors ->
       { model | floorsInfo = floors } ! []
     FloorLoaded floor ->

@@ -148,8 +148,8 @@ decodePrototype =
   decode
     (,,,)
     |> required "id" Decode.string
-    |> required "name" Decode.string
     |> required "color" Decode.string
+    |> required "name" Decode.string
     |> required "size" intSize
 
 serializeFloor : Floor -> String
