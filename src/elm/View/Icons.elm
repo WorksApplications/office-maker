@@ -7,9 +7,13 @@ import Material.Icons.Action exposing (search)
 import Material.Icons.Editor exposing (mode_edit, border_all)
 import Material.Icons.Image exposing (crop_square)
 import Material.Icons.Social exposing (person)
+import Material.Icons.Communication exposing (phone, email)
 
 -- import Material.Icons.Notification exposing (priority_high) -- TODO
 -- import Material.Icons.Internal exposing (icon)
+
+defaultColor : Color
+defaultColor = Color.rgb 140 140 140
 
 selectMode : Bool -> Svg msg
 selectMode selected =
@@ -34,20 +38,27 @@ personNotMatched =
 
 popupClose : Svg msg
 popupClose =
-  close white 18
+  close defaultColor 18
 
 searchTab : Svg msg
 searchTab =
-  search (Color.rgb 140 140 140) 20
+  search defaultColor 20
 
 editTab : Svg msg
 editTab =
-  mode_edit (Color.rgb 140 140 140) 20
+  mode_edit defaultColor 20
 
 searchResultItemPerson : Svg msg
 searchResultItemPerson =
-  person (Color.rgb 140 140 140) 20
+  person defaultColor 20
 
+personDetailPopupPersonTel : Svg msg
+personDetailPopupPersonTel =
+  phone defaultColor 16
+
+personDetailPopupPersonMail : Svg msg
+personDetailPopupPersonMail =
+  email defaultColor 16
 
 -- TODO PR to elm-material-icons
 

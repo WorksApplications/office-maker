@@ -16,6 +16,7 @@ import View.MessageBar as MessageBar
 import View.EquipmentView exposing (..)
 import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
+import View.ProfilePopup as ProfilePopup
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
@@ -29,7 +30,7 @@ import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
-import Model.Person as Person exposing (Person)
+-- import Model.Person as Person exposing (Person)
 
 contextMenuView : Model -> Html Msg
 contextMenuView model =
@@ -104,27 +105,6 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           disableTransition
           personInfo
           personMatched
-
-popup : Model -> Equipment -> Person -> Html msg
-popup model equipment person =
-  let
-    url =
-      Maybe.withDefault "images/users/default.png" person.image
-    (offsetX, offsetY) = model.offset
-    (x, y, w, h) =
-      rect equipment
-    (screenX, screenY) =
-      Scale.imageToScreenForPosition model.scale (offsetX + x + w//2, offsetY + y)
-  in
-    div
-      [ style (Styles.personDetailPopup (screenX, screenY)) ]
-      [ div [ style Styles.personDetailPopupClose ] [ Icons.popupClose ]
-      , img [ style Styles.personDetailPopupPersonImage, src url ] []
-      -- , div [ style Styles.popupPersonNo ] [ text person.no ]
-      , div [ style Styles.personDetailPopupPersonName ] [ text person.name ]
-      , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
-      ]
-
 
 transitionDisabled : Model -> Bool
 transitionDisabled model =
@@ -338,7 +318,7 @@ canvasContainerView model =
       findEquipmentById floor.equipments id `Maybe.andThen` \e ->
       Equipments.relatedPerson e `Maybe.andThen` \personId ->
       Dict.get personId model.personInfo `Maybe.andThen` \person ->
-      Just (popup model e person)
+      Just (ProfilePopup.view model.scale model.offset e person)
 
   in
     div

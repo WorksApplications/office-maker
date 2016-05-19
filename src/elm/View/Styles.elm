@@ -520,16 +520,14 @@ personDetailPopup (x, y) =
 personDetailPopupClose : S
 personDetailPopupClose =
   [ ("position", "absolute")
-  , ("top", "5px")
-  , ("right", "5px")
+  , ("top", "10px")
+  , ("right", "10px")
   ]
-
 
 personDetailPopupPersonImage : S
 personDetailPopupPersonImage =
   [ ("position", "absolute")
   , ("top", "15px")
-  , ("right", "15px")
   , ("max-width", "60px")
   ]
 
@@ -546,14 +544,32 @@ personDetailPopupPersonName =
   , ("fon-size", "larger")
   , ("font-weight", "bold")
   , ("top", "15px")
+  , ("left", "100px")
   ]
 
 personDetailPopupPersonOrg : S
 personDetailPopupPersonOrg =
   [ ("position", "absolute")
-  , ("fon-size", "small")
-  , ("top", "50px")
+  , ("font-size", "small")
+  , ("bottom", "40px")
   ]
+
+personDetailPopupPersonTel : S
+personDetailPopupPersonTel =
+  flex ++ [ ("position", "absolute")
+  , ("font-size", "small")
+  , ("top", "50px")
+  , ("left", "100px")
+  ]
+
+personDetailPopupPersonMail : S
+personDetailPopupPersonMail =
+  flex ++ [ ("position", "absolute")
+  , ("font-size", "small")
+  , ("top", "70px")
+  , ("left", "100px")
+  ]
+
 
 messageBar : S
 messageBar =
