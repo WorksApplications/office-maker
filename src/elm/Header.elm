@@ -36,9 +36,9 @@ view maybeContext =
             greetingView =
               div [ style Styles.greeting ] [ greeting user ]
             login =
-              div [ style Styles.login, onClick Login ] [ text "Sign in"]
+              div [ style Styles.login, onClick Login ] [ text "Sign in" ]
             logout =
-              div [ style Styles.logout, onClick Logout ] [ text "Sign out"]
+              div [ style Styles.logout, onClick Logout ] [ text "Sign out" ]
             children =
               greetingView ::
                 ( case user of
@@ -52,7 +52,7 @@ view maybeContext =
   in
     header
       [ style Styles.header ]
-      [ h1 [ style Styles.h1 ] [text "Office Maker"]
+      [ h1 [ style Styles.h1 ] [text "Office Maker" ]
       , menu
       ]
 

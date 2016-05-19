@@ -37,21 +37,19 @@ type alias Model =
 
 init : (Model, Cmd Action)
 init =
-  ( { error = Nothing, inputId = "", inputPass = "" }
-  , Cmd.none
-  )
+  { error = Nothing, inputId = "", inputPass = "" } ! []
 
 update : Action -> Model -> (Model, Cmd Action)
 update action model =
   case action of
-    InputId s -> ({model | inputId = s}, Cmd.none)
-    InputPass s -> ({model | inputPass = s}, Cmd.none)
+    InputId s -> { model | inputId = s} ! []
+    InputPass s -> { model | inputPass = s} ! []
     Submit ->
       let
         task =
           API.login model.inputId model.inputPass
       in
-        (model, Task.perform Error (always Success) task)
+        model ! [ Task.perform Error (always Success) task ]
     Error e ->
       let
         message =
@@ -61,15 +59,11 @@ update action model =
             _ ->
               "unauthorized"
       in
-        ({model | error = Just message}, Cmd.none)
+        {model | error = Just message} ! []
     Success ->
-      let
-        task =
-          API.gotoTop
-      in
-        (model, Task.perform (always NoOp) (always NoOp) task)
+        model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
     NoOp ->
-      (model, Cmd.none)
+        model ! []
 
 view : Model -> Html Action
 view model =
