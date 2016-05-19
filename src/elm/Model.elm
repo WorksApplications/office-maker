@@ -1001,19 +1001,13 @@ updateByKeyEvent event model =
             Nothing -> (0, 0) --TODO
         (copiedIdsWithNewIds, newSeed) =
           IdGenerator.zipWithNewIds model.seed model.copiedEquipments
-        model' =
-          { model |
-            floor = UndoRedo.commit model.floor (Floor.paste copiedIdsWithNewIds base)
-          , seed = newSeed
-          }
-        selected = List.map snd copiedIdsWithNewIds
-        newModel =
-          { model' |
-            selectedEquipments = selected
-          , selectorRect = Nothing
-          }
       in
-        newModel ! []
+        { model |
+          floor = UndoRedo.commit model.floor (Floor.paste copiedIdsWithNewIds base)
+        , seed = newSeed
+        , selectedEquipments = List.map snd copiedIdsWithNewIds
+        , selectorRect = Nothing
+        } ! []
     (True, ShortCut.X) ->
       { model |
         floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
@@ -1021,13 +1015,9 @@ updateByKeyEvent event model =
       , selectedEquipments = []
       } ! []
     (True, ShortCut.Y) ->
-      { model |
-        floor = UndoRedo.redo model.floor
-      } ! []
+      { model | floor = UndoRedo.redo model.floor } ! []
     (True, ShortCut.Z) ->
-      { model |
-        floor = UndoRedo.undo model.floor
-      } ! []
+      { model | floor = UndoRedo.undo model.floor } ! []
     (_, ShortCut.UpArrow) ->
       shiftSelectionToward EquipmentsOperation.Up model ! []
     (_, ShortCut.DownArrow) ->
@@ -1037,14 +1027,9 @@ updateByKeyEvent event model =
     (_, ShortCut.RightArrow) ->
       shiftSelectionToward EquipmentsOperation.Right model ! []
     (_, ShortCut.Del) ->
-      let
-        newModel =
-          { model |
-            floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
-          }
-        cmd = saveFloorCmd (UndoRedo.data newModel.floor)
-      in
-        newModel ! [ cmd ]
+      { model |
+        floor = UndoRedo.commit model.floor (Floor.delete model.selectedEquipments)
+      } ! [ saveFloorCmd (UndoRedo.data newModel.floor) ]
     (_, ShortCut.Other 9) -> --TODO waiting for fix double-click
       let
         floor = UndoRedo.data model.floor

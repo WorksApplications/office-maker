@@ -38,10 +38,7 @@ update : Msg -> Model -> (Model, Cmd Msg, Maybe Event)
 update msg model =
   case {-Debug.log "searchbox"-} msg of
     Input query ->
-      let
-        newModel = { model | query = query }
-      in
-        (newModel, Cmd.none, Nothing)
+        ({ model | query = query }, Cmd.none, Nothing)
     Submit withPrivate ->
       let
         cmd =
@@ -52,10 +49,7 @@ update msg model =
       in
         (model, cmd, Nothing)
     Results results ->
-      let
-        newModel = { model | results = Just results }
-      in
-        (newModel, Cmd.none, Just OnResults)
+        ({ model | results = Just results }, Cmd.none, Just OnResults)
     SelectResult id ->
         (model, Cmd.none, Just (OnSelectResult id))
     Error apiError ->
@@ -67,7 +61,7 @@ equipmentsInFloor floorId model =
     Nothing ->
       []
     Just results ->
-      List.filterMap (\(e, id) -> if id == Debug.log "floorId" floorId then Just e else Nothing) results
+      List.filterMap (\(e, id) -> if id == floorId then Just e else Nothing) results
 
 
 view : (Msg -> msg) -> Bool -> Model -> Html msg
