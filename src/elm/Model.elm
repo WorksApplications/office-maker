@@ -193,25 +193,9 @@ debugMsg action =
   else
     action
 
-saveTemporaryFloorAndLoadIt : User.User -> Cmd Msg
-saveTemporaryFloorAndLoadIt user =
-  let
-    name = case user of
-      User.Guest -> "tmp"
-      User.Admin name -> "tmp-" ++ name
-      User.General name -> "tmp-" ++ name
-    newFloor =
-      Floor.init name
-    saveCmd =
-      if User.isGuest user then
-        Cmd.none
-      else
-        saveFloorCmd newFloor
-  in
-    Cmd.batch
-      [ saveCmd
-      , Task.perform (always NoOp) FloorLoaded (Task.succeed newFloor)
-      ]
+performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
+performAPI tagger task =
+  Task.perform (Error << APIError) tagger task
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update action model =
@@ -258,8 +242,8 @@ update action model =
             Cmd.none
           else
             Cmd.batch
-              [ Task.perform (Error << APIError) ColorsLoaded API.getColors
-              , Task.perform (Error << APIError) PrototypesLoaded API.getPrototypes
+              [ performAPI ColorsLoaded API.getColors
+              , performAPI PrototypesLoaded API.getPrototypes
               ]
       in
         { model |
@@ -297,7 +281,7 @@ update action model =
                       API.getPerson by `Task.andThen` \person ->
                         Task.succeed (RegisterPeople [person])
                   in
-                    Task.perform (Error << APIError) identity task
+                    performAPI identity task
       in
         newModel ! [ cmd ]
     FloorSaved isPublish ->
@@ -762,7 +746,7 @@ update action model =
     Publish ->
       let
         floor = UndoRedo.data model.floor
-        cmd = Task.perform (Error << APIError) GotDiffSource (API.getDiffSource floor.id)
+        cmd = performAPI GotDiffSource (API.getDiffSource floor.id)
       in
         model ! [ cmd ]
     HeaderMsg action ->
@@ -795,7 +779,7 @@ update action model =
                     cmd =
                       case Equipments.relatedPerson head of
                         Just id ->
-                          Task.perform (Error << APIError) identity <|
+                          performAPI identity <|
                             API.getPerson id `Task.andThen` \person ->
                               Task.succeed (RegisterPeople [person])
                         Nothing ->
@@ -807,7 +791,7 @@ update action model =
               -- TODO if result is in this floor, fetch detail of person
               (Just id, Cmd.none)
             Just (SearchBox.OnError e) ->
-              (Nothing, Task.perform (always NoOp) (Error << APIError) (Task.succeed e))
+              (Nothing, performAPI (always NoOp) (Task.fail e))
             _ ->
               (model'.selectedResult, Cmd.none)
 
@@ -898,6 +882,25 @@ update action model =
       in
         newModel ! []
 
+saveTemporaryFloorAndLoadIt : User.User -> Cmd Msg
+saveTemporaryFloorAndLoadIt user =
+  let
+    name = case user of
+      User.Guest -> "tmp"
+      User.Admin name -> "tmp-" ++ name
+      User.General name -> "tmp-" ++ name
+    newFloor =
+      Floor.init name
+    saveCmd =
+      if User.isGuest user then
+        Cmd.none
+      else
+        saveFloorCmd newFloor
+  in
+    Cmd.batch
+      [ saveCmd
+      , Task.perform (always NoOp) FloorLoaded (Task.succeed newFloor)
+      ]
 
 updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput id name model =
@@ -923,7 +926,7 @@ updateOnFinishNameInput id name model =
                       Task.succeed (RegisterPeople people) `Task.andThen` \_ ->
                       Task.succeed (UpdatePersonCandidate id (List.map .id people))
                   in
-                    Task.perform (Error << APIError) identity task
+                    performAPI identity task
             newEditingEquipment =
               case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
                 Just equipment -> Just (idOf equipment, nameOf equipment)
@@ -959,8 +962,7 @@ saveFloorCmd floor =
           Task.succeed ()
     secondTask = API.saveEditingFloor floor
   in
-    Task.perform
-      (Error << APIError)
+    performAPI
       (always (FloorSaved False))
       (firstTask `Task.andThen` (always secondTask))
 
@@ -976,8 +978,7 @@ publishFloorCmd floor =
           Task.succeed ()
     secondTask = API.publishEditingFloor floor
   in
-    Task.perform
-      (Error << APIError)
+    performAPI
       (always (FloorSaved True))
       (firstTask `Task.andThen` (always secondTask))
 
@@ -1150,11 +1151,11 @@ shiftSelectionToward direction model =
 
 loadAuthCmd : Cmd Msg
 loadAuthCmd =
-    Task.perform (Error << APIError) AuthLoaded API.getAuth
+    performAPI AuthLoaded API.getAuth
 
 loadFloorsInfoCmd : Bool -> Cmd Msg
 loadFloorsInfoCmd withPrivate =
-    Task.perform (Error << APIError) FloorsInfoLoaded (API.getFloorsInfo withPrivate)
+    performAPI FloorsInfoLoaded (API.getFloorsInfo withPrivate)
 
 
 loadFloorCmd : Bool -> String -> Cmd Msg
