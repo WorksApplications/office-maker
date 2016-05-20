@@ -39,7 +39,7 @@ CAUTION: This product is under construction.
 |Type|Structure|
 |:--|:--|
 |User| { id : UUID, name : string, role : Role, personId? : string } |
-|Floor| { id : UUID, name : string, image : string, realSize? : (int, int), equipments : [ Equipment ], public : boolean, publishedBy? : string, publishedAt? : int } |
+|Floor| { id : UUID, name : string, image : string, realSize? : (int, int), equipments : [ Equipment ], public : boolean, publishedBy? : string, publishedAt? : Date } |
 |Equipment| { id : UUID, name : string, size : (int, int), color : Color, userId? : string } |
 |Prototype| { id : UUID, name : string, size : (int, int), color : Color } |
 |Image| binary |
@@ -48,6 +48,7 @@ CAUTION: This product is under construction.
 |Role| "admin" "general" |
 |Color| string |
 |UUID| string |
+|Date| int |
 
 ## Development
 
