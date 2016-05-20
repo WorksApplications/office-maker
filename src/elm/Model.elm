@@ -28,6 +28,7 @@ import Model.API as API
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 import Model.Errors as Errors exposing (GlobalError(..))
+-- import Model.URL
 
 import FloorProperty
 import SearchBox
