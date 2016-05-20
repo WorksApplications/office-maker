@@ -17,11 +17,11 @@ import View.EquipmentView exposing (..)
 import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
 import View.ProfilePopup as ProfilePopup
+import FloorProperty
 
 import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
 import Util.ListUtil exposing (..)
-import Util.DateUtil exposing (..)
 
 import Model exposing (..)
 import Model.Floor as Floor
@@ -30,7 +30,6 @@ import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
--- import Model.Person as Person exposing (Person)
 
 contextMenuView : Model -> Html Msg
 contextMenuView model =
@@ -39,7 +38,7 @@ contextMenuView model =
       text ""
     Equipment (x, y) id ->
       div
-        [ style (Styles.contextMenu (x, y + 37) (fst model.windowDimensions, snd model.windowDimensions) 2) -- TODO
+        [ style (Styles.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
         ] -- TODO
         [ contextMenuItemView (SelectIsland id) "Select Island"
         , contextMenuItemView (RegisterPrototype id) "Register as stamp"
@@ -124,23 +123,16 @@ nameInputView model =
             textarea
               ([ Html.Attributes.id "name-input"
               , style styles
-              ] ++ (inputAttributes (InputName id) KeydownOnNameInput name True))
+              ] ++ (FloorProperty.inputAttributes (InputName id) KeydownOnNameInput name (Just NoOp)))
               [text name]
         Nothing -> text ""
     Nothing ->
       text ""
 
-inputAttributes : (String -> Msg) -> (Int -> Msg) -> String -> Bool -> List (Attribute Msg)
-inputAttributes toInputMsg toKeydownMsg value' defence =
-  [ onInput' toInputMsg -- TODO cannot input japanese
-  , onKeyDown'' toKeydownMsg
-  , value value'
-  ] ++ (if defence then [onMouseDown' NoOp] else [])
-
 mainView : Model -> Html Msg
 mainView model =
   let
-    (windowWidth, windowHeight) = model.windowDimensions
+    (windowWidth, windowHeight) = model.windowSize
   in
     main' [ style (Styles.mainView windowHeight) ]
       [ FloorsInfoView.view (UndoRedo.data model.floor).id model.floorsInfo
@@ -172,9 +164,15 @@ subView model =
 
 subViewForEdit : Model -> List (Html Msg)
 subViewForEdit model =
+  let
+    floorView =
+      List.map
+        (Html.App.map FloorPropertyMsg)
+        (FloorProperty.view model.visitDate model.user (UndoRedo.data model.floor) model.floorProperty)
+  in
     [ card <| penView model
     , card <| propertyView model
-    , card <| floorView model
+    , card <| floorView
     , card <| debugView model
     ]
 
@@ -225,46 +223,6 @@ penView model =
     [ modeSelectionView model
     , prototypePreviewView prototypes (model.editMode == Stamp)
     ]
-
-floorNameInputView : Model -> Html Msg
-floorNameInputView model =
-  let
-    floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
-    nameInput =
-      input
-      ([ Html.Attributes.id "floor-name-input"
-      , type' "text"
-      , style Styles.floorNameInput
-      ] ++ (inputAttributes InputFloorName (always NoOp) (UndoRedo.data model.floor).name False))
-      []
-  in
-    div [] [ floorNameLabel, nameInput ]
-
-floorRealSizeInputView : Model -> Html Msg
-floorRealSizeInputView model =
-  let
-    floor = UndoRedo.data model.floor
-    useReal = True--TODO
-    widthInput =
-      input
-      ([ Html.Attributes.id "floor-real-width-input"
-      , type' "text"
-      , disabled (not useReal)
-      , style Styles.realSizeInput
-      ] ++ (inputAttributes InputFloorRealWidth (always NoOp) (model.inputFloorRealWidth) False))
-      []
-    heightInput =
-      input
-      ([ Html.Attributes.id "floor-real-height-input"
-      , type' "text"
-      , disabled (not useReal)
-      , style Styles.realSizeInput
-      ] ++ (inputAttributes InputFloorRealHeight (always NoOp) (model.inputFloorRealHeight) False))
-      []
-    widthLabel = label [ style Styles.widthHeightLabel ] [ text "Width(m)" ]
-    heightLabel = label [ style Styles.widthHeightLabel ] [ text "Height(m)" ]
-  in
-    div [] [widthLabel, widthInput, heightLabel, heightInput ]
 
 
 modeSelectionView : Model -> Html Msg
@@ -524,37 +482,7 @@ colorPropertyView model =
     ul [ style (Styles.ul ++ [("display", "flex")]) ]
       (List.map viewForEach model.colorPalette)
 
-publishButtonView : Model -> Html Msg
-publishButtonView model =
-  if User.isAdmin model.user then
-    button
-      [ onClick' Publish
-      , style Styles.publishButton ]
-      [ text "Publish" ]
-  else
-    text ""
 
-floorView : Model -> List (Html Msg)
-floorView model =
-    [ fileLoadButton Styles.imageLoadButton "Load Image" |> Html.App.map LoadFile
-    , floorNameInputView model
-    , floorRealSizeInputView model
-    , publishButtonView model
-    , floorUpdateInfoView model
-    ]
-
-floorUpdateInfoView : Model -> Html Msg
-floorUpdateInfoView model =
-  let
-    floor = UndoRedo.data model.floor
-    date at =
-      formatDateOrTime model.visitDate at
-  in
-    case floor.update of
-      Just { by, at } ->
-        div [] [ text ("Last Update by " ++ by ++ " at " ++ date at) ]
-      Nothing ->
-        text ""
 
 view : Model -> Html Msg
 view model =

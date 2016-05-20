@@ -21,7 +21,7 @@ type Msg =
 
 
 type Event =
-  OnError API.Error | OnResults | OnSelectResult String
+  OnError API.Error | OnResults | OnSelectResult String | None
 
 type alias Model =
   { query : String
@@ -34,14 +34,11 @@ init =
   , results = Nothing
   }
 
-update : Msg -> Model -> (Model, Cmd Msg, Maybe Event)
+update : Msg -> Model -> (Model, Cmd Msg, Event)
 update msg model =
   case {-Debug.log "searchbox"-} msg of
     Input query ->
-      let
-        newModel = { model | query = query }
-      in
-        (newModel, Cmd.none, Nothing)
+        ({ model | query = query }, Cmd.none, None)
     Submit withPrivate ->
       let
         cmd =
@@ -50,16 +47,13 @@ update msg model =
           else
             Cmd.none
       in
-        (model, cmd, Nothing)
+        (model, cmd, None)
     Results results ->
-      let
-        newModel = { model | results = Just results }
-      in
-        (newModel, Cmd.none, Just OnResults)
+        ({ model | results = Just results }, Cmd.none, OnResults)
     SelectResult id ->
-        (model, Cmd.none, Just (OnSelectResult id))
+        (model, Cmd.none, (OnSelectResult id))
     Error apiError ->
-        (model, Cmd.none, Just (OnError apiError))
+        (model, Cmd.none, (OnError apiError))
 
 equipmentsInFloor : String -> Model -> List Equipment
 equipmentsInFloor floorId model =
@@ -67,8 +61,7 @@ equipmentsInFloor floorId model =
     Nothing ->
       []
     Just results ->
-      List.filterMap (\(e, id) -> if id == Debug.log "floorId" floorId then Just e else Nothing) results
-
+      List.filterMap (\(e, id) -> if id == floorId then Just e else Nothing) results
 
 view : (Msg -> msg) -> Bool -> Model -> Html msg
 view translateMsg searchWithPrivate model =

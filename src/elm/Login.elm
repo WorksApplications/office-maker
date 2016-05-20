@@ -21,7 +21,7 @@ main =
 
 --------
 
-type Action =
+type Msg =
     InputId String
   | InputPass String
   | Submit
@@ -35,23 +35,21 @@ type alias Model =
   , inputPass : String
   }
 
-init : (Model, Cmd Action)
+init : (Model, Cmd Msg)
 init =
-  ( { error = Nothing, inputId = "", inputPass = "" }
-  , Cmd.none
-  )
+  { error = Nothing, inputId = "", inputPass = "" } ! []
 
-update : Action -> Model -> (Model, Cmd Action)
-update action model =
-  case action of
-    InputId s -> ({model | inputId = s}, Cmd.none)
-    InputPass s -> ({model | inputPass = s}, Cmd.none)
+update : Msg -> Model -> (Model, Cmd Msg)
+update message model =
+  case message of
+    InputId s -> { model | inputId = s} ! []
+    InputPass s -> { model | inputPass = s} ! []
     Submit ->
       let
         task =
           API.login model.inputId model.inputPass
       in
-        (model, Task.perform Error (always Success) task)
+        model ! [ Task.perform Error (always Success) task ]
     Error e ->
       let
         message =
@@ -61,17 +59,13 @@ update action model =
             _ ->
               "unauthorized"
       in
-        ({model | error = Just message}, Cmd.none)
+        {model | error = Just message} ! []
     Success ->
-      let
-        task =
-          API.gotoTop
-      in
-        (model, Task.perform (always NoOp) (always NoOp) task)
+        model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
     NoOp ->
-      (model, Cmd.none)
+        model ! []
 
-view : Model -> Html Action
+view : Model -> Html Msg
 view model =
   div
     []
@@ -79,7 +73,7 @@ view model =
     , container model
     ]
 
-container : Model -> Html Action
+container : Model -> Html Msg
 container model =
   div
     [ style Styles.loginContainer ]
@@ -88,7 +82,7 @@ container model =
     , loginForm model
     ]
 
-loginForm : Model -> Html Action
+loginForm : Model -> Html Msg
 loginForm model =
   HtmlUtil.form' Submit
     []
