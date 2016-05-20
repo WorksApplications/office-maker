@@ -38,17 +38,40 @@ CAUTION: This product is under construction.
 ### Types
 |Type|Structure|
 |:--|:--|
-|User| { id : UUID, name : string, role : Role, personId? : string } |
-|Floor| { id : UUID, name : string, image : string, realSize? : (int, int), equipments : [ Equipment ], public : boolean, publishedBy? : string, publishedAt? : Date } |
-|Equipment| { id : UUID, name : string, size : (int, int), color : Color, userId? : string } |
+|User| { id : UUID, name : Person.name, role : Role, personId : Person.id } |
+|Floor| { id : UUID, version : int, name : string, image? : URL, realSize? : (int, int), equipments : [ Equipment ], public : boolean, publishedBy? : User.id, publishedAt? : Date } |
+|Equipment| { id : UUID, name : string, size : (int, int), color : Color, personId? : Person.id } |
 |Prototype| { id : UUID, name : string, size : (int, int), color : Color } |
 |Image| binary |
 |SearchResult| [(Equipment, string)] |
-|Person| { id : string, name : string, org : string, tel? : string, mail? : string } |
+|Person| { id : string, name : string, org : string, tel? : string, mail? : string, image? : URL } |
 |Role| "admin" "general" |
 |Color| string |
 |UUID| string |
 |Date| int |
+|URL| string |
+
+### Tables
+
+#### User
+|id|pass|role|personId|
+|:--|:--|:--|:--|
+|string|string|string|Person.id|
+
+#### Floor
+|id*|version*|name|image|realWidth|realHeight|public|publishedBy|
+|:--|:--|:--|:--|:--|:--|:--|:--|
+|string|string|string|string|int|int|bool|User.id|
+
+#### Equipment
+|id|name|width|height|color|personId|floorId|
+|:--|:--|:--|:--|:--|:--|:--|
+|string|string|int|int|string|Person.id|Floor.id|
+
+#### Person
+|id|name|org|tel|mail|image|
+|:--|:--|:--|:--|:--|:--|
+|string|string|string|string|string|string|
 
 ## Development
 
