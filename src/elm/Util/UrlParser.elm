@@ -8,7 +8,7 @@ type alias URL = (List String, Dict String String)
 
 parse : String -> URL
 parse s =
-  case split2 "&" s of
+  case split2 "?" s of
     Just (s1, s2) ->
       (String.split "/" s1, parseParams s2)
     Nothing ->

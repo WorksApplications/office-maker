@@ -2,7 +2,7 @@ module Model exposing (..) -- where
 
 import Date exposing (Date)
 import Maybe
-import Task
+import Task exposing (Task, andThen, onError)
 import Debug
 import Window
 import String
@@ -199,6 +199,7 @@ update action model =
       let
         newURL = URL.parse hash
         floorId = newURL.floorId
+
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
           if String.length floorId == 36 then
@@ -206,7 +207,7 @@ update action model =
               loadFloorCmd forEdit floorId
           else if String.length floorId > 0 then
             -- Debug.log "2" <|
-              Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#"))
+              noOpCmd (URL.updateFloorId "" model.url)
           else if String.left 4 (UndoRedo.data model.floor).id /= "tmp-" then
             -- Debug.log "3" <|
               saveTemporaryFloorAndLoadIt model.user
@@ -271,7 +272,7 @@ update action model =
                 Nothing ->
                   let
                     task =
-                      API.getPerson by `Task.andThen` \person ->
+                      API.getPerson by `andThen` \person ->
                         Task.succeed (RegisterPeople [person])
                   in
                     performAPI identity task
@@ -660,7 +661,7 @@ update action model =
         newModel ! [ Cmd.map HeaderMsg cmd ]
     SearchBoxMsg msg ->
       let
-        (searchBox, cmd, event) =
+        (searchBox, cmd1, event) =
           SearchBox.update msg model.searchBox
 
         model' =
@@ -669,8 +670,12 @@ update action model =
         results =
           SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
 
-        (selectedResult, errCmd) =
+        (selectedResult, cmd2) =
           case event of
+            SearchBox.OnSubmit ->
+              ( Nothing
+              , noOpCmd ( URL.updateQuery model'.searchBox.query model'.url )
+              )
             SearchBox.OnResults ->
               case results of
                 head :: [] ->
@@ -703,7 +708,7 @@ update action model =
             Nothing -> model''
 
       in
-        newModel ! [ Cmd.map SearchBoxMsg cmd, errCmd ]
+        newModel ! [ Cmd.map SearchBoxMsg cmd1, cmd2 ]
 
     ChangeEditing isEditing ->
       { model | isEditing = isEditing } ! []
@@ -745,7 +750,7 @@ update action model =
             in
               ( Cmd.batch
                 [ publishFloorCmd (UndoRedo.data newFloor)
-                , Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#" ++ newFloorId))
+                , noOpCmd (URL.updateFloorId newFloorId model.url)
                 , Task.perform (always NoOp) Published <| Task.succeed newFloorId
                 ]
               , newSeed
@@ -768,7 +773,7 @@ update action model =
     Published newFloorId ->
         { model |
           error = Success ("Successfully published " ++ newFloorId)
-        } ! [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `Task.andThen` \_ -> Task.succeed NoError) ]
+        } ! [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError) ]
     Error e ->
       let
         newModel =
@@ -776,7 +781,9 @@ update action model =
       in
         newModel ! []
 
-
+noOpCmd : Task a () -> Cmd Msg
+noOpCmd task =
+  Task.perform (always NoOp) (always NoOp) task
 
 updateFloorByFloorPropertyEvent : FloorProperty.Event -> Seed -> UndoRedo.Model Floor Commit -> ((UndoRedo.Model Floor Commit, Seed), Cmd Msg)
 updateFloorByFloorPropertyEvent event seed floor =
@@ -827,7 +834,7 @@ regesterPersonOfEquipment e =
   case Equipments.relatedPerson e of
     Just personId ->
       performAPI identity <|
-        API.getPerson personId `Task.andThen` \person ->
+        API.getPerson personId `andThen` \person ->
           Task.succeed (RegisterPeople [person])
     Nothing ->
       Cmd.none
@@ -871,9 +878,9 @@ updateOnFinishNameInput id name model =
                 Nothing ->
                   let
                     task =
-                      API.personCandidate name `Task.onError`
-                      HttpUtil.recover404With [] `Task.andThen` \people ->
-                      Task.succeed (RegisterPeople people) `Task.andThen` \_ ->
+                      API.personCandidate name `onError`
+                      HttpUtil.recover404With [] `andThen` \people ->
+                      Task.succeed (RegisterPeople people) `andThen` \_ ->
                       Task.succeed (UpdatePersonCandidate id (List.map .id people))
                   in
                     performAPI identity task
@@ -914,7 +921,7 @@ saveFloorCmd floor =
   in
     performAPI
       (always (FloorSaved False))
-      (firstTask `Task.andThen` (always secondTask))
+      (firstTask `andThen` (always secondTask))
 
 
 publishFloorCmd : Floor -> Cmd Msg
@@ -930,7 +937,7 @@ publishFloorCmd floor =
   in
     performAPI
       (always (FloorSaved True))
-      (firstTask `Task.andThen` (always secondTask))
+      (firstTask `andThen` (always secondTask))
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEvent event model =
@@ -1074,13 +1081,13 @@ loadFloorCmd forEdit floorId =
       case e of
         Http.BadResponse 404 _ ->
           HttpUtil.goTo "#"
-          `Task.andThen` \_ -> Task.succeed (FloorLoaded <| Floor.init floorId)
+          `andThen` \_ -> Task.succeed (FloorLoaded <| Floor.init floorId)
         _ -> Task.succeed (Error <| APIError e)
     task =
       Task.map
         FloorLoaded
         (if forEdit then API.getEditingFloor floorId else API.getFloor floorId)
-      `Task.onError` recover404
+      `onError` recover404
   in
     Task.perform (always NoOp) identity task
 

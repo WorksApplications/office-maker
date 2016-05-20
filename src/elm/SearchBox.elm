@@ -19,9 +19,12 @@ type Msg =
   | SelectResult String
   | Error API.Error
 
-
 type Event =
-  OnError API.Error | OnResults | OnSelectResult String | None
+    OnError API.Error
+  | OnResults
+  | OnSelectResult String
+  | OnSubmit
+  | None
 
 type alias Model =
   { query : String
@@ -41,13 +44,13 @@ update msg model =
         ({ model | query = query }, Cmd.none, None)
     Submit withPrivate ->
       let
-        cmd =
+        (cmd, event) =
           if model.query /= "" then
-            Task.perform Error Results (API.search withPrivate model.query)
+            (Task.perform Error Results (API.search withPrivate model.query), OnSubmit)
           else
-            Cmd.none
+            (Cmd.none, None)
       in
-        (model, cmd, None)
+        (model, cmd, event)
     Results results ->
         ({ model | results = Just results }, Cmd.none, OnResults)
     SelectResult id ->
