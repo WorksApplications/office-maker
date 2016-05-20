@@ -28,7 +28,7 @@ import Model.API as API
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 import Model.Errors as Errors exposing (GlobalError(..))
--- import Model.URL
+import Model.URL as URL
 
 import FloorProperty
 import SearchBox
@@ -61,7 +61,7 @@ type alias Model =
   , scaling : Bool
   , prototypes : Prototypes.Model
   , error : GlobalError
-  , hash : String
+  , url : URL.Model
   , floorProperty : FloorProperty.Model
   , searchBox : SearchBox.Model
   , selectedResult : Maybe Id
@@ -121,7 +121,7 @@ init randomSeed initialSize initialHash visitDate =
     , scaling = False
     , prototypes = Prototypes.init []
     , error = NoError
-    , hash = initialHash
+    , url = URL.parse initialHash
     , floorProperty = FloorProperty.init "" 0 0
     , searchBox = SearchBox.init
     , selectedResult = Nothing
@@ -197,7 +197,8 @@ update action model =
       model ! []
     HashChange hash ->
       let
-        floorId = String.dropLeft 1 hash
+        newURL = URL.parse hash
+        floorId = newURL.floorId
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
           if String.length floorId == 36 then
@@ -213,13 +214,13 @@ update action model =
             -- Debug.log "4" <|
               Cmd.none
       in
-        { model | hash = hash } ! [ loadFloorCmd' ]
+        { model | url = newURL } ! [ loadFloorCmd' ]
     Init ->
       model ! [ loadAuthCmd ]
     AuthLoaded user ->
       let
         requestPrivateFloors = not (User.isGuest user)
-        floorId = String.dropLeft 1 model.hash
+        floorId = model.url.floorId
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
           if String.length floorId == 36 then

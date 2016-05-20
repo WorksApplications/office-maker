@@ -1,9 +1,19 @@
 module Model.URL exposing (..) -- where
 
+import String
 import Util.UrlDecode
 
-type alias Result =
-  { floorId: Maybe String
+type alias Model =
+  { rawHash : String -- deprecated
+  , floorId: String
   , query : Maybe String
-  , person : Maybe String
+  , personId : Maybe String
   }
+
+parse : String -> Model
+parse hash =
+    { rawHash = hash
+    , floorId = String.dropLeft 1 hash
+    , query = Nothing
+    , personId = Nothing
+    }
