@@ -31,11 +31,20 @@ type alias Model =
   , results : Maybe (List (Equipment, String))
   }
 
-init : Model
-init =
-  { query = ""
+init : Maybe String -> Model
+init query =
+  { query = Maybe.withDefault "" query
   , results = Nothing
   }
+
+doSearch : (Msg -> a) -> Bool -> String -> Model -> (Model, Cmd a)
+doSearch transformMsg withPrivate query model =
+  ({ model | query = query }
+  , if query /= "" then
+      Cmd.map transformMsg (searchCmd withPrivate query)
+    else
+      Cmd.none
+  )
 
 update : Msg -> Model -> (Model, Cmd Msg, Event)
 update msg model =
@@ -43,20 +52,18 @@ update msg model =
     Input query ->
         ({ model | query = query }, Cmd.none, None)
     Submit withPrivate ->
-      let
-        (cmd, event) =
-          if model.query /= "" then
-            (Task.perform Error Results (API.search withPrivate model.query), OnSubmit)
-          else
-            (Cmd.none, None)
-      in
-        (model, cmd, event)
+        (model, Cmd.none, OnSubmit)
     Results results ->
         ({ model | results = Just results }, Cmd.none, OnResults)
     SelectResult id ->
         (model, Cmd.none, (OnSelectResult id))
     Error apiError ->
         (model, Cmd.none, (OnError apiError))
+
+searchCmd : Bool -> String -> Cmd Msg
+searchCmd withPrivate query =
+  Task.perform Error Results (API.search withPrivate query)
+
 
 equipmentsInFloor : String -> Model -> List Equipment
 equipmentsInFloor floorId model =

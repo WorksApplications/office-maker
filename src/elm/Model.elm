@@ -123,7 +123,7 @@ init randomSeed initialSize initialHash visitDate =
     , error = NoError
     , url = URL.parse initialHash
     , floorProperty = FloorProperty.init "" 0 0
-    , searchBox = SearchBox.init
+    , searchBox = SearchBox.init (URL.parse initialHash).query
     , selectedResult = Nothing
     , isEditing = False
     , personInfo = Dict.empty
@@ -200,6 +200,17 @@ update action model =
         newURL = URL.parse hash
         floorId = newURL.floorId
 
+        (newSearchBox, searchBoxCmd) =
+          case newURL.query of
+            Just query ->
+              let
+                withPrivate =
+                  not (User.isGuest model.user)
+              in
+                SearchBox.doSearch SearchBoxMsg withPrivate query model.searchBox
+            Nothing ->
+              (model.searchBox, Cmd.none)
+
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
           if String.length floorId == 36 then
@@ -215,7 +226,10 @@ update action model =
             -- Debug.log "4" <|
               Cmd.none
       in
-        { model | url = newURL } ! [ loadFloorCmd' ]
+        { model |
+          url = newURL
+        , searchBox = newSearchBox
+        } ! [ loadFloorCmd', searchBoxCmd ]
     Init ->
       model ! [ loadAuthCmd ]
     AuthLoaded user ->
