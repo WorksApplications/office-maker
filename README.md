@@ -15,13 +15,14 @@ CAUTION: This product is under construction.
 
 |Method|URL|Req Body|Res Body|Description|Guest|General|Admin|
 |:--|:--|:--|:--|:--|:--|:--|:--|
-|GET| /api/v1/search/:query||||✓|✓|✓|
+|GET| /api/v1/search/:query||[SearchResult]||✓|✓|✓|
 |GET| /api/v1/auth||||✓|✓|✓|
-|GET| /api/v1/persons||||✓|✓|✓|
-|GET| /api/v1/persons/missing||||✓|✓|✓|
-|GET| /api/v1/persons/:personId||||✓|✓|✓|
-|GET| /api/v1/candidate/:name||||✓|✓|✓|
-|GET| /api/v1/prototypes||||✓|✓|✓|
+|GET| /api/v1/people||[Person]||✓|✓|✓|
+|GET| /api/v1/people/missing||[Person]||✓|✓|✓|
+|GET| /api/v1/people/:personId||Person||✓|✓|✓|
+|GET| /api/v1/candidate/:name||[Person]||✓|✓|✓|
+|GET| /api/v1/colors||[Color]||✓|✓|✓|
+|GET| /api/v1/prototypes||[Prototype]||✓|✓|✓|
 |PUT| /api/v1/prototypes/:id|Prototype|||||✓|
 |DELETE| /api/v1/prototypes/:id||||||✓|
 |GET| /api/v1/floors||||✓|✓|✓|
@@ -37,10 +38,16 @@ CAUTION: This product is under construction.
 ### Types
 |Type|Structure|
 |:--|:--|
-|Floor|TODO|
-|Prototype|TODO|
-|Image|TODO|
-|Person|TODO|
+|User| { id : UUID, name : string, role : Role, personId? : string } |
+|Floor| { id : UUID, name : string, image : string, realSize? : (int, int), equipments : [ Equipment ], public : bool, publishedBy? : string, publishedAt? : int } |
+|Equipment| { id : UUID, name : string, size : (int, int), color : Color, userId? : string } |
+|Prototype| { id : UUID, name : string, size : (int, int), color : Color } |
+|Image| binary |
+|SearchResult| [(Equipment, string)] |
+|Person| { id : string, name : string, org : string, tel? : string, mail? : string } |
+|Role| "admin" "general" |
+|Color| string |
+|UUID| string |
 
 ## Development
 
