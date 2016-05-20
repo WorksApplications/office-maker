@@ -27,13 +27,16 @@ CAUTION: This product is under construction.
 |DELETE| /api/v1/prototypes/:id||||||✓|
 |GET| /api/v1/floors||[FloorInfo]||✓|✓|✓|
 |GET| /api/v1/floors/:id||Floor|fetch latest version|✓|✓|✓|
-<!--|GET| /api/v1/floors/:id/versions||||✓|✓|✓|-->
-<!--|GET| /api/v1/floors/:id/version/:version||||✓|✓|✓|-->
 |GET| /api/v1/floors/:id/edit||Floor|fetch latest unpublished version||✓|✓|
 |PUT| /api/v1/floors/:id/edit|Floor||update latest unpublished version||✓|✓|
 |POST| /api/v1/floors/:id|||publish latest unpublished version|||✓|
 |DELETE| /api/v1/floors/:id||||||✓|
 |PUT| /api/v1/images/:id|Image|||||✓|
+
+<!-- 
+|GET| /api/v1/floors/:id/versions||||✓|✓|✓|
+|GET| /api/v1/floors/:id/version/:version||||✓|✓|✓| 
+-->
 
 ### Types
 |Type|Structure|
