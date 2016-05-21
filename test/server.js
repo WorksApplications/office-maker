@@ -4,38 +4,9 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var db = require('./db.js');
 
 var publicDir = __dirname + '/public';
-
-var floors = {};
-var passes = {
-  admin01: 'admin01',
-  user01 : 'user01'
-};
-var users = {
-  admin01: {
-    id:'admin01',
-    org: 'Sample Co.,Ltd',
-    name: 'Admin01',
-    mail: 'admin01@xxx.com',
-    image: 'images/users/admin01.png',
-    role: 'admin'
-  },
-  user01 : {
-    id:'user01',
-    org: 'Sample Co.,Ltd',
-    name: 'User01',
-    tel: '33510',
-    role: 'general'
-  }
-};
-var gridSize = 8;
-var colors = ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
-, "#bbb", "#fff", "rgba(255,255,255,0.5)"];
-var prototypes = [
-  { id: "1", color: "#ed9", name: "", size : [gridSize*6, gridSize*10] },
-  { id: "2", color: "#8bd", name: "foo", size : [gridSize*7, gridSize*12] }
-];
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -52,7 +23,7 @@ app.use(session({
 app.post('/api/v1/login', function(req, res) {
   var id = req.body.id;
   var pass = req.body.pass;
-  if(passes[id] === pass) {
+  if(db.getPass(id) === pass) {
     req.session.user = id;
     res.send({});
   } else {
@@ -71,7 +42,7 @@ function role(req) {
   if(!req.session.user) {
     return "guest"
   } else {
-    return users[req.session.user].role;
+    return db.getUser(req.session.user).role;
   }
 }
 
@@ -80,30 +51,6 @@ function isValidFloor(floor) {
     return false;
   }
   return true;
-}
-
-function getFloor(withPrivate, id) {
-  if(withPrivate) {
-    return floors[id] ? floors[id][0] : null;
-  } else {
-    if(floors[id]) {
-      return floors[id][0].public ? floors[id][0] : floors[id][1];
-    } else {
-      return null;
-    }
-  }
-}
-function getFloors(withPrivate) {
-  return Object.keys(floors).map(function(id) {
-    return getFloor(withPrivate, id);
-  }).filter(function(floor) {
-    return !!floor;
-  });
-}
-function ensureFloor(id) {
-  if(!floors[id]) {
-    floors[id] = [];
-  }
 }
 
 /* Login required */
@@ -117,7 +64,7 @@ app.get('/logout', function(req, res) {
 });
 app.get('/api/v1/people/:id', function(req, res) {
   var id = req.params.id;
-  var person = users[id];
+  var person = db.getPerson(id);
   if(!person) {
     res.status(404).send('');
     return;
@@ -127,8 +74,7 @@ app.get('/api/v1/people/:id', function(req, res) {
 app.get('/api/v1/auth', function(req, res) {
   var id = req.session.user;
   if(id) {
-    var user = users[id];
-    res.send(user);
+    res.send(db.getUser(id));
   } else {
     res.send({});
   }
@@ -138,19 +84,19 @@ app.get('/api/v1/prototypes', function (req, res) {
     res.status(401).send('');
     return;
   }
-  res.send(prototypes);
+  res.send(db.getPrototypes());
 });
 app.put('/api/v1/prototypes', function (req, res) {
   if(role(req) === 'guest') {
     res.status(401).send('');
     return;
   }
-  var prototypes_ = req.body;
-  if(!prototypes_ || !prototypes_.length) {
+  var prototypes = req.body;
+  if(!prototypes || !prototypes_.length) {
     res.status(403).send('');
     return;
   }
-  prototypes = prototypes_;
+  db.savePrototypes(prototypes);
   res.send();
 });
 app.get('/api/v1/colors', function (req, res) {
@@ -158,19 +104,19 @@ app.get('/api/v1/colors', function (req, res) {
     res.status(401).send('');
     return;
   }
-  res.send(colors);
+  res.send(db.getColors());
 });
 app.put('/api/v1/colors', function (req, res) {
   if(role(req) === 'guest') {
     res.status(401).send('');
     return;
   }
-  var colors_ = req.body;
-  if(!colors_ || !prototypes_.length) {
+  var colors = req.body;
+  if(!colors || !prototypes_.length) {
     res.status(403).send('');
     return;
   }
-  colors = colors_;
+  db.saveColors(colors);
   res.send();
 });
 app.get('/api/v1/floors', function (req, res) {
@@ -179,34 +125,17 @@ app.get('/api/v1/floors', function (req, res) {
     res.status(401).send('');
     return;
   }
-  res.send(getFloors(options.all));
+  res.send(db.getFloors(options.all));
 });
 app.get('/api/v1/search/:query', function (req, res) {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  var results = getFloors(options.all).reduce(function(memo, floor) {
-    return floor.equipments.reduce(function(memo, e) {
-      if(e.name.indexOf(query) >= 0) {
-        return memo.concat([[e, floor.id]]);
-      } else {
-        return memo;
-      }
-    }, memo);
-  }, []);
+  var results = db.search(query, options.all);
   res.send(results);
 });
 app.get('/api/v1/candidate/:name', function (req, res) {
   var name = req.params.name;
-  var users_ = Object.keys(users).map(function(id) {
-    return users[id];
-  });
-  var results = users_.reduce(function(memo, user) {
-    if(user.name.toLowerCase().indexOf(name.toLowerCase()) >= 0) {
-      return memo.concat([user]);
-    } else {
-      return memo;
-    }
-  }, []);
+  var results = db.getCandidate(name);
   res.send(results);
 });
 app.get('/api/v1/floor/:id/edit', function (req, res) {
@@ -216,7 +145,7 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
   }
   var id = req.params.id;
   console.log('get: ' + id);
-  var floor = getFloor(true, id);
+  var floor = db.getFloor(true, id);
   if(floor) {
     res.send(floor);
   } else {
@@ -226,7 +155,7 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
 app.get('/api/v1/floor/:id', function (req, res) {
   var id = req.params.id;
   console.log('get: ' + id);
-  var floor = getFloor(false, id);
+  var floor = db.getFloor(false, id);
   if(floor) {
     res.send(floor);
   } else {
@@ -251,15 +180,9 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
   newFloor.public = false;
   newFloor.updateBy = req.session.user;
   newFloor.updateAt = new Date().getTime();
-  if(floors[id]) {
-    if(floors[id][0].public) {
-      floors[id].unshift(newFloor);
-    } else {
-      floors[id][0] = newFloor;
-    }
-  } else {
-    floors[id] = [newFloor];
-  }
+
+  db.saveFloor(newFloor);
+
   console.log('saved floor: ' + id);
   // console.log(newFloor);
   res.send({});
@@ -290,14 +213,12 @@ app.post('/api/v1/floor/:id', function (req, res) {
   newFloor.public = true;
   newFloor.updateBy = req.session.user;
   newFloor.updateAt = new Date().getTime();
-  ensureFloor(id);
-  if(floors[id][0] && !floors[id][0].public) {
-    floors[id][0] = newFloor;
-  } else {
-    floors[id].unshift(newFloor);
-  }
+
+  db.ensureFloor(id);
+  db.publishFloor(newFloor);
+
   console.log('published floor: ' + id);
-  console.log(Object.keys(floors).map(function(key) { return key + ' => ' + floors[key].map(function(f) { return f.public }) } ));
+
   // console.log(newFloor);
   res.send({});
 });
@@ -314,7 +235,7 @@ app.put('/api/v1/image/:id', function (req, res) {
   });
   req.on('end', function() {
     var image = Buffer.concat(all);
-    fs.writeFile(publicDir + '/images/floors/' + id, image, function(e) {
+    db.saveImage(publicDir + '/images/floors/' + id, image, function(e) {
       if(e) {
         res.status(500).send('' + e);
       } else {
@@ -323,12 +244,11 @@ app.put('/api/v1/image/:id', function (req, res) {
     });
   })
 });
-
 process.on('uncaughtException', function(e) {
   console.log(e);
 });
-
-fs.emptyDirSync(publicDir + '/images/floors');
-app.listen(3000, function () {
-  console.log('mock server listening on port 3000.');
+db.resetImage(publicDir + '/images/floors', function() {
+  app.listen(3000, function () {
+    console.log('mock server listening on port 3000.');
+  });
 });
