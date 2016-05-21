@@ -1,31 +1,11 @@
-var mysql = require('mysql');
-var alasql = require('alasql');
+var sql = require('./sql.js');
+var rdb = require('./rdb.js');
 var db = require('./db.js');
-
-var esc = mysql.escape.bind(mysql);
 
 function select(table, where) {
   return `SELECT * FROM ${table}` + (where ? ` ${where}` : '');
 }
 
-function insert(table, keyValues) {
-  var columns = [];
-  var values = [];
-  keyValues.forEach(function(keyValue) {
-    columns.push(esc(keyValue[0]));
-    values.push(esc(keyValue[1]));
-  });
-  var columnsStr = `(${ columns.join(',') })`;
-  var valuesStr = `VALUES(${ columns.join(',') })`;
-  return `INSERT INTO ${table} ${columnsStr} ${valuesStr}`;
-}
-function update(table, keyValues, where) {
-  var sets = keyValues.map(function(keyValue) {
-    return `${ esc(keyValue[0]) }=${esc(keyValue[1]) }`
-  });
-  var str = `SET ${ sets.join(',') }`;
-  return `UPDATE ${table} ${str} WHERE ${where}`;
-}
 function floorKeyValues(floor) {
   //id*	version*	name	image	realWidth	realHeight	public	publishedBy  publishedAt
   return [
@@ -42,10 +22,10 @@ function floorKeyValues(floor) {
 }
 
 function getFloor(withPrivate, id) {
-  console.log(select('floors', `WHERE id=${esc(id)}`));
+  rdb.exec(sql.select('floors', `WHERE id=${esc(id)}`));
 }
 function getFloors(withPrivate) {
-  console.log(select('floors', withPrivate ? null : `WHERE public=true`));
+  rdb.exec(sql.select('floors', withPrivate ? null : `WHERE public=true`));
 }
 function ensureFloor(id) {
   // nothing to do
@@ -53,10 +33,10 @@ function ensureFloor(id) {
 function saveFloor(newFloor) {
   // TODO upsert
   var where = 'TODO';
-  console.log(update('floors', floorKeyValues(newFloor), where));
+  rdb.exec(sql.update('floors', floorKeyValues(newFloor), where));
 }
 function publishFloor(newFloor) {
-  console.log(insert('floors', floorKeyValues(newFloor)));
+  rdb.exec(sql.insert('floors', floorKeyValues(newFloor)));
 }
 function saveImage(path, image, cb) {
 
