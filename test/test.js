@@ -104,7 +104,7 @@ function login(server, user, id, pass) {
 
 function withServer(test, done) {
   var started = false;
-  var server = cp.spawn('node', [ __dirname + '/server.js']);
+  var server = cp.spawn('node', [ __dirname + '/server/server.js']);
   server.stdout.on('data', function (data) {
     // console.log(data.toString());
     try {

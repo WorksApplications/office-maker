@@ -25,7 +25,7 @@ function taskServer(cb) {
   if(queued.server) {
     queued.server = false;
     server && server.kill();
-    server = cp.spawn('node', ['test/server'], {stdio: 'inherit'});
+    server = cp.spawn('node', ['test/server/server'], {stdio: 'inherit'});
     cb();
   } else {
     cb();
@@ -48,11 +48,9 @@ watch.createMonitor('src', function (monitor) {
   monitor.on("removed", schedule.bind(null, 'build'));
 });
 
-watch.createMonitor('test', {
+watch.createMonitor('test/server', {
   filter: function(stat) {
-    return minimatch(slash(stat), 'test/server.js') ||
-           minimatch(slash(stat), 'test/db.js') ||
-           minimatch(slash(stat), 'test/db2.js');
+    return minimatch(slash(stat), 'test/server/*.js');
   }
 }, function (monitor) {
   monitor.on("created", schedule.bind(null, 'server'));
