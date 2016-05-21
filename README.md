@@ -62,9 +62,9 @@ CAUTION: This product is under construction.
 |string|string|string|Person.id|
 
 #### Floor
-|id*|version*|name|image|realWidth|realHeight|public|publishedBy|
-|:--|:--|:--|:--|:--|:--|:--|:--|
-|string|string|string|string|int|int|bool|User.id|
+|id*|version*|name|image|realWidth|realHeight|public|publishedBy|publishedAt|
+|:--|:--|:--|:--|:--|:--|:--|:--|:--|
+|string|string|string|string|int|int|bool|User.id|int|
 
 #### Equipment
 |id|name|width|height|color|personId|floorId|
