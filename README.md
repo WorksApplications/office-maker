@@ -15,32 +15,66 @@ CAUTION: This product is under construction.
 
 |Method|URL|Req Body|Res Body|Description|Guest|General|Admin|
 |:--|:--|:--|:--|:--|:--|:--|:--|
-|GET| /api/v1/search/:query||||✓|✓|✓|
+|GET| /api/v1/search/:query||[SearchResult]||✓|✓|✓|
 |GET| /api/v1/auth||||✓|✓|✓|
-|GET| /api/v1/persons||||✓|✓|✓|
-|GET| /api/v1/persons/missing||||✓|✓|✓|
-|GET| /api/v1/persons/:personId||||✓|✓|✓|
-|GET| /api/v1/candidate/:name||||✓|✓|✓|
-|GET| /api/v1/prototypes||||✓|✓|✓|
+|GET| /api/v1/people||[Person]||✓|✓|✓|
+|GET| /api/v1/people/missing||[Person]||✓|✓|✓|
+|GET| /api/v1/people/:personId||Person||✓|✓|✓|
+|GET| /api/v1/candidate/:name||[Person]||✓|✓|✓|
+|GET| /api/v1/colors||[Color]||✓|✓|✓|
+|GET| /api/v1/prototypes||[Prototype]||✓|✓|✓|
 |PUT| /api/v1/prototypes/:id|Prototype|||||✓|
 |DELETE| /api/v1/prototypes/:id||||||✓|
-|GET| /api/v1/floors||||✓|✓|✓|
-|GET| /api/v1/floors/:id|||fetch latest version|✓|✓|✓|
-|GET| /api/v1/floors/:id/versions||||✓|✓|✓|
-|GET| /api/v1/floors/:id/version/:version||||✓|✓|✓|
-|GET| /api/v1/floors/:id/edit|||fetch latest unpublished version||✓|✓|
+|GET| /api/v1/floors||[FloorInfo]||✓|✓|✓|
+|GET| /api/v1/floors/:id||Floor|fetch latest version|✓|✓|✓|
+|GET| /api/v1/floors/:id/edit||Floor|fetch latest unpublished version||✓|✓|
 |PUT| /api/v1/floors/:id/edit|Floor||update latest unpublished version||✓|✓|
 |POST| /api/v1/floors/:id|||publish latest unpublished version|||✓|
 |DELETE| /api/v1/floors/:id||||||✓|
 |PUT| /api/v1/images/:id|Image|||||✓|
 
+<!-- 
+|GET| /api/v1/floors/:id/versions||||✓|✓|✓|
+|GET| /api/v1/floors/:id/version/:version||||✓|✓|✓| 
+-->
+
 ### Types
 |Type|Structure|
 |:--|:--|
-|Floor|TODO|
-|Prototype|TODO|
-|Image|TODO|
-|Person|TODO|
+|User| { id : UUID, name : Person.name, role : Role, personId : Person.id } |
+|Floor| { id : UUID, version : int, name : string, image? : URL, realSize? : (int, int), equipments : [ Equipment ], public : boolean, publishedBy? : User.id, publishedAt? : Date } |
+|Equipment| { id : UUID, name : string, size : (int, int), color : Color, personId? : Person.id } |
+|Prototype| { id : UUID, name : string, size : (int, int), color : Color } |
+|Image| binary |
+|SearchResult| [(Equipment, string)] |
+|Person| { id : string, name : string, org : string, tel? : string, mail? : string, image? : URL } |
+|Role| "admin" "general" |
+|Color| string |
+|UUID| string |
+|Date| int |
+|URL| string |
+
+### Tables
+
+#### User
+|id|pass|role|personId|
+|:--|:--|:--|:--|
+|string|string|string|Person.id|
+
+#### Floor
+|id*|version*|name|image|realWidth|realHeight|public|publishedBy|
+|:--|:--|:--|:--|:--|:--|:--|:--|
+|string|string|string|string|int|int|bool|User.id|
+
+#### Equipment
+|id|name|width|height|color|personId|floorId|
+|:--|:--|:--|:--|:--|:--|:--|
+|string|string|int|int|string|Person.id|Floor.id|
+
+#### Person
+|id|name|org|tel|mail|image|
+|:--|:--|:--|:--|:--|:--|
+|string|string|string|string|string|string|
 
 ## Development
 
