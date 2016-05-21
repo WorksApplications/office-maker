@@ -4,7 +4,7 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var session = require('express-session');
-var db = require('./db.js');
+var db = require('./db2.js');
 
 var publicDir = __dirname + '/public';
 
