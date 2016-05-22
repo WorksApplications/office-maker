@@ -2,7 +2,6 @@ var url = require('url');
 var fs = require('fs-extra');
 var _async = require('async');
 
-
 var sql = require('./sql.js');
 var rdb = require('./rdb.js');
 var schema = require('./schema.js');
@@ -32,12 +31,6 @@ var users = {
   }
 };
 var gridSize = 8;
-// var colors = ["#ed9", "#b9f", "#fa9", "#8bd", "#af6", "#6df"
-// , "#bbb", "#fff", "rgba(255,255,255,0.5)"];
-// var prototypes = [
-//   { id: "1", color: "#ed9", name: "", size : [gridSize*6, gridSize*10] },
-//   { id: "2", color: "#8bd", name: "foo", size : [gridSize*7, gridSize*12] }
-// ];
 function getFloorSync(withPrivate, id) {
   if(withPrivate) {
     return floors[id] ? floors[id][0] : null;
@@ -56,7 +49,7 @@ function getFloor(withPrivate, id, cb) {
 //   rdb.exec(sql.select('floors', sql.where('id', id)), cb);
 // }
 function getFloors(withPrivate, cb) {
-  floors_ = Object.keys(floors).map(function(id) {
+  var floors_ = Object.keys(floors).map(function(id) {
     return getFloorSync(withPrivate, id);
   }).filter(function(floor) {
     return !!floor;
@@ -134,16 +127,22 @@ function getCandidate(name, cb) {
   cb(null, results);
 }
 function search(query, all, cb) {
-  var results = getFloors(all).reduce(function(memo, floor) {
-    return floor.equipments.reduce(function(memo, e) {
-      if(e.name.indexOf(query) >= 0) {
-        return memo.concat([[e, floor.id]]);
-      } else {
-        return memo;
-      }
-    }, memo);
-  }, []);
-  cb(null, results);
+  getFloors(all, function(e, floors) {
+    if(e) {
+      cb(e);
+    } else {
+      var results = floors.reduce(function(memo, floor) {
+        return floor.equipments.reduce(function(memo, e) {
+          if(e.name.indexOf(query) >= 0) {
+            return memo.concat([[e, floor.id]]);
+          } else {
+            return memo;
+          }
+        }, memo);
+      }, []);
+      cb(null, results);
+    }
+  });
 }
 function getPrototypes(cb) {
   rdb.exec(sql.select('prototypes'), function(e, prototypes) {
@@ -169,10 +168,20 @@ function getPass(id, cb) {
   cb(null, passes[id]);
 }
 function getColors(cb) {
-  rdb.exec(sql.select('colors', function(e, colors) {
-    console.log(colors);
-    cb(null, colors);
-  }));
+  rdb.exec(sql.select('colors', sql.where('id', '1')), function(e, colors) {
+    if(e) {
+      cb(e);
+    } else {
+      var _colors = [];
+      [1,2,3,4,5,6,7,8,9,10].forEach(function(i) {
+        var c = colors[0]['color' + i];
+        if(c) {
+          _colors.push(c);
+        }
+      });
+      cb(null, _colors);
+    }
+  });
 }
 function saveColors(newColors, cb) {
   var keyValues = newColors.map(function(c, index) {
@@ -241,24 +250,26 @@ function init(cb) {
       color10 string
     )`
   ], function(e) {
-    console.log(e);
-
-    _async.series(mock.users.map(function(user) {
-      return saveUser.bind(null, user);
-    }));
-    _async.series(mock.persons.map(function(person) {
-      return savePerson.bind(null, person);
-    }));
-    _async.series([savePrototypes.bind(null, mock.prototypes)], function(e) {
-      console.log(e);
-    });
-    _async.series([saveColors.bind(null, mock.colors)]);
+    if(e) {
+      cb && cb(e);
+    } else {
+      _async.series(mock.users.map(function(user) {
+        return saveUser.bind(null, user);
+      }).concat(mock.persons.map(function(person) {
+        return savePerson.bind(null, person);
+      })).concat([
+        savePrototypes.bind(null, mock.prototypes)
+      ]).concat([
+        saveColors.bind(null, mock.colors)
+      ]), cb);
+    }
   });
-
-
-  cb && cb();//TODO after all done
 }
-init();//TODO export
+init(function(e) {
+  if(e) {
+    console.log(e);
+  }
+});//TODO export
 
 module.exports = {
   getPass: getPass,

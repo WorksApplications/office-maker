@@ -24,7 +24,7 @@ function batch(list, cb) {
           } else {
             results = results.concat();
             results.unshift(result);
-            cb && cb(results);
+            cb && cb(null, results);
           }
         });
       }
