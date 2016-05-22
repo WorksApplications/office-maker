@@ -31,7 +31,7 @@ var prototypes = [
   { id: "2", color: "#8bd", name: "foo", size : [gridSize*7, gridSize*12] }
 ];
 
-function getFloor(withPrivate, id) {
+function getFloor(withPrivate, id, cb) {
   if(withPrivate) {
     return floors[id] ? floors[id][0] : null;
   } else {
@@ -131,7 +131,24 @@ function getColors() {
 function saveColors(newColors) {
   colors = newColors;
 }
-module.exports = {
+
+function wrapForAsync(functions) {
+  return Object.keys(functions).reduce(function(memo, key) {
+    var f = functions[key];
+    memo[key] = function() {
+      try {
+        var ret = f.apply(null, arguments);
+      } catch(e) {
+        var cb = arguments[arguments.length - 1];
+        typeof cb === 'function' && cb(e);
+      }
+    };
+    return memo;
+  }, functions);
+}
+
+
+module.exports = wrapForAsync({
   getPass: getPass,
   getUser: getUser,
   getPerson: getPerson,
@@ -148,4 +165,4 @@ module.exports = {
   publishFloor: publishFloor,
   saveImage: saveImage,
   resetImage: resetImage
-};
+});

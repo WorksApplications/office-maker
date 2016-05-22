@@ -23,9 +23,12 @@ function update(table, keyValues, where) {
   var str = `SET ${ sets.join(',') }`;
   return `UPDATE ${ table } ${ str } WHERE ${ where }`;
 }
-
+function where(key, value) {
+  return `WHERE ${key}=${esc(value)}`;
+}
 module.exports = {
   select: select,
   insert: insert,
-  update: update
+  update: update,
+  where: where
 };

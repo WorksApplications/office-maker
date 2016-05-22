@@ -22,10 +22,10 @@ function floorKeyValues(floor) {
 }
 
 function getFloor(withPrivate, id) {
-  rdb.exec(sql.select('floors', `WHERE id=${esc(id)}`));
+  rdb.exec(sql.select('floors', sql.where('id', id)));
 }
 function getFloors(withPrivate) {
-  rdb.exec(sql.select('floors', withPrivate ? null : `WHERE public=true`));
+  rdb.exec(sql.select('floors', withPrivate ? null : sql.where('public', true)));
 }
 function ensureFloor(id) {
   // nothing to do
@@ -75,8 +75,11 @@ function wrapForDebug(functions) {
   return Object.keys(functions).reduce(function(memo, key) {
     var f = functions[key];
     memo[key] = function() {
-      f.apply(null, arguments);
-      return db[key].apply(null, arguments);
+      var args = (arguments.length === 1?[arguments[0]]:Array.apply(null, arguments));
+      var args2 = args.concat();
+      args.length = args.length - 1;
+      f.apply(null, args);
+      return db[key].apply(null, args2);
     };
     return memo;
   }, functions);

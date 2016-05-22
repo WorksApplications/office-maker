@@ -23,12 +23,17 @@ app.use(session({
 app.post('/api/v1/login', function(req, res) {
   var id = req.body.id;
   var pass = req.body.pass;
-  if(db.getPass(id) === pass) {
-    req.session.user = id;
-    res.send({});
-  } else {
-    res.status(401).send('');
-  }
+  db.getPass(id, function(e, _pass) {
+    if(e) {
+    } else {
+      if(_pass === pass) {
+        req.session.user = id;
+        res.send({});
+      } else {
+        res.status(401).send('');
+      }
+    }
+  });
 });
 
 app.post('/api/v1/logout', function(req, res) {
@@ -38,11 +43,17 @@ app.post('/api/v1/logout', function(req, res) {
 
 app.use(express.static(publicDir));
 
-function role(req) {
+function role(req, cb) {
   if(!req.session.user) {
-    return "guest"
+    cb(null, "guest")
   } else {
-    return db.getUser(req.session.user).role;
+    db.getUser(req.session.user, function(e, user) {
+      if(e) {
+        cb(e);
+      } else {
+        cb(null, user.role);
+      }
+    });
   }
 }
 
@@ -64,187 +75,308 @@ app.get('/logout', function(req, res) {
 });
 app.get('/api/v1/people/:id', function(req, res) {
   var id = req.params.id;
-  var person = db.getPerson(id);
-  if(!person) {
-    res.status(404).send('');
-    return;
-  }
-  res.send(person);
+  db.getPerson(id, function(e, person) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(!person) {
+      res.status(404).send('');
+      return;
+    }
+    res.send(person);
+  });
 });
 app.get('/api/v1/auth', function(req, res) {
   var id = req.session.user;
   if(id) {
-    res.send(db.getUser(id));
+    db.getUser(id, function(e, user) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      res.send(user);
+    });
   } else {
     res.send({});
   }
 });
 app.get('/api/v1/prototypes', function (req, res) {
-  if(role(req) === 'guest') {
-    res.status(401).send('');
-    return;
-  }
-  res.send(db.getPrototypes());
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role === 'guest') {
+      res.status(401).send('');
+      return;
+    }
+    db.getPrototypes(function(e, prototypes) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      res.send(prototypes);
+    });
+  });
 });
 app.put('/api/v1/prototypes', function (req, res) {
-  if(role(req) === 'guest') {
-    res.status(401).send('');
-    return;
-  }
-  var prototypes = req.body;
-  if(!prototypes || !prototypes_.length) {
-    res.status(403).send('');
-    return;
-  }
-  db.savePrototypes(prototypes);
-  res.send();
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role === 'guest') {
+      res.status(401).send('');
+      return;
+    }
+    var prototypes = req.body;
+    if(!prototypes || !prototypes_.length) {
+      res.status(403).send('');
+      return;
+    }
+    db.savePrototypes(prototypes, function(e) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      res.send();
+    });
+  });
 });
 app.get('/api/v1/colors', function (req, res) {
-  if(role(req) === 'guest') {
-    res.status(401).send('');
-    return;
-  }
-  res.send(db.getColors());
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role === 'guest') {
+      res.status(401).send('');
+      return;
+    }
+    db.getColors(function(e, colors) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      res.send(colors);
+    });
+  });
 });
 app.put('/api/v1/colors', function (req, res) {
-  if(role(req) === 'guest') {
-    res.status(401).send('');
-    return;
-  }
-  var colors = req.body;
-  if(!colors || !prototypes_.length) {
-    res.status(403).send('');
-    return;
-  }
-  db.saveColors(colors);
-  res.send();
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role === 'guest') {
+      res.status(401).send('');
+      return;
+    }
+    var colors = req.body;
+    if(!colors || !prototypes_.length) {
+      res.status(403).send('');
+      return;
+    }
+    db.saveColors(colors, function(e) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      res.send();
+    });
+  });
 });
 app.get('/api/v1/floors', function (req, res) {
   var options = url.parse(req.url, true).query;
-  if(role(req) === 'guest' && options.all) {
-    res.status(401).send('');
-    return;
-  }
-  res.send(db.getFloors(options.all));
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role === 'guest' && options.all) {
+      res.status(401).send('');
+      return;
+    }
+    db.getFloors(options.all, function(e, floors) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      res.send(floors);
+    });
+  });
 });
 app.get('/api/v1/search/:query', function (req, res) {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  var results = db.search(query, options.all);
-  res.send(results);
+  db.search(query, options.all, function(e, results) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    res.send(results);
+  });
 });
 app.get('/api/v1/candidate/:name', function (req, res) {
   var name = req.params.name;
-  var results = db.getCandidate(name);
-  res.send(results);
+  db.getCandidate(name, function(e, results) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    res.send(results);
+  });
 });
 app.get('/api/v1/floor/:id/edit', function (req, res) {
-  if(role(req) === 'guest') {
-    res.status(401).send('');
-    return;
-  }
-  var id = req.params.id;
-  console.log('get: ' + id);
-  var floor = db.getFloor(true, id);
-  if(floor) {
-    res.send(floor);
-  } else {
-    res.status(404).send('not found by id: ' + id);
-  }
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role === 'guest') {
+      res.status(401).send('');
+      return;
+    }
+    var id = req.params.id;
+    console.log('get: ' + id);
+    db.getFloor(true, id, function(e, floor) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      if(floor) {
+        res.send(floor);
+      } else {
+        res.status(404).send('not found by id: ' + id);
+      }
+    });
+  });
 });
 app.get('/api/v1/floor/:id', function (req, res) {
   var id = req.params.id;
   console.log('get: ' + id);
-  var floor = db.getFloor(false, id);
-  if(floor) {
-    res.send(floor);
-  } else {
-    res.status(404).send('not found by id: ' + id);
-  }
+  db.getFloor(false, id, function(e, floor) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(floor) {
+      res.send(floor);
+    } else {
+      res.status(404).send('not found by id: ' + id);
+    }
+  });
 });
 app.put('/api/v1/floor/:id/edit', function (req, res) {
-  if(role(req) === 'guest') {
-    res.status(401).send('');
-    return;
-  }
-  var id = req.params.id;
-  var newFloor = req.body;
-  if(id !== newFloor.id) {
-    res.status(400).send('');
-    return;
-  }
-  if(!isValidFloor(newFloor)) {
-    res.status(400).send('');
-    return;
-  }
-  newFloor.public = false;
-  newFloor.updateBy = req.session.user;
-  newFloor.updateAt = new Date().getTime();
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role === 'guest') {
+      res.status(401).send('');
+      return;
+    }
+    var id = req.params.id;
+    var newFloor = req.body;
+    if(id !== newFloor.id) {
+      res.status(400).send('');
+      return;
+    }
+    if(!isValidFloor(newFloor)) {
+      res.status(400).send('');
+      return;
+    }
+    newFloor.public = false;
+    newFloor.updateBy = req.session.user;
+    newFloor.updateAt = new Date().getTime();
 
-  db.saveFloor(newFloor);
-
-  console.log('saved floor: ' + id);
-  // console.log(newFloor);
-  res.send({});
+    db.saveFloor(newFloor, function(e) {
+      if(e) {
+        res.status(500).send('');
+        return;
+      }
+      console.log('saved floor: ' + id);
+      // console.log(newFloor);
+      res.send({});
+    });
+  });
 });
 
 // publish
 app.post('/api/v1/floor/:id', function (req, res) {
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role !== 'admin') {
+      res.status(401).send('');
+      return;
+    }
+    var id = req.params.id;
+    var newFloor = req.body;
+    if(id !== newFloor.id) {
+      res.status(400).send('');
+      return;
+    }
+    if(!id || id.length !== 36) {// must be UUID
+      res.status(400).send('');
+      return;
+    }
+    if(!isValidFloor(newFloor)) {
+      res.status(400).send('');
+      return;
+    }
+    newFloor.public = true;
+    newFloor.updateBy = req.session.user;
+    newFloor.updateAt = new Date().getTime();
 
-  if(role(req) !== 'admin') {
-    console.log('unauthorized: ' + role(req));
-    res.status(401).send('');
-    return;
-  }
-  var id = req.params.id;
-  var newFloor = req.body;
-  if(id !== newFloor.id) {
-    res.status(400).send('');
-    return;
-  }
-  if(!id || id.length !== 36) {// must be UUID
-    res.status(403).send('');
-    return;
-  }
-  if(!isValidFloor(newFloor)) {
-    res.status(400).send('');
-    return;
-  }
-  newFloor.public = true;
-  newFloor.updateBy = req.session.user;
-  newFloor.updateAt = new Date().getTime();
+    db.ensureFloor(id, function() {
+      db.publishFloor(newFloor, function(e) {
+        if(e) {
+          res.status(500).send('');
+          return;
+        }
+        console.log('published floor: ' + id);
+        // console.log(newFloor);
+        res.send({});
+      });
+    });
+  });
 
-  db.ensureFloor(id);
-  db.publishFloor(newFloor);
-
-  console.log('published floor: ' + id);
-
-  // console.log(newFloor);
-  res.send({});
 });
 
 app.put('/api/v1/image/:id', function (req, res) {
-  if(role(req) !== 'admin') {
-    res.status(401).send('');
-    return;
-  }
-  var id = req.params.id;
-  var all = [];
-  req.on('data', function(data) {
-    all.push(data);
-  });
-  req.on('end', function() {
-    var image = Buffer.concat(all);
-    db.saveImage(publicDir + '/images/floors/' + id, image, function(e) {
-      if(e) {
-        res.status(500).send('' + e);
-      } else {
-        res.end();
-      }
+  role(req, function(e, role) {
+    if(e) {
+      res.status(500).send('');
+      return;
+    }
+    if(role !== 'admin') {
+      res.status(401).send('');
+      return;
+    }
+    var id = req.params.id;
+    var all = [];
+    req.on('data', function(data) {
+      all.push(data);
     });
-  })
+    req.on('end', function() {
+      var image = Buffer.concat(all);
+      db.saveImage(publicDir + '/images/floors/' + id, image, function(e) {
+        if(e) {
+          res.status(500).send('' + e);
+        } else {
+          res.end();
+        }
+      });
+    })
+  });
 });
 process.on('uncaughtException', function(e) {
+  console.log('uncaughtException');
   console.log(e);
 });
 db.resetImage(publicDir + '/images/floors', function() {
