@@ -1,8 +1,13 @@
 var alasql = require('alasql');
 
 function exec(sql, cb) {
-  console.log(sql);
-  cb && cb();
+  try {
+    var res = alasql(sql);
+    console.log(`${sql} => ${res}`);
+    cb && cb(null, res);
+  } catch(e) {
+    cb && cb(e);
+  }
 }
 function batch(list, cb) {
   var list = list.concat();
