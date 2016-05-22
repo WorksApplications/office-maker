@@ -1,5 +1,8 @@
 var url = require('url');
 var fs = require('fs-extra');
+var sql = require('./sql.js');
+var rdb = require('./rdb.js');
+var filestorage = require('./filestorage.js');
 
 var floors = {};
 var passes = {
@@ -30,8 +33,7 @@ var prototypes = [
   { id: "1", color: "#ed9", name: "", size : [gridSize*6, gridSize*10] },
   { id: "2", color: "#8bd", name: "foo", size : [gridSize*7, gridSize*12] }
 ];
-
-function getFloor(withPrivate, id, cb) {
+function getFloorSync(withPrivate, id) {
   if(withPrivate) {
     return floors[id] ? floors[id][0] : null;
   } else {
@@ -42,19 +44,24 @@ function getFloor(withPrivate, id, cb) {
     }
   }
 }
-function getFloors(withPrivate) {
-  return Object.keys(floors).map(function(id) {
-    return getFloor(withPrivate, id);
+function getFloor(withPrivate, id, cb) {
+  cb(null, getFloorSync(withPrivate, id));
+}
+function getFloors(withPrivate, cb) {
+  floors_ = Object.keys(floors).map(function(id) {
+    return getFloorSync(withPrivate, id);
   }).filter(function(floor) {
     return !!floor;
   });
+  cb(null, floors_);
 }
-function ensureFloor(id) {
+function ensureFloor(id, cb) {
   if(!floors[id]) {
     floors[id] = [];
   }
+  cb && cb();
 }
-function saveFloor(newFloor) {
+function saveFloor(newFloor, cb) {
   var id = newFloor.id;
   if(floors[id]) {
     if(floors[id][0].public) {
@@ -65,8 +72,9 @@ function saveFloor(newFloor) {
   } else {
     floors[id] = [newFloor];
   }
+  cb && cb();
 }
-function publishFloor(newFloor) {
+function publishFloor(newFloor, cb) {
   var id = newFloor.id;
   if(floors[id][0] && !floors[id][0].public) {
     floors[id][0] = newFloor;
@@ -80,13 +88,12 @@ function publishFloor(newFloor) {
   }));
 }
 function saveImage(path, image, cb) {
-  fs.writeFile(path, image, cb);
+  filestorage.save(path, image, cb);
 }
 function resetImage(dir, cb) {
-  fs.emptyDirSync(dir);
-  cb();
+  filestorage.empty(dir, cb);
 }
-function getCandidate(name) {
+function getCandidate(name, cb) {
   var users_ = Object.keys(users).map(function(id) {
     return users[id];
   });
@@ -97,10 +104,10 @@ function getCandidate(name) {
       return memo;
     }
   }, []);
-  return results;
+  cb(null, results);
 }
-function search(query, all) {
-  return getFloors(all).reduce(function(memo, floor) {
+function search(query, all, cb) {
+  var results = getFloors(all).reduce(function(memo, floor) {
     return floor.equipments.reduce(function(memo, e) {
       if(e.name.indexOf(query) >= 0) {
         return memo.concat([[e, floor.id]]);
@@ -109,46 +116,32 @@ function search(query, all) {
       }
     }, memo);
   }, []);
+  cb(null, results);
 }
-function getPrototypes() {
-  return prototypes;
+function getPrototypes(cb) {
+  cb(null, prototypes);
 }
-function savePrototypes(newPrototypes) {
+function savePrototypes(newPrototypes, cb) {
   prototypes = newPrototypes;
+  cb && cb();
 }
-function getUser(id) {
-  return users[id];
+function getUser(id, cb) {
+  cb(null, users[id]);
 }
-function getPerson(id) {
-  return users[id];
+function getPerson(id, cb) {
+  cb(null, users[id]);
 }
-function getPass(id) {
-  return passes[id];
+function getPass(id, cb) {
+  cb(null, passes[id]);
 }
-function getColors() {
-  return colors;
+function getColors(cb) {
+  cb(null, colors);
 }
-function saveColors(newColors) {
+function saveColors(newColors, cb) {
   colors = newColors;
+  cb && cb();
 }
-
-function wrapForAsync(functions) {
-  return Object.keys(functions).reduce(function(memo, key) {
-    var f = functions[key];
-    memo[key] = function() {
-      try {
-        var ret = f.apply(null, arguments);
-      } catch(e) {
-        var cb = arguments[arguments.length - 1];
-        typeof cb === 'function' && cb(e);
-      }
-    };
-    return memo;
-  }, functions);
-}
-
-
-module.exports = wrapForAsync({
+module.exports = {
   getPass: getPass,
   getUser: getUser,
   getPerson: getPerson,
@@ -165,4 +158,4 @@ module.exports = wrapForAsync({
   publishFloor: publishFloor,
   saveImage: saveImage,
   resetImage: resetImage
-});
+};

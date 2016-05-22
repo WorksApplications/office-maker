@@ -1,9 +1,9 @@
 var url = require('url');
-var fs = require('fs-extra');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var filestorage = require('./filestorage.js');
 var db = require('./db2.js');
 
 var publicDir = __dirname + '/public';
@@ -200,6 +200,7 @@ app.get('/api/v1/floors', function (req, res) {
     }
     db.getFloors(options.all, function(e, floors) {
       if(e) {
+        console.log(e);
         res.status(500).send('');
         return;
       }
@@ -365,7 +366,7 @@ app.put('/api/v1/image/:id', function (req, res) {
     });
     req.on('end', function() {
       var image = Buffer.concat(all);
-      db.saveImage(publicDir + '/images/floors/' + id, image, function(e) {
+      db.saveImage('images/floors/' + id, image, function(e) {
         if(e) {
           res.status(500).send('' + e);
         } else {
@@ -379,7 +380,7 @@ process.on('uncaughtException', function(e) {
   console.log('uncaughtException');
   console.log(e);
 });
-db.resetImage(publicDir + '/images/floors', function() {
+db.resetImage('images/floors', function() {
   app.listen(3000, function () {
     console.log('mock server listening on port 3000.');
   });
