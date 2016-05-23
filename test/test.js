@@ -18,18 +18,19 @@ describe('guest', function () {
     withServer(function(done) {
       var admin = user();
       var server = host('http://localhost:3000');
+      var floorId = '550e8400-e29b-41d4-a716-446655440000';
       test([
-        server.send(admin, 'POST', '/api/v1/floor/1', {
+        server.send(admin, 'POST', `/api/v1/floor/${floorId}`, {
         }, status(401)),
-        server.send(admin, 'PUT', '/api/v1/image/1', {
+        server.send(admin, 'PUT', `/api/v1/image/${floorId}`, {
         }, status(401)),
-        server.send(admin, 'PUT', '/api/v1/floor/1/edit', {
+        server.send(admin, 'PUT', `/api/v1/floor/${floorId}/edit`, {
         }, status(401)),
-        server.send(admin, 'GET', '/api/v1/floor/1/edit', {
+        server.send(admin, 'GET', `/api/v1/floor/${floorId}/edit`, {
         }, status(401)),
-        server.send(admin, 'GET', '/api/v1/floors?all=true', {
+        server.send(admin, 'GET', `/api/v1/floors?all=true`, {
         }, status(401)),
-        server.send(admin, 'GET', '/api/v1/floors', {
+        server.send(admin, 'GET', `/api/v1/floors`, {
         }, length(0)),
       ], done);
     }, done);
@@ -41,15 +42,16 @@ describe('admin', function () {
     withServer(function(done) {
       var admin = user();
       var server = host('http://localhost:3000');
+      var floorId = '550e8400-e29b-41d4-a716-446655440000';
       test([
         login(server, admin, 'admin01', 'admin01'),
-        server.send(admin, 'PUT', '/api/v1/floor/1/edit', {
-          id: '1',
+        server.send(admin, 'PUT', `/api/v1/floor/${floorId}/edit`, {
+          id: floorId,
           name: 'F1'
         }, status(200)),
-        server.send(admin, 'GET', '/api/v1/floor/1/edit', {
+        server.send(admin, 'GET', `/api/v1/floor/${floorId}/edit`, {
         }, status(200)),
-        server.send(admin, 'GET', '/api/v1/floors?all=true', {
+        server.send(admin, 'GET', `/api/v1/floors?all=true`, {
         }, status(200)),
       ], done);
     }, done);
@@ -62,32 +64,33 @@ describe('private floor', function () {
       var admin = user();
       var guest = user();
       var server = host('http://localhost:3000');
+      var floorId = '550e8400-e29b-41d4-a716-446655440000';
       test([
         login(server, admin, 'admin01', 'admin01'),
         login(server, guest, 'user01', 'user01'),
-        server.send(admin, 'PUT', '/api/v1/floor/1/edit', {
-          id: '1',
+        server.send(admin, 'PUT', `/api/v1/floor/${floorId}/edit`, {
+          id: floorId,
           name: 'F1'
         }, status(200)),
-        server.send(admin, 'GET', '/api/v1/floors', {
+        server.send(admin, 'GET', `/api/v1/floors`, {
         }, length(0)),
-        server.send(admin, 'GET', '/api/v1/floors?all=true', {
+        server.send(admin, 'GET', `/api/v1/floors?all=true`, {
         }, length(1)),
-        server.send(guest, 'GET', '/api/v1/floors', {
+        server.send(guest, 'GET', `/api/v1/floors`, {
         }, length(0)),
-        server.send(admin, 'GET', '/api/v1/floor/1', {
+        server.send(admin, 'GET', `/api/v1/floor/${floorId}`, {
         }, status(404)),
-        server.send(guest, 'GET', '/api/v1/floor/1', {
+        server.send(guest, 'GET', `/api/v1/floor/${floorId}`, {
         }, status(404)),
-        server.send(admin, 'POST', '/api/v1/floor/1', {
-          id: '1',
+        server.send(admin, 'POST', `/api/v1/floor/${floorId}`, {
+          id: floorId,
           name: 'F2'
         }, status(200)),
-        server.send(guest, 'GET', '/api/v1/floors', {
+        server.send(guest, 'GET', `/api/v1/floors`, {
         }, length(1)),
-        server.send(guest, 'GET', '/api/v1/floor/1', {
+        server.send(guest, 'GET', `/api/v1/floor/${floorId}`, {
         }, json({
-          id: '1',
+          id: floorId,
           name: 'F2'
         })),
       ], done);
@@ -104,7 +107,7 @@ function login(server, user, id, pass) {
 
 function withServer(test, done) {
   var started = false;
-  var server = cp.spawn('node', [ __dirname + '/server.js']);
+  var server = cp.spawn('node', [ __dirname + '/server/server.js']);
   server.stdout.on('data', function (data) {
     // console.log(data.toString());
     try {

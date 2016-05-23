@@ -146,11 +146,12 @@ decodeFloor =
 decodePrototype : Decoder Prototype
 decodePrototype =
   decode
-    (,,,)
+    (\id color name width height -> (id, color, name, (width, height)))
     |> required "id" Decode.string
     |> required "color" Decode.string
     |> required "name" Decode.string
-    |> required "size" intSize
+    |> required "width" Decode.int
+    |> required "height" Decode.int
 
 serializeFloor : Floor -> String
 serializeFloor floor =

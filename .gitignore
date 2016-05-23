@@ -3,7 +3,7 @@ node_modules
 index.js
 login.js
 elm.js
-test/public
+test/server/public
 *.ttf
 data
 repl-temp-*
