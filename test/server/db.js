@@ -86,10 +86,9 @@ function getFloorsWithEquipments(withPrivate, cb) {
       if(e) {
         cb(e);
       } else {
-        equipmentsList.forEach((equipments, i) => {
-          floors[i].equipments = equipments;//TODO don't mutate
-        });
-        cb(null, floors);
+        cb(null, equipmentsList.map((equipments, i) => {
+          return Object.assign({}, floors[i], { equipments: equipments });
+        }));
       }
     });
   });
@@ -106,16 +105,16 @@ function saveFloorWithEquipments(newFloor, cb) {
       cb && cb(e);
     } else {
       var version = floor ? floor.version + 1 : 0;
-      newFloor.version = version;// TODO don't mutate!
+      var _newFloor = Object.assign({}, newFloor, { version: version });
       var sqls = [
-        sql.delete('floors', sql.where('id', newFloor.id) + ' and public=false'),
-        sql.insert('floors', schema.floorKeyValues(newFloor))
+        sql.delete('floors', sql.where('id', _newFloor.id) + ' and public=false'),
+        sql.insert('floors', schema.floorKeyValues(_newFloor))
       ];
       rdb.batch(sqls, (e) => {
         if(e) {
           cb && cb(e);
         } else {
-          saveEquipments(newFloor.id, version, newFloor.equipments, cb);
+          saveEquipments(_newFloor.id, version, _newFloor.equipments, cb);
         }
       });
     }
@@ -211,8 +210,7 @@ function getUserWithPerson(id, cb) {
         if(e) {
           cb(e);
         } else {
-          user.person = person;//TODO don't mutate
-          cb(null, user);
+          cb(null, Object.assign({}, user, { person: person }));
         }
       });
     }
