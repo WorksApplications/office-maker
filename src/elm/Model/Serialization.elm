@@ -65,9 +65,8 @@ encodeFloor floor =
       , ("equipments", list <| List.map encodeEquipment floor.equipments)
       , ("width", int floor.width)
       , ("height", int floor.height)
-      , ("realSize", case floor.realSize of
-          Just (w, h) -> list [ int w, int h ]
-          Nothing -> null)
+      , ("realWidth", Maybe.withDefault null <| Maybe.map (int << fst) floor.realSize)
+      , ("realHeight", Maybe.withDefault null <| Maybe.map (int << snd) floor.realSize)
       , ("src", src)
       , ("public", bool floor.public)
       ]
@@ -101,18 +100,18 @@ decodePerson =
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
-  object8
+  decode
     (\id x y width height color name personId ->
       Desk id (x, y, width, height) color name personId
     )
-    ("id" := Decode.string)
-    ("x" := Decode.int)
-    ("y" := Decode.int)
-    ("width" := Decode.int)
-    ("height" := Decode.int)
-    ("color" := Decode.string)
-    ("name" := Decode.string)
-    ("personId" := Decode.maybe Decode.string)
+    |> required "id" Decode.string
+    |> required "x" Decode.int
+    |> required "y" Decode.int
+    |> required "width" Decode.int
+    |> required "height" Decode.int
+    |> required "color" Decode.string
+    |> required "name" Decode.string
+    |> optional' "personId" Decode.string
 
 decodeSearchResult : Decoder (List (Equipment, String))
 decodeSearchResult =
@@ -121,14 +120,14 @@ decodeSearchResult =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id name equipments width height realSize src public updateBy updateAt ->
+    (\id name equipments width height realWidth realHeight src public updateBy updateAt ->
       { id = id
       , name = name
       , equipments = equipments
       , width = width
       , height = height
       , imageSource = Maybe.withDefault None (Maybe.map URL src)
-      , realSize = realSize
+      , realSize = Maybe.map2 (,) realWidth realHeight
       , public = public
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
       })
@@ -137,7 +136,8 @@ decodeFloor =
     |> required "equipments" (Decode.list decodeEquipment)
     |> required "width" Decode.int
     |> required "height" Decode.int
-    |> optional' "realSize" intSize
+    |> optional' "realWidth" Decode.int
+    |> optional' "realHeight" Decode.int
     |> optional' "src" Decode.string
     |> optional "public" Decode.bool False
     |> optional' "updateBy" Decode.string

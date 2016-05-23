@@ -26,6 +26,11 @@ function update(table, keyValues, where) {
 function where(key, value) {
   return `WHERE ${key}=${esc(value)}`;
 }
+function whereList(keyValues) {
+  return `WHERE ` + keyValues.map(function(keyValue) {
+    return `${keyValue[0]}=${esc(keyValue[1])}`;
+  }).join(' AND ');
+}
 function _delete(table, where) {
   return `DELETE FROM ${ table }` + (where ? ` ${where}` : '');
 }
@@ -34,5 +39,6 @@ module.exports = {
   insert: insert,
   update: update,
   delete: _delete,
-  where: where
+  where: where,
+  whereList: whereList
 };

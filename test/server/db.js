@@ -8,7 +8,6 @@ var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
 
-var floors = {};
 var passes = {
   admin01: 'admin01',
   user01 : 'user01'
@@ -31,71 +30,115 @@ var users = {
   }
 };
 var gridSize = 8;
-function getFloorSync(withPrivate, id) {
-  if(withPrivate) {
-    return floors[id] ? floors[id][0] : null;
-  } else {
-    if(floors[id]) {
-      return floors[id][0].public ? floors[id][0] : floors[id][1];
+function saveEquipments(floorId, floorVersion, equipments, cb) {
+  var sqls = equipments.map(function(equipment) {
+    return sql.insert('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
+  });
+  sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]])));
+  rdb.batch(sqls, cb);
+}
+function getEquipments(floorId, floorVersion, cb) {
+  var q = sql.select('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]]));
+  rdb.exec(q, cb);
+}
+function getFloorWithEquipments(withPrivate, id, cb) {
+  getFloor(withPrivate, id, function(e, floor) {
+    if(e) {
+      cb(e);
+    } else if(!floor) {
+      cb(null, null);
     } else {
-      return null;
+      getEquipments(floor.id, floor.version, function(e, equipments) {
+        if(e) {
+          cb(e);
+        } else {
+          floor.equipments = equipments;
+          cb(null, floor);
+        }
+      });
     }
-  }
+  });
 }
 function getFloor(withPrivate, id, cb) {
-  cb(null, getFloorSync(withPrivate, id));
-}
-// function getFloor(withPrivate, id, cb) {
-//   rdb.exec(sql.select('floors', sql.where('id', id)), cb);
-// }
-function getFloors(withPrivate, cb) {
-  var floors_ = Object.keys(floors).map(function(id) {
-    return getFloorSync(withPrivate, id);
-  }).filter(function(floor) {
-    return !!floor;
+  var q = sql.select('floors', sql.where('id', id))
+  rdb.exec(q, function(e, floors) {
+    if(e) {
+      cb(e);
+    } else {
+      var _floor = null;
+      floors.forEach(function(floor) {
+        if(!_floor || _floor.version < floor.version) {
+          if(floor.public || withPrivate) {
+            _floor = floor;
+          }
+        }
+      });
+      cb(null, _floor);
+    }
   });
-  cb(null, floors_);
+}
+function getFloors(withPrivate, cb) {
+  rdb.exec(sql.select('floors'), function(e, floors) {
+    var results = {};
+    floors.forEach(function(floor) {
+      if(!results[floor.id] || results[floor.id].version < floor.version) {
+        if(floor.public || withPrivate) {
+          results[floor.id] = floor;
+        }
+      }
+    });
+    cb(null, Object.keys(results).map(function(id) {
+      return results[id];
+    }));
+  });
+}
+function getFloorsWithEquipments(withPrivate, cb) {
+  getFloors(withPrivate, function(e, floors) {
+    var functions = floors.map(function(floor) {
+      return function(cb) {
+        return getEquipments(floor.id, floor.version, cb);
+      };
+    });
+    _async.parallel(functions, function(e, equipmentsList) {
+      if(e) {
+        cb(e);
+      } else {
+        equipmentsList.forEach(function(equipments, i) {
+          floors[i].equipments = equipments;//TODO don't mutate
+        });
+        cb(null, floors);
+      }
+    });
+  });
 }
 function ensureFloor(id, cb) {
-  if(!floors[id]) {
-    floors[id] = [];
-  }
   cb && cb();
 }
-function saveFloor(newFloor, cb) {
-  var id = newFloor.id;
-  if(floors[id]) {
-    if(floors[id][0].public) {
-      floors[id].unshift(newFloor);
+function saveFloorWithEquipments(newFloor, cb) {
+  getFloor(true, newFloor.id, function(e, floor) {
+    if(e) {
+      cb && cb(e);
     } else {
-      floors[id][0] = newFloor;
+      var version = floor ? floor.version + 1 : 0;
+      newFloor.version = version;// TODO don't mutate!
+      var sqls = [
+        sql.delete('floors', sql.where('id', newFloor.id) + ' and public=false'),
+        sql.insert('floors', schema.floorKeyValues(newFloor))
+      ];
+      rdb.batch(sqls, function(e) {
+        if(e) {
+          cb && cb(e);
+        } else {
+          saveEquipments(newFloor.id, version, newFloor.equipments, cb);
+        }
+      });
     }
-  } else {
-    floors[id] = [newFloor];
-  }
-  cb && cb();
+  });
 }
-// function saveFloor(newFloor, cb) {
-//   // TODO upsert
-//   var where = 'TODO';
-//   rdb.exec(sql.update('floors', schema.floorKeyValues(newFloor), where), cb);
-// }
+
 function publishFloor(newFloor, cb) {
-  var id = newFloor.id;
-  if(floors[id][0] && !floors[id][0].public) {
-    floors[id][0] = newFloor;
-  } else {
-    floors[id].unshift(newFloor);
-  }
-  console.log(Object.keys(floors).map(function(key) {
-    return key + ' => ' + floors[key].map(function(f) {
-      return f.public
-    })
-  }));
+  saveFloorWithEquipments(newFloor, cb);
 }
-// function publishFloor(newFloor, cb) {
-//   rdb.exec(sql.insert('floors', schema.floorKeyValues(newFloor)), cb);
-// }
 
 function saveUser(user, cb) {
   //TODO upsert
@@ -213,6 +256,8 @@ function init(cb) {
       version number NOT NULL,
       name string NOT NULL,
       image string,
+      width number,
+      height number,
       realWidth number,
       realHeight number,
       public boolean,
@@ -222,11 +267,14 @@ function init(cb) {
     CREATE TABLE equipments (
       id string NOT NULL,
       name string NOT NULL,
+      x number NOT NULL,
+      y number NOT NULL,
       width number NOT NULL,
       height number NOT NULL,
       color string NOT NULL,
       personId string,
-      floorId string NOT NULL
+      floorId string NOT NULL,
+      floorVersion number NOT NULL
     )`, `
     CREATE TABLE prototypes (
       id string NOT NULL,
@@ -261,6 +309,8 @@ function init(cb) {
         savePrototypes.bind(null, mock.prototypes)
       ]).concat([
         saveColors.bind(null, mock.colors)
+      ]).concat([
+        rdb.exec.bind(null, 'SELECT * FROM floors')
       ]), cb);
     }
   });
@@ -281,10 +331,10 @@ module.exports = {
   savePrototypes: savePrototypes,
   getColors: getColors,
   saveColors: saveColors,
-  getFloor: getFloor,
-  getFloors: getFloors,
+  getFloorWithEquipments: getFloorWithEquipments,
+  getFloorsWithEquipments: getFloorsWithEquipments,
   ensureFloor: ensureFloor,
-  saveFloor: saveFloor,
+  saveFloorWithEquipments: saveFloorWithEquipments,
   publishFloor: publishFloor,
   saveImage: saveImage,
   resetImage: resetImage

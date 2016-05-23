@@ -597,7 +597,7 @@ messageBar =
     , ("width", "100%")
     , ("z-index", zIndex.messageBar)
     , ("padding", "5px 10px")
-    , ("height", "29px")
+    -- , ("height", "29px")
     , ("transition", "height")
     , ("box-sizing", "border-box")
     , ("transition", "opacity 0.8s linear")

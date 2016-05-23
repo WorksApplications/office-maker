@@ -1,12 +1,21 @@
 var alasql = require('alasql');
 
 function exec(sql, cb) {
+  var err = null;
   try {
     var res = alasql(sql);
     console.log(`${sql} => ${res}`);
-    cb && cb(null, res);
+    try {
+      cb && cb(null, res);
+    } catch(e) {
+      err = e;
+    }
   } catch(e) {
+    console.log('Error on executing ' + sql);
     cb && cb(e);
+  }
+  if(err) {
+    throw err;
   }
 }
 function batch(list, cb) {

@@ -198,7 +198,7 @@ app.get('/api/v1/floors', function (req, res) {
       res.status(401).send('');
       return;
     }
-    db.getFloors(options.all, function(e, floors) {
+    db.getFloorsWithEquipments(options.all, function(e, floors) {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -241,7 +241,7 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
     }
     var id = req.params.id;
     console.log('get: ' + id);
-    db.getFloor(true, id, function(e, floor) {
+    db.getFloorWithEquipments(true, id, function(e, floor) {
       if(e) {
         res.status(500).send('');
         return;
@@ -257,7 +257,7 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
 app.get('/api/v1/floor/:id', function (req, res) {
   var id = req.params.id;
   console.log('get: ' + id);
-  db.getFloor(false, id, function(e, floor) {
+  db.getFloorWithEquipments(false, id, function(e, floor) {
     if(e) {
       res.status(500).send('');
       return;
@@ -293,7 +293,7 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloor(newFloor, function(e) {
+    db.saveFloorWithEquipments(newFloor, function(e) {
       if(e) {
         res.status(500).send('');
         return;

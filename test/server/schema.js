@@ -19,9 +19,11 @@ function personKeyValues(person) {
 function floorKeyValues(floor) {
   return [
     ["id", floor.id],
-    ["version", 0],//TODO
+    ["version", floor.version || 0],//TODO
     ["name", floor.name],
     ["image", floor.image],
+    ["width", floor.width],
+    ["height", floor.height],
     ["realWidth", floor.realWidth],
     ["realHeight", floor.realHeight],
     ["public", floor.public],
@@ -38,15 +40,18 @@ function prototypeKeyValues(proto) {
     ["color", proto.color]
   ];
 }
-function equipmentKeyValues(equipment) {
+function equipmentKeyValues(floorId, floorVersion, equipment) {
   return [
     ["id", equipment.id],
     ["name", equipment.name],
+    ["x", equipment.x],
+    ["y", equipment.y],
     ["width", equipment.width],
     ["height", equipment.height],
     ["color", equipment.color],
     ["personId", equipment.personId],
-    ["floorId", equipment.floorId]
+    ["floorId", floorId],
+    ["floorVersion", floorVersion]
   ];
 }
 
