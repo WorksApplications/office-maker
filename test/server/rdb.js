@@ -25,11 +25,11 @@ function batch(list, cb) {
   var head = list.shift();
   var tail = list;
   if(head) {
-    exec(head, function(e, result) {
+    exec(head, (e, result) => {
       if(e) {
         cb && cb(e);
       } else {
-        batch(tail, function(e, results) {
+        batch(tail, (e, results) => {
           if(e) {
             cb && cb(e);
           } else {
