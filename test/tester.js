@@ -101,7 +101,9 @@ function user() {
         'User-Agent': 'request',
         'Cookie': cookie
       },
-      form : form
+      form : form// TODO maybe this is wrong...
+      // body: JSON.stringify(form),
+      // json: true,
     };
     request(options, function(error, response, body) {
       if(error) {

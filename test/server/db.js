@@ -8,7 +8,6 @@ var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
 
-var gridSize = 8;
 function saveEquipments(floorId, floorVersion, equipments, cb) {
   var sqls = equipments.map(function(equipment) {
     return sql.insert('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
@@ -99,6 +98,9 @@ function ensureFloor(id, cb) {
   cb && cb();
 }
 function saveFloorWithEquipments(newFloor, cb) {
+  if(!newFloor.equipments) {
+    throw "invalid: ";
+  }
   getFloor(true, newFloor.id, function(e, floor) {
     if(e) {
       cb && cb(e);
@@ -177,7 +179,6 @@ function search(query, all, cb) {
 }
 function getPrototypes(cb) {
   rdb.exec(sql.select('prototypes'), function(e, prototypes) {
-    console.log(prototypes);
     cb(null, prototypes);
   });
 }
@@ -186,7 +187,6 @@ function savePrototypes(newPrototypes, cb) {
     return sql.insert('prototypes', schema.prototypeKeyValues(proto));
   });
   inserts.unshift(sql.delete('prototypes'));
-  console.log(inserts);
   rdb.batch(inserts, cb);
 }
 function getUser(id, cb) {

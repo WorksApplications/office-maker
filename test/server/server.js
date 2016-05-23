@@ -100,7 +100,6 @@ app.get('/api/v1/auth', function(req, res) {
         res.status(500).send('');
         return;
       }
-      console.log(user);
       res.send(user);
     });
   } else {
