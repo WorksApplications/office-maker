@@ -8,27 +8,6 @@ var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
 
-var passes = {
-  admin01: 'admin01',
-  user01 : 'user01'
-};
-var users = {
-  admin01: {
-    id:'admin01',
-    org: 'Sample Co.,Ltd',
-    name: 'Admin01',
-    mail: 'admin01@xxx.com',
-    image: 'images/users/admin01.png',
-    role: 'admin'
-  },
-  user01 : {
-    id:'user01',
-    org: 'Sample Co.,Ltd',
-    name: 'User01',
-    tel: '33510',
-    role: 'general'
-  }
-};
 var gridSize = 8;
 function saveEquipments(floorId, floorVersion, equipments, cb) {
   var sqls = equipments.map(function(equipment) {
@@ -79,17 +58,22 @@ function getFloor(withPrivate, id, cb) {
 }
 function getFloors(withPrivate, cb) {
   rdb.exec(sql.select('floors'), function(e, floors) {
-    var results = {};
-    floors.forEach(function(floor) {
-      if(!results[floor.id] || results[floor.id].version < floor.version) {
-        if(floor.public || withPrivate) {
-          results[floor.id] = floor;
+    if(e) {
+      cb(e);
+    } else {
+      var results = {};
+      floors.forEach(function(floor) {
+        if(!results[floor.id] || results[floor.id].version < floor.version) {
+          if(floor.public || withPrivate) {
+            results[floor.id] = floor;
+          }
         }
-      }
-    });
-    cb(null, Object.keys(results).map(function(id) {
-      return results[id];
-    }));
+      });
+      var ret = Object.keys(results).map(function(id) {
+        return results[id];
+      });
+      cb(null, ret);
+    }
   });
 }
 function getFloorsWithEquipments(withPrivate, cb) {
@@ -147,7 +131,7 @@ function saveUser(user, cb) {
 
 function savePerson(person, cb) {
   //TODO upsert
-  rdb.exec(sql.insert('persons', schema.personKeyValues(person)), cb);
+  rdb.exec(sql.insert('people', schema.personKeyValues(person)), cb);
 }
 
 function saveImage(path, image, cb) {
@@ -157,20 +141,24 @@ function resetImage(dir, cb) {
   filestorage.empty(dir, cb);
 }
 function getCandidate(name, cb) {
-  var users_ = Object.keys(users).map(function(id) {
-    return users[id];
-  });
-  var results = users_.reduce(function(memo, user) {
-    if(user.name.toLowerCase().indexOf(name.toLowerCase()) >= 0) {
-      return memo.concat([user]);
+  // TODO like search
+  getPeople(function(e, people) {
+    if(e) {
+      cb(e);
     } else {
-      return memo;
+      var results = people.reduce(function(memo, person) {
+        if(person.name.toLowerCase().indexOf(name.toLowerCase()) >= 0) {
+          return memo.concat([person]);
+        } else {
+          return memo;
+        }
+      }, []);
+      cb(null, results);
     }
-  }, []);
-  cb(null, results);
+  });
 }
 function search(query, all, cb) {
-  getFloors(all, function(e, floors) {
+  getFloorsWithEquipments(all, function(e, floors) {
     if(e) {
       cb(e);
     } else {
@@ -202,13 +190,47 @@ function savePrototypes(newPrototypes, cb) {
   rdb.batch(inserts, cb);
 }
 function getUser(id, cb) {
-  cb(null, users[id]);
+  rdb.exec(sql.select('users', sql.where('id', id)), function(e, users) {
+    if(e) {
+      cb(e);
+    } else if(users.length < 1) {
+      cb(null, null);
+    } else {
+      cb(null, users[0]);
+    }
+  });
+}
+function getUserWithPerson(id, cb) {
+  getUser(id, function(e, user) {
+    if(e) {
+      cb(e);
+    } else if(!user) {
+      cb(null, null);
+    } else {
+      getPerson(user.personId, function(e, person) {
+        if(e) {
+          cb(e);
+        } else {
+          user.person = person;//TODO don't mutate
+          cb(null, user);
+        }
+      });
+    }
+  });
+}
+function getPeople(cb) {
+  rdb.exec(sql.select('people'), cb);
 }
 function getPerson(id, cb) {
-  cb(null, users[id]);
-}
-function getPass(id, cb) {
-  cb(null, passes[id]);
+  rdb.exec(sql.select('people', sql.where('id', id)), function(e, people) {
+    if(e) {
+      cb(e);
+    } else if(people.length < 1) {
+      cb(null, null);
+    } else {
+      cb(null, people[0]);
+    }
+  });
 }
 function getColors(cb) {
   rdb.exec(sql.select('colors', sql.where('id', '1')), function(e, colors) {
@@ -241,15 +263,16 @@ function init(cb) {
   rdb.batch([`
     CREATE TABLE users (
       id string NOT NULL,
+      pass string NOT NULL,
       role string NOT NULL,
       personId string NOT NULL
     )`,`
-    CREATE TABLE persons (
+    CREATE TABLE people (
       id string NOT NULL,
-      name number NOT NULL,
+      name string NOT NULL,
       org string NOT NULL,
       mail string,
-      image number
+      image string
     )`,`
     CREATE TABLE floors (
       id string NOT NULL,
@@ -303,7 +326,7 @@ function init(cb) {
     } else {
       _async.series(mock.users.map(function(user) {
         return saveUser.bind(null, user);
-      }).concat(mock.persons.map(function(person) {
+      }).concat(mock.people.map(function(person) {
         return savePerson.bind(null, person);
       })).concat([
         savePrototypes.bind(null, mock.prototypes)
@@ -322,8 +345,8 @@ init(function(e) {
 });//TODO export
 
 module.exports = {
-  getPass: getPass,
   getUser: getUser,
+  getUserWithPerson: getUserWithPerson,
   getPerson: getPerson,
   getCandidate: getCandidate,
   search: search,

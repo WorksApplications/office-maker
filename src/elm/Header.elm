@@ -68,6 +68,6 @@ greeting user =
 userName : User -> String
 userName user =
   case user of
-    Admin name -> name
-    General name -> name
+    Admin person -> person.name
+    General person -> person.name
     Guest -> "Guest"

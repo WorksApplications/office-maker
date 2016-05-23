@@ -79,9 +79,11 @@ decodeUser : Decoder User
 decodeUser =
   oneOf
   [ object2
-      (\role name -> if role == "admin" then User.admin name else User.general name)
+      (\role person ->
+        if role == "admin" then User.admin person else User.general person
+      )
       ("role" := Decode.string)
-      ("name" := Decode.string)
+      ("person" := decodePerson)
   , Decode.succeed User.guest
   ]
 

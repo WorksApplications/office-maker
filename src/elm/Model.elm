@@ -858,8 +858,8 @@ saveTemporaryFloorAndLoadIt user =
   let
     name = case user of
       User.Guest -> "tmp"
-      User.Admin name -> "tmp-" ++ name
-      User.General name -> "tmp-" ++ name
+      User.Admin person -> "tmp-" ++ person.name
+      User.General person -> "tmp-" ++ person.name
     newFloor =
       Floor.init name
     saveCmd =

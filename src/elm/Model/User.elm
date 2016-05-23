@@ -1,15 +1,13 @@
 module Model.User exposing (..) -- where
 
+import Model.Person exposing (Person)
+
 type alias Id = String
 
 type User =
-    Admin String
-  | General String
+    Admin Person
+  | General Person
   | Guest
-
-admin : String -> User
-admin name =
-  Admin name
 
 isAdmin : User -> Bool
 isAdmin user =
@@ -21,9 +19,13 @@ isGuest : User -> Bool
 isGuest user =
   user == Guest
 
-general : String -> User
-general name =
-  General name
+admin : Person -> User
+admin person =
+  Admin person
+
+general : Person -> User
+general person =
+  General person
 
 guest : User
 guest = Guest

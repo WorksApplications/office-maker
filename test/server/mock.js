@@ -12,7 +12,7 @@ var users = [
     role: 'general'
   }
 ];
-var persons = [
+var people = [
   {
     id:'admin01',
     org: 'Sample Co.,Ltd',
@@ -37,7 +37,7 @@ var prototypes = [
 module.exports = {
   users: users,
   // floors: floors,
-  persons: persons,
+  people: people,
   colors: colors,
   prototypes: prototypes
 };

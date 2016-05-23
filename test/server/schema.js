@@ -2,6 +2,7 @@
 function userKeyValues(user) {
   return [
     ["id", user.id],
+    ["pass", user.pass],
     ["role", user.role],
     ["personId", user.personId],
   ];

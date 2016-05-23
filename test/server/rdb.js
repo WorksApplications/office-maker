@@ -4,7 +4,9 @@ function exec(sql, cb) {
   var err = null;
   try {
     var res = alasql(sql);
-    console.log(`${sql} => ${res}`);
+
+    var _res = res.length || res;
+    console.log(`${sql} => ${_res}`);
     try {
       cb && cb(null, res);
     } catch(e) {

@@ -19,14 +19,19 @@ app.use(session({
   }
 }));
 
+function hash(str) {
+  return str;//TODO
+}
+
 /* Login NOT required */
 app.post('/api/v1/login', function(req, res) {
   var id = req.body.id;
   var pass = req.body.pass;
-  db.getPass(id, function(e, _pass) {
+  db.getUser(id, function(e, user) {
     if(e) {
+      res.status(500).send('');
     } else {
-      if(_pass === pass) {
+      if(hash(pass) === user.pass) {
         req.session.user = id;
         res.send({});
       } else {
@@ -90,11 +95,12 @@ app.get('/api/v1/people/:id', function(req, res) {
 app.get('/api/v1/auth', function(req, res) {
   var id = req.session.user;
   if(id) {
-    db.getUser(id, function(e, user) {
+    db.getUserWithPerson(id, function(e, user) {
       if(e) {
         res.status(500).send('');
         return;
       }
+      console.log(user);
       res.send(user);
     });
   } else {
