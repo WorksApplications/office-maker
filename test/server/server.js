@@ -31,6 +31,7 @@ app.post('/api/v1/login', function(req, res) {
     if(e) {
       res.status(500).send('');
     } else {
+      console.log(pass, user);
       if(hash(pass) === user.pass) {
         req.session.user = id;
         res.send({});

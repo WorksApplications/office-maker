@@ -3,7 +3,7 @@ var fs = require('fs-extra');
 var _async = require('async');
 
 var sql = require('./sql.js');
-var rdb = require('./rdb.js');
+var rdb = require('./rdb2.js');
 var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
@@ -40,6 +40,7 @@ function getFloorWithEquipments(withPrivate, id, cb) {
 function getFloor(withPrivate, id, cb) {
   var q = sql.select('floors', sql.where('id', id))
   rdb.exec(q, function(e, floors) {
+
     if(e) {
       cb(e);
     } else {
@@ -77,21 +78,25 @@ function getFloors(withPrivate, cb) {
 }
 function getFloorsWithEquipments(withPrivate, cb) {
   getFloors(withPrivate, function(e, floors) {
-    var functions = floors.map(function(floor) {
-      return function(cb) {
-        return getEquipments(floor.id, floor.version, cb);
-      };
-    });
-    _async.parallel(functions, function(e, equipmentsList) {
-      if(e) {
-        cb(e);
-      } else {
-        equipmentsList.forEach(function(equipments, i) {
-          floors[i].equipments = equipments;//TODO don't mutate
-        });
-        cb(null, floors);
-      }
-    });
+    if(e) {
+      cb(e);
+    } else {
+      var functions = floors.map(function(floor) {
+        return function(cb) {
+          return getEquipments(floor.id, floor.version, cb);
+        };
+      });
+      _async.parallel(functions, function(e, equipmentsList) {
+        if(e) {
+          cb(e);
+        } else {
+          equipmentsList.forEach(function(equipments, i) {
+            floors[i].equipments = equipments;//TODO don't mutate
+          });
+          cb(null, floors);
+        }
+      });
+    }
   });
 }
 function ensureFloor(id, cb) {
@@ -105,8 +110,7 @@ function saveFloorWithEquipments(newFloor, cb) {
     if(e) {
       cb && cb(e);
     } else {
-      var version = floor ? floor.version + 1 : 0;
-      newFloor.version = version;// TODO don't mutate!
+      newFloor.version = newFloor.version || 0;// TODO
       var sqls = [
         sql.delete('floors', sql.where('id', newFloor.id) + ' and public=false'),
         sql.insert('floors', schema.floorKeyValues(newFloor))
@@ -115,7 +119,7 @@ function saveFloorWithEquipments(newFloor, cb) {
         if(e) {
           cb && cb(e);
         } else {
-          saveEquipments(newFloor.id, version, newFloor.equipments, cb);
+          saveEquipments(newFloor.id, newFloor.version, newFloor.equipments, cb);
         }
       });
     }
@@ -123,17 +127,23 @@ function saveFloorWithEquipments(newFloor, cb) {
 }
 
 function publishFloor(newFloor, cb) {
+  newFloor.version = newFloor.version || 0;
+  newFloor.version = newFloor.version + 1;
   saveFloorWithEquipments(newFloor, cb);
 }
 
 function saveUser(user, cb) {
-  //TODO upsert
-  rdb.exec(sql.insert('users', schema.userKeyValues(user)), cb);
+  rdb.batch([
+    sql.delete('users', sql.where('id', user.id)),
+    sql.insert('users', schema.userKeyValues(user))
+  ], cb);
 }
 
 function savePerson(person, cb) {
-  //TODO upsert
-  rdb.exec(sql.insert('people', schema.personKeyValues(person)), cb);
+  rdb.batch([
+    sql.delete('people', sql.where('id', person.id)),
+    sql.insert('people', schema.personKeyValues(person))
+  ], cb);
 }
 
 function saveImage(path, image, cb) {
@@ -260,83 +270,15 @@ function saveColors(newColors, cb) {
 }
 
 function init(cb) {
-  rdb.batch([`
-    CREATE TABLE users (
-      id string NOT NULL,
-      pass string NOT NULL,
-      role string NOT NULL,
-      personId string NOT NULL
-    )`,`
-    CREATE TABLE people (
-      id string NOT NULL,
-      name string NOT NULL,
-      org string NOT NULL,
-      mail string,
-      image string
-    )`,`
-    CREATE TABLE floors (
-      id string NOT NULL,
-      version number NOT NULL,
-      name string NOT NULL,
-      image string,
-      width number,
-      height number,
-      realWidth number,
-      realHeight number,
-      public boolean,
-      publishedBy string,
-      publishedAt number
-    )`, `
-    CREATE TABLE equipments (
-      id string NOT NULL,
-      name string NOT NULL,
-      x number NOT NULL,
-      y number NOT NULL,
-      width number NOT NULL,
-      height number NOT NULL,
-      color string NOT NULL,
-      personId string,
-      floorId string NOT NULL,
-      floorVersion number NOT NULL
-    )`, `
-    CREATE TABLE prototypes (
-      id string NOT NULL,
-      name string NOT NULL,
-      width number NOT NULL,
-      height number NOT NULL,
-      color string NOT NULL
-    )`, `
-    CREATE TABLE colors (
-      id string NOT NULL,
-      color0 string,
-      color1 string,
-      color2 string,
-      color3 string,
-      color4 string,
-      color5 string,
-      color6 string,
-      color7 string,
-      color8 string,
-      color9 string,
-      color10 string
-    )`
-  ], function(e) {
-    if(e) {
-      cb && cb(e);
-    } else {
-      _async.series(mock.users.map(function(user) {
-        return saveUser.bind(null, user);
-      }).concat(mock.people.map(function(person) {
-        return savePerson.bind(null, person);
-      })).concat([
-        savePrototypes.bind(null, mock.prototypes)
-      ]).concat([
-        saveColors.bind(null, mock.colors)
-      ]).concat([
-        rdb.exec.bind(null, 'SELECT * FROM floors')
-      ]), cb);
-    }
-  });
+  _async.series(mock.users.map(function(user) {
+    return saveUser.bind(null, user);
+  }).concat(mock.people.map(function(person) {
+    return savePerson.bind(null, person);
+  })).concat([
+    savePrototypes.bind(null, mock.prototypes)
+  ]).concat([
+    saveColors.bind(null, mock.colors)
+  ]), cb);
 }
 init(function(e) {
   if(e) {

@@ -1,4 +1,7 @@
 var alasql = require('alasql');
+var fs = require('fs');
+
+console.log('You are using dummuy DB.');
 
 function exec(sql, cb) {
   var err = null;
@@ -6,7 +9,7 @@ function exec(sql, cb) {
     var res = alasql(sql);
 
     var _res = res.length || res;
-    console.log(`${sql} => ${_res}`);
+    console.log(`${sql.split('\n').join()} => ${_res}`);
     try {
       cb && cb(null, res);
     } catch(e) {
@@ -44,6 +47,11 @@ function batch(list, cb) {
     cb && cb(null, []);
   }
 }
+batch(fs.readFileSync(__dirname + '/sql/1.sql', 'utf8').split('\r').join('').split('\n\n'), function(e) {
+  if(e) {
+    throw e;
+  }
+});
 module.exports = {
   exec: exec,
   batch: batch
