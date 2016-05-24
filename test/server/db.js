@@ -10,9 +10,9 @@ var mock = require('./mock.js');
 
 function saveEquipments(floorId, floorVersion, equipments, cb) {
   var sqls = equipments.map((equipment) => {
-    return sql.insert('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
+    return sql.replace('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
   });
-  sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]])));
+  // sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]])));
   rdb.batch(sqls, cb);
 }
 function getEquipments(floorId, floorVersion, cb) {
@@ -134,15 +134,15 @@ function publishFloor(newFloor, cb) {
 
 function saveUser(user, cb) {
   rdb.batch([
-    sql.delete('users', sql.where('id', user.id)),
-    sql.insert('users', schema.userKeyValues(user))
+    // sql.delete('users', sql.where('id', user.id)),
+    sql.replace('users', schema.userKeyValues(user))
   ], cb);
 }
 
 function savePerson(person, cb) {
   rdb.batch([
-    sql.delete('people', sql.where('id', person.id)),
-    sql.insert('people', schema.personKeyValues(person))
+    // sql.delete('people', sql.where('id', person.id)),
+    sql.replace('people', schema.personKeyValues(person))
   ], cb);
 }
 
@@ -259,8 +259,8 @@ function saveColors(newColors, cb) {
   });
   keyValues.unshift(['id', '1']);
   rdb.batch([
-    sql.delete('colors'),
-    sql.insert('colors', keyValues)
+    // sql.delete('colors'),
+    sql.replace('colors', keyValues)
   ], cb);
 }
 

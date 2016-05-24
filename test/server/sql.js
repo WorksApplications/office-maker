@@ -16,6 +16,17 @@ function insert(table, keyValues) {
   var valuesStr = `VALUES(${ values.join(',') })`;
   return `INSERT INTO ${table} ${columnsStr} ${valuesStr}`;
 }
+function replace(table, keyValues) {
+  var columns = [];
+  var values = [];
+  keyValues.forEach(function(keyValue) {
+    columns.push(keyValue[0]);
+    values.push(esc(keyValue[1]));
+  });
+  var columnsStr = `(${ columns.join(',') })`;
+  var valuesStr = `VALUES(${ values.join(',') })`;
+  return `REPLACE INTO ${table} ${columnsStr} ${valuesStr}`;
+}
 function update(table, keyValues, where) {
   var sets = keyValues.map(function(keyValue) {
     return `${ keyValue[0] }=${ esc(keyValue[1]) }`;
@@ -37,6 +48,7 @@ function _delete(table, where) {
 module.exports = {
   select: select,
   insert: insert,
+  replace: replace,
   update: update,
   delete: _delete,
   where: where,
