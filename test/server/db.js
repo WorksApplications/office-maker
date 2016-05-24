@@ -106,6 +106,7 @@ function saveFloorWithEquipments(newFloor, incrementVersion, cb) {
   if(!newFloor.equipments) {
     throw "invalid: ";
   }
+  console.log('newFloor.equipments.length', newFloor.equipments.length);
   getFloor(true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);
@@ -152,8 +153,7 @@ function resetImage(dir, cb) {
   filestorage.empty(dir, cb);
 }
 function getCandidate(name, cb) {
-  // TODO like search
-  getPeople((e, people) => {
+  rdb.exec(sql.select('people', `WHERE name LIKE '%${name.trim()}%'`), (e, people) => {//TODO sanitize
     if(e) {
       cb(e);
     } else {
@@ -225,9 +225,6 @@ function getUserWithPerson(id, cb) {
       });
     }
   });
-}
-function getPeople(cb) {
-  rdb.exec(sql.select('people'), cb);
 }
 function getPerson(id, cb) {
   rdb.exec(sql.select('people', sql.where('id', id)), (e, people) => {

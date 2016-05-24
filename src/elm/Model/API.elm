@@ -121,7 +121,7 @@ search withPrivate query =
   let
     url =
       Http.url
-        ("/api/v1/search/" ++ query)
+        ("/api/v1/search/" ++ Http.uriEncode query)
         (if withPrivate then [("all", "true")] else [])
   in
     Http.get
@@ -131,8 +131,8 @@ search withPrivate query =
 personCandidate : String -> Task Error (List Person)
 personCandidate name =
     getJsonWithoutCache
-      decodePersons
-      ("/api/v1/candidate/" ++ name)
+      decodePersons <| Debug.log "url" <|
+      ("/api/v1/candidate/" ++ Http.uriEncode name)
 
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =

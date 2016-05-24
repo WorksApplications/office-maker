@@ -22,7 +22,7 @@ function exec(sql, cb) {
         });
       });
       var _res = rows.length || '';
-      console.log(`${sql.split('\n').join()} => ${_res}`);
+      // console.log(`${sql.split('\n').join()} => ${_res}`);
       try {
         cb && cb(null, rows);
       } catch(e) {
