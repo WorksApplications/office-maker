@@ -62,9 +62,9 @@ CAUTION: This product is under construction.
 |string|string|string|Person.id|
 
 #### Floor
-|id*|version*|name|image|realWidth|realHeight|public|publishedBy|publishedAt|
-|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-|string|string|string|string|int|int|bool|User.id|int|
+|id*|version*|name|image|width|height|realWidth|realHeight|public|updateBy|updateAt|
+|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
+|string|string|string|string|int|int|int|int|bool|User.id|bigint|
 
 #### Equipment
 |id|name|width|height|color|personId|floorId|
@@ -80,7 +80,7 @@ CAUTION: This product is under construction.
 
 ### Requirement
 
-You need to have [Elm](http://elm-lang.org/) (== 0.17) and [Node.js](https://nodejs.org/) installed.
+You need to have [Elm](http://elm-lang.org/) (== 0.17) and [Node.js](https://nodejs.org/) (>= 4.0) installed.
 
 ### Install
 
