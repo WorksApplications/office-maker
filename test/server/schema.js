@@ -28,8 +28,8 @@ function floorKeyValues(floor) {
     ["realWidth", floor.realWidth],
     ["realHeight", floor.realHeight],
     ["public", floor.public],
-    ["updateBy", floor.publishedBy],
-    ["updateAt", floor.publishedAt]
+    ["updateBy", floor.updateBy],
+    ["updateAt", floor.updateAt]
   ];
 }
 function prototypeKeyValues(proto) {
