@@ -14,6 +14,7 @@ function exec(sql, cb) {
     if(e) {
       cb(e);
     } else {
+      console.log(sql);
       (rows.length ? rows : []).forEach(function(row) {
         (fields || []).forEach(function(field) {
           if(field.type === 1) {

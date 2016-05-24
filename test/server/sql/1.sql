@@ -1,3 +1,5 @@
+SET SQL_SAFE_UPDATES=0;
+
 CREATE TABLE users (
   id varchar(36) NOT NULL,
   pass varchar(128) NOT NULL,

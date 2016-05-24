@@ -3,6 +3,7 @@ module Util.UrlParser exposing (..) -- where
 import Dict exposing (Dict)
 import String
 import Util.StringUtil exposing (..)
+import Http
 
 type alias URL = (List String, Dict String String)
 
@@ -32,7 +33,7 @@ parseParams s =
     updateDict maybe dict =
       case maybe of
         Just (key, value) ->
-          Dict.insert key value dict
+          Dict.insert key (Http.uriDecode value) dict
         Nothing ->
           dict
   in
