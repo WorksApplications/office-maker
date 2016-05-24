@@ -3,7 +3,7 @@ var request = require('request');
 var deepDiff = require('deep-diff');
 
 function json(expect) {
-  return function(error, response, body, done) {
+  return (error, response, body, done) => {
     if(error) {
       done(response);
     } else {
@@ -29,7 +29,7 @@ function json(expect) {
   };
 }
 function status(code) {
-  return function(error, response, body, done) {
+  return (error, response, body, done) => {
     if(error) {
       done(error);
     } else if(response.statusCode !== code) {
@@ -41,7 +41,7 @@ function status(code) {
 }
 
 function length(len) {
-  return function(error, response, body, done) {
+  return (error, response, body, done) => {
     if(error) {
       done(error);
     } else if(JSON.parse(body).length !== len) {
@@ -57,7 +57,7 @@ function test(steps, done) {
   var head = tail.shift();
   if(head) {
     try {
-      head(function(e) {
+      head((e) => {
         if(e) {
           done(e);
         } else {
@@ -74,7 +74,7 @@ function test(steps, done) {
 }
 function host(host) {
   return {
-    send: function(user, method, path, form, assertion) {
+    send: (user, method, path, form, assertion) => {
       if(!assertion) {
         throw "too few arguments.";
       }
@@ -84,8 +84,8 @@ function host(host) {
 }
 
 function send(user, method, url, form, assertion) {
-  return function(cb) {
-    user.send(method, url, form, function(error, response, body) {
+  return (cb) => {
+    user.send(method, url, form, (error, response, body) => {
       (assertion || status(200))(error, response, body, cb);
     });
   };
@@ -93,7 +93,7 @@ function send(user, method, url, form, assertion) {
 
 function user() {
   var cookie = '';
-  var send = function(method, url, form, cb) {
+  var send = (method, url, form, cb) => {
     var options = {
       method: method,
       url: url,
@@ -105,7 +105,7 @@ function user() {
       // body: JSON.stringify(form),
       // json: true,
     };
-    request(options, function(error, response, body) {
+    request(options, (error, response, body) => {
       if(error) {
         cb(error);
       } else {

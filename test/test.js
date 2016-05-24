@@ -13,9 +13,9 @@ var user = tester.user;
 var length = tester.length;
 var json = tester.json;
 
-describe('guest', function () {
-  it('cannot access to edit api', function (done) {
-    withServer(function(done) {
+describe('guest', () => {
+  it('cannot access to edit api', (done) => {
+    withServer((done) => {
       var admin = user();
       var server = host('http://localhost:3000');
       var floorId = '550e8400-e29b-41d4-a716-446655440000';
@@ -37,9 +37,9 @@ describe('guest', function () {
   });
 });
 
-describe('admin', function () {
-  it('can access to /api/v1/floor/:id/edit', function (done) {
-    withServer(function(done) {
+describe('admin', () => {
+  it('can access to /api/v1/floor/:id/edit', (done) => {
+    withServer((done) => {
       var admin = user();
       var server = host('http://localhost:3000');
       var floorId = '550e8400-e29b-41d4-a716-446655440000';
@@ -59,9 +59,9 @@ describe('admin', function () {
   });
 });
 
-describe('private floor', function () {
-  it('cannot be accessed by guest', function (done) {
-    withServer(function(done) {
+describe('private floor', () => {
+  it('cannot be accessed by guest', (done) => {
+    withServer((done) => {
       var admin = user();
       var guest = user();
       var server = host('http://localhost:3000');
@@ -111,10 +111,10 @@ function login(server, user, id, pass) {
 function withServer(test, done) {
   var started = false;
   var server = cp.spawn('node', [ __dirname + '/server/server.js']);
-  server.stdout.on('data', function (data) {
+  server.stdout.on('data', (data) => {
     // console.log(data.toString());
     try {
-      started || test(function(e) {
+      started || test((e) => {
         server.kill();
         done(e);
       });
@@ -124,7 +124,7 @@ function withServer(test, done) {
     }
     started = true;
   });
-  server.stderr.on('data', function (data) {
+  server.stderr.on('data', (data) => {
     console.error(data.toString());
   });
 }

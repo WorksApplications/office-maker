@@ -9,7 +9,7 @@ var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
 
 function saveEquipments(floorId, floorVersion, equipments, cb) {
-  var sqls = equipments.map(function(equipment) {
+  var sqls = equipments.map((equipment) => {
     return sql.insert('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
   });
   sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]])));
@@ -20,13 +20,13 @@ function getEquipments(floorId, floorVersion, cb) {
   rdb.exec(q, cb);
 }
 function getFloorWithEquipments(withPrivate, id, cb) {
-  getFloor(withPrivate, id, function(e, floor) {
+  getFloor(withPrivate, id, (e, floor) => {
     if(e) {
       cb(e);
     } else if(!floor) {
       cb(null, null);
     } else {
-      getEquipments(floor.id, floor.version, function(e, equipments) {
+      getEquipments(floor.id, floor.version, (e, equipments) => {
         if(e) {
           cb(e);
         } else {
@@ -39,12 +39,12 @@ function getFloorWithEquipments(withPrivate, id, cb) {
 }
 function getFloor(withPrivate, id, cb) {
   var q = sql.select('floors', sql.where('id', id))
-  rdb.exec(q, function(e, floors) {
+  rdb.exec(q, (e, floors) => {
     if(e) {
       cb(e);
     } else {
       var _floor = null;
-      floors.forEach(function(floor) {
+      floors.forEach((floor) => {
         if(!_floor || _floor.version < floor.version) {
           if(floor.public || withPrivate) {
             _floor = floor;
@@ -56,19 +56,19 @@ function getFloor(withPrivate, id, cb) {
   });
 }
 function getFloors(withPrivate, cb) {
-  rdb.exec(sql.select('floors'), function(e, floors) {
+  rdb.exec(sql.select('floors'), (e, floors) => {
     if(e) {
       cb(e);
     } else {
       var results = {};
-      floors.forEach(function(floor) {
+      floors.forEach((floor) => {
         if(!results[floor.id] || results[floor.id].version < floor.version) {
           if(floor.public || withPrivate) {
             results[floor.id] = floor;
           }
         }
       });
-      var ret = Object.keys(results).map(function(id) {
+      var ret = Object.keys(results).map((id) => {
         return results[id];
       });
       cb(null, ret);
@@ -76,20 +76,19 @@ function getFloors(withPrivate, cb) {
   });
 }
 function getFloorsWithEquipments(withPrivate, cb) {
-  getFloors(withPrivate, function(e, floors) {
-    var functions = floors.map(function(floor) {
-      return function(cb) {
+  getFloors(withPrivate, (e, floors) => {
+    var functions = floors.map((floor) => {
+      return (cb) => {
         return getEquipments(floor.id, floor.version, cb);
       };
     });
-    _async.parallel(functions, function(e, equipmentsList) {
+    _async.parallel(functions, (e, equipmentsList) => {
       if(e) {
         cb(e);
       } else {
-        equipmentsList.forEach(function(equipments, i) {
-          floors[i].equipments = equipments;//TODO don't mutate
-        });
-        cb(null, floors);
+        cb(null, equipmentsList.map((equipments, i) => {
+          return Object.assign({}, floors[i], { equipments: equipments });
+        }));
       }
     });
   });
@@ -101,21 +100,21 @@ function saveFloorWithEquipments(newFloor, cb) {
   if(!newFloor.equipments) {
     throw "invalid: ";
   }
-  getFloor(true, newFloor.id, function(e, floor) {
+  getFloor(true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);
     } else {
       var version = floor ? floor.version + 1 : 0;
-      newFloor.version = version;// TODO don't mutate!
+      var _newFloor = Object.assign({}, newFloor, { version: version });
       var sqls = [
-        sql.delete('floors', sql.where('id', newFloor.id) + ' and public=false'),
-        sql.insert('floors', schema.floorKeyValues(newFloor))
+        sql.delete('floors', sql.where('id', _newFloor.id) + ' and public=false'),
+        sql.insert('floors', schema.floorKeyValues(_newFloor))
       ];
-      rdb.batch(sqls, function(e) {
+      rdb.batch(sqls, (e) => {
         if(e) {
           cb && cb(e);
         } else {
-          saveEquipments(newFloor.id, version, newFloor.equipments, cb);
+          saveEquipments(_newFloor.id, version, _newFloor.equipments, cb);
         }
       });
     }
@@ -144,11 +143,11 @@ function resetImage(dir, cb) {
 }
 function getCandidate(name, cb) {
   // TODO like search
-  getPeople(function(e, people) {
+  getPeople((e, people) => {
     if(e) {
       cb(e);
     } else {
-      var results = people.reduce(function(memo, person) {
+      var results = people.reduce((memo, person) => {
         if(person.name.toLowerCase().indexOf(name.toLowerCase()) >= 0) {
           return memo.concat([person]);
         } else {
@@ -160,12 +159,12 @@ function getCandidate(name, cb) {
   });
 }
 function search(query, all, cb) {
-  getFloorsWithEquipments(all, function(e, floors) {
+  getFloorsWithEquipments(all, (e, floors) => {
     if(e) {
       cb(e);
     } else {
-      var results = floors.reduce(function(memo, floor) {
-        return floor.equipments.reduce(function(memo, e) {
+      var results = floors.reduce((memo, floor) => {
+        return floor.equipments.reduce((memo, e) => {
           if(e.name.indexOf(query) >= 0) {
             return memo.concat([[e, floor.id]]);
           } else {
@@ -178,19 +177,19 @@ function search(query, all, cb) {
   });
 }
 function getPrototypes(cb) {
-  rdb.exec(sql.select('prototypes'), function(e, prototypes) {
+  rdb.exec(sql.select('prototypes'), (e, prototypes) => {
     cb(null, prototypes);
   });
 }
 function savePrototypes(newPrototypes, cb) {
-  var inserts = newPrototypes.map(function(proto) {
+  var inserts = newPrototypes.map((proto) => {
     return sql.insert('prototypes', schema.prototypeKeyValues(proto));
   });
   inserts.unshift(sql.delete('prototypes'));
   rdb.batch(inserts, cb);
 }
 function getUser(id, cb) {
-  rdb.exec(sql.select('users', sql.where('id', id)), function(e, users) {
+  rdb.exec(sql.select('users', sql.where('id', id)), (e, users) => {
     if(e) {
       cb(e);
     } else if(users.length < 1) {
@@ -201,18 +200,17 @@ function getUser(id, cb) {
   });
 }
 function getUserWithPerson(id, cb) {
-  getUser(id, function(e, user) {
+  getUser(id, (e, user) => {
     if(e) {
       cb(e);
     } else if(!user) {
       cb(null, null);
     } else {
-      getPerson(user.personId, function(e, person) {
+      getPerson(user.personId, (e, person) => {
         if(e) {
           cb(e);
         } else {
-          user.person = person;//TODO don't mutate
-          cb(null, user);
+          cb(null, Object.assign({}, user, { person: person }));
         }
       });
     }
@@ -222,7 +220,7 @@ function getPeople(cb) {
   rdb.exec(sql.select('people'), cb);
 }
 function getPerson(id, cb) {
-  rdb.exec(sql.select('people', sql.where('id', id)), function(e, people) {
+  rdb.exec(sql.select('people', sql.where('id', id)), (e, people) => {
     if(e) {
       cb(e);
     } else if(people.length < 1) {
@@ -233,12 +231,12 @@ function getPerson(id, cb) {
   });
 }
 function getColors(cb) {
-  rdb.exec(sql.select('colors', sql.where('id', '1')), function(e, colors) {
+  rdb.exec(sql.select('colors', sql.where('id', '1')), (e, colors) => {
     if(e) {
       cb(e);
     } else {
       var _colors = [];
-      [1,2,3,4,5,6,7,8,9,10].forEach(function(i) {
+      [1,2,3,4,5,6,7,8,9,10].forEach((i) => {
         var c = colors[0]['color' + i];
         if(c) {
           _colors.push(c);
@@ -249,7 +247,7 @@ function getColors(cb) {
   });
 }
 function saveColors(newColors, cb) {
-  var keyValues = newColors.map(function(c, index) {
+  var keyValues = newColors.map((c, index) => {
     return ['color' + index, c];
   });
   keyValues.unshift(['id', '1']);
@@ -320,13 +318,13 @@ function init(cb) {
       color9 string,
       color10 string
     )`
-  ], function(e) {
+  ], (e) => {
     if(e) {
       cb && cb(e);
     } else {
-      _async.series(mock.users.map(function(user) {
+      _async.series(mock.users.map((user) => {
         return saveUser.bind(null, user);
-      }).concat(mock.people.map(function(person) {
+      }).concat(mock.people.map((person) => {
         return savePerson.bind(null, person);
       })).concat([
         savePrototypes.bind(null, mock.prototypes)
@@ -338,7 +336,7 @@ function init(cb) {
     }
   });
 }
-init(function(e) {
+init((e) => {
   if(e) {
     console.log(e);
   }
