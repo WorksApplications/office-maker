@@ -25,7 +25,7 @@ CREATE TABLE floors (
   realHeight int,
   public boolean,
   updateBy varchar(36),
-  updateAt int
+  updateAt bigint
 )
 
 CREATE TABLE equipments (
