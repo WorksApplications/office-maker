@@ -83,6 +83,7 @@ app.get('/api/v1/people/:id', function(req, res) {
   var id = req.params.id;
   db.getPerson(id, function(e, person) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -98,6 +99,7 @@ app.get('/api/v1/auth', function(req, res) {
   if(id) {
     db.getUserWithPerson(id, function(e, user) {
       if(e) {
+        console.log(e);
         res.status(500).send('');
         return;
       }
@@ -110,6 +112,7 @@ app.get('/api/v1/auth', function(req, res) {
 app.get('/api/v1/prototypes', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -119,6 +122,7 @@ app.get('/api/v1/prototypes', function (req, res) {
     }
     db.getPrototypes(function(e, prototypes) {
       if(e) {
+        console.log(e);
         res.status(500).send('');
         return;
       }
@@ -129,6 +133,7 @@ app.get('/api/v1/prototypes', function (req, res) {
 app.put('/api/v1/prototypes', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -143,6 +148,7 @@ app.put('/api/v1/prototypes', function (req, res) {
     }
     db.savePrototypes(prototypes, function(e) {
       if(e) {
+        console.log(e);
         res.status(500).send('');
         return;
       }
@@ -153,6 +159,7 @@ app.put('/api/v1/prototypes', function (req, res) {
 app.get('/api/v1/colors', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -162,6 +169,7 @@ app.get('/api/v1/colors', function (req, res) {
     }
     db.getColors(function(e, colors) {
       if(e) {
+        console.log(e);
         res.status(500).send('');
         return;
       }
@@ -172,6 +180,7 @@ app.get('/api/v1/colors', function (req, res) {
 app.put('/api/v1/colors', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -186,6 +195,7 @@ app.put('/api/v1/colors', function (req, res) {
     }
     db.saveColors(colors, function(e) {
       if(e) {
+        console.log(e);
         res.status(500).send('');
         return;
       }
@@ -197,6 +207,7 @@ app.get('/api/v1/floors', function (req, res) {
   var options = url.parse(req.url, true).query;
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -219,6 +230,7 @@ app.get('/api/v1/search/:query', function (req, res) {
   var query = req.params.query;
   db.search(query, options.all, function(e, results) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -229,6 +241,7 @@ app.get('/api/v1/candidate/:name', function (req, res) {
   var name = req.params.name;
   db.getCandidate(name, function(e, results) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -238,6 +251,7 @@ app.get('/api/v1/candidate/:name', function (req, res) {
 app.get('/api/v1/floor/:id/edit', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -265,6 +279,7 @@ app.get('/api/v1/floor/:id', function (req, res) {
   console.log('get: ' + id);
   db.getFloorWithEquipments(false, id, function(e, floor) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -278,6 +293,7 @@ app.get('/api/v1/floor/:id', function (req, res) {
 app.put('/api/v1/floor/:id/edit', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -299,8 +315,9 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloorWithEquipments(newFloor, function(e) {
+    db.saveFloorWithEquipments(newFloor, false, function(e) {
       if(e) {
+        console.log(e);
         res.status(500).send('');
         return;
       }
@@ -315,6 +332,7 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
 app.post('/api/v1/floor/:id', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }
@@ -343,6 +361,7 @@ app.post('/api/v1/floor/:id', function (req, res) {
     db.ensureFloor(id, function() {
       db.publishFloor(newFloor, function(e) {
         if(e) {
+          console.log(e);
           res.status(500).send('');
           return;
         }
@@ -358,6 +377,7 @@ app.post('/api/v1/floor/:id', function (req, res) {
 app.put('/api/v1/image/:id', function (req, res) {
   role(req, function(e, role) {
     if(e) {
+      console.log(e);
       res.status(500).send('');
       return;
     }

@@ -102,7 +102,7 @@ function getFloorsWithEquipments(withPrivate, cb) {
 function ensureFloor(id, cb) {
   cb && cb();
 }
-function saveFloorWithEquipments(newFloor, cb) {
+function saveFloorWithEquipments(newFloor, incrementVersion, cb) {
   if(!newFloor.equipments) {
     throw "invalid: ";
   }
@@ -110,13 +110,15 @@ function saveFloorWithEquipments(newFloor, cb) {
     if(e) {
       cb && cb(e);
     } else {
-      newFloor.version = newFloor.version || 0;// TODO
+
+      newFloor.version = floor ? (incrementVersion ? floor.version + 1 : floor.version) : 0;
       var sqls = [
         sql.delete('floors', sql.where('id', newFloor.id) + ' and public=false'),
         sql.insert('floors', schema.floorKeyValues(newFloor))
       ];
       rdb.batch(sqls, function(e) {
         if(e) {
+          console.log(e);
           cb && cb(e);
         } else {
           saveEquipments(newFloor.id, newFloor.version, newFloor.equipments, cb);
@@ -127,9 +129,7 @@ function saveFloorWithEquipments(newFloor, cb) {
 }
 
 function publishFloor(newFloor, cb) {
-  newFloor.version = newFloor.version || 0;
-  newFloor.version = newFloor.version + 1;
-  saveFloorWithEquipments(newFloor, cb);
+  saveFloorWithEquipments(newFloor, true, cb);
 }
 
 function saveUser(user, cb) {
