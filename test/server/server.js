@@ -24,10 +24,10 @@ function hash(str) {
 }
 
 /* Login NOT required */
-app.post('/api/v1/login', function(req, res) {
+app.post('/api/v1/login', (req, res) => {
   var id = req.body.id;
   var pass = req.body.pass;
-  db.getUser(id, function(e, user) {
+  db.getUser(id, (e, user) => {
     if(e) {
       res.status(500).send('');
     } else {
@@ -42,7 +42,7 @@ app.post('/api/v1/login', function(req, res) {
   });
 });
 
-app.post('/api/v1/logout', function(req, res) {
+app.post('/api/v1/logout', (req, res) => {
   req.session.user = null;
   res.send({});
 });
@@ -53,7 +53,7 @@ function role(req, cb) {
   if(!req.session.user) {
     cb(null, "guest")
   } else {
-    db.getUser(req.session.user, function(e, user) {
+    db.getUser(req.session.user, (e, user) => {
       if(e) {
         cb(e);
       } else {
@@ -72,16 +72,16 @@ function isValidFloor(floor) {
 
 /* Login required */
 
-app.get('/login', function(req, res) {
+app.get('/login', (req, res) => {
   res.sendfile(publicDir + '/login.html');
 });
-app.get('/logout', function(req, res) {
+app.get('/logout', (req, res) => {
   req.session.user = null;
   res.redirect('/login');
 });
-app.get('/api/v1/people/:id', function(req, res) {
+app.get('/api/v1/people/:id', (req, res) => {
   var id = req.params.id;
-  db.getPerson(id, function(e, person) {
+  db.getPerson(id, (e, person) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -94,10 +94,10 @@ app.get('/api/v1/people/:id', function(req, res) {
     res.send(person);
   });
 });
-app.get('/api/v1/auth', function(req, res) {
+app.get('/api/v1/auth', (req, res) => {
   var id = req.session.user;
   if(id) {
-    db.getUserWithPerson(id, function(e, user) {
+    db.getUserWithPerson(id, (e, user) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -109,8 +109,8 @@ app.get('/api/v1/auth', function(req, res) {
     res.send({});
   }
 });
-app.get('/api/v1/prototypes', function (req, res) {
-  role(req, function(e, role) {
+app.get('/api/v1/prototypes', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -120,7 +120,7 @@ app.get('/api/v1/prototypes', function (req, res) {
       res.status(401).send('');
       return;
     }
-    db.getPrototypes(function(e, prototypes) {
+    db.getPrototypes((e, prototypes) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -130,8 +130,8 @@ app.get('/api/v1/prototypes', function (req, res) {
     });
   });
 });
-app.put('/api/v1/prototypes', function (req, res) {
-  role(req, function(e, role) {
+app.put('/api/v1/prototypes', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -146,7 +146,7 @@ app.put('/api/v1/prototypes', function (req, res) {
       res.status(403).send('');
       return;
     }
-    db.savePrototypes(prototypes, function(e) {
+    db.savePrototypes(prototypes, (e) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -156,8 +156,8 @@ app.put('/api/v1/prototypes', function (req, res) {
     });
   });
 });
-app.get('/api/v1/colors', function (req, res) {
-  role(req, function(e, role) {
+app.get('/api/v1/colors', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -167,7 +167,7 @@ app.get('/api/v1/colors', function (req, res) {
       res.status(401).send('');
       return;
     }
-    db.getColors(function(e, colors) {
+    db.getColors((e, colors) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -177,8 +177,8 @@ app.get('/api/v1/colors', function (req, res) {
     });
   });
 });
-app.put('/api/v1/colors', function (req, res) {
-  role(req, function(e, role) {
+app.put('/api/v1/colors', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -193,7 +193,7 @@ app.put('/api/v1/colors', function (req, res) {
       res.status(403).send('');
       return;
     }
-    db.saveColors(colors, function(e) {
+    db.saveColors(colors, (e) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -203,9 +203,9 @@ app.put('/api/v1/colors', function (req, res) {
     });
   });
 });
-app.get('/api/v1/floors', function (req, res) {
+app.get('/api/v1/floors', (req, res) => {
   var options = url.parse(req.url, true).query;
-  role(req, function(e, role) {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -215,7 +215,7 @@ app.get('/api/v1/floors', function (req, res) {
       res.status(401).send('');
       return;
     }
-    db.getFloorsWithEquipments(options.all, function(e, floors) {
+    db.getFloorsWithEquipments(options.all, (e, floors) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -225,10 +225,10 @@ app.get('/api/v1/floors', function (req, res) {
     });
   });
 });
-app.get('/api/v1/search/:query', function (req, res) {
+app.get('/api/v1/search/:query', (req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  db.search(query, options.all, function(e, results) {
+  db.search(query, options.all, (e, results) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -237,9 +237,9 @@ app.get('/api/v1/search/:query', function (req, res) {
     res.send(results);
   });
 });
-app.get('/api/v1/candidate/:name', function (req, res) {
+app.get('/api/v1/candidate/:name', (req, res) => {
   var name = req.params.name;
-  db.getCandidate(name, function(e, results) {
+  db.getCandidate(name, (e, results) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -248,8 +248,8 @@ app.get('/api/v1/candidate/:name', function (req, res) {
     res.send(results);
   });
 });
-app.get('/api/v1/floor/:id/edit', function (req, res) {
-  role(req, function(e, role) {
+app.get('/api/v1/floor/:id/edit', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -261,7 +261,7 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
     }
     var id = req.params.id;
     console.log('get: ' + id);
-    db.getFloorWithEquipments(true, id, function(e, floor) {
+    db.getFloorWithEquipments(true, id, (e, floor) => {
       if(e) {
         res.status(500).send('');
         return;
@@ -274,10 +274,10 @@ app.get('/api/v1/floor/:id/edit', function (req, res) {
     });
   });
 });
-app.get('/api/v1/floor/:id', function (req, res) {
+app.get('/api/v1/floor/:id', (req, res) => {
   var id = req.params.id;
   console.log('get: ' + id);
-  db.getFloorWithEquipments(false, id, function(e, floor) {
+  db.getFloorWithEquipments(false, id, (e, floor) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -290,8 +290,8 @@ app.get('/api/v1/floor/:id', function (req, res) {
     }
   });
 });
-app.put('/api/v1/floor/:id/edit', function (req, res) {
-  role(req, function(e, role) {
+app.put('/api/v1/floor/:id/edit', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -315,7 +315,7 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloorWithEquipments(newFloor, false, function(e) {
+    db.saveFloorWithEquipments(newFloor, false, (e) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -329,8 +329,8 @@ app.put('/api/v1/floor/:id/edit', function (req, res) {
 });
 
 // publish
-app.post('/api/v1/floor/:id', function (req, res) {
-  role(req, function(e, role) {
+app.post('/api/v1/floor/:id', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -358,8 +358,8 @@ app.post('/api/v1/floor/:id', function (req, res) {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.ensureFloor(id, function() {
-      db.publishFloor(newFloor, function(e) {
+    db.ensureFloor(id, () => {
+      db.publishFloor(newFloor, (e) => {
         if(e) {
           console.log(e);
           res.status(500).send('');
@@ -374,8 +374,8 @@ app.post('/api/v1/floor/:id', function (req, res) {
 
 });
 
-app.put('/api/v1/image/:id', function (req, res) {
-  role(req, function(e, role) {
+app.put('/api/v1/image/:id', (req, res) => {
+  role(req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -387,12 +387,12 @@ app.put('/api/v1/image/:id', function (req, res) {
     }
     var id = req.params.id;
     var all = [];
-    req.on('data', function(data) {
+    req.on('data', (data) => {
       all.push(data);
     });
-    req.on('end', function() {
+    req.on('end', () => {
       var image = Buffer.concat(all);
-      db.saveImage('images/floors/' + id, image, function(e) {
+      db.saveImage('images/floors/' + id, image, (e) => {
         if(e) {
           res.status(500).send('' + e);
         } else {
@@ -402,11 +402,11 @@ app.put('/api/v1/image/:id', function (req, res) {
     })
   });
 });
-process.on('uncaughtException', function(e) {
+process.on('uncaughtException', (e) => {
   console.log('uncaughtException');
   console.log(e);
 });
-db.resetImage('images/floors', function() {
+db.resetImage('images/floors', () => {
   app.listen(3000, function () {
     console.log('mock server listening on port 3000.');
   });
