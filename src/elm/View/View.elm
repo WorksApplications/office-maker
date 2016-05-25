@@ -365,6 +365,7 @@ canvasView model =
         EquipmentNameInput.view
           (screenRectOf model)
           (transitionDisabled model)
+          (candidatesOf model)
           model.equipmentNameInput
   in
     div

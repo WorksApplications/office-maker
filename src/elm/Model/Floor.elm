@@ -48,7 +48,7 @@ type Msg =
   | SetLocalFile String File String
   | ChangeRealSize (Int, Int)
   | OnSaved Bool
-  | ChangeUserCandidate String (List String)
+  | SetPerson String String
 
 create : (List (Id, (Int, Int, Int, Int), String, String)) -> Msg
 create = Create
@@ -86,8 +86,8 @@ changeRealSize = ChangeRealSize
 onSaved : Bool -> Msg
 onSaved = OnSaved
 
-changeUserCandidate : String -> List String -> Msg
-changeUserCandidate = ChangeUserCandidate
+setPerson : String -> String -> Msg
+setPerson = SetPerson
 
 update : Msg -> Model -> Model
 update action model =
@@ -145,14 +145,10 @@ update action model =
               model.imageSource
       , public = isPublish
       }
-    ChangeUserCandidate equipmentId ids ->
+    SetPerson equipmentId personId ->
       let
         newEquipments =
-          case ids of
-            head :: [] ->
-              partiallyChange (Equipments.setPerson (Just head)) [equipmentId] (equipments model)
-            _ ->
-              partiallyChange (Equipments.setPerson Nothing) [equipmentId] (equipments model)
+          partiallyChange (Equipments.setPerson (Just personId)) [equipmentId] (equipments model)
       in
         setEquipments newEquipments model
 

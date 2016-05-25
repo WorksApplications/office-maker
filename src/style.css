@@ -12,3 +12,8 @@ body {
   background-color: #9ce;
   cursor: pointer;
 }
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}

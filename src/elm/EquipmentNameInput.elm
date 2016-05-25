@@ -3,9 +3,12 @@ module EquipmentNameInput exposing (..) -- where
 import Util.ShortCut as ShortCut
 import Html exposing (..)
 import Html.Attributes exposing (..)
+-- import Html.Events exposing (..)
 import Util.HtmlUtil exposing (..)
+import Model.Person exposing (Person)
 
 import View.Styles as Styles
+import View.ProfilePopup as ProfilePopup
 
 type alias Model =
   { editingEquipment : Maybe (String, String)
@@ -21,10 +24,12 @@ type Msg =
     NoOp
   | InputName Id String
   | KeydownOnNameInput Int
+  | SelectCandidate Id Id
 
 type Event =
     OnInput Id String
   | OnFinish Id String
+  | OnSelectCandidate Id Id
   | None
 
 update : ShortCut.Model -> Msg -> Model -> (Model, Event)
@@ -71,6 +76,10 @@ update keys message model =
             (model, None)
       in
         (newModel, event)
+    SelectCandidate equipmentId personId ->
+      ( { model | editingEquipment = Nothing }
+      , OnSelectCandidate equipmentId personId
+      )
 
 updateNewEdit : (Maybe (String, String)) -> Model -> Model
 updateNewEdit editingEquipment model =
@@ -87,8 +96,8 @@ forceFinish model =
     Nothing ->
       (model, None)
 
-view : (String -> Maybe (Int, Int, Int, Int)) -> Bool -> Model -> Html Msg
-view screenRectOf transitionDisabled model =
+view : (String -> Maybe (Int, Int, Int, Int)) -> Bool -> List Person -> Model -> Html Msg
+view screenRectOf transitionDisabled candidates model =
   case model.editingEquipment of
     Just (id, name) ->
       case screenRectOf id of
@@ -98,14 +107,37 @@ view screenRectOf transitionDisabled model =
               Styles.deskInput screenRect ++
               Styles.transition transitionDisabled
           in
-            textarea
-              ([ Html.Attributes.id "name-input"
-              , style styles
-              ] ++ (inputAttributes (InputName id) KeydownOnNameInput name (Just NoOp)))
-              [text name]
+            div
+              []
+              [ textarea
+                ([ Html.Attributes.id "name-input"
+                , style styles
+                ] ++ (inputAttributes (InputName id) KeydownOnNameInput name (Just NoOp)))
+                [ text name ]
+              , candidatesView id (400, 100) candidates --TODO
+              ]
         Nothing -> text ""
     Nothing ->
       text ""
+
+candidatesView : Id -> (Int, Int) -> List Person -> Html Msg
+candidatesView equipmentId pos people =
+  case people of
+    [] -> text ""
+    _ ->
+      let
+        each person =
+          li
+            [ style Styles.candidateItem
+            , class "hovarable"
+            , onMouseDown' (SelectCandidate equipmentId person.id)
+            ]
+            (ProfilePopup.innerView person)
+      in
+        ul
+          [ style (Styles.ul ++ Styles.candidatesView pos)
+          ]
+          (List.map each people)
 
 -- TODO duplicated
 inputAttributes : (String -> msg) -> (Int -> msg) -> String -> Maybe msg -> List (Attribute msg)

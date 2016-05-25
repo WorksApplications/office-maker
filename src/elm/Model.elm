@@ -516,6 +516,26 @@ update action model =
             model' ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
           EquipmentNameInput.OnFinish id name ->
             updateOnFinishNameInput id name model'
+          EquipmentNameInput.OnSelectCandidate equipmentId personId ->
+            case Dict.get personId model'.personInfo of
+              Just person ->
+                let
+                  newFloor =
+                    UndoRedo.commit
+                    model'.floor
+                    (Floor.setPerson equipmentId personId)
+                  cmd =
+                    saveFloorCmd (UndoRedo.data newFloor)
+                  (newModel, cmd2) =
+                    updateOnFinishNameInput equipmentId person.name
+                      { model' |
+                        floor = newFloor
+                      }
+                in
+                  newModel ! [ cmd, cmd2 ]
+              Nothing ->
+                model' ! [] -- maybe never happen
+
           EquipmentNameInput.None ->
             model' ! []
 
@@ -732,9 +752,14 @@ update action model =
     UpdatePersonCandidate equipmentId personIds ->
       let
         newFloor =
-          UndoRedo.commit
-            model.floor
-            (Floor.changeUserCandidate equipmentId personIds)
+          case personIds of
+            head :: _ :: _ ->
+              UndoRedo.commit
+                model.floor
+                (Floor.setPerson equipmentId head)
+            _ ->
+              model.floor
+
         newModel =
           { model |
             floor = newFloor
@@ -1048,6 +1073,11 @@ updateByMoveEquipmentEnd id (x0, y0) (x1, y1) model =
       }
     else
       model
+
+candidatesOf : Model -> List Person
+candidatesOf model =
+  List.filterMap (\personId -> Dict.get personId model.personInfo) model.candidates
+
 
 shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =

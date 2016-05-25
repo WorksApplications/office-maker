@@ -1,4 +1,4 @@
-module View.ProfilePopup exposing(view) -- where
+module View.ProfilePopup exposing(view, innerView) -- where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -11,8 +11,6 @@ import Model.Equipments as Equipments exposing (..)
 view : Scale.Model -> (Int, Int) -> Equipment -> Person -> Html msg
 view scale (offsetX, offsetY) equipment person =
   let
-    url =
-      Maybe.withDefault "images/users/default.png" person.image
     (x, y, w, h) =
       rect equipment
     (screenX, screenY) =
@@ -20,15 +18,22 @@ view scale (offsetX, offsetY) equipment person =
   in
     div
       [ style (Styles.personDetailPopup (screenX, screenY)) ]
-      [ div [ style Styles.personDetailPopupClose ] [ Icons.popupClose ]
-      , img [ style Styles.personDetailPopupPersonImage, src url ] []
-      -- , div [ style Styles.popupPersonNo ] [ text person.no ]
-      , div [ style Styles.personDetailPopupPersonName ] [ text person.name ]
-      , tel person
-      , mail person
-      , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
-      , pointer
-      ]
+      (pointer :: innerView person)
+
+innerView : Person -> List (Html msg)
+innerView person =
+  let
+    url =
+      Maybe.withDefault "images/users/default.png" person.image
+  in
+    [ div [ style Styles.personDetailPopupClose ] [ Icons.popupClose ]
+    , img [ style Styles.personDetailPopupPersonImage, src url ] []
+    -- , div [ style Styles.popupPersonNo ] [ text person.no ]
+    , div [ style Styles.personDetailPopupPersonName ] [ text person.name ]
+    , tel person
+    , mail person
+    , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
+    ]
 
 pointer : Html msg
 pointer =

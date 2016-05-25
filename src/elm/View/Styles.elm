@@ -55,10 +55,7 @@ h1 =
 
 ul : S
 ul =
-  noMargin ++
-    [ ("list-style-type", "none")
-    , ("padding-left", "0")
-    ]
+  noMargin
 
 headerHeight : Int
 headerHeight = 37
@@ -639,4 +636,19 @@ mainView windowHeight =
 searchResultItemIcon : S
 searchResultItemIcon =
   [ ("width", "30px")
+  ]
+
+candidatesView : (Int, Int) -> S
+candidatesView (x, y) =
+  [ ("position", "absolute")
+  , ("top", px y)
+  , ("left", px x)
+  ] ++ shadow
+
+candidateItem : S
+candidateItem =
+  [ ("width", "300px")
+  , ("height", "160px")
+  , ("position", "relative")
+  , ("padding", "15px")
   ]
