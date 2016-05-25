@@ -10,9 +10,9 @@ var mock = require('./mock.js');
 
 function saveEquipments(floorId, floorVersion, equipments, cb) {
   var sqls = equipments.map((equipment) => {
-    return sql.replace('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
+    return sql.insert('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
   });
-  // sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]])));
+  sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]])));
   rdb.batch(sqls, cb);
 }
 function getEquipments(floorId, floorVersion, cb) {
