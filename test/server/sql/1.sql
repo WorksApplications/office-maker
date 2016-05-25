@@ -27,11 +27,12 @@ CREATE TABLE floors (
   realHeight int,
   public boolean,
   updateBy varchar(36),
-  updateAt bigint
+  updateAt bigint,
+  UNIQUE(id, version)
 );
 
 CREATE TABLE equipments (
-  id varchar(36) NOT NULL PRIMARY KEY,
+  id varchar(36) NOT NULL,
   name varchar(128) NOT NULL,
   x int NOT NULL,
   y int NOT NULL,
@@ -40,7 +41,8 @@ CREATE TABLE equipments (
   color varchar(64) NOT NULL,
   personId varchar(36),
   floorId varchar(36) NOT NULL,
-  floorVersion int NOT NULL
+  floorVersion int NOT NULL,
+  UNIQUE(id, floorId, floorVersion)
 );
 
 CREATE TABLE prototypes (
