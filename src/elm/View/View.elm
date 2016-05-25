@@ -4,12 +4,13 @@ import Dict
 import Maybe
 
 import Html exposing (..)
-import Html.App
+import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 import SearchBox
 import Header
+import EquipmentNameInput
 import View.Styles as Styles
 import View.Icons as Icons
 import View.MessageBar as MessageBar
@@ -109,26 +110,6 @@ transitionDisabled : Model -> Bool
 transitionDisabled model =
   not model.scaling
 
-nameInputView : Model -> Html Msg
-nameInputView model =
-  case model.editingEquipment of
-    Just (id, name) ->
-      case findEquipmentById (UndoRedo.data model.floor).equipments id of
-        Just (Desk id rect _ _ _) ->
-          let
-            styles =
-              Styles.deskInput (Scale.imageToScreenForRect model.scale rect) ++
-              Styles.transition (transitionDisabled model)
-          in
-            textarea
-              ([ Html.Attributes.id "name-input"
-              , style styles
-              ] ++ (FloorProperty.inputAttributes (InputName id) KeydownOnNameInput name (Just NoOp)))
-              [text name]
-        Nothing -> text ""
-    Nothing ->
-      text ""
-
 mainView : Model -> Html Msg
 mainView model =
   let
@@ -167,7 +148,7 @@ subViewForEdit model =
   let
     floorView =
       List.map
-        (Html.App.map FloorPropertyMsg)
+        (App.map FloorPropertyMsg)
         (FloorProperty.view model.visitDate model.user (UndoRedo.data model.floor) model.floorProperty)
   in
     [ card <| penView model
@@ -378,11 +359,25 @@ canvasView model =
         [ style [("width", "100%"), ("height", "100%")]
         , src (Maybe.withDefault "" (Floor.src floor))
         ] []
+
+    nameInput =
+      App.map EquipmentNameInputMsg <|
+        EquipmentNameInput.view
+          (screenRectOf model)
+          (transitionDisabled model)
+          model.equipmentNameInput
   in
     div
       [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
       ]
-      ((image :: (nameInputView model) :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
+      ((image :: nameInput :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
+
+screenRectOf : Model -> String -> Maybe (Int, Int, Int, Int)
+screenRectOf model id =
+  case findEquipmentById (UndoRedo.data model.floor).equipments id of
+    Just (Desk id rect _ _ _) ->
+      Just (Scale.imageToScreenForRect model.scale rect)
+    Nothing -> Nothing
 
 prototypePreviewView : List (Prototype, Bool) -> Bool -> Html Msg
 prototypePreviewView prototypes stampMode =
@@ -488,7 +483,7 @@ view : Model -> Html Msg
 view model =
   div
     []
-    [ Header.view (Just model.user) |> Html.App.map HeaderMsg
+    [ Header.view (Just model.user) |> App.map HeaderMsg
     , mainView model
     , Maybe.withDefault (text "") <|
         Maybe.map (DiffView.view model.visitDate model.personInfo { onClose = CloseDiff, onConfirm = ConfirmDiff }) model.diff -- TODO

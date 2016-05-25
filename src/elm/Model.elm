@@ -33,6 +33,7 @@ import Model.URL as URL
 import FloorProperty
 import SearchBox
 import Header exposing (..)
+import EquipmentNameInput
 
 type alias Floor = Floor.Model
 
@@ -46,7 +47,7 @@ type alias Model =
   , draggingContext : DraggingContext
   , selectedEquipments : List Id
   , copiedEquipments : List Equipment
-  , editingEquipment : Maybe (Id, String)
+  , equipmentNameInput : EquipmentNameInput.Model
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
   , keys : ShortCut.Model
@@ -107,7 +108,7 @@ init randomSeed initialSize initialHash visitDate =
     , draggingContext = None
     , selectedEquipments = []
     , copiedEquipments = []
-    , editingEquipment = Nothing
+    , equipmentNameInput = EquipmentNameInput.init
     , gridSize = gridSize
     , selectorRect = Nothing
     , keys = ShortCut.init
@@ -153,8 +154,7 @@ type Msg = NoOp
   | StartEditEquipment Id
   | KeyCodeMsg Bool Int
   | SelectColor String
-  | InputName Id String
-  | KeydownOnNameInput Int
+  | EquipmentNameInputMsg EquipmentNameInput.Msg
   | ShowContextMenuOnEquipment Id
   | SelectIsland Id
   | WindowSize (Int, Int)
@@ -441,11 +441,11 @@ update action model =
     MouseDownOnCanvas ->
       let
         (model', cmd) =
-          case model.editingEquipment of
-            Just (id, name) ->
-              updateOnFinishNameInput id name model
-            Nothing ->
-              (model, Cmd.none)
+          case EquipmentNameInput.forceFinish model.equipmentNameInput of
+            (equipmentNameInput, EquipmentNameInput.OnFinish id name) ->
+              updateOnFinishNameInput id name { model | equipmentNameInput = equipmentNameInput }
+            (equipmentNameInput, _) ->
+              { model | equipmentNameInput = equipmentNameInput } ! []
 
         (clientX, clientY) =
           model.pos
@@ -466,21 +466,27 @@ update action model =
               PenFromScreenPos (clientX, clientY)
             Select -> ShiftOffsetPrevScreenPos
 
+        (model'', cmd2) =
+          case EquipmentNameInput.forceFinish model.equipmentNameInput of
+            (equipmentNameInput, EquipmentNameInput.OnFinish id name) ->
+              updateOnFinishNameInput id name { model | equipmentNameInput = equipmentNameInput }
+            (equipmentNameInput, _) ->
+              { model | equipmentNameInput = equipmentNameInput } ! []
+
         newModel =
-          { model' |
+          { model'' |
             selectedEquipments = []
           , selectorRect = selectorRect
-          , editingEquipment = Nothing
           , contextMenu = NoContextMenu
           , draggingContext = draggingContext
           }
       in
-        newModel ! [ cmd ]
+        newModel ! [ cmd, cmd2 ]
     StartEditEquipment id ->
       case findEquipmentById (UndoRedo.data model.floor).equipments id of
         Just e ->
           { model |
-            editingEquipment = Just (idOf e, nameOf e)
+            equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
           , contextMenu = NoContextMenu
           } ! [ focusCmd "name-input" ]
         Nothing ->
@@ -495,47 +501,24 @@ update action model =
           saveFloorCmd (UndoRedo.data newModel.floor)
       in
         newModel ! [ cmd ]
-    InputName id name ->
+
+    EquipmentNameInputMsg message ->
       let
-        newModel =
+        (equipmentNameInput, event) =
+          EquipmentNameInput.update model.keys message model.equipmentNameInput
+        model' =
           { model |
-            editingEquipment =
-              case model.editingEquipment of
-                Just (id', name') ->
-                  if id == id' then
-                    Just (id, name)
-                  else
-                    Just (id', name')
-                Nothing -> Nothing
+            equipmentNameInput = equipmentNameInput
           }
-        cmd = performAPI (GotCandidateSelection id) <|
-          API.personCandidate name
       in
-        newModel ! [ cmd ]
-    KeydownOnNameInput keyCode ->
-      let
-        (newModel, cmd) =
-          if keyCode == 13 && not model.keys.ctrl then
-            case model.editingEquipment of
-              Just (id, name) ->
-                updateOnFinishNameInput id name model
-              Nothing ->
-                (model, Cmd.none)
-          else if keyCode == 13 then
-            let
-              newModel =
-                { model |
-                  editingEquipment =
-                    case model.editingEquipment of
-                      Just (id, name) -> Just (id, name ++ "\n")
-                      Nothing -> Nothing
-                }
-            in
-              (newModel, Cmd.none)
-          else
-            (model, Cmd.none)
-      in
-        newModel ! [ cmd ]
+        case event of
+          EquipmentNameInput.OnInput id name ->
+            model' ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
+          EquipmentNameInput.OnFinish id name ->
+            updateOnFinishNameInput id name model'
+          EquipmentNameInput.None ->
+            model' ! []
+
     ShowContextMenuOnEquipment id ->
       let
         (clientX, clientY) = model.pos
@@ -892,7 +875,7 @@ updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput id name model =
   let
     allEquipments = (UndoRedo.data model.floor).equipments
-    (editingEquipment, cmd) =
+    (equipmentNameInput, cmd) =
       case findEquipmentById allEquipments id of
         Just equipment ->
           let
@@ -913,13 +896,16 @@ updateOnFinishNameInput id name model =
                       Task.succeed (UpdatePersonCandidate id (List.map .id people))
                   in
                     performAPI identity task
-            newEditingEquipment =
+            newEquipmentNameInput =
               case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
-                Just equipment -> Just (idOf equipment, nameOf equipment)
-                Nothing -> Nothing
+                Just equipment ->
+                  EquipmentNameInput.start (idOf equipment, nameOf equipment) model.equipmentNameInput
+                Nothing ->
+                  model.equipmentNameInput
           in
-            (newEditingEquipment, cmd)
-        Nothing -> (Nothing, Cmd.none)
+            (newEquipmentNameInput, cmd)
+        Nothing ->
+          (model.equipmentNameInput, Cmd.none)
     newFloor =  --TODO if name really changed
       UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
 
@@ -928,7 +914,7 @@ updateOnFinishNameInput id name model =
     newModel =
       { model |
         floor = newFloor
-      , editingEquipment = editingEquipment
+      , equipmentNameInput = equipmentNameInput
       , candidates = []
       }
   in
@@ -1034,7 +1020,7 @@ updateByKeyEvent event model =
                 let
                   newModel =
                     { model |
-                      editingEquipment = Just (idOf e, nameOf e)
+                      equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
                     , contextMenu = NoContextMenu
                     }
                 in
