@@ -68,6 +68,7 @@ type alias Model =
   , isEditing : Bool
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
+  , candidates : List Id
   }
 
 type ContextMenu =
@@ -128,6 +129,7 @@ init randomSeed initialSize initialHash visitDate =
     , isEditing = False
     , personInfo = Dict.empty
     , diff = Nothing
+    , candidates = []
     }
   , Task.perform (always NoOp) identity (Task.succeed Init)
   )
@@ -168,6 +170,7 @@ type Msg = NoOp
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
   | RegisterPeople (List Person)
+  | GotCandidateSelection Id (List Person)
   | UpdatePersonCandidate Id (List Id)
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
@@ -505,8 +508,10 @@ update action model =
                     Just (id', name')
                 Nothing -> Nothing
           }
+        cmd = performAPI (GotCandidateSelection id) <|
+          API.personCandidate name
       in
-        newModel ! []
+        newModel ! [ cmd ]
     KeydownOnNameInput keyCode ->
       let
         (newModel, cmd) =
@@ -731,6 +736,16 @@ update action model =
         personInfo =
           addAll (.id) people model.personInfo
       } ! []
+    GotCandidateSelection equipmentId people ->
+      let
+        newModel =
+          { model |
+            personInfo =
+              addAll (.id) people model.personInfo
+          , candidates = List.map .id people
+          }
+      in
+        newModel ! []
     UpdatePersonCandidate equipmentId personIds ->
       let
         newFloor =
@@ -914,6 +929,7 @@ updateOnFinishNameInput id name model =
       { model |
         floor = newFloor
       , editingEquipment = editingEquipment
+      , candidates = []
       }
   in
     newModel ! [ cmd, cmd2 ]

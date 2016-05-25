@@ -131,7 +131,7 @@ search withPrivate query =
 personCandidate : String -> Task Error (List Person)
 personCandidate name =
     getJsonWithoutCache
-      decodePersons <| Debug.log "url" <|
+      decodePersons <| -- Debug.log "url" <|
       ("/api/v1/candidate/" ++ Http.uriEncode name)
 
 saveEditingImage : Id -> File -> Task a ()
