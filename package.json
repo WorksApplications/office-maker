@@ -9,7 +9,6 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "alasql": "^0.2.6",
     "async": "^2.0.0-rc.5",
     "body-parser": "^1.15.0",
     "chai": "^3.5.0",
