@@ -32,7 +32,7 @@ function inTransaction(f) {
         res.status(500).send('');
       } else {
         var originalSend = res.send;
-        var newRes = Object.assign(res, {
+        var newRes = Object.assign({}, res, {
           send: function() {
             var args = arguments;
             if(res.statusCode < 400) {
