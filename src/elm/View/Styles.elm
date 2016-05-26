@@ -427,16 +427,28 @@ floorsInfoView =
     ]
 
 floorsInfoViewItem : Bool -> Bool -> S
-floorsInfoViewItem selected public =
-    [ ("background-color", if public then "#fff" else "#aaa")
-    , ("padding", "8px 12px")
+floorsInfoViewItem selected private =
+    [ ("background-color", if private then "#eee" else "#fff")
     , ("border-right", if selected then "solid 2px " ++ selectColor else "solid 1px #ddd")
     , ("border-bottom", if selected then "solid 2px " ++ selectColor else "solid 1px #ddd")
     , ("border-top", if selected then "solid 2px " ++ selectColor else "none")
     , ("border-left", if selected then "solid 2px " ++ selectColor else "none")
     , ("min-width", "60px")
-    , ("text-align", "center")
     , ("box-sizing", "border-box")
+    , ("height", "37px")
+    , ("position", "relative")
+    ]
+
+floorsInfoViewItemLink : S
+floorsInfoViewItemLink =
+    [ ("text-decoration", "none")
+    , ("display", "block")
+    , ("left", "0")
+    , ("right", "0")
+    , ("position", "absolute")
+    , ("text-align", "center")
+    , ("vertical-align", "middle")
+    , ("line-height", "37px")
     ]
 
 subViewTab : Int -> Bool -> S
