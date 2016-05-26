@@ -7,8 +7,8 @@ var pool = mysql.createPool({
   database : 'map2'
 });
 
-function exec(connection, sql, cb) {
-  connection.query(sql, (e, rows, fields) => {
+function exec(conn, sql, cb) {
+  conn.query(sql, (e, rows, fields) => {
     if(e) {
       cb(e);
     } else {
@@ -25,57 +25,94 @@ function exec(connection, sql, cb) {
         cb && cb(null, rows);
       } catch(e) {
         console.trace();
-        console.log('exec', e);
+        console.log(e);
       }
     }
   });
 }
-function inTransaction(process, cb) {
-  pool.getConnection(function(e, connection) {
+function forConnection(onGetConnection) {
+  pool.getConnection(function(e, conn) {
     if(e) {
-      cb(e);
+      onGetConnection(e);
     } else {
-      connection.beginTransaction(function(e) {
-        if(e) {
-          cb(e);
-        } else {
+      try {
+        onGetConnection(null, conn, function done(onClose) {
           try {
-            process(connection, {
-              success: function(cb) {
-                var callbackArgs = arguments;
-                connection.commit(function(e) {
-                  if(e) {
-                    // console.log(e);
-                    connection.rollback(function() {
-                      connection.release();
-                      cb && cb(e);
-                    });
-                  } else {
-                    connection.release();
-                    cb && cb();
-                  }
+            conn.release();
+          } catch(e) {
+            console.log(e);
+          }
+          onClose && onClose();
+        });
+      } catch(e) {
+        console.log(e);
+        try {
+          conn.release();
+        } catch(e) {
+          console.log(e);
+        }
+      }
+    }
+  });
+}
+function forTransaction(conn, onBeginTransaction) {
+  conn.beginTransaction(function(e) {
+    if(e) {
+      onBeginTransaction(e);
+    } else {
+      try {
+        onBeginTransaction(null, function done(e, onFinishCommit) {
+          if(e) {
+            conn.rollback(function(e) {
+              onFinishCommit && onFinishCommit(e);
+            });
+          } else {
+            var callbackArgs = arguments;
+            conn.commit(function(e) {
+              if(e) {
+                // console.log(e);
+                conn.rollback(function() {
+                  onFinishCommit && onFinishCommit(e);
                 });
-              },
-              fail: function(cb) {
-                connection.rollback(function(e) {
-                  cb && cb(e);
-                });
+              } else {
+                onFinishCommit && onFinishCommit();
               }
             });
-          } catch(e) {
-            // console.log(e);
-            connection.rollback(function() {
-              connection.release();
-              cb(e);
-            });
           }
-
+        });
+      } catch(e) {
+        conn.rollback(function() {
+          onBeginTransaction(e);
+        });
+      }
+    }
+  });
+}
+function forConnectionAndTransaction(f) {
+  forConnection(function(e, conn, connectionDone) {
+    if(e) {
+      f(e);
+    } else {
+      forTransaction(conn, function(e, commitDone) {
+        if(e) {
+          f(e);
+        } else {
+          f(null, conn, function(e, onConnectionDone) {
+            commitDone(e, function() {
+              connectionDone(onConnectionDone);
+            });
+          });
         }
       });
     }
   });
 }
 function batch(conn, list, cb) {
+  if(!conn) {
+    console.log('connection does not exist');
+    // console.trace();
+    throw 'connection does not exist';
+  }
   var list = list.concat();
   var head = list.shift();
   var tail = list;
@@ -102,5 +139,7 @@ function batch(conn, list, cb) {
 module.exports = {
   exec: exec,
   batch: batch,
-  inTransaction: inTransaction
+  forConnection: forConnection,
+  forTransaction: forTransaction,
+  forConnectionAndTransaction: forConnectionAndTransaction
 };

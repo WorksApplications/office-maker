@@ -133,6 +133,11 @@ function publishFloor(conn, newFloor, cb) {
 }
 
 function saveUser(conn, user, cb) {
+  if(!conn) {
+    console.log('connection does not exist');
+    console.trace();
+    throw 'connection does not exist';
+  }
   rdb.batch(conn, [
     // sql.delete('users', sql.where('id', user.id)),
     sql.replace('users', schema.userKeyValues(user))
@@ -265,24 +270,38 @@ function saveColors(conn, newColors, cb) {
 }
 
 function init(conn, cb) {
+
   _async.series(mock.users.map((user) => {
-    return saveUser.bind(null, conn, user);
+    return function(cb) {
+      saveUser(conn, user, cb);
+    };
   }).concat(mock.people.map((person) => {
-    return savePerson.bind(null, conn, person);
+    return function(cb) {
+      savePerson(conn, person, cb);
+    };
   })).concat([
-    savePrototypes.bind(null, conn, mock.prototypes)
+    function(cb) {
+      savePrototypes(conn, mock.prototypes, cb);
+    }
   ]).concat([
-    saveColors.bind(null, conn, mock.colors)
+    function(cb) {
+      saveColors.bind(conn, mock.colors, cb)
+    }
   ]), cb);
 }
-rdb.inTransaction((conn, notify) => {
-  init(conn, (e) => {
-    if(e) {
-      notify.fail();
-    } else {
-      notify.success();
-    }
-  });
+rdb.forConnectionAndTransaction((e, conn, done) => {
+  if(e) {
+    done(e);
+  } else {
+    init(conn, (e) => {
+      // console.log('init done?', e);
+      if(e) {
+        done(true);
+      } else {
+        done();
+      }
+    });
+  }
 });
 
 

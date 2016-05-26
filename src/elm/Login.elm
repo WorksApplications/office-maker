@@ -52,6 +52,7 @@ update message model =
         model ! [ Task.perform Error (always Success) task ]
     Error e ->
       let
+        _ = Debug.log "Error"
         message =
           case e of
             Http.NetworkError ->
@@ -61,6 +62,9 @@ update message model =
       in
         {model | error = Just message} ! []
     Success ->
+      let
+        _ = Debug.log "Success"
+      in
         model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
     NoOp ->
         model ! []
