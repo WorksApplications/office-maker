@@ -32,10 +32,15 @@ function inTransaction(f) {
         res.status(500).send('');
       } else {
         var originalSend = res.send;
+        var originalStatus = res.status;
         var newRes = Object.assign({}, res, {
+          status: function() {
+            var args = arguments;
+            return originalStatus.apply(res, args);
+          },
           send: function() {
             var args = arguments;
-            if(res.statusCode < 400) {
+            if(res.statusCode >= 400) {
               done(true, function(rollbackFailed) {
                 if(rollbackFailed) {
                   console.log(rollbackFailed);
@@ -46,7 +51,8 @@ function inTransaction(f) {
               done(false, function(commitFailed) {
                 if(commitFailed) {
                   console.log(commitFailed);
-                  res.status(500);
+                  newRes.status(500);
+                  // res.status(500);
                 }
                 originalSend.apply(res, args);
               });
@@ -93,7 +99,7 @@ function role(conn, req, cb) {
       if(e) {
         cb(e);
       } else {
-        cb(null, user.role);
+        cb(null, user.role, user);
       }
     });
   }
@@ -285,7 +291,7 @@ app.get('/api/v1/candidate/:name', inTransaction((conn, req, res) => {
   });
 }));
 app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
-  role(conn, req, (e, role) => {
+  role(conn, req, (e, role, user) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -295,7 +301,7 @@ app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
       res.status(401).send('');
       return;
     }
-    var id = req.params.id;
+    var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
     console.log('get: ' + id);
     db.getFloorWithEquipments(conn, true, id, (e, floor) => {
       if(e) {
@@ -311,23 +317,30 @@ app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
   });
 }));
 app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
-  var id = req.params.id;
-  console.log('get: ' + id);
-  db.getFloorWithEquipments(conn, false, id, (e, floor) => {
-    if(e) {
-      console.log(e);
-      res.status(500).send('');
+  role(conn, req, (e, role, user) => {
+    if(role === 'guest' && req.params.id === 'draft') {
+      res.status(404).send('not found by id: ' + req.params.id);//401?
       return;
     }
-    if(floor) {
-      res.send(floor);
-    } else {
-      res.status(404).send('not found by id: ' + id);
-    }
+    var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
+    console.log('get: ' + id);
+    db.getFloorWithEquipments(conn, false, id, (e, floor) => {
+      if(e) {
+        console.log(e);
+        res.status(500).send('');
+        return;
+      }
+      if(floor) {
+        res.send(floor);
+      } else {
+        res.status(404).send({ message : 'not found by id: ' + id });
+      }
+    });
   });
+
 }));
 app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
-  role(conn, req, (e, role) => {
+  role(conn, req, (e, role, user) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -337,9 +350,8 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
       res.status(401).send('');
       return;
     }
-    var id = req.params.id;
     var newFloor = req.body;
-    if(id !== newFloor.id) {
+    if(newFloor.id && req.params.id !== newFloor.id) {
       res.status(400).send('');
       return;
     }
@@ -347,6 +359,8 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
       res.status(400).send('');
       return;
     }
+    var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
+    newFloor.id = id
     newFloor.public = false;
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();

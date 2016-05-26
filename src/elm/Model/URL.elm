@@ -4,26 +4,34 @@ import Dict
 import String
 import Http
 import Util.UrlParser as UrlParser
-import Util.HttpUtil as HttpUtil
-import Task exposing (..)
+import Navigation
 
 type alias Model =
-  { rawHash : String -- deprecated
-  , floorId: String
+  { floorId: String
   , query : Maybe String
   , personId : Maybe String
   }
 
-parse : String -> Model
-parse hash =
+parse : Navigation.Location -> Result String Model
+parse location =
   let
-    hash' = String.dropLeft 1 hash
-    (floorId, dict) = UrlParser.parse hash'
+    floorId = String.dropLeft 1 location.hash
+    dict = UrlParser.parseSearch location.search
   in
-    { rawHash = hash
-    , floorId = Maybe.withDefault "" (List.head floorId)
-    , query = Dict.get "q" dict
-    , personId = Dict.get "person" dict
+    if String.length floorId == 36 || String.length floorId == 0 then
+      Ok
+        { floorId = floorId
+        , query = Dict.get "q" dict
+        , personId = Dict.get "person" dict
+        }
+    else
+      Err ("invalid floorId: " ++ floorId)
+
+dummy : Model
+dummy =
+    { floorId = ""
+    , query = Nothing
+    , personId = Nothing
     }
 
 stringify : Model -> String
@@ -34,18 +42,25 @@ stringify { floorId, query, personId } =
         (\(key, maybeValue) -> Maybe.map (\v -> (key, v)) maybeValue)
         [ ("q", query), ("personId", personId) ]
   in
-    "#" ++ Http.url floorId params
+    Http.url "" params ++ "#" ++ floorId
 
-updateQuery : String -> Model -> Task a ()
+validate : Model -> Model
+validate model =
+  if String.length model.floorId == 36 || String.length model.floorId == 0 then
+    model
+  else
+    updateFloorId Nothing model
+
+updateQuery : String -> Model -> Model
 updateQuery newQuery model =
-  let
-    url = stringify { model | query = Just newQuery }
-  in
-    HttpUtil.goTo url
+  { model | query = Just newQuery }
 
-updateFloorId : String -> Model -> Task a ()
+updateFloorId : Maybe String -> Model -> Model
 updateFloorId newId model =
-  let
-    url = stringify { model | floorId = newId }
-  in
-    HttpUtil.goTo url
+  { model | floorId = Maybe.withDefault "" newId }
+
+hashFromFloorId : Maybe String -> String
+hashFromFloorId floorId =
+  "#" ++ Maybe.withDefault "" floorId
+
+--

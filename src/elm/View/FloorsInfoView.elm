@@ -4,18 +4,19 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import View.Styles as Styles
 
+import Model.URL as URL
 import Model.Floor
 
 type alias Floor = Model.Floor.Model
 
-view : String -> List Floor -> Html msg
+view : Maybe String -> List Floor -> Html msg
 view currentFloorId floors =
   let
     each floor =
       li
         [ style (Styles.floorsInfoViewItem (currentFloorId == floor.id) floor.public)
         ]
-        [ a [ href ("#" ++ floor.id) ] [ text floor.name ]
+        [ a [ href (URL.hashFromFloorId floor.id) ] [ text floor.name ]
         ]
   in
     ul

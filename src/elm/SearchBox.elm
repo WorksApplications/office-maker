@@ -65,13 +65,16 @@ searchCmd withPrivate query =
   Task.perform Error Results (API.search withPrivate query)
 
 
-equipmentsInFloor : String -> Model -> List Equipment
-equipmentsInFloor floorId model =
+equipmentsInFloor : Maybe String -> Model -> List Equipment
+equipmentsInFloor maybeId model =
   case model.results of
     Nothing ->
       []
     Just results ->
-      List.filterMap (\(e, id) -> if id == floorId then Just e else Nothing) results
+      let
+        targetId = Maybe.withDefault "draft" maybeId
+      in
+        List.filterMap (\(e, id) -> if id == targetId then Just e else Nothing) results
 
 view : (Msg -> msg) -> Bool -> Model -> Html msg
 view translateMsg searchWithPrivate model =
