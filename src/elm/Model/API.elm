@@ -20,6 +20,7 @@ module Model.API exposing (
     , Error
   ) -- where
 
+import String
 import Http
 import Task exposing (Task)
 
@@ -130,6 +131,9 @@ search withPrivate query =
 
 personCandidate : String -> Task Error (List Person)
 personCandidate name =
+  if String.isEmpty name then
+    Task.succeed []
+  else
     getJsonWithoutCache
       decodePersons <| -- Debug.log "url" <|
       ("/api/v1/candidate/" ++ Http.uriEncode name)

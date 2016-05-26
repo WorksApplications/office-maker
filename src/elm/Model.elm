@@ -915,22 +915,30 @@ updateOnFinishNameInput id name model =
                 Nothing ->
                   let
                     task =
-                      API.personCandidate name `onError`
-                      HttpUtil.recover404With [] `andThen` \people ->
+                      API.personCandidate name `andThen` \people ->
                       Task.succeed (RegisterPeople people) `andThen` \_ ->
                       Task.succeed (UpdatePersonCandidate id (List.map .id people))
                   in
                     performAPI identity task
             newEquipmentNameInput =
               case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
-                Just equipment ->
-                  EquipmentNameInput.start (idOf equipment, nameOf equipment) model.equipmentNameInput
+                Just e ->
+                  if idOf equipment == idOf e then
+                    model.equipmentNameInput
+                  else
+                    EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
                 Nothing ->
                   model.equipmentNameInput
           in
             (newEquipmentNameInput, cmd)
         Nothing ->
           (model.equipmentNameInput, Cmd.none)
+    selectedEquipments =
+      case equipmentNameInput.editingEquipment of
+        Just (id, _) ->
+          [id]
+        Nothing ->
+          []
     newFloor =  --TODO if name really changed
       UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
 
@@ -941,6 +949,7 @@ updateOnFinishNameInput id name model =
         floor = newFloor
       , equipmentNameInput = equipmentNameInput
       , candidates = []
+      , selectedEquipments = selectedEquipments
       }
   in
     newModel ! [ cmd, cmd2 ]

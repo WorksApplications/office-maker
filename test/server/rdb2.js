@@ -24,7 +24,7 @@ function exec(conn, sql, cb) {
       try {
         cb && cb(null, rows);
       } catch(e) {
-        console.trace();
+        // console.trace();
         console.log(e);
       }
     }
