@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var filestorage = require('./filestorage.js');
 var db = require('./db.js');
+var rdb = require('./rdb2.js');
 
 var publicDir = __dirname + '/public';
 
@@ -48,6 +49,42 @@ app.post('/api/v1/logout', (req, res) => {
 });
 
 app.use(express.static(publicDir));
+
+function inTransaction(f) {
+  return function(req, res) {
+    rdb.inTransaction((conn, notify) => {
+      var originalSend = res.send;
+      var newRes = Object.assign({}, res, {
+        send: function() {
+          var args = arguments;
+          if(res.statusCode < 400) {
+            notify.fail(function(rollbackFailed) {
+              if(rollbackFailed) {
+                console.log(rollbackFailed);
+              }
+              originalSend.apply(res, args);
+            });
+          } else {
+            notify.success(function(commitFailed) {
+              if(commitFailed) {
+                console.log(commitFailed);
+                res.status(500);
+              }
+              originalSend.apply(res, args);
+            });
+          }
+
+        }
+      });
+      f(conn, req, newRes);
+
+
+    });
+
+
+  }
+}
+
 
 function role(req, cb) {
   if(!req.session.user) {
