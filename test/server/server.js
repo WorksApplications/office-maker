@@ -24,15 +24,50 @@ function hash(str) {
   return str;//TODO
 }
 
+function inTransaction(f) {
+  return function(req, res) {
+    rdb.forConnectionAndTransaction((e, conn, done) => {
+      if(e) {
+        console.log(e)
+        res.status(500).send('');
+      } else {
+        var originalSend = res.send;
+        var newRes = Object.assign(res, {
+          send: function() {
+            var args = arguments;
+            if(res.statusCode < 400) {
+              done(true, function(rollbackFailed) {
+                if(rollbackFailed) {
+                  console.log(rollbackFailed);
+                }
+                originalSend.apply(res, args);
+              });
+            } else {
+              done(false, function(commitFailed) {
+                if(commitFailed) {
+                  console.log(commitFailed);
+                  res.status(500);
+                }
+                originalSend.apply(res, args);
+              });
+            }
+          }
+        });
+        f(conn, req, newRes);
+      }
+
+    });
+  }
+}
+
 /* Login NOT required */
-app.post('/api/v1/login', (req, res) => {
+app.post('/api/v1/login', inTransaction((conn, req, res) => {
   var id = req.body.id;
   var pass = req.body.pass;
-  db.getUser(id, (e, user) => {
+  db.getUser(conn, id, (e, user) => {
     if(e) {
       res.status(500).send('');
     } else {
-      console.log(pass, user);
       if(hash(pass) === user.pass) {
         req.session.user = id;
         res.send({});
@@ -41,7 +76,7 @@ app.post('/api/v1/login', (req, res) => {
       }
     }
   });
-});
+}));
 
 app.post('/api/v1/logout', (req, res) => {
   req.session.user = null;
@@ -50,47 +85,11 @@ app.post('/api/v1/logout', (req, res) => {
 
 app.use(express.static(publicDir));
 
-function inTransaction(f) {
-  return function(req, res) {
-    rdb.inTransaction((conn, notify) => {
-      var originalSend = res.send;
-      var newRes = Object.assign({}, res, {
-        send: function() {
-          var args = arguments;
-          if(res.statusCode < 400) {
-            notify.fail(function(rollbackFailed) {
-              if(rollbackFailed) {
-                console.log(rollbackFailed);
-              }
-              originalSend.apply(res, args);
-            });
-          } else {
-            notify.success(function(commitFailed) {
-              if(commitFailed) {
-                console.log(commitFailed);
-                res.status(500);
-              }
-              originalSend.apply(res, args);
-            });
-          }
-
-        }
-      });
-      f(conn, req, newRes);
-
-
-    });
-
-
-  }
-}
-
-
-function role(req, cb) {
+function role(conn, req, cb) {
   if(!req.session.user) {
     cb(null, "guest")
   } else {
-    db.getUser(req.session.user, (e, user) => {
+    db.getUser(conn, req.session.user, (e, user) => {
       if(e) {
         cb(e);
       } else {
@@ -116,9 +115,9 @@ app.get('/logout', (req, res) => {
   req.session.user = null;
   res.redirect('/login');
 });
-app.get('/api/v1/people/:id', (req, res) => {
+app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
   var id = req.params.id;
-  db.getPerson(id, (e, person) => {
+  db.getPerson(conn, id, (e, person) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -130,11 +129,11 @@ app.get('/api/v1/people/:id', (req, res) => {
     }
     res.send(person);
   });
-});
-app.get('/api/v1/auth', (req, res) => {
+}));
+app.get('/api/v1/auth', inTransaction((conn, req, res) => {
   var id = req.session.user;
   if(id) {
-    db.getUserWithPerson(id, (e, user) => {
+    db.getUserWithPerson(conn, id, (e, user) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -145,9 +144,9 @@ app.get('/api/v1/auth', (req, res) => {
   } else {
     res.send({});
   }
-});
-app.get('/api/v1/prototypes', (req, res) => {
-  role(req, (e, role) => {
+}));
+app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -157,7 +156,7 @@ app.get('/api/v1/prototypes', (req, res) => {
       res.status(401).send('');
       return;
     }
-    db.getPrototypes((e, prototypes) => {
+    db.getPrototypes(conn, (e, prototypes) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -166,9 +165,9 @@ app.get('/api/v1/prototypes', (req, res) => {
       res.send(prototypes);
     });
   });
-});
-app.put('/api/v1/prototypes', (req, res) => {
-  role(req, (e, role) => {
+}));
+app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -183,7 +182,7 @@ app.put('/api/v1/prototypes', (req, res) => {
       res.status(403).send('');
       return;
     }
-    db.savePrototypes(prototypes, (e) => {
+    db.savePrototypes(conn, prototypes, (e) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -192,9 +191,9 @@ app.put('/api/v1/prototypes', (req, res) => {
       res.send();
     });
   });
-});
-app.get('/api/v1/colors', (req, res) => {
-  role(req, (e, role) => {
+}));
+app.get('/api/v1/colors', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -204,7 +203,7 @@ app.get('/api/v1/colors', (req, res) => {
       res.status(401).send('');
       return;
     }
-    db.getColors((e, colors) => {
+    db.getColors(conn, (e, colors) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -213,9 +212,9 @@ app.get('/api/v1/colors', (req, res) => {
       res.send(colors);
     });
   });
-});
-app.put('/api/v1/colors', (req, res) => {
-  role(req, (e, role) => {
+}));
+app.put('/api/v1/colors', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -230,7 +229,7 @@ app.put('/api/v1/colors', (req, res) => {
       res.status(403).send('');
       return;
     }
-    db.saveColors(colors, (e) => {
+    db.saveColors(conn, colors, (e) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -239,10 +238,10 @@ app.put('/api/v1/colors', (req, res) => {
       res.send();
     });
   });
-});
-app.get('/api/v1/floors', (req, res) => {
+}));
+app.get('/api/v1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  role(req, (e, role) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -252,7 +251,7 @@ app.get('/api/v1/floors', (req, res) => {
       res.status(401).send('');
       return;
     }
-    db.getFloorsWithEquipments(options.all, (e, floors) => {
+    db.getFloorsWithEquipments(conn, options.all, (e, floors) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -261,11 +260,11 @@ app.get('/api/v1/floors', (req, res) => {
       res.send(floors);
     });
   });
-});
-app.get('/api/v1/search/:query', (req, res) => {
+}));
+app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  db.search(query, options.all, (e, results) => {
+  db.search(conn, query, options.all, (e, results) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -273,10 +272,10 @@ app.get('/api/v1/search/:query', (req, res) => {
     }
     res.send(results);
   });
-});
-app.get('/api/v1/candidate/:name', (req, res) => {
+}));
+app.get('/api/v1/candidate/:name', inTransaction((conn, req, res) => {
   var name = req.params.name;
-  db.getCandidate(name, (e, results) => {
+  db.getCandidate(conn, name, (e, results) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -284,9 +283,9 @@ app.get('/api/v1/candidate/:name', (req, res) => {
     }
     res.send(results);
   });
-});
-app.get('/api/v1/floor/:id/edit', (req, res) => {
-  role(req, (e, role) => {
+}));
+app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -298,7 +297,7 @@ app.get('/api/v1/floor/:id/edit', (req, res) => {
     }
     var id = req.params.id;
     console.log('get: ' + id);
-    db.getFloorWithEquipments(true, id, (e, floor) => {
+    db.getFloorWithEquipments(conn, true, id, (e, floor) => {
       if(e) {
         res.status(500).send('');
         return;
@@ -310,11 +309,11 @@ app.get('/api/v1/floor/:id/edit', (req, res) => {
       }
     });
   });
-});
-app.get('/api/v1/floor/:id', (req, res) => {
+}));
+app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
   var id = req.params.id;
   console.log('get: ' + id);
-  db.getFloorWithEquipments(false, id, (e, floor) => {
+  db.getFloorWithEquipments(conn, false, id, (e, floor) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -326,9 +325,9 @@ app.get('/api/v1/floor/:id', (req, res) => {
       res.status(404).send('not found by id: ' + id);
     }
   });
-});
-app.put('/api/v1/floor/:id/edit', (req, res) => {
-  role(req, (e, role) => {
+}));
+app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -352,7 +351,7 @@ app.put('/api/v1/floor/:id/edit', (req, res) => {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloorWithEquipments(newFloor, false, (e) => {
+    db.saveFloorWithEquipments(conn, newFloor, false, (e) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -363,11 +362,11 @@ app.put('/api/v1/floor/:id/edit', (req, res) => {
       res.send({});
     });
   });
-});
+}));
 
 // publish
-app.post('/api/v1/floor/:id', (req, res) => {
-  role(req, (e, role) => {
+app.post('/api/v1/floor/:id', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -395,24 +394,24 @@ app.post('/api/v1/floor/:id', (req, res) => {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.ensureFloor(id, () => {
-      db.publishFloor(newFloor, (e) => {
-        if(e) {
-          console.log(e);
-          res.status(500).send('');
-          return;
-        }
-        console.log('published floor: ' + id);
-        // console.log(newFloor);
-        res.send({});
-      });
+
+    db.publishFloor(conn, newFloor, (e) => {
+      if(e) {
+        console.log(e);
+        res.status(500).send('');
+        return;
+      }
+      console.log('published floor: ' + id);
+      // console.log(newFloor);
+      res.send({});
     });
+
   });
 
-});
+}));
 
-app.put('/api/v1/image/:id', (req, res) => {
-  role(req, (e, role) => {
+app.put('/api/v1/image/:id', inTransaction((conn, req, res) => {
+  role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -429,7 +428,7 @@ app.put('/api/v1/image/:id', (req, res) => {
     });
     req.on('end', () => {
       var image = Buffer.concat(all);
-      db.saveImage('images/floors/' + id, image, (e) => {
+      db.saveImage(conn, 'images/floors/' + id, image, (e) => {
         if(e) {
           res.status(500).send('' + e);
         } else {
@@ -438,12 +437,12 @@ app.put('/api/v1/image/:id', (req, res) => {
       });
     })
   });
-});
+}));
 process.on('uncaughtException', (e) => {
   console.log('uncaughtException');
-  console.log(e);
+  console.log(e.stack);
 });
-db.resetImage('images/floors', () => {
+db.resetImage(null, 'images/floors', () => {
   app.listen(3000, function () {
     console.log('mock server listening on port 3000.');
   });
