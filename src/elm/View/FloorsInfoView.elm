@@ -12,6 +12,7 @@ type alias Floor = Model.Floor.Model
 view : Maybe String -> List Floor -> Html msg
 view currentFloorId floors =
   let
+    _ = Debug.log "currentFloorId, floor.id" (currentFloorId, List.map .id floors)
     each floor =
       li
         [ style (Styles.floorsInfoViewItem (currentFloorId == floor.id) floor.public)

@@ -263,6 +263,11 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
+      floors.forEach(function(floor) {
+        if(floor.id.startsWith('tmp')) {
+          floor.id = null;
+        }
+      })
       res.send(floors);
     });
   });
@@ -276,6 +281,11 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
       res.status(500).send('');
       return;
     }
+    results.forEach(function(r) {
+      if(r[1] && r[1].startsWith('tmp')) {
+        r[1] = 'draft';
+      }
+    })
     res.send(results);
   });
 }));
@@ -309,6 +319,9 @@ app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
         return;
       }
       if(floor) {
+        if(floor.id.startsWith('tmp')) {
+          floor.id = null;
+        }
         res.send(floor);
       } else {
         res.status(404).send('not found by id: ' + id);
@@ -331,6 +344,9 @@ app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
         return;
       }
       if(floor) {
+        if(floor.id.startsWith('tmp')) {
+          floor.id = null;
+        }
         res.send(floor);
       } else {
         res.status(404).send({ message : 'not found by id: ' + id });

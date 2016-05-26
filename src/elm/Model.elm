@@ -227,7 +227,7 @@ urlUpdate result model =
           if String.length floorId == 36 then
             -- Debug.log "1" <|
               loadFloorCmd forEdit (Just floorId)
-          else if (UndoRedo.data model.floor).id == Nothing then
+          else if floorId == "" then
               loadDraftFloor model.user
           else
             -- Debug.log "4" <|
