@@ -108,7 +108,7 @@ init randomSeed initialSize urlResult visitDate =
   let
     initialFloor =
       Floor.init Nothing
-    toModel url searchBox editMode =
+    toModel url searchBox =
       { seed = IdGenerator.init randomSeed
       , visitDate = Date.fromTime visitDate
       , user = User.guest
@@ -120,7 +120,7 @@ init randomSeed initialSize urlResult visitDate =
       , gridSize = gridSize
       , selectorRect = Nothing
       , keys = ShortCut.init
-      , editMode = editMode
+      , editMode = Viewing
       , colorPalette = []
       , contextMenu = NoContextMenu
       , floorsInfo = []
@@ -145,12 +145,12 @@ init randomSeed initialSize urlResult visitDate =
   in
     case urlResult of
       Ok url ->
-        (toModel url (SearchBox.init url.query) (if url.editMode then Select else Viewing)) ! [ initCmd ]
+        (toModel url (SearchBox.init url.query)) ! [ initCmd ]
       Err _ ->
         let
           dummyURL = URL.dummy
         in
-          (toModel URL.dummy (SearchBox.init dummyURL.query) Viewing)
+          (toModel URL.dummy (SearchBox.init dummyURL.query))
           ! [ initCmd ] -- TODO modifyURL
 
 --
@@ -243,7 +243,11 @@ urlUpdate result model =
       in
         { model |
           url = newURL
-        , editMode = if newURL.editMode then Select else Viewing
+        , editMode =
+            if User.isAdmin model.user then
+              if newURL.editMode then Select else Viewing
+            else
+              Viewing
         , searchBox = newSearchBox
         } ! [ loadFloorCmd', searchBoxCmd ]
     Err _ ->
@@ -280,6 +284,11 @@ update action model =
       in
         { model |
           user = user
+        , editMode =
+            if User.isAdmin user then
+              if model.url.editMode then Select else Viewing
+            else
+              Viewing
         }
         ! [ loadFloorsInfoCmd requestPrivateFloors
           , loadFloorCmd'
