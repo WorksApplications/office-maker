@@ -2,7 +2,6 @@ module Model.URL exposing (..) -- where
 
 import Dict
 import String
-import Http
 import Util.UrlParser as UrlParser
 import Navigation
 
@@ -41,13 +40,21 @@ stringify : Model -> String
 stringify { floorId, query, personId, editMode } =
   let
     params =
-      List.filterMap
+      (List.filterMap
         (\(key, maybeValue) -> Maybe.map (\v -> (key, v)) maybeValue)
         [ ("q", query)
         , ("personId", personId)
-        ] --++ (if editMode then [ ("edit", "") ] else [])
+        ]
+      ) ++ (if editMode then [ ("edit", "true") ] else [])
   in
-    Http.url "" params ++ "#" ++ floorId
+    stringifyParams params ++ "#" ++ floorId
+
+stringifyParams : List (String, String) -> String
+stringifyParams params =
+    "?" ++
+      ( String.join "&" <|
+        List.map (\(k, v) -> k ++ "=" ++ v) params
+      )
 
 validate : Model -> Model
 validate model =
@@ -59,6 +66,10 @@ validate model =
 updateQuery : String -> Model -> Model
 updateQuery newQuery model =
   { model | query = Just newQuery }
+
+updateEditMode : Bool -> Model -> Model
+updateEditMode editMode model =
+  { model | editMode = editMode }
 
 updateFloorId : Maybe String -> Model -> Model
 updateFloorId newId model =

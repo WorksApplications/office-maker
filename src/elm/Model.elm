@@ -240,14 +240,15 @@ urlUpdate result model =
           else
             -- Debug.log "4" <|
               Cmd.none
+        nextIsEditing =
+          User.isAdmin model.user && newURL.editMode
       in
         { model |
           url = newURL
         , editMode =
-            if User.isAdmin model.user then
-              if newURL.editMode then Select else Viewing
-            else
-              Viewing
+            if nextIsEditing then Select else Viewing
+        , tab =
+            if nextIsEditing then EditTab else SearchTab
         , searchBox = newSearchBox
         } ! [ loadFloorCmd', searchBoxCmd ]
     Err _ ->
@@ -723,21 +724,24 @@ update action model =
       let
         (cmd, event) =
           Header.update action
-        newModel =
+        (newModel, cmd2) =
           case event of
             Header.LogoutDone ->
-              { model | user = User.guest }
+              { model | user = User.guest } ! []
             Header.OnToggleEditing ->
-              { model |
-                editMode =
-                  if model.editMode == Viewing then Select else Viewing
-              , tab =
-                  if model.editMode == Viewing then EditTab else SearchTab
-              }
+              let
+                nextIsEditing =
+                  model.editMode == Viewing
+              in
+                model !
+                  [ Navigation.modifyUrl <|
+                      URL.stringify <|
+                        URL.updateEditMode nextIsEditing model.url
+                  ]
             Header.None ->
-              model
+              model ! []
       in
-        newModel ! [ Cmd.map HeaderMsg cmd ]
+        newModel ! [ Cmd.map HeaderMsg cmd, cmd2 ]
     SearchBoxMsg msg ->
       let
         (searchBox, cmd1, event) =
