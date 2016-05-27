@@ -65,17 +65,21 @@ type alias Model =
   , floorProperty : FloorProperty.Model
   , searchBox : SearchBox.Model
   , selectedResult : Maybe Id
-  , isEditing : Bool
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
   , candidates : List Id
+  , tab : Tab
   }
 
 type ContextMenu =
     NoContextMenu
   | Equipment (Int, Int) Id
 
-type EditMode = Select | Pen | Stamp
+type EditMode =
+    Viewing
+  | Select
+  | Pen
+  | Stamp
 
 type DraggingContext =
     None
@@ -84,6 +88,9 @@ type DraggingContext =
   | ShiftOffsetPrevScreenPos
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
+
+type Tab =
+  SearchTab | EditTab
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -101,7 +108,7 @@ init randomSeed initialSize urlResult visitDate =
   let
     initialFloor =
       Floor.init Nothing
-    toModel url searchBox =
+    toModel url searchBox editMode =
       { seed = IdGenerator.init randomSeed
       , visitDate = Date.fromTime visitDate
       , user = User.guest
@@ -113,7 +120,7 @@ init randomSeed initialSize urlResult visitDate =
       , gridSize = gridSize
       , selectorRect = Nothing
       , keys = ShortCut.init
-      , editMode = Select
+      , editMode = editMode
       , colorPalette = []
       , contextMenu = NoContextMenu
       , floorsInfo = []
@@ -126,24 +133,24 @@ init randomSeed initialSize urlResult visitDate =
       , error = NoError
       , floorProperty = FloorProperty.init initialFloor.name 0 0
       , selectedResult = Nothing
-      , isEditing = False
       , personInfo = Dict.empty
       , diff = Nothing
       , candidates = []
       , url = url
       , searchBox = searchBox
+      , tab = SearchTab
       }
     initCmd =
       Task.perform (always NoOp) identity (Task.succeed Init)
   in
     case urlResult of
       Ok url ->
-        (toModel url (SearchBox.init url.query)) ! [ initCmd ]
+        (toModel url (SearchBox.init url.query) (if url.editMode then Select else Viewing)) ! [ initCmd ]
       Err _ ->
         let
           dummyURL = URL.dummy
         in
-          (toModel URL.dummy (SearchBox.init dummyURL.query))
+          (toModel URL.dummy (SearchBox.init dummyURL.query) Viewing)
           ! [ initCmd ] -- TODO modifyURL
 
 --
@@ -186,6 +193,7 @@ type Msg = NoOp
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
   | ConfirmDiff
+  | ChangeTab Tab
   | Error GlobalError
 
 debug : Bool
@@ -235,6 +243,7 @@ urlUpdate result model =
       in
         { model |
           url = newURL
+        , editMode = if newURL.editMode then Select else Viewing
         , searchBox = newSearchBox
         } ! [ loadFloorCmd', searchBoxCmd ]
     Err _ ->
@@ -491,7 +500,10 @@ update action model =
               StampFromScreenPos (clientX, clientY)
             Pen ->
               PenFromScreenPos (clientX, clientY)
-            Select -> ShiftOffsetPrevScreenPos
+            Select ->
+              ShiftOffsetPrevScreenPos
+            Viewing ->
+              ShiftOffsetPrevScreenPos
 
         (model'', cmd2) =
           case EquipmentNameInput.forceFinish model.equipmentNameInput of
@@ -763,7 +775,7 @@ update action model =
         newModel ! [ Cmd.map SearchBoxMsg cmd1, cmd2 ]
 
     ChangeEditing isEditing ->
-      { model | isEditing = isEditing } ! []
+      { model | editMode = if isEditing then Select else Viewing } ! []
     RegisterPeople people ->
       { model |
         personInfo =
@@ -830,6 +842,8 @@ update action model =
         , seed = newSeed
         , floor = newFloor
         } ! [ cmd ]
+    ChangeTab tab ->
+      { model | tab = tab } ! []
     Error e ->
       let
         newModel =

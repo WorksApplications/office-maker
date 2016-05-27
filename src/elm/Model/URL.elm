@@ -10,6 +10,7 @@ type alias Model =
   { floorId: String
   , query : Maybe String
   , personId : Maybe String
+  , editMode : Bool
   }
 
 parse : Navigation.Location -> Result String Model
@@ -23,6 +24,7 @@ parse location =
         { floorId = floorId
         , query = Dict.get "q" dict
         , personId = Dict.get "person" dict
+        , editMode = Dict.member "edit" dict
         }
     else
       Err ("invalid floorId: " ++ floorId)
@@ -32,15 +34,18 @@ dummy =
     { floorId = ""
     , query = Nothing
     , personId = Nothing
+    , editMode = False
     }
 
 stringify : Model -> String
-stringify { floorId, query, personId } =
+stringify { floorId, query, personId, editMode } =
   let
     params =
       List.filterMap
         (\(key, maybeValue) -> Maybe.map (\v -> (key, v)) maybeValue)
-        [ ("q", query), ("personId", personId) ]
+        [ ("q", query)
+        , ("personId", personId)
+        ] --++ (if editMode then [ ("edit", "") ] else [])
   in
     Http.url "" params ++ "#" ++ floorId
 
