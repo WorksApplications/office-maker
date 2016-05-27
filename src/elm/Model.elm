@@ -488,7 +488,7 @@ update action model =
         (model', cmd) =
           case EquipmentNameInput.forceFinish model.equipmentNameInput of
             (equipmentNameInput, EquipmentNameInput.OnFinish id name) ->
-              updateOnFinishNameInput id name { model | equipmentNameInput = equipmentNameInput }
+              updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
             (equipmentNameInput, _) ->
               { model | equipmentNameInput = equipmentNameInput } ! []
 
@@ -517,7 +517,7 @@ update action model =
         (model'', cmd2) =
           case EquipmentNameInput.forceFinish model.equipmentNameInput of
             (equipmentNameInput, EquipmentNameInput.OnFinish id name) ->
-              updateOnFinishNameInput id name { model | equipmentNameInput = equipmentNameInput }
+              updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
             (equipmentNameInput, _) ->
               { model | equipmentNameInput = equipmentNameInput } ! []
 
@@ -563,7 +563,7 @@ update action model =
           EquipmentNameInput.OnInput id name ->
             model' ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
           EquipmentNameInput.OnFinish id name ->
-            updateOnFinishNameInput id name model'
+            updateOnFinishNameInput True id name model'
           EquipmentNameInput.OnSelectCandidate equipmentId personId ->
             case Dict.get personId model'.personInfo of
               Just person ->
@@ -575,7 +575,7 @@ update action model =
                   cmd =
                     saveFloorCmd (UndoRedo.data newFloor)
                   (newModel, cmd2) =
-                    updateOnFinishNameInput equipmentId person.name
+                    updateOnFinishNameInput True equipmentId person.name
                       { model' |
                         floor = newFloor
                       }
@@ -967,8 +967,8 @@ loadDraftFloor user =
   in
     performAPI DraftFloorLoaded loadTask
 
-updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Msg)
-updateOnFinishNameInput id name model =
+updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
+updateOnFinishNameInput continueEditing id name model =
   let
     allEquipments = (UndoRedo.data model.floor).equipments
     (equipmentNameInput, cmd) =
@@ -992,13 +992,13 @@ updateOnFinishNameInput id name model =
                   in
                     performAPI identity task
             newEquipmentNameInput =
-              case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
-                Just e ->
+              case (continueEditing, EquipmentsOperation.nearest EquipmentsOperation.Down equipment island') of
+                (True, Just e) ->
                   if idOf equipment == idOf e then
                     model.equipmentNameInput
                   else
                     EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
-                Nothing ->
+                _ ->
                   model.equipmentNameInput
           in
             (newEquipmentNameInput, cmd)
