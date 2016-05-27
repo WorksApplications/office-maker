@@ -108,24 +108,28 @@ view screenRectOf transitionDisabled candidates model =
               Styles.transition transitionDisabled
           in
             div
-              []
+              [ ]
               [ textarea
                 ([ Html.Attributes.id "name-input"
                 , style styles
                 ] ++ (inputAttributes (InputName id) KeydownOnNameInput name (Just NoOp)))
                 [ text name ]
-              , candidatesView id (400, 100) candidates --TODO
+              , candidatesView id screenRect candidates
+              -- TODO popup pointer here
               ]
         Nothing -> text ""
     Nothing ->
       text ""
 
-candidatesView : Id -> (Int, Int) -> List Person -> Html Msg
-candidatesView equipmentId pos people =
+candidatesView : Id -> (Int, Int, Int, Int) -> List Person -> Html Msg
+candidatesView equipmentId screenRectOfDesk people =
   case people of
     [] -> text ""
     _ ->
       let
+        (x, y, w, h) = screenRectOfDesk
+        left = x + w + 10
+        top = Basics.max 10 <| y - (160 * List.length people) // 2
         each person =
           li
             [ style Styles.candidateItem
@@ -135,7 +139,7 @@ candidatesView equipmentId pos people =
             (ProfilePopup.innerView person)
       in
         ul
-          [ style (Styles.ul ++ Styles.candidatesView pos)
+          [ style (Styles.ul ++ Styles.candidatesView (left, top))
           ]
           (List.map each people)
 

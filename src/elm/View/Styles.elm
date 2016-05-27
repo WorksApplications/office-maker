@@ -10,6 +10,7 @@ zIndex :
   , selectorRect : String
   , floorInfo : String
   , personDetailPopup : String
+  , candidatesView : String
   , subView : String
   , messageBar : String
   , contextMenu : String
@@ -21,6 +22,7 @@ zIndex =
   , selectorRect = "300"
   , floorInfo = "500"
   , personDetailPopup = "550"
+  , candidatesView = "560"
   , subView = "600"
   , messageBar = "700"
   , contextMenu = "800"
@@ -526,17 +528,26 @@ personDetailPopup (x, y) =
       , ("z-index", zIndex.personDetailPopup)
       ]
 
-personDetailPopupPointer : S
-personDetailPopupPointer =
-  shadow ++
-    [ ("transform", "rotate(45deg)")
-    , ("width", "20px")
+popupPointerBase : S
+popupPointerBase =
+    [ ("width", "20px")
     , ("height", "20px")
     , ("position", "absolute")
-    , ("bottom", "-10px")
-    , ("left", px (300 // 2 - 20 // 2))
     , ("background-color", "#fff")
-    , ("box-shadow", "rgba(0, 0, 0, 0.237255) 2px 2px 5px 0px")
+    ]
+
+popupPointerButtom : S
+popupPointerButtom =
+    popupPointerBase ++
+      [ ("transform", "rotate(45deg)")
+      , ("box-shadow", "rgba(0, 0, 0, 0.237255) 2px 2px 5px 0px")
+      ]
+
+personDetailPopupPointer : S
+personDetailPopupPointer =
+  popupPointerButtom ++
+    [ ("bottom", "-10px")
+    , ("left", px (300 // 2 - 20 // 2))
     ]
 
 personDetailPopupClose : S
@@ -655,6 +666,7 @@ candidatesView (x, y) =
   [ ("position", "absolute")
   , ("top", px y)
   , ("left", px x)
+  , ("z-index", zIndex.candidatesView)
   ] ++ shadow
 
 candidateItem : S
@@ -663,4 +675,10 @@ candidateItem =
   , ("height", "160px")
   , ("position", "relative")
   , ("padding", "15px")
+  , ("background-color", "#fff")
+  ]
+
+nameInputContainer : S
+nameInputContainer =
+  [ ("position", "relative")
   ]
