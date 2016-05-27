@@ -80,11 +80,10 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             ( if model.editMode == Viewing then
                 []
               else
-                [ onMouseDown' (MouseDownOnEquipment id) ]
-            ) ++ [
-            -- , Html.Events.onDoubleClick (StartEditEquipment id)
-            onDblClick' (StartEditEquipment id)
-            ]
+                [ onMouseDown' (MouseDownOnEquipment id)
+                , onDblClick' (StartEditEquipment id)
+                ]
+            )
         floor = UndoRedo.data model.floor
         personInfo =
           model.selectedResult `Maybe.andThen` \id' ->
