@@ -382,7 +382,7 @@ update action model =
     MouseDownOnEquipment lastTouchedId ->
       let
         (clientX, clientY) = model.pos
-        newModel =
+        newModel = -- if model.editMode == Viewing then model else
           { model |
             selectedEquipments =
               if model.keys.ctrl then
@@ -725,8 +725,17 @@ update action model =
           Header.update action
         newModel =
           case event of
-            LogoutDone -> { model | user = User.guest }
-            Header.None -> model
+            Header.LogoutDone ->
+              { model | user = User.guest }
+            Header.OnToggleEditing ->
+              { model |
+                editMode =
+                  if model.editMode == Viewing then Select else Viewing
+              , tab =
+                  if model.editMode == Viewing then EditTab else SearchTab
+              }
+            Header.None ->
+              model
       in
         newModel ! [ Cmd.map HeaderMsg cmd ]
     SearchBoxMsg msg ->

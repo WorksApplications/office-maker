@@ -77,9 +77,13 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             [ onContextMenu' (ShowContextMenuOnEquipment id) ]
         eventHandlers =
           contextMenu ++
-            [ onMouseDown' (MouseDownOnEquipment id)
+            ( if model.editMode == Viewing then
+                []
+              else
+                [ onMouseDown' (MouseDownOnEquipment id) ]
+            ) ++ [
             -- , Html.Events.onDoubleClick (StartEditEquipment id)
-            , onDblClick' (StartEditEquipment id)
+            onDblClick' (StartEditEquipment id)
             ]
         floor = UndoRedo.data model.floor
         personInfo =
@@ -484,7 +488,7 @@ view : Model -> Html Msg
 view model =
   div
     []
-    [ Header.view (Just model.user) |> App.map HeaderMsg
+    [ Header.view (Just (model.user, model.editMode /= Viewing)) |> App.map HeaderMsg
     , mainView model
     , Maybe.withDefault (text "") <|
         Maybe.map (DiffView.view model.visitDate model.personInfo { onClose = CloseDiff, onConfirm = ConfirmDiff }) model.diff -- TODO

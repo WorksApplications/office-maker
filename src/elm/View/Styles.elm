@@ -344,16 +344,46 @@ headerMenuItem =
     , ("line-height", "37px")
     ]
 
-greeting : S
-greeting = headerMenuItem ++
-  [ ("margin-right", "50px")
+editingToggleContainer : S
+editingToggleContainer =
+  flex ++
+    [ ("width", "150px")
+    , ("cursor", "pointer")
+    ]
+
+editingToggleIcon : S
+editingToggleIcon =
+  [ ("padding-top", "7px")
   ]
+
+editingToggleText : Bool -> S
+editingToggleText editing =
+  [ ("margin-left", "5px")
+  , ("margin-top", "5px")
+  , ("line-height", "30px")
+  , ("width", "150px")
+  , ("opacity", if editing then "1" else "0.5")
+  , ("user-select", "none")
+  ]
+
+
+greetingContainer : S
+greetingContainer =
+  flex ++
+    [ ("width", "150px") ]
 
 greetingImage : S
 greetingImage =
   [ ("height", "24px")
   , ("margin-top", "6px")
   , ("box-shadow", "0 0px 5px 3px rgba(255,255,255,0.5)")
+  ]
+
+greetingName : S
+greetingName =
+  [ ("margin-left", "10px")
+  , ("margin-top", "5px")
+  , ("line-height", "30px")
   ]
 
 login : S
