@@ -5,6 +5,7 @@ module Model.API exposing (
     , publishEditingFloor
     , getEditingFloor
     , getFloor
+    , getDraftFloor
     , getFloorsInfo
     , saveEditingImage
     , gotoTop
@@ -20,6 +21,7 @@ module Model.API exposing (
     , Error
   ) -- where
 
+import String
 import Http
 import Task exposing (Task)
 
@@ -39,26 +41,23 @@ type alias Error = Http.Error
 
 saveEditingFloor : Floor -> Task Error ()
 saveEditingFloor floor =
-  -- let
-  --   _ = if floor.id == "tmp" then Debug.crash "cannot save tmp" else ""
-  -- in
     putJson
       noResponse
-      ("/api/v1/floor/" ++ floor.id ++ "/edit")
+      ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id ++ "/edit")
       (Http.string <| serializeFloor floor)
 
 publishEditingFloor : Floor -> Task Error ()
 publishEditingFloor floor =
     postJson
       noResponse
-      ("/api/v1/floor/" ++ floor.id)
+      ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id)
       (Http.string <| serializeFloor floor)
 
-getEditingFloor : String -> Task Error Floor
+getEditingFloor : Maybe String -> Task Error Floor
 getEditingFloor id =
     getJsonWithoutCache
       decodeFloor
-      ("/api/v1/floor/" ++ id ++ "/edit")
+      ("/api/v1/floor/" ++ Maybe.withDefault "draft" id ++ "/edit")
 
 getFloorsInfo : Bool -> Task Error (List Floor)
 getFloorsInfo withPrivate =
@@ -90,13 +89,18 @@ getColors =
 --   `Task.andThen` \prototypes -> getColors
 --   `Task.andThen` \colors -> Task.succeed (prototypes, colors)
 
-getFloor : String -> Task Error Floor
+getFloor : Maybe String -> Task Error Floor
 getFloor id =
     getJsonWithoutCache
       decodeFloor
-      ("/api/v1/floor/" ++ id)
+      ("/api/v1/floor/" ++ Maybe.withDefault "draft" id)
 
-getFloorMaybe : String -> Task Error (Maybe Floor)
+getDraftFloor : Task Error (Maybe Floor)
+getDraftFloor =
+  getFloorMaybe Nothing
+
+
+getFloorMaybe : Maybe String -> Task Error (Maybe Floor)
 getFloorMaybe id =
   getFloor id
   `Task.andThen` (\floor -> Task.succeed (Just floor))
@@ -104,7 +108,7 @@ getFloorMaybe id =
     Http.BadResponse 404 _ -> Task.succeed Nothing
     _ -> Task.fail e
 
-getDiffSource : String -> Task Error (Floor, Maybe Floor)
+getDiffSource : Maybe String -> Task Error (Floor, Maybe Floor)
 getDiffSource id =
   getEditingFloor id
   `Task.andThen` \current -> getFloorMaybe id
@@ -130,6 +134,9 @@ search withPrivate query =
 
 personCandidate : String -> Task Error (List Person)
 personCandidate name =
+  if String.isEmpty name then
+    Task.succeed []
+  else
     getJsonWithoutCache
       decodePersons <| -- Debug.log "url" <|
       ("/api/v1/candidate/" ++ Http.uriEncode name)

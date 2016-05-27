@@ -24,7 +24,7 @@ function exec(conn, sql, cb) {
       try {
         cb && cb(null, rows);
       } catch(e) {
-        console.trace();
+        // console.trace();
         console.log(e);
       }
     }
@@ -36,8 +36,10 @@ function forConnection(onGetConnection) {
       onGetConnection(e);
     } else {
       try {
+        // console.log('getConnection');
         onGetConnection(null, conn, function done(onClose) {
           try {
+            // console.log('release 1');
             conn.release();
           } catch(e) {
             console.log(e);
@@ -47,6 +49,7 @@ function forConnection(onGetConnection) {
       } catch(e) {
         console.log(e);
         try {
+          // console.log('release 2');
           conn.release();
         } catch(e) {
           console.log(e);
@@ -61,7 +64,7 @@ function forTransaction(conn, onBeginTransaction) {
       onBeginTransaction(e);
     } else {
       try {
-        onBeginTransaction(null, function done(e, onFinishCommit) {
+        onBeginTransaction(null, function commit(e, onFinishCommit) {
           if(e) {
             conn.rollback(function(e) {
               onFinishCommit && onFinishCommit(e);
@@ -93,13 +96,19 @@ function forConnectionAndTransaction(f) {
     if(e) {
       f(e);
     } else {
-      forTransaction(conn, function(e, commitDone) {
+      forTransaction(conn, function(e, commit) {
         if(e) {
           f(e);
         } else {
-          f(null, conn, function(e, onConnectionDone) {
-            commitDone(e, function() {
-              connectionDone(onConnectionDone);
+          // console.log('f');
+          f(null, conn, function(e, onFinishClose) {
+            // console.log('commit');
+            commit(e, function onFinishCommit(e) {
+              // console.log('committed');
+              connectionDone(function onClose() {
+                // console.log('closed');
+                onFinishClose();
+              });
             });
           });
         }

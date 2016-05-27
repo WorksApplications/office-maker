@@ -125,15 +125,15 @@ mainView model =
 subView : Model -> Html Msg
 subView model =
   let
-    children =
-      if model.isEditing then
-        subViewForEdit model
-      else
+    pane =
+      if model.tab == SearchTab then
         subViewForSearch model
+      else
+        subViewForEdit model
     tabs =
-      if User.isAdmin model.user then
-        [ subViewTab (ChangeEditing False) 0 Icons.searchTab (not model.isEditing)
-        , subViewTab (ChangeEditing True) 1 Icons.editTab (model.isEditing)
+      if model.editMode /= Viewing then
+        [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (model.tab == SearchTab)
+        , subViewTab (ChangeTab EditTab) 1 Icons.editTab (model.tab == EditTab)
         ]
       else
         []
@@ -141,7 +141,7 @@ subView model =
     div
       [ style (Styles.subView)
       ]
-      (children ++ tabs) --TODO if swapping, padding-left disappears...
+      (pane ++ tabs)
 
 subViewForEdit : Model -> List (Html Msg)
 subViewForEdit model =

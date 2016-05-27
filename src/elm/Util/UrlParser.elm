@@ -7,17 +7,10 @@ import Http
 
 type alias URL = (List String, Dict String String)
 
-parse : String -> URL
-parse s =
-  case split2 "?" s of
-    Just (s1, s2) ->
-      (String.split "/" s1, parseParams s2)
-    Nothing ->
-      (String.split "/" s, Dict.empty)
-
-parseParams : String -> Dict String String
-parseParams s =
+parseSearch : String -> Dict String String
+parseSearch s' =
   let
+    s = String.dropLeft 1 s' -- drop "?"
     list = String.split "&" s
 
     keyValue indices =

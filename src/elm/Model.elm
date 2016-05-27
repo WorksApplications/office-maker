@@ -9,14 +9,13 @@ import String
 import Process
 import Keyboard
 import Dict exposing (Dict)
+import Navigation
 import Http
 
 import Util.UndoRedo as UndoRedo
 import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
-import Util.HttpUtil as HttpUtil
 import Util.IdGenerator as IdGenerator exposing (Seed)
-import Util.Routing as Routing
 import Util.DictUtil exposing (..)
 
 import Model.User as User exposing (User)
@@ -66,17 +65,21 @@ type alias Model =
   , floorProperty : FloorProperty.Model
   , searchBox : SearchBox.Model
   , selectedResult : Maybe Id
-  , isEditing : Bool
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
   , candidates : List Id
+  , tab : Tab
   }
 
 type ContextMenu =
     NoContextMenu
   | Equipment (Int, Int) Id
 
-type EditMode = Select | Pen | Stamp
+type EditMode =
+    Viewing
+  | Select
+  | Pen
+  | Stamp
 
 type DraggingContext =
     None
@@ -86,11 +89,13 @@ type DraggingContext =
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
 
+type Tab =
+  SearchTab | EditTab
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-    [ Routing.hashchanges HashChange
-    , Window.resizes (\e -> WindowSize (e.width, e.height))
+    [ Window.resizes (\e -> WindowSize (e.width, e.height))
     , Keyboard.downs (KeyCodeMsg True)
     , Keyboard.ups (KeyCodeMsg False)
     ]
@@ -98,50 +103,64 @@ subscriptions model =
 gridSize : Int
 gridSize = 8 -- 2^N
 
-init : (Int, Int) -> (Int, Int) -> String -> Float -> (Model, Cmd Msg)
-init randomSeed initialSize initialHash visitDate =
-  (
-    { seed = IdGenerator.init randomSeed
-    , visitDate = Date.fromTime visitDate
-    , user = User.guest
-    , pos = (0, 0)
-    , draggingContext = None
-    , selectedEquipments = []
-    , copiedEquipments = []
-    , equipmentNameInput = EquipmentNameInput.init
-    , gridSize = gridSize
-    , selectorRect = Nothing
-    , keys = ShortCut.init
-    , editMode = Select
-    , colorPalette = []
-    , contextMenu = NoContextMenu
-    , floorsInfo = []
-    , floor = UndoRedo.init { data = Floor.init "tmp", update = Floor.update }
-    , windowSize = initialSize
-    , scale = Scale.init
-    , offset = (35, 35)
-    , scaling = False
-    , prototypes = Prototypes.init []
-    , error = NoError
-    , url = URL.parse initialHash
-    , floorProperty = FloorProperty.init "" 0 0
-    , searchBox = SearchBox.init (URL.parse initialHash).query
-    , selectedResult = Nothing
-    , isEditing = False
-    , personInfo = Dict.empty
-    , diff = Nothing
-    , candidates = []
-    }
-  , Task.perform (always NoOp) identity (Task.succeed Init)
-  )
+init : (Int, Int) -> (Int, Int) -> (Result String URL.Model) -> Float -> (Model, Cmd Msg)
+init randomSeed initialSize urlResult visitDate =
+  let
+    initialFloor =
+      Floor.init Nothing
+    toModel url searchBox editMode =
+      { seed = IdGenerator.init randomSeed
+      , visitDate = Date.fromTime visitDate
+      , user = User.guest
+      , pos = (0, 0)
+      , draggingContext = None
+      , selectedEquipments = []
+      , copiedEquipments = []
+      , equipmentNameInput = EquipmentNameInput.init
+      , gridSize = gridSize
+      , selectorRect = Nothing
+      , keys = ShortCut.init
+      , editMode = editMode
+      , colorPalette = []
+      , contextMenu = NoContextMenu
+      , floorsInfo = []
+      , floor = UndoRedo.init { data = initialFloor, update = Floor.update }
+      , windowSize = initialSize
+      , scale = Scale.init
+      , offset = (35, 35)
+      , scaling = False
+      , prototypes = Prototypes.init []
+      , error = NoError
+      , floorProperty = FloorProperty.init initialFloor.name 0 0
+      , selectedResult = Nothing
+      , personInfo = Dict.empty
+      , diff = Nothing
+      , candidates = []
+      , url = url
+      , searchBox = searchBox
+      , tab = SearchTab
+      }
+    initCmd =
+      Task.perform (always NoOp) identity (Task.succeed Init)
+  in
+    case urlResult of
+      Ok url ->
+        (toModel url (SearchBox.init url.query) (if url.editMode then Select else Viewing)) ! [ initCmd ]
+      Err _ ->
+        let
+          dummyURL = URL.dummy
+        in
+          (toModel URL.dummy (SearchBox.init dummyURL.query) Viewing)
+          ! [ initCmd ] -- TODO modifyURL
+
 --
 
 type Msg = NoOp
   | Init
-  | HashChange String
   | AuthLoaded User
   | FloorsInfoLoaded (List Floor)
   | FloorLoaded Floor
+  | DraftFloorLoaded (Maybe Floor)
   | ColorsLoaded (List String)
   | PrototypesLoaded (List Prototype)
   | FloorSaved Bool
@@ -165,7 +184,6 @@ type Msg = NoOp
   | RegisterPrototype Id
   | FloorPropertyMsg FloorProperty.Msg
   | Rotate Id
-  | Published Id
   | HeaderMsg Header.Msg
   | SearchBoxMsg SearchBox.Msg
   | ChangeEditing Bool
@@ -175,6 +193,7 @@ type Msg = NoOp
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
   | ConfirmDiff
+  | ChangeTab Tab
   | Error GlobalError
 
 debug : Bool
@@ -193,14 +212,11 @@ performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
 performAPI tagger task =
   Task.perform (Error << APIError) tagger task
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update action model =
-  case debugMsg action of
-    NoOp ->
-      model ! []
-    HashChange hash ->
+urlUpdate : Result String URL.Model -> Model -> (Model, Cmd Msg)
+urlUpdate result model =
+  case result of
+    Ok newURL ->
       let
-        newURL = URL.parse hash
         floorId = newURL.floorId
 
         (newSearchBox, searchBoxCmd) =
@@ -218,21 +234,29 @@ update action model =
         loadFloorCmd' =
           if String.length floorId == 36 then
             -- Debug.log "1" <|
-              loadFloorCmd forEdit floorId
-          else if String.length floorId > 0 then
-            -- Debug.log "2" <|
-              noOpCmd (URL.updateFloorId "" model.url)
-          else if String.left 4 (UndoRedo.data model.floor).id /= "tmp-" then
-            -- Debug.log "3" <|
-              saveTemporaryFloorAndLoadIt model.user
+              loadFloorCmd forEdit (Just floorId)
+          else if floorId == "" then
+              loadDraftFloor model.user
           else
             -- Debug.log "4" <|
               Cmd.none
       in
         { model |
           url = newURL
+        , editMode = if newURL.editMode then Select else Viewing
         , searchBox = newSearchBox
         } ! [ loadFloorCmd', searchBoxCmd ]
+    Err _ ->
+      let
+        validURL = URL.validate model.url
+      in
+        model ! [ Navigation.modifyUrl (URL.stringify validURL) ]
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update action model =
+  case debugMsg action of
+    NoOp ->
+      model ! []
     Init ->
       model ! [ loadAuthCmd ]
     AuthLoaded user ->
@@ -242,13 +266,9 @@ update action model =
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
           if String.length floorId == 36 then
-            loadFloorCmd forEdit floorId
+            loadFloorCmd forEdit (Just floorId)
           else
-            saveTemporaryFloorAndLoadIt user
-            -- Cmd.batch
-            --   [ saveTemporaryFloorAndLoadIt user
-            --   , Task.perform (always NoOp) (always NoOp) (HttpUtil.goTo ("#"))
-            --   ]
+            loadDraftFloor user
         loadSettingsCmd =
           if User.isGuest user then
             Cmd.none
@@ -272,33 +292,49 @@ update action model =
     FloorsInfoLoaded floors ->
       { model | floorsInfo = floors } ! []
     FloorLoaded floor ->
-      let
-        (realWidth, realHeight) =
-          Floor.realSize floor
-        newModel =
-          { model |
-            floor = UndoRedo.init { data = floor, update = Floor.update }
-          , floorProperty = FloorProperty.init floor.name realWidth realHeight
-          }
-        cmd =
-          case floor.update of
-            Nothing -> Cmd.none
-            Just { by } ->
-              case Dict.get by model.personInfo of
-                Just _ -> Cmd.none
-                Nothing ->
-                  let
-                    task =
-                      API.getPerson by `andThen` \person ->
-                        Task.succeed (RegisterPeople [person])
-                  in
-                    performAPI identity task
-      in
-        newModel ! [ cmd ]
+      updateOnFloorLoaded floor model
+    DraftFloorLoaded maybeFloor ->
+      case maybeFloor of
+        Just floor ->
+          updateOnFloorLoaded floor model
+        Nothing ->
+          if not (User.isGuest model.user) then
+            let
+              draftFloor = Floor.init Nothing
+              floor = UndoRedo.init { data = draftFloor, update = Floor.update }
+            in
+              { model | floor = floor }
+              ! [ saveFloorCmd draftFloor ]
+          else
+            model ! []
+
     FloorSaved isPublish ->
-      { model |
-        floor = UndoRedo.commit model.floor (Floor.onSaved isPublish)
-      } ! []
+      let
+        newFloorId =
+          (UndoRedo.data model.floor).id
+
+        (message, cmd) =
+          if isPublish then
+            let
+              newFloorId' =
+                case newFloorId of
+                  Just id ->
+                    id
+                  Nothing ->
+                    Debug.crash "new id not found."
+              message = Success ("Successfully published " ++ newFloorId')
+            in
+              message !
+                [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+                , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId newFloorId model.url)
+                ]
+          else
+            model.error ! []
+      in
+        { model |
+          floor = UndoRedo.commit model.floor (Floor.onSaved isPublish)
+        , error = message
+        } ! [ cmd ]
     MoveOnCanvas (clientX, clientY) ->
       let
         (x, y) = (clientX, clientY - 37)
@@ -464,7 +500,10 @@ update action model =
               StampFromScreenPos (clientX, clientY)
             Pen ->
               PenFromScreenPos (clientX, clientY)
-            Select -> ShiftOffsetPrevScreenPos
+            Select ->
+              ShiftOffsetPrevScreenPos
+            Viewing ->
+              ShiftOffsetPrevScreenPos
 
         (model'', cmd2) =
           case EquipmentNameInput.forceFinish model.equipmentNameInput of
@@ -689,20 +728,23 @@ update action model =
         model' =
           { model | searchBox = searchBox }
 
-        results =
-          SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
+
 
         (selectedResult, cmd2) =
           case event of
             SearchBox.OnSubmit ->
               ( Nothing
-              , noOpCmd ( URL.updateQuery model'.searchBox.query model'.url )
+              , Navigation.modifyUrl ( URL.stringify <| URL.updateQuery model'.searchBox.query model'.url )
               )
             SearchBox.OnResults ->
-              case results of
-                head :: [] ->
-                   (Just (idOf head), regesterPersonOfEquipment head)
-                _ -> (Nothing, Cmd.none)
+              let
+                results =
+                  SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
+              in
+                case results of
+                  head :: [] ->
+                     (Just (idOf head), regesterPersonOfEquipment head)
+                  _ -> (Nothing, Cmd.none)
             SearchBox.OnSelectResult id ->
               let
                 equipments = Floor.equipments (UndoRedo.data model.floor)
@@ -733,7 +775,7 @@ update action model =
         newModel ! [ Cmd.map SearchBoxMsg cmd1, cmd2 ]
 
     ChangeEditing isEditing ->
-      { model | isEditing = isEditing } ! []
+      { model | editMode = if isEditing then Select else Viewing } ! []
     RegisterPeople people ->
       { model |
         personInfo =
@@ -776,7 +818,7 @@ update action model =
         floor =
           UndoRedo.data model.floor
         (cmd, newSeed, newFloor) =
-          if String.left 3 floor.id == "tmp" then
+          if floor.id == Nothing then
             let
               (newFloorId, newSeed) =
                 IdGenerator.new model.seed
@@ -785,19 +827,12 @@ update action model =
                   model.floor
                   (Floor.changeId newFloorId)
             in
-              ( Cmd.batch
-                [ publishFloorCmd (UndoRedo.data newFloor)
-                , noOpCmd (URL.updateFloorId newFloorId model.url)
-                , Task.perform (always NoOp) Published <| Task.succeed newFloorId
-                ]
+              ( publishFloorCmd (UndoRedo.data newFloor)
               , newSeed
               , newFloor
               )
           else
-            ( Cmd.batch
-              [ publishFloorCmd floor
-              , Task.perform (always NoOp) Published <| Task.succeed floor.id
-              ]
+            ( publishFloorCmd floor
             , model.seed
             , model.floor
             )
@@ -807,10 +842,8 @@ update action model =
         , seed = newSeed
         , floor = newFloor
         } ! [ cmd ]
-    Published newFloorId ->
-        { model |
-          error = Success ("Successfully published " ++ newFloorId)
-        } ! [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError) ]
+    ChangeTab tab ->
+      { model | tab = tab } ! []
     Error e ->
       let
         newModel =
@@ -821,6 +854,33 @@ update action model =
 noOpCmd : Task a () -> Cmd Msg
 noOpCmd task =
   Task.perform (always NoOp) (always NoOp) task
+
+updateOnFloorLoaded : Floor -> Model -> (Model, Cmd Msg)
+updateOnFloorLoaded floor model =
+  let
+    (realWidth, realHeight) =
+      Floor.realSize floor
+    newModel =
+      { model |
+        floor = UndoRedo.init { data = floor, update = Floor.update }
+      , floorProperty = FloorProperty.init floor.name realWidth realHeight
+      }
+    cmd =
+      case floor.update of
+        Nothing -> Cmd.none
+        Just { by } ->
+          case Dict.get by model.personInfo of
+            Just _ -> Cmd.none
+            Nothing ->
+              let
+                task =
+                  API.getPerson by `andThen` \person ->
+                    Task.succeed (RegisterPeople [person])
+              in
+                performAPI identity task
+  in
+    newModel ! [ cmd ]
+
 
 updateFloorByFloorPropertyEvent : FloorProperty.Event -> Seed -> UndoRedo.Model Floor Commit -> ((UndoRedo.Model Floor Commit, Seed), Cmd Msg)
 updateFloorByFloorPropertyEvent event seed floor =
@@ -876,25 +936,18 @@ regesterPersonOfEquipment e =
     Nothing ->
       Cmd.none
 
-saveTemporaryFloorAndLoadIt : User.User -> Cmd Msg
-saveTemporaryFloorAndLoadIt user =
+loadDraftFloor : User.User -> Cmd Msg
+loadDraftFloor user =
   let
-    name = case user of
-      User.Guest -> "tmp"
-      User.Admin person -> "tmp-" ++ person.name
-      User.General person -> "tmp-" ++ person.name
     newFloor =
-      Floor.init name
-    saveCmd =
+      Floor.init Nothing
+    loadTask =
       if User.isGuest user then
-        Cmd.none
+        Task.succeed Nothing
       else
-        saveFloorCmd newFloor
+        API.getDraftFloor
   in
-    Cmd.batch
-      [ saveCmd
-      , Task.perform (always NoOp) FloorLoaded (Task.succeed newFloor)
-      ]
+    performAPI DraftFloorLoaded loadTask
 
 updateOnFinishNameInput : String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput id name model =
@@ -915,22 +968,30 @@ updateOnFinishNameInput id name model =
                 Nothing ->
                   let
                     task =
-                      API.personCandidate name `onError`
-                      HttpUtil.recover404With [] `andThen` \people ->
+                      API.personCandidate name `andThen` \people ->
                       Task.succeed (RegisterPeople people) `andThen` \_ ->
                       Task.succeed (UpdatePersonCandidate id (List.map .id people))
                   in
                     performAPI identity task
             newEquipmentNameInput =
               case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
-                Just equipment ->
-                  EquipmentNameInput.start (idOf equipment, nameOf equipment) model.equipmentNameInput
+                Just e ->
+                  if idOf equipment == idOf e then
+                    model.equipmentNameInput
+                  else
+                    EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
                 Nothing ->
                   model.equipmentNameInput
           in
             (newEquipmentNameInput, cmd)
         Nothing ->
           (model.equipmentNameInput, Cmd.none)
+    selectedEquipments =
+      case equipmentNameInput.editingEquipment of
+        Just (id, _) ->
+          [id]
+        Nothing ->
+          []
     newFloor =  --TODO if name really changed
       UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
 
@@ -941,6 +1002,7 @@ updateOnFinishNameInput id name model =
         floor = newFloor
       , equipmentNameInput = equipmentNameInput
       , candidates = []
+      , selectedEquipments = selectedEquipments
       }
   in
     newModel ! [ cmd, cmd2 ]
@@ -974,7 +1036,8 @@ publishFloorCmd floor =
           API.saveEditingImage id file
         _ ->
           Task.succeed ()
-    secondTask = API.publishEditingFloor floor
+    secondTask =
+      API.publishEditingFloor floor
   in
     performAPI
       (always (FloorSaved True))
@@ -1115,27 +1178,21 @@ loadFloorsInfoCmd withPrivate =
     performAPI FloorsInfoLoaded (API.getFloorsInfo withPrivate)
 
 
-loadFloorCmd : Bool -> String -> Cmd Msg
+loadFloorCmd : Bool -> Maybe String -> Cmd Msg
 loadFloorCmd forEdit floorId =
   let
-    _ =
-      if String.length floorId /= 36 then
-        Debug.crash "floorId is invalid: " ++ floorId
-      else
-        ""
     recover404 e =
       case e of
         Http.BadResponse 404 _ ->
-          HttpUtil.goTo "#"
-          `andThen` \_ -> Task.succeed (FloorLoaded <| Floor.init floorId)
-        _ -> Task.succeed (Error <| APIError e)
+          FloorLoaded (Floor.init floorId)
+        _ ->
+          Error (APIError e)
     task =
       Task.map
         FloorLoaded
         (if forEdit then API.getEditingFloor floorId else API.getFloor floorId)
-      `onError` recover404
   in
-    Task.perform (always NoOp) identity task
+    Task.perform recover404 identity task
 
 
 focusCmd : String -> Cmd Msg

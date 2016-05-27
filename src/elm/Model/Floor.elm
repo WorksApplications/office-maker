@@ -8,7 +8,7 @@ import Util.File exposing (..)
 type alias Id = String
 
 type alias Model =
-  { id : Id
+  { id : Maybe Id
   , name : String
   , equipments: List Equipment
   , width : Int
@@ -22,7 +22,7 @@ type alias Model =
 type ImageSource =
   LocalFile String File String | URL String | None
 
-init : Id -> Model
+init : Maybe Id -> Model
 init id =
     { id = id
     , name = "1F"
@@ -115,7 +115,7 @@ update action model =
     Rotate id ->
       setEquipments (partiallyChange Equipments.rotate [id] (equipments model)) model
     ChangeId id ->
-      { model | id = id }
+      { model | id = Just id }
     ChangeEquipmentColor ids color ->
       let
         newEquipments =
