@@ -9,7 +9,7 @@ CAUTION: This product is under construction.
 |:--|
 |/|
 |/#floorId|
-|/#floorId?q=foo|
+|/?q=foo&edit=#floorId|
 
 ## REST API
 
