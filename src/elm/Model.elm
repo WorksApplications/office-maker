@@ -750,8 +750,6 @@ update action model =
         model' =
           { model | searchBox = searchBox }
 
-
-
         (selectedResult, cmd2) =
           case event of
             SearchBox.OnSubmit ->
@@ -761,23 +759,32 @@ update action model =
             SearchBox.OnResults ->
               let
                 results =
-                  SearchBox.equipmentsInFloor (UndoRedo.data model'.floor).id model'.searchBox
+                  SearchBox.resultsInFloor (UndoRedo.data model'.floor).id model'.searchBox
               in
                 case results of
-                  head :: [] ->
-                     (Just (idOf head), regesterPersonOfEquipment head)
+                  { personId, equipmentIdAndFloorId } :: [] ->
+                    let
+                      regesterPersonCmd =
+                        case personId of
+                          Just id -> regesterPerson id
+                          Nothing -> Cmd.none
+                    in
+                      case equipmentIdAndFloorId of
+                        Just (e, fid) ->
+                          (Just (idOf e), regesterPersonCmd)
+                        Nothing ->
+                          (Nothing, regesterPersonCmd)
                   _ -> (Nothing, Cmd.none)
-            SearchBox.OnSelectResult id ->
+            SearchBox.OnSelectResult { personId, equipmentIdAndFloorId } ->
               let
-                equipments = Floor.equipments (UndoRedo.data model.floor)
+                equipments =
+                  Floor.equipments (UndoRedo.data model.floor)
                 cmd =
-                  case findEquipmentById equipments id of
-                    Just e ->
-                      regesterPersonOfEquipment e
-                    Nothing ->
-                      Cmd.none
+                  case personId of
+                    Just id -> regesterPerson id
+                    Nothing -> Cmd.none
               in
-                (Just id, cmd)
+                (Maybe.map (idOf << fst) equipmentIdAndFloorId, cmd)
             SearchBox.OnError e ->
               (Nothing, performAPI (always NoOp) (Task.fail e))
             SearchBox.None ->
@@ -952,11 +959,15 @@ regesterPersonOfEquipment : Equipment -> Cmd Msg
 regesterPersonOfEquipment e =
   case Equipments.relatedPerson e of
     Just personId ->
-      performAPI identity <|
-        API.getPerson personId `andThen` \person ->
-          Task.succeed (RegisterPeople [person])
+      regesterPerson personId
     Nothing ->
       Cmd.none
+
+regesterPerson : String -> Cmd Msg
+regesterPerson personId =
+  performAPI identity <|
+    API.getPerson personId `andThen` \person ->
+      Task.succeed (RegisterPeople [person])
 
 loadDraftFloor : User.User -> Cmd Msg
 loadDraftFloor user =
