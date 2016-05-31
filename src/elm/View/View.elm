@@ -1,6 +1,6 @@
 module View.View exposing(view) -- where
 
-import Dict
+import Dict exposing (..)
 import Maybe
 
 import Html exposing (..)
@@ -31,6 +31,8 @@ import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
+import Model.Person exposing (Person)
+import Model.SearchResult exposing (SearchResult)
 
 contextMenuView : Model -> Html Msg
 contextMenuView model =
@@ -166,21 +168,53 @@ subViewForSearch model =
     searchWithPrivate =
       not <| User.isGuest model.user
 
-    format : Equipment -> String -> Html Msg
-    format e id =
-      let
-        isPerson = Equipments.relatedPerson e /= Nothing
-        icon =
-          div
-            [ style Styles.searchResultItemIcon
-            ]
-            [ if isPerson then Icons.searchResultItemPerson else text "" ]
-      in
-        div [ style Styles.flex ] [ icon, text (nameOf e) ]
+    format =
+      formatSearchResult (Dict.fromList <| List.map (\f -> (Maybe.withDefault "draft" f.id, f)) model.floorsInfo) model.personInfo
+
+    thisFloorId =
+      (UndoRedo.data model.floor).id
   in
-    [ card <| [ SearchBox.view SearchBoxMsg searchWithPrivate model.searchBox ]
-    , card <| [ SearchBox.resultsView SearchBoxMsg format model.searchBox ]
+    [ card <| [ SearchBox.view SearchBoxMsg model.searchBox ]
+    , card <| [ SearchBox.resultsView SearchBoxMsg thisFloorId format model.searchBox ]
     ]
+
+formatSearchResult : Dict String Floor -> Dict String Person -> SearchResult -> Html Msg
+formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
+  let
+    floorName =
+      case equipmentIdAndFloorId of
+        Just (e, fid) ->
+          if fid == "draft" then
+            "draft"
+          else
+            case Dict.get fid floorsInfo of
+              Just info ->
+                info.name
+              Nothing ->
+                "?" -- Seems a bug
+        Nothing ->
+          "Missing"
+    isPerson =
+      personId /= Nothing
+    icon =
+      div
+        [ style Styles.searchResultItemIcon
+        ]
+        [ if isPerson then Icons.searchResultItemPerson else text "" ]
+
+    nameOfEquipment =
+      case equipmentIdAndFloorId of
+        Just (e, fid) -> nameOf e
+        Nothing -> ""
+    name =
+      case personId of
+        Just id ->
+          case Dict.get id personInfo of
+            Just person -> person.name
+            Nothing -> nameOfEquipment
+        Nothing -> nameOfEquipment
+  in
+    div [ style Styles.flex ] [ icon, text (name ++ "(" ++ floorName ++ ")") ]
 
 
 subViewTab : msg -> Int -> Html msg -> Bool -> Html msg

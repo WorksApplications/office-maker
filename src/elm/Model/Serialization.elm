@@ -14,6 +14,7 @@ import Model.Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
 import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
+import Model.SearchResult exposing (SearchResult)
 
 type alias Floor = Floor.Model
 
@@ -115,9 +116,17 @@ decodeEquipment =
     |> required "name" Decode.string
     |> optional' "personId" Decode.string
 
-decodeSearchResult : Decoder (List (Equipment, String))
+decodeSearchResult : Decoder SearchResult
 decodeSearchResult =
-  Decode.list (Decode.tuple2 (,) decodeEquipment Decode.string)
+  decode
+    SearchResult
+    |> optional' "personId" Decode.string
+    |> optional' "equipmentIdAndFloorId" (Decode.tuple2 (,) decodeEquipment Decode.string)
+
+decodeSearchResults : Decoder (List SearchResult)
+decodeSearchResults =
+  Decode.list decodeSearchResult
+
 
 decodeFloor : Decoder Floor
 decodeFloor =

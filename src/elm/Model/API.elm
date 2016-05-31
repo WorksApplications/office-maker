@@ -35,6 +35,7 @@ import Model.Equipments as Equipments exposing (..)
 import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
 import Model.Serialization exposing (..)
+import Model.SearchResult exposing (SearchResult)
 
 type alias Floor = Floor.Model
 type alias Error = Http.Error
@@ -120,7 +121,7 @@ getAuth =
       decodeUser
       ("/api/v1/auth")
 
-search : Bool -> String -> Task Error (List (Equipment, String))
+search : Bool -> String -> Task Error (List SearchResult)
 search withPrivate query =
   let
     url =
@@ -129,7 +130,7 @@ search withPrivate query =
         (if withPrivate then [("all", "true")] else [])
   in
     Http.get
-      decodeSearchResult
+      decodeSearchResults
       url
 
 personCandidate : String -> Task Error (List Person)

@@ -157,39 +157,69 @@ function saveImage(conn, path, image, cb) {
 function resetImage(conn, dir, cb) {
   filestorage.empty(dir, cb);
 }
+function getPeopleLikeName(conn, name, cb) {
+  rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%'`), cb);//TODO sanitize
+}
 function getCandidate(conn, name, cb) {
-  rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%'`), (e, people) => {//TODO sanitize
-    if(e) {
-      cb(e);
-    } else {
-      var results = people.reduce((memo, person) => {
-        if(person.name.toLowerCase().indexOf(name.toLowerCase()) >= 0) {
-          return memo.concat([person]);
-        } else {
-          return memo;
-        }
-      }, []);
-      cb(null, results);
-    }
-  });
+  getPeopleLikeName(conn, name, cb);
 }
 function search(conn, query, all, cb) {
-  getFloorsWithEquipments(conn, all, (e, floors) => {
+  getPeopleLikeName(conn, query, (e, people) => {
     if(e) {
       cb(e);
     } else {
-      var results = floors.reduce((memo, floor) => {
-        return floor.equipments.reduce((memo, e) => {
-          if(e.name.indexOf(query) >= 0) {
-            return memo.concat([[e, floor.id]]);
-          } else {
-            return memo;
-          }
-        }, memo);
-      }, []);
-      cb(null, results);
+      getFloorsWithEquipments(conn, all, (e, floors) => {
+        if(e) {
+          cb(e);
+        } else {
+          var results = {};
+          var arr = [];
+          people.forEach((person) => {
+            results[person.id] = [];
+          });
+          floors.forEach((floor) => {
+            floor.equipments.forEach((e) => {
+              if(e.name.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
+                if(e.personId) {
+                  if(!results[e.personId]) {
+                    results[e.personId] = [];
+                  }
+                  results[e.personId].push(e);
+                } else {
+                  // { Nothing, Just } -- equipments that has no person
+                  arr.push({
+                    personId : null,
+                    equipmentIdAndFloorId : [e, e.floorId]
+                  });
+                }
+
+              }
+            });
+          });
+
+          Object.keys(results).forEach((personId) => {
+            var equipments = results[personId];
+            equipments.forEach(e => {
+              // { Just, Just } -- people who exist in map
+              arr.push({
+                personId : personId,
+                equipmentIdAndFloorId : [e, e.floorId]
+              });
+            })
+            // { Just, Nothing } -- missing people
+            if(!equipments.length) {
+              arr.push({
+                personId : personId,
+                equipmentIdAndFloorId : null
+              });
+            }
+          });
+          cb(null, arr);
+        }
+      });
     }
   });
+
 }
 function getPrototypes(conn, cb) {
   rdb.exec(conn, sql.select('prototypes'), (e, prototypes) => {
