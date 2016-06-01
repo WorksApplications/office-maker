@@ -5,7 +5,7 @@ module Model.API exposing (
     , publishEditingFloor
     , getEditingFloor
     , getFloor
-    , getDraftFloor
+    , getEditingDraftFloor
     , getFloorsInfo
     , saveEditingImage
     , gotoTop
@@ -96,14 +96,22 @@ getFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" id)
 
-getDraftFloor : Task Error (Maybe Floor)
-getDraftFloor =
-  getFloorMaybe Nothing
-
+getEditingDraftFloor : Task Error (Maybe Floor)
+getEditingDraftFloor =
+  getEditingFloorMaybe Nothing
 
 getFloorMaybe : Maybe String -> Task Error (Maybe Floor)
 getFloorMaybe id =
   getFloor id
+  `Task.andThen` (\floor -> Task.succeed (Just floor))
+  `Task.onError` \e -> case e of
+    Http.BadResponse 404 _ -> Task.succeed Nothing
+    _ -> Task.fail e
+
+
+getEditingFloorMaybe : Maybe String -> Task Error (Maybe Floor)
+getEditingFloorMaybe id =
+  getEditingFloor id
   `Task.andThen` (\floor -> Task.succeed (Just floor))
   `Task.onError` \e -> case e of
     Http.BadResponse 404 _ -> Task.succeed Nothing

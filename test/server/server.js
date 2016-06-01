@@ -338,6 +338,7 @@ app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
     var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
     console.log('get: ' + id);
     db.getFloorWithEquipments(conn, false, id, (e, floor) => {
+      console.log("floor:", floor)
       if(e) {
         console.log(e);
         res.status(500).send('');

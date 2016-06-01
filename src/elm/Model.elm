@@ -219,6 +219,8 @@ urlUpdate result model =
       let
         floorId = newURL.floorId
 
+        --TODO what is changed?
+
         (newSearchBox, searchBoxCmd) =
           case newURL.query of
             Just query ->
@@ -248,7 +250,10 @@ urlUpdate result model =
         , editMode =
             if nextIsEditing then Select else Viewing
         , tab =
-            if nextIsEditing then EditTab else SearchTab
+            if nextIsEditing then
+              model.tab
+            else
+              SearchTab
         , searchBox = newSearchBox
         } ! [ loadFloorCmd', searchBoxCmd ]
     Err _ ->
@@ -978,7 +983,7 @@ loadDraftFloor user =
       if User.isGuest user then
         Task.succeed Nothing
       else
-        API.getDraftFloor
+        API.getEditingDraftFloor
   in
     performAPI DraftFloorLoaded loadTask
 
@@ -1047,6 +1052,7 @@ adjustPositionByFocus focused model = model
 saveFloorCmd : Floor -> Cmd Msg
 saveFloorCmd floor =
   let
+    _ = Debug.log "saveFloorCmd" floor
     firstTask =
       case floor.imageSource of
         Floor.LocalFile id file url ->
