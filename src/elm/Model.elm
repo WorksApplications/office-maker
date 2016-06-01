@@ -194,6 +194,7 @@ type Msg = NoOp
   | CloseDiff
   | ConfirmDiff
   | ChangeTab Tab
+  | ClosePopup
   | Error GlobalError
 
 debug : Bool
@@ -878,6 +879,8 @@ update action model =
         } ! [ cmd ]
     ChangeTab tab ->
       { model | tab = tab } ! []
+    ClosePopup ->
+      { model | selectedResult = Nothing } ! []
     Error e ->
       let
         newModel =
@@ -1052,7 +1055,6 @@ adjustPositionByFocus focused model = model
 saveFloorCmd : Floor -> Cmd Msg
 saveFloorCmd floor =
   let
-    _ = Debug.log "saveFloorCmd" floor
     firstTask =
       case floor.imageSource of
         Floor.LocalFile id file url ->

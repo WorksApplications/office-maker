@@ -2,14 +2,15 @@ module View.ProfilePopup exposing(view, innerView) -- where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
 
-view : Scale.Model -> (Int, Int) -> Equipment -> Person -> Html msg
-view scale (offsetX, offsetY) equipment person =
+view : msg -> Scale.Model -> (Int, Int) -> Equipment -> Person -> Html msg
+view closeMsg scale (offsetX, offsetY) equipment person =
   let
     (x, y, w, h) =
       rect equipment
@@ -18,15 +19,25 @@ view scale (offsetX, offsetY) equipment person =
   in
     div
       [ style (Styles.personDetailPopup (screenX, screenY)) ]
-      (pointer :: innerView person)
+      (pointer :: innerView (Just closeMsg) person)
 
-innerView : Person -> List (Html msg)
-innerView person =
+innerView : Maybe msg -> Person -> List (Html msg)
+innerView maybeCloseMsg person =
   let
     url =
       Maybe.withDefault "images/users/default.png" person.image
+    closeButton =
+      case maybeCloseMsg of
+        Just msg ->
+          div
+            [ style Styles.personDetailPopupClose
+            , onClick msg
+            ]
+            [ Icons.popupClose ]
+        Nothing ->
+          text ""
   in
-    [ div [ style Styles.personDetailPopupClose ] [ Icons.popupClose ]
+    [ closeButton
     , img [ style Styles.personDetailPopupPersonImage, src url ] []
     -- , div [ style Styles.popupPersonNo ] [ text person.no ]
     , div [ style Styles.personDetailPopupPersonName ] [ text person.name ]

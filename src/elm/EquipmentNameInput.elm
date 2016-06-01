@@ -136,7 +136,7 @@ candidatesView equipmentId screenRectOfDesk people =
             , class "hovarable"
             , onMouseDown' (SelectCandidate equipmentId person.id)
             ]
-            (ProfilePopup.innerView person)
+            (ProfilePopup.innerView Nothing person)
       in
         ul
           [ style (Styles.ul ++ Styles.candidatesView (left, top))

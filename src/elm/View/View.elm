@@ -294,7 +294,7 @@ canvasContainerView model =
       findEquipmentById floor.equipments id `Maybe.andThen` \e ->
       Equipments.relatedPerson e `Maybe.andThen` \personId ->
       Dict.get personId model.personInfo `Maybe.andThen` \person ->
-      Just (ProfilePopup.view model.scale model.offset e person)
+      Just (ProfilePopup.view ClosePopup model.scale model.offset e person)
 
   in
     div
