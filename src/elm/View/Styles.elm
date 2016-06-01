@@ -451,6 +451,11 @@ searchResultItem =
     , ("cursor", "pointer")
     ]
 
+searchResultItemInner : S
+searchResultItemInner =
+  flex
+
+
 floorsInfoView : S
 floorsInfoView =
     [ ("position", "absolute")

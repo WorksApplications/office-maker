@@ -167,9 +167,11 @@ subViewForSearch model =
   let
     searchWithPrivate =
       not <| User.isGuest model.user
-
+    floorsInfoDict =
+      Dict.fromList <|
+        List.map (\f -> (Maybe.withDefault "draft" f.id, f)) model.floorsInfo
     format =
-      formatSearchResult (Dict.fromList <| List.map (\f -> (Maybe.withDefault "draft" f.id, f)) model.floorsInfo) model.personInfo
+      formatSearchResult floorsInfoDict model.personInfo
 
     thisFloorId =
       (UndoRedo.data model.floor).id
@@ -206,6 +208,7 @@ formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
       case equipmentIdAndFloorId of
         Just (e, fid) -> nameOf e
         Nothing -> ""
+
     name =
       case personId of
         Just id ->
@@ -214,7 +217,10 @@ formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
             Nothing -> nameOfEquipment
         Nothing -> nameOfEquipment
   in
-    div [ style Styles.flex ] [ icon, text (name ++ "(" ++ floorName ++ ")") ]
+    div
+      [ style <| Styles.searchResultItemInner
+      ]
+      [ icon, text (name ++ "(" ++ floorName ++ ")") ]
 
 
 subViewTab : msg -> Int -> Html msg -> Bool -> Html msg
