@@ -57,7 +57,6 @@ contextMenuItemView action text' =
     ]
     [ text text' ]
 
-
 equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg
 equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
@@ -74,7 +73,12 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             _ -> (left, top)
         eventOptions =
           if model.editMode == Viewing then
-            EquipmentView.noEvents
+            let
+              noEvents = EquipmentView.noEvents
+            in
+              { noEvents |
+                onMouseDown = Just (ShowDetailForEquipment id)
+              }
           else
             { onContextMenu =
                 if contextMenuDisabled then
@@ -93,6 +97,8 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
               Dict.get personId model.personInfo
             else
               Nothing
+
+        -- _ = Debug.log "model.personInfo" model.personInfo
 
         personMatched = personId /= Nothing
       in

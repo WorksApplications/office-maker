@@ -194,6 +194,7 @@ type Msg = NoOp
   | ConfirmDiff
   | ChangeTab Tab
   | ClosePopup
+  | ShowDetailForEquipment Id
   | Error GlobalError
 
 debug : Bool
@@ -400,7 +401,7 @@ update action model =
     MouseDownOnEquipment lastTouchedId ->
       let
         (clientX, clientY) = model.pos
-        newModel = -- if model.editMode == Viewing then model else
+        newModel =
           { model |
             selectedEquipments =
               if model.keys.ctrl then
@@ -759,14 +760,14 @@ update action model =
                   _ -> (Nothing, Cmd.none)
             SearchBox.OnSelectResult { personId, equipmentIdAndFloorId } ->
               let
-                equipments =
-                  Floor.equipments (UndoRedo.data model.floor)
+                selectedResult =
+                  Maybe.map (idOf << fst) equipmentIdAndFloorId
                 cmd =
                   case personId of
                     Just id -> regesterPerson id
                     Nothing -> Cmd.none
               in
-                (Maybe.map (idOf << fst) equipmentIdAndFloorId, cmd)
+                (selectedResult, cmd)
             SearchBox.OnError e ->
               (Nothing, performAPI (always NoOp) (Task.fail e))
             SearchBox.None ->
@@ -854,6 +855,21 @@ update action model =
       { model | tab = tab } ! []
     ClosePopup ->
       { model | selectedResult = Nothing } ! []
+    ShowDetailForEquipment id ->
+      let
+        allEquipments = (UndoRedo.data model.floor).equipments
+        personId =
+          case findEquipmentById allEquipments id of
+            Just e ->
+              relatedPerson e
+            Nothing ->
+              Nothing
+        cmd =
+          case personId of
+            Just id -> regesterPerson id
+            Nothing -> Cmd.none
+      in
+        { model | selectedResult = Just id } ! [ cmd ]
     Error e ->
       let
         newModel =
