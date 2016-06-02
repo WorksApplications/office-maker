@@ -1,20 +1,48 @@
-module View.EquipmentView exposing(equipmentView') -- where
+module View.EquipmentView exposing(noEvents, equipmentView') -- where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Util.HtmlUtil exposing (..)
 import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
 
+type alias Id = String
 
-equipmentView' : Bool -> String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Maybe Person -> Bool -> Html msg
-equipmentView' showPersonMatch key' rect color name selected alpha eventHandlers scale disableTransition personInfo personMatched =
+type alias EventOptions msg =
+  { onMouseDown : Maybe msg
+  , onStartEditingName : Maybe msg
+  , onContextMenu : Maybe msg
+  }
+
+noEvents : EventOptions msg
+noEvents =
+  { onMouseDown = Nothing
+  , onStartEditingName = Nothing
+  , onContextMenu = Nothing
+  }
+
+equipmentView' : EventOptions msg -> Bool -> String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Scale.Model -> Bool -> Maybe Person -> Bool -> Html msg
+equipmentView' eventOptions showPersonMatch key' rect color name selected alpha scale disableTransition personInfo personMatched =
   let
     screenRect =
       Scale.imageToScreenForRect scale rect
     styles =
       Styles.desk screenRect color selected alpha disableTransition
+    eventHandlers =
+      ( case eventOptions.onContextMenu of
+          Just msg -> [ onContextMenu' msg ]
+          Nothing -> []
+      ) ++
+      ( case eventOptions.onMouseDown of
+          Just msg -> [ onMouseDown' msg ]
+          Nothing -> []
+      ) ++
+      ( case eventOptions.onStartEditingName of
+          Just msg -> [ onDblClick' msg ]
+          Nothing -> []
+      )
   in
     div
       ( eventHandlers ++ [ {- key key', -} style styles ] )

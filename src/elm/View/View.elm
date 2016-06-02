@@ -14,7 +14,7 @@ import EquipmentNameInput
 import View.Styles as Styles
 import View.Icons as Icons
 import View.MessageBar as MessageBar
-import View.EquipmentView exposing (..)
+import View.EquipmentView as EquipmentView exposing (..)
 import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
 import View.ProfilePopup as ProfilePopup
@@ -72,20 +72,18 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
               in
                 fitToGrid model.gridSize (left + dx, top + dy)
             _ -> (left, top)
-        contextMenu =
-          if contextMenuDisabled then
-            []
+        eventOptions =
+          if model.editMode == Viewing then
+            EquipmentView.noEvents
           else
-            [ onContextMenu' (ShowContextMenuOnEquipment id) ]
-        eventHandlers =
-          contextMenu ++
-            ( if model.editMode == Viewing then
-                []
-              else
-                [ onMouseDown' (MouseDownOnEquipment id)
-                , onDblClick' (StartEditEquipment id)
-                ]
-            )
+            { onContextMenu =
+                if contextMenuDisabled then
+                  Nothing
+                else
+                  Just (ShowContextMenuOnEquipment id)
+            , onMouseDown = Just (MouseDownOnEquipment id)
+            , onStartEditingName = Just (StartEditEquipment id)
+            }
         floor = UndoRedo.data model.floor
         personInfo =
           model.selectedResult `Maybe.andThen` \id' ->
@@ -99,6 +97,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
         personMatched = personId /= Nothing
       in
         equipmentView'
+          eventOptions
           (model.editMode /= Viewing)
           (id ++ toString movingBool)
           (x, y, width, height)
@@ -106,7 +105,6 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           name
           selected
           alpha
-          eventHandlers
           model.scale
           disableTransition
           personInfo
@@ -468,6 +466,7 @@ prototypePreviewView prototypes stampMode =
 temporaryStampView : Scale.Model -> Bool -> StampCandidate -> Html msg
 temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
     equipmentView'
+      EquipmentView.noEvents
       False
       ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight)
       (left, top, deskWidth, deskHeight)
@@ -475,7 +474,6 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       name --name
       selected
       False -- alpha
-      [] -- eventHandlers
       scale
       True -- disableTransition
       Nothing
@@ -486,6 +484,7 @@ temporaryPenView model from =
   case temporaryPen model from of
     Just (color, name, (left, top, width, height)) ->
       equipmentView'
+        EquipmentView.noEvents
         False
         ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
         (left, top, width, height)
@@ -493,7 +492,6 @@ temporaryPenView model from =
         name --name
         False -- selected
         False -- alpha
-        [] -- eventHandlers
         model.scale
         True -- disableTransition
         Nothing
