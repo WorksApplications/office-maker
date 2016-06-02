@@ -339,7 +339,7 @@ update action model =
     FloorSaved isPublish ->
       let
         newFloorId =
-          (UndoRedo.data model.floor).id
+          (currentFloor model).id
 
         (message, cmd) =
           if isPublish then
@@ -411,7 +411,7 @@ update action model =
               else if model.keys.shift then
                 let
                   allEquipments =
-                    (UndoRedo.data model.floor).equipments
+                    (currentFloor model).equipments
                   equipmentsExcept target =
                     List.filter (\e -> idOf e /= idOf target) allEquipments
                 in
@@ -515,7 +515,7 @@ update action model =
       in
         newModel ! [ cmd, cmd2 ]
     StartEditEquipment id ->
-      case findEquipmentById (UndoRedo.data model.floor).equipments id of
+      case findEquipmentById (currentFloor model).equipments id of
         Just e ->
           { model |
             equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
@@ -583,14 +583,14 @@ update action model =
     SelectIsland id ->
       let
         newModel =
-          case findEquipmentById (UndoRedo.data model.floor).equipments id of
+          case findEquipmentById (currentFloor model).equipments id of
             Just equipment ->
               let
                 island' =
                   island
                     [equipment]
                     (List.filter (\e -> (idOf e) /= id)
-                    (UndoRedo.data model.floor).equipments)
+                    (currentFloor model).equipments)
               in
                 { model |
                   selectedEquipments = List.map idOf island'
@@ -655,7 +655,7 @@ update action model =
     RegisterPrototype id ->
       let
         equipment =
-          findEquipmentById (UndoRedo.data model.floor).equipments id
+          findEquipmentById (currentFloor model).equipments id
         model' =
           { model |
             contextMenu = NoContextMenu
@@ -825,7 +825,7 @@ update action model =
     ConfirmDiff ->
       let
         floor =
-          UndoRedo.data model.floor
+          currentFloor model
         (cmd, newSeed, newFloor) =
           if floor.id == Nothing then
             let
@@ -857,7 +857,7 @@ update action model =
       { model | selectedResult = Nothing } ! []
     ShowDetailForEquipment id ->
       let
-        allEquipments = (UndoRedo.data model.floor).equipments
+        allEquipments = (currentFloor model).equipments
         personId =
           case findEquipmentById allEquipments id of
             Just e ->
@@ -876,6 +876,11 @@ update action model =
           { model | error = e }
       in
         newModel ! []
+
+currentFloor : Model -> Floor
+currentFloor model =
+  UndoRedo.data model.floor
+
 
 noOpCmd : Task a () -> Cmd Msg
 noOpCmd task =
@@ -1028,7 +1033,7 @@ loadDraftFloor user =
 updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput continueEditing id name model =
   let
-    allEquipments = (UndoRedo.data model.floor).equipments
+    allEquipments = (currentFloor model).equipments
     (equipmentNameInput, cmd) =
       case findEquipmentById allEquipments id of
         Just equipment ->
@@ -1125,7 +1130,7 @@ updateByKeyEvent event model =
     (True, ShortCut.A) ->
       { model |
         selectedEquipments =
-          List.map idOf <| Floor.equipments (UndoRedo.data model.floor)
+          List.map idOf <| Floor.equipments (currentFloor model)
       } ! []
     (True, ShortCut.C) ->
       { model |
@@ -1175,7 +1180,7 @@ updateByKeyEvent event model =
         newModel ! [ saveFloorCmd (UndoRedo.data newModel.floor) ]
     (_, ShortCut.Other 9) -> --TODO waiting for fix double-click
       let
-        floor = UndoRedo.data model.floor
+        floor = currentFloor model
       in
         case model.selectedEquipments of
           id :: _ ->
@@ -1221,7 +1226,7 @@ candidatesOf model =
 shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =
   let
-    floor = UndoRedo.data model.floor
+    floor = currentFloor model
     selected = selectedEquipments model
   in
     case selected of
@@ -1288,13 +1293,13 @@ primarySelectedEquipment : Model -> Maybe Equipment
 primarySelectedEquipment model =
   case model.selectedEquipments of
     head :: _ ->
-      findEquipmentById (equipments <| UndoRedo.data model.floor) head
+      findEquipmentById (equipments <| currentFloor model) head
     _ -> Nothing
 
 selectedEquipments : Model -> List Equipment
 selectedEquipments model =
   List.filterMap (\id ->
-    findEquipmentById (UndoRedo.data model.floor).equipments id
+    findEquipmentById (currentFloor model).equipments id
   ) model.selectedEquipments
 
 

@@ -20,7 +20,6 @@ import View.DiffView as DiffView
 import View.ProfilePopup as ProfilePopup
 import FloorProperty
 
-import Util.UndoRedo as UndoRedo
 import Util.HtmlUtil exposing (..)
 import Util.ListUtil exposing (..)
 
@@ -88,7 +87,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             , onMouseDown = Just (MouseDownOnEquipment id)
             , onStartEditingName = Just (StartEditEquipment id)
             }
-        floor = UndoRedo.data model.floor
+        floor = currentFloor model
         personInfo =
           model.selectedResult `Maybe.andThen` \id' ->
             if id' == id then
@@ -126,7 +125,7 @@ mainView model =
     (windowWidth, windowHeight) = model.windowSize
   in
     main' [ style (Styles.mainView windowHeight) ]
-      [ FloorsInfoView.view (UndoRedo.data model.floor).id model.floorsInfo
+      [ FloorsInfoView.view (currentFloor model).id model.floorsInfo
       , MessageBar.view model.error
       , canvasContainerView model
       , subView model
@@ -159,7 +158,7 @@ subViewForEdit model =
     floorView =
       List.map
         (App.map FloorPropertyMsg)
-        (FloorProperty.view model.visitDate model.user (UndoRedo.data model.floor) model.floorProperty)
+        (FloorProperty.view model.visitDate model.user (currentFloor model) model.floorProperty)
   in
     [ card <| penView model
     , card <| propertyView model
@@ -179,7 +178,7 @@ subViewForSearch model =
       formatSearchResult floorsInfoDict model.personInfo
 
     thisFloorId =
-      (UndoRedo.data model.floor).id
+      (currentFloor model).id
   in
     [ card <| [ SearchBox.view SearchBoxMsg model.searchBox ]
     , card <| [ SearchBox.resultsView SearchBoxMsg thisFloorId format model.searchBox ]
@@ -298,7 +297,7 @@ debugView model =
 canvasContainerView : Model -> Html Msg
 canvasContainerView model =
   let
-    floor = UndoRedo.data model.floor
+    floor = currentFloor model
     popup' =
       Maybe.withDefault (text "") <|
       model.selectedResult `Maybe.andThen` \id ->
@@ -329,7 +328,7 @@ canvasContainerView model =
 canvasView : Model -> Html Msg
 canvasView model =
   let
-    floor = UndoRedo.data model.floor
+    floor = currentFloor model
     disableTransition = transitionDisabled model
 
     isDragged equipment =
@@ -423,7 +422,7 @@ canvasView model =
 
 screenRectOf : Model -> String -> Maybe (Int, Int, Int, Int)
 screenRectOf model id =
-  case findEquipmentById (UndoRedo.data model.floor).equipments id of
+  case findEquipmentById (currentFloor model).equipments id of
     Just (Desk id rect _ _ _) ->
       Just (Scale.imageToScreenForRect model.scale rect)
     Nothing -> Nothing
