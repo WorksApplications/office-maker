@@ -346,11 +346,12 @@ headerMenuItem =
     , ("line-height", "37px")
     ]
 
-editingToggleContainer : S
-editingToggleContainer =
+editingToggleContainer : Bool -> S
+editingToggleContainer editing =
   flex ++
-    [ ("width", "150px")
+    [ ("width", "100px")
     , ("cursor", "pointer")
+    , ("opacity", if editing then "1" else "")
     ]
 
 editingToggleIcon : S
@@ -358,28 +359,27 @@ editingToggleIcon =
   [ ("padding-top", "7px")
   ]
 
-editingToggleText : Bool -> S
-editingToggleText editing =
+editingToggleText : S
+editingToggleText =
   [ ("margin-left", "5px")
   , ("margin-top", "5px")
   , ("line-height", "30px")
   , ("width", "150px")
-  , ("opacity", if editing then "1" else "0.5")
   , ("user-select", "none")
   ]
-
 
 greetingContainer : S
 greetingContainer =
   flex ++
-    [ ("width", "150px") ]
+    [ ("width", "150px")
+    ]
 
 greetingImage : S
 greetingImage =
   [ ("width", "24px")
   , ("height", "24px")
   , ("margin-top", "6px")
-  -- , ("box-shadow", "0 0px 5px 3px rgba(255,255,255,0.5)")
+  , ("border", "solid 1px #888")
   ]
 
 greetingName : S

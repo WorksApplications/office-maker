@@ -69,6 +69,7 @@ type alias Model =
   , diff : Maybe (Floor, Maybe Floor)
   , candidates : List Id
   , tab : Tab
+  , showPrintView : Bool
   }
 
 type ContextMenu =
@@ -139,6 +140,7 @@ init randomSeed initialSize urlResult visitDate =
       , url = url
       , searchBox = searchBox
       , tab = SearchTab
+      , showPrintView = False
       }
     initCmd =
       Task.perform (always NoOp) identity (Task.succeed Init)
@@ -721,6 +723,8 @@ update action model =
                       URL.stringify <|
                         URL.updateEditMode nextIsEditing model.url
                   ]
+            Header.OnTogglePrintView opened ->
+              { model | showPrintView = opened } ! []
             Header.None ->
               model ! []
       in

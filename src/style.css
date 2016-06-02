@@ -8,12 +8,20 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
 .hovarable:hover {
   background-color: #9ce;
   cursor: pointer;
 }
 
-ul {
-  list-style-type: none;
-  padding-left: 0;
+.hover-header-icon {
+  opacity: 0.5;
+}
+
+.hover-header-icon:hover {
+  opacity: 0.7;
 }

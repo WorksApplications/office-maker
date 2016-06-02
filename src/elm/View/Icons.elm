@@ -8,6 +8,7 @@ import Material.Icons.Editor exposing (mode_edit, border_all)
 import Material.Icons.Image exposing (crop_square)
 import Material.Icons.Social exposing (person)
 import Material.Icons.Communication exposing (phone, email)
+import Material.Icons.Maps exposing (local_printshop)
 
 -- import Material.Icons.Notification exposing (priority_high) -- TODO
 -- import Material.Icons.Internal exposing (icon)
@@ -61,9 +62,18 @@ personDetailPopupPersonMail : Svg msg
 personDetailPopupPersonMail =
   email defaultColor 16
 
-editingToggle : Bool -> Svg msg
-editingToggle editing =
-  mode_edit (if editing then white else Color.rgba 255 255 255 0.5) 22
+headerIconColor : Color
+headerIconColor =
+  white
+
+editingToggle : Svg msg
+editingToggle =
+  mode_edit headerIconColor 22
+
+printButton : Svg msg
+printButton =
+  local_printshop headerIconColor 22
+
 
 -- TODO PR to elm-material-icons
 

@@ -1,7 +1,7 @@
 module Util.HtmlUtil exposing (..) -- where
 
 import Native.HtmlUtil
-import Html exposing (Html, Attribute)
+import Html exposing (Html, Attribute, text)
 import Html.App
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
@@ -12,6 +12,12 @@ import Process
 
 type Error =
   IdNotFound String | Unexpected String
+
+-- optional : (a -> Html msg) -> Maybe a -> Html msg
+-- optional f maybe =
+--   case maybe of
+--     Just a -> f a
+--     Nothing -> text ""
 
 decodeClientXY : Decoder (Int, Int)
 decodeClientXY =
