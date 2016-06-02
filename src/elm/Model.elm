@@ -434,7 +434,7 @@ update action model =
               in
                 newModel ! [ cmd ]
             Selector ->
-              ({ model |
+              { model |
                 selectorRect =
                   case model.selectorRect of
                     Just (x, y, _, _) ->
@@ -446,46 +446,11 @@ update action model =
                       in
                         Just (x, y, w, h)
                     _ -> model.selectorRect
-              }, Cmd.none)
+              } ! []
             StampFromScreenPos _ ->
-              let
-                (candidatesWithNewIds, newSeed) =
-                  IdGenerator.zipWithNewIds model.seed (stampCandidates model)
-                candidatesWithNewIds' =
-                  List.map
-                    (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
-                    candidatesWithNewIds
-                newFloor =
-                  UndoRedo.commit model.floor (Floor.create candidatesWithNewIds')
-                cmd =
-                  saveFloorCmd (UndoRedo.data newFloor)
-              in
-                { model |
-                  seed = newSeed
-                , floor = newFloor
-                } ! [ cmd ]
-            PenFromScreenPos (x, y) ->
-              let
-                (newFloor, newSeed, cmd) =
-                  case temporaryPen model (x, y) of
-                    Just (color, name, (left, top, width, height)) ->
-                      let
-                        (newId, newSeed) =
-                          IdGenerator.new model.seed
-                        newFloor =
-                          UndoRedo.commit model.floor (Floor.create [(newId, (left, top, width, height), color, name)])
-                      in
-                        ( newFloor
-                        , newSeed
-                        , saveFloorCmd (UndoRedo.data newFloor)
-                        )
-                    Nothing ->
-                      (model.floor, model.seed, Cmd.none)
-              in
-                { model |
-                  seed = newSeed
-                , floor = newFloor
-                } ! [ cmd ]
+              updateOnFinishStamp model
+            PenFromScreenPos pos ->
+              updateOnFinishPen pos model
             _ -> model ! []
         newModel =
           { model' |
@@ -892,6 +857,52 @@ noOpCmd : Task a () -> Cmd Msg
 noOpCmd task =
   Task.perform (always NoOp) (always NoOp) task
 
+updateOnFinishStamp : Model -> (Model, Cmd Msg)
+updateOnFinishStamp model =
+  let
+    (candidatesWithNewIds, newSeed) =
+      IdGenerator.zipWithNewIds model.seed (stampCandidates model)
+    candidatesWithNewIds' =
+      List.map
+        (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
+        candidatesWithNewIds
+    newFloor =
+      UndoRedo.commit model.floor (Floor.create candidatesWithNewIds')
+    cmd =
+      saveFloorCmd (UndoRedo.data newFloor)
+  in
+    { model |
+      seed = newSeed
+    , floor = newFloor
+    , editMode = Select -- maybe selecting stamped desks would be better?
+    } ! [ cmd ]
+
+updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
+updateOnFinishPen (x, y) model =
+  let
+    (newFloor, newSeed, cmd) =
+      case temporaryPen model (x, y) of
+        Just (color, name, (left, top, width, height)) ->
+          let
+            (newId, newSeed) =
+              IdGenerator.new model.seed
+            newFloor =
+              UndoRedo.commit model.floor (Floor.create [(newId, (left, top, width, height), color, name)])
+          in
+            ( newFloor
+            , newSeed
+            , saveFloorCmd (UndoRedo.data newFloor)
+            )
+        Nothing ->
+          (model.floor, model.seed, Cmd.none)
+  in
+    { model |
+      seed = newSeed
+    , floor = newFloor
+    } ! [ cmd ]
+
+
+
 updateOnFloorLoaded : Floor -> Model -> (Model, Cmd Msg)
 updateOnFloorLoaded floor model =
   let
@@ -1246,6 +1257,7 @@ blurCmd id =
 
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
+  model.editMode /= Viewing &&
   List.member (idOf equipment) model.selectedEquipments
 
 primarySelectedEquipment : Model -> Maybe Equipment
