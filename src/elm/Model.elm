@@ -186,7 +186,6 @@ type Msg = NoOp
   | Rotate Id
   | HeaderMsg Header.Msg
   | SearchBoxMsg SearchBox.Msg
-  | ChangeEditing Bool
   | RegisterPeople (List Person)
   | GotCandidateSelection Id (List Person)
   | UpdatePersonCandidate Id (List Id)
@@ -251,8 +250,12 @@ urlUpdate result model =
         , editMode =
             if nextIsEditing then Select else Viewing
         , tab =
+            -- TODO detect what is changed
             if nextIsEditing then
-              model.tab
+              if model.editMode == Viewing then
+                EditTab
+              else
+                model.tab
             else
               SearchTab
         , searchBox = newSearchBox
@@ -808,9 +811,6 @@ update action model =
 
       in
         newModel ! [ Cmd.map SearchBoxMsg cmd1, cmd2 ]
-
-    ChangeEditing isEditing ->
-      { model | editMode = if isEditing then Select else Viewing } ! []
     RegisterPeople people ->
       { model |
         personInfo =
