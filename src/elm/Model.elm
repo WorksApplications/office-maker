@@ -244,11 +244,14 @@ urlUpdate result model =
               Cmd.none
         nextIsEditing =
           User.isAdmin model.user && newURL.editMode
+        newEditMode =
+          if nextIsEditing then Select else Viewing
+        requestPrivateFloors =
+          newEditMode /= Viewing && not (User.isGuest model.user)
       in
         { model |
           url = newURL
-        , editMode =
-            if nextIsEditing then Select else Viewing
+        , editMode = newEditMode
         , tab =
             -- TODO detect what is changed
             if nextIsEditing then
@@ -259,7 +262,11 @@ urlUpdate result model =
             else
               SearchTab
         , searchBox = newSearchBox
-        } ! [ loadFloorCmd', searchBoxCmd ]
+        } !
+          [ loadFloorCmd'
+          , searchBoxCmd
+          , loadFloorsInfoCmd requestPrivateFloors
+          ]
     Err _ ->
       let
         validURL = URL.validate model.url
@@ -275,7 +282,8 @@ update action model =
       model ! [ loadAuthCmd ]
     AuthLoaded user ->
       let
-        requestPrivateFloors = not (User.isGuest user)
+        requestPrivateFloors =
+          model.editMode /= Viewing && not (User.isGuest user)
         floorId = model.url.floorId
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
