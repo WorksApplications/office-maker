@@ -67,5 +67,10 @@ mail person =
     [ Icons.personDetailPopupPersonMail
     , div
         [ style Styles.personDetailPopupPersonIconText ]
-        [ text (Maybe.withDefault "" person.mail) ]
+        [ case person.mail of
+            Just mail ->
+              a [ href ("mailto:" ++ mail) ] [ text mail ]
+            Nothing ->
+              text ""
+        ]
     ]
