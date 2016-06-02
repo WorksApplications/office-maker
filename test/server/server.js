@@ -266,7 +266,7 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
 }));
 app.get('/api/v1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  role(conn, req, (e, role) => {
+  role(conn, req, (e, role, user) => {
     if(e) {
       console.log(e);
       res.status(500).send('');
@@ -282,6 +282,13 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
+      floors = floors.filter(function(floor) {
+        if(floor.id.startsWith('tmp')) {
+          return floor.id === 'tmp-' + user.id;
+        } else {
+          return true;
+        }
+      })
       floors.forEach(function(floor) {
         if(floor.id.startsWith('tmp')) {
           floor.id = null;
