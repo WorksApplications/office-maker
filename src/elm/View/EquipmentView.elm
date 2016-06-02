@@ -8,20 +8,21 @@ import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
 
 
-equipmentView' : String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Maybe Person -> Bool -> Html msg
-equipmentView' key' rect color name selected alpha eventHandlers scale disableTransition personInfo personMatched =
+equipmentView' : Bool -> String -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> List (Html.Attribute msg) -> Scale.Model -> Bool -> Maybe Person -> Bool -> Html msg
+equipmentView' showPersonMatch key' rect color name selected alpha eventHandlers scale disableTransition personInfo personMatched =
   let
     screenRect =
       Scale.imageToScreenForRect scale rect
     styles =
-      Styles.desk screenRect color selected alpha ++
-        [("display", "table")] ++
-        Styles.transition disableTransition
+      Styles.desk screenRect color selected alpha disableTransition
   in
     div
       ( eventHandlers ++ [ {- key key', -} style styles ] )
       [ equipmentLabelView scale disableTransition name
-      , personMatchingView name personMatched
+      , if showPersonMatch then
+          personMatchingView name personMatched
+        else
+          text ""
       ]
 
 personMatchingView : String -> Bool -> Html msg
@@ -38,8 +39,9 @@ equipmentLabelView : Scale.Model -> Bool -> String -> Html msg
 equipmentLabelView scale disableTransition name =
   let
     styles =
-      Styles.nameLabel (Scale.imageToScreenRatio scale) ++  --TODO
-        Styles.transition disableTransition
+      Styles.nameLabel
+        (Scale.imageToScreenRatio scale)
+        disableTransition  --TODO
   in
     pre
       [ style styles ]

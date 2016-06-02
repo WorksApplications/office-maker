@@ -92,16 +92,18 @@ deskInput rect =
   , ("box-sizing", "border-box")
   ]
 
-desk : (Int, Int, Int, Int) -> String -> Bool -> Bool -> S
-desk rect color selected alpha =
-  (absoluteRect rect) ++ [ ("opacity", if alpha then "0.5" else "1.0")
+desk : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
+desk rect color selected alpha disableTransition =
+  (absoluteRect rect) ++
+  [ ("opacity", if alpha then "0.5" else "1.0")
+  , ("display", "table")
   , ("background-color", color)
   , ("box-sizing", "border-box")
   , ("z-index", if selected then zIndex.selectedDesk else "")
   , ("border-style", "solid")
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then "#69e" else "#666")
-  ]
+  ] ++ transition disableTransition
 
 selectorRect : (Int, Int, Int, Int) -> S
 selectorRect rect =
@@ -174,8 +176,8 @@ canvasContainer =
   , ("flex", "1")
   ]
 
-nameLabel : Float -> S
-nameLabel ratio =
+nameLabel : Float -> Bool -> S
+nameLabel ratio disableTransition =
   [ ("display", "table-cell")
   , ("vertical-align", "middle")
   , ("text-align", "center")
@@ -183,7 +185,7 @@ nameLabel ratio =
   , ("cursor", "default")
   , ("font-size", em ratio) --TODO
    -- TODO vertical align
-  ]
+  ] ++ transition disableTransition
 
 shadow : S
 shadow =

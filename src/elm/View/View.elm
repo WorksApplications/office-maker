@@ -99,6 +99,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
         personMatched = personId /= Nothing
       in
         equipmentView'
+          (model.editMode /= Viewing)
           (id ++ toString movingBool)
           (x, y, width, height)
           color
@@ -467,6 +468,7 @@ prototypePreviewView prototypes stampMode =
 temporaryStampView : Scale.Model -> Bool -> StampCandidate -> Html msg
 temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
     equipmentView'
+      False
       ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight)
       (left, top, deskWidth, deskHeight)
       color
@@ -484,6 +486,7 @@ temporaryPenView model from =
   case temporaryPen model from of
     Just (color, name, (left, top, width, height)) ->
       equipmentView'
+        False
         ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
         (left, top, width, height)
         color
