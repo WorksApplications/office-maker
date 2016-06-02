@@ -1,11 +1,14 @@
 module Header exposing (..) -- where
 
+import Task exposing (Task)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+
+import Model.Person exposing (..)
 import Model.User as User exposing (..)
 import Model.API as API
-import Task exposing (Task)
 
 import View.Styles as Styles
 import View.Icons as Icons
@@ -86,19 +89,25 @@ greeting user =
     Guest ->
       text ""
     Admin person ->
-      div
-        [ style Styles.greetingContainer ]
-        [ img [ style Styles.greetingImage, src "/images/users/default.png" ] []
-        , div [ style Styles.greetingName ] [ text person.name ]
-        ]
+      greetingForPerson person
     General person ->
-      div
-        [ style Styles.greetingContainer ]
-        [ img [ style Styles.greetingImage, src "/images/users/default.png" ] []
-        , div [ style Styles.greetingName ] [ text person.name ]
-        ]
+      greetingForPerson person
 
-
+greetingForPerson : Person -> Html msg
+greetingForPerson person =
+  let
+    image =
+      case person.image of
+        Just url ->
+          img [ style Styles.greetingImage, src url ] []
+        Nothing ->
+          text ""
+  in
+    div
+      [ style Styles.greetingContainer ]
+      [ image
+      , div [ style Styles.greetingName ] [ text person.name ]
+      ]
 
 userName : User -> String
 userName user =

@@ -145,11 +145,30 @@ app.get('/api/v1/auth', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
+      if(!user) {
+        res.status(404).send('');
+      }
+      user.pass = null;
       res.send(user);
     });
   } else {
     res.send({});
   }
+}));
+app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
+  var id = req.params.id;
+  db.getUserWithPerson(conn, id, (e, user) => {
+    if(e) {
+      console.log(e);
+      res.status(500).send('');
+      return;
+    }
+    if(!user) {
+      res.status(404).send('');
+    }
+    user.pass = null;
+    res.send(user);
+  });
 }));
 app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
   role(conn, req, (e, role) => {

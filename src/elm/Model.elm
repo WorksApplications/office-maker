@@ -951,7 +951,7 @@ updateOnFloorLoaded floor model =
             Nothing ->
               let
                 task =
-                  API.getPerson by `andThen` \person ->
+                  API.getPersonByUser by `andThen` \person ->
                     Task.succeed (RegisterPeople [person])
               in
                 performAPI identity task

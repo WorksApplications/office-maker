@@ -16,6 +16,7 @@ module Model.API exposing (
     , personCandidate
     , getDiffSource
     , getPerson
+    , getPersonByUser
     , getColors
     , getPrototypes
     , Error
@@ -163,6 +164,20 @@ getPerson id =
       decodePerson
       ("/api/v1/people/" ++ id)
 
+getPersonByUser : Id -> Task Error Person
+getPersonByUser id =
+  let
+    getUser =
+      Http.get
+        decodeUser
+        ("/api/v1/users/" ++ id)
+  in
+    getUser
+    `Task.andThen` (\user -> case user of
+        User.Admin person -> Task.succeed person
+        User.General person -> Task.succeed person
+        User.Guest -> Debug.crash ("user " ++ id ++ " has no person")
+      )
 
 login : String -> String -> Task Error ()
 login id pass =
