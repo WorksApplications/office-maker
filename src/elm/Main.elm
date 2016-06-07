@@ -5,6 +5,8 @@ import Model.URL as URL
 import View.View as View
 import Navigation
 
+import TimeTravel.Navigation as TimeTravel
+
 type alias Flags =
   { initialSize : (Int, Int)
   , randomSeed : (Int, Int)
@@ -13,7 +15,7 @@ type alias Flags =
 
 main : Program Flags
 main =
-  Navigation.programWithFlags urlParser
+  TimeTravel.programWithFlags urlParser
     { init = \flags result -> Model.init flags.randomSeed flags.initialSize result flags.visitDate
     , view = View.view
     , update =  Model.update
