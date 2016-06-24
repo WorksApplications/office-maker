@@ -59,6 +59,25 @@ ul : S
 ul =
   noMargin
 
+-- TODO better name
+hovarableHover : S
+hovarableHover =
+  [ ("background-color", "#9ce")
+  , ("cursor", "pointer")
+  ]
+
+-- TODO better name
+headerIconHover : S
+headerIconHover =
+  [ ("opacity", "0.5")
+  ]
+
+-- TODO better name
+hoverHeaderIconHover : S
+hoverHeaderIconHover =
+  [ ("opacity", "0.7")
+  ]
+
 headerHeight : Int
 headerHeight = 37
 

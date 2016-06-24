@@ -33,6 +33,8 @@ import Model.User as User
 import Model.Person exposing (Person)
 import Model.SearchResult exposing (SearchResult)
 
+import InlineHover exposing (hover)
+
 contextMenuView : Model -> Html Msg
 contextMenuView model =
   case model.contextMenu of
@@ -49,9 +51,9 @@ contextMenuView model =
 
 contextMenuItemView : Msg -> String -> Html Msg
 contextMenuItemView action text' =
+  hover Styles.hovarableHover
   div
-    [ class "hovarable"
-    , style Styles.contextMenuItem
+    [ style Styles.contextMenuItem
     , onMouseDown' action
     ]
     [ text text' ]

@@ -13,6 +13,8 @@ import Model.API as API
 import View.Styles as Styles
 import View.Icons as Icons
 
+import InlineHover exposing (hover)
+
 type Msg =
     Login
   | Logout
@@ -85,10 +87,10 @@ menu maybeContext =
 printButtonView : Html Msg
 printButtonView =
   -- iconView ToggleEditing (Icons.editingToggle False) "Print"
+  hover Styles.hoverHeaderIconHover
   div
     [ onClick (TogglePrintView True)
     , style (Styles.editingToggleContainer False)
-    , class "hover-header-icon"
     ]
     [ div [ style Styles.editingToggleIcon ] [ Icons.printButton ]
     , div [ style (Styles.editingToggleText) ] [ text "Print" ]
@@ -97,10 +99,10 @@ printButtonView =
 editingToggleView : Bool -> Html Msg
 editingToggleView editing =
   -- iconView ToggleEditing (Icons.editingToggle editing) "Edit"
+  hover Styles.hoverHeaderIconHover
   div
     [ onClick ToggleEditing
     , style (Styles.editingToggleContainer editing)
-    , class "hover-header-icon"
     ]
     [ div [ style Styles.editingToggleIcon ] [ Icons.editingToggle ]
     , div [ style (Styles.editingToggleText) ] [ text "Edit" ]

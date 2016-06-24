@@ -10,6 +10,8 @@ import Model.Person exposing (Person)
 import View.Styles as Styles
 import View.ProfilePopup as ProfilePopup
 
+import InlineHover exposing (hover)
+
 type alias Model =
   { editingEquipment : Maybe (String, String)
   }
@@ -131,9 +133,9 @@ candidatesView equipmentId screenRectOfDesk people =
         left = x + w + 10
         top = Basics.max 10 <| y - (160 * List.length people) // 2
         each person =
+          hover Styles.hovarableHover
           li
             [ style Styles.candidateItem
-            , class "hovarable"
             , onMouseDown' (SelectCandidate equipmentId person.id)
             ]
             (ProfilePopup.innerView Nothing person)
