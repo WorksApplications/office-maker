@@ -200,7 +200,7 @@ type Msg = NoOp
   | Error GlobalError
 
 debug : Bool
-debug = False
+debug = False --|| True
 
 debugMsg : Msg -> Msg
 debugMsg action =
@@ -246,7 +246,7 @@ urlUpdate result model =
             -- Debug.log "4" <|
               Cmd.none
         nextIsEditing =
-          User.isAdmin model.user && newURL.editMode
+          not (User.isGuest model.user) && newURL.editMode
         newEditMode =
           if nextIsEditing then Select else Viewing
         requestPrivateFloors =
