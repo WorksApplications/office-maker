@@ -1,4 +1,4 @@
-module Model.SearchResult exposing (..) -- where
+module Model.SearchResult exposing (..)
 
 import Model.Equipments exposing (Equipment)
 

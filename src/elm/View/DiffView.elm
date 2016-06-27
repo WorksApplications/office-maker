@@ -1,4 +1,4 @@
-module View.DiffView exposing(..) -- where
+module View.DiffView exposing(..)
 
 import Maybe
 import Dict exposing (Dict)

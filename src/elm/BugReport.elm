@@ -1,4 +1,4 @@
-module BugReport exposing (..) -- where
+module BugReport exposing (..)
 
 import Html exposing (div, text)
 import Html.App exposing (beginnerProgram)

@@ -1,4 +1,4 @@
-module Util.UUID exposing (Seed, init, step) -- where
+module Util.UUID exposing (Seed, init, step)
 
 -- TODO maybe this implementation is incorrect. Use library instead.
 

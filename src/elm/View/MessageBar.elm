@@ -1,4 +1,4 @@
-module View.MessageBar exposing(view) -- where
+module View.MessageBar exposing(view)
 
 import Html exposing (..)
 -- import Html.App

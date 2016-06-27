@@ -1,4 +1,4 @@
-module Model.Serialization exposing (..) -- where
+module Model.Serialization exposing (..)
 
 import Date
 

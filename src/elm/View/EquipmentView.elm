@@ -1,4 +1,4 @@
-module View.EquipmentView exposing(noEvents, equipmentView') -- where
+module View.EquipmentView exposing(noEvents, equipmentView')
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

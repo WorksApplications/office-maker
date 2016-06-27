@@ -1,4 +1,4 @@
-module SearchBox exposing (..) -- where
+module SearchBox exposing (..)
 
 import Task
 import Html exposing (..)

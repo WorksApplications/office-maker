@@ -1,4 +1,4 @@
-module View.FloorsInfoView exposing(view) -- where
+module View.FloorsInfoView exposing(view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

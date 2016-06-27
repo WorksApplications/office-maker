@@ -1,4 +1,4 @@
-module Util.HtmlUtil exposing (..) -- where
+module Util.HtmlUtil exposing (..)
 
 import Native.HtmlUtil
 import Html exposing (Html, Attribute, text)
@@ -70,7 +70,7 @@ onMouseUp' e =
 onMouseDown' : a -> Attribute a
 onMouseDown' e =
   onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
-  
+
 onDblClick' : a -> Attribute a
 onDblClick' e =
   onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } (Decode.succeed e)

@@ -1,4 +1,4 @@
-module EquipmentNameInput exposing (..) -- where
+module EquipmentNameInput exposing (..)
 
 import Util.ShortCut as ShortCut
 import Html exposing (..)

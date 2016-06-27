@@ -1,4 +1,4 @@
-module Model.User exposing (..) -- where
+module Model.User exposing (..)
 
 import Model.Person exposing (Person)
 

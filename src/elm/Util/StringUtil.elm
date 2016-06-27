@@ -1,4 +1,4 @@
-module Util.StringUtil exposing (..) -- where
+module Util.StringUtil exposing (..)
 
 import String
 

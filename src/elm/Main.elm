@@ -1,4 +1,4 @@
-module Main exposing (..) -- where
+module Main exposing (..)
 
 import Model
 import Model.URL as URL

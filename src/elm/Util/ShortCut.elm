@@ -3,7 +3,7 @@ module Util.ShortCut exposing
   , Event(..)
   , init
   , update
-  ) -- where
+  )
 
 import Char
 

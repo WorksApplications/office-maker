@@ -1,4 +1,4 @@
-module Util.StyleUtil exposing (..) -- where
+module Util.StyleUtil exposing (..)
 
 px : number -> String
 px num =

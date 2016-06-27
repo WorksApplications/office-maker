@@ -1,4 +1,4 @@
-module View.View exposing(view) -- where
+module View.View exposing (view)
 
 import Dict exposing (..)
 import Maybe

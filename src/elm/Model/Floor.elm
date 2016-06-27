@@ -1,4 +1,4 @@
-module Model.Floor exposing (..) -- where
+module Model.Floor exposing (..)
 
 import Date exposing (Date)
 import Model.Equipments as Equipments exposing (..)

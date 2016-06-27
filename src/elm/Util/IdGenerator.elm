@@ -1,4 +1,4 @@
-module Util.IdGenerator exposing (..) -- where
+module Util.IdGenerator exposing (..)
 
 import Util.UUID as UUID
 

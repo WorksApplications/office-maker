@@ -1,4 +1,4 @@
-module Model.EquipmentsOperation exposing (..) -- where
+module Model.EquipmentsOperation exposing (..)
 
 {- this module does not know Model or Floor -}
 

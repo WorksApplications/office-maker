@@ -1,4 +1,4 @@
-module Util.DecodeUtil exposing (..) -- where
+module Util.DecodeUtil exposing (..)
 
 import Json.Decode exposing (Decoder, maybe, succeed, (:=), int, tuple2)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, custom)

@@ -1,4 +1,4 @@
-module Util.ListUtil exposing (..) -- where
+module Util.ListUtil exposing (..)
 
 findBy : (a -> Bool) -> List a -> Maybe a
 findBy f list =

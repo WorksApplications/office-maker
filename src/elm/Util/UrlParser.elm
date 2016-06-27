@@ -1,4 +1,4 @@
-module Util.UrlParser exposing (..) -- where
+module Util.UrlParser exposing (..)
 
 import Dict exposing (Dict)
 import String

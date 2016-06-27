@@ -1,4 +1,4 @@
-module Util.HoverUtil exposing (Model, Msg, init, onHover, update, isHovered) -- where
+module Util.HoverUtil exposing (Model, Msg, init, onHover, update, isHovered)
 
 import Html exposing (Attribute, div, button, text)
 import Html.Attributes exposing (style)

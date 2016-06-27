@@ -1,4 +1,4 @@
-module View.Styles exposing (..) -- where
+module View.Styles exposing (..)
 
 import Util.StyleUtil exposing (..)
 

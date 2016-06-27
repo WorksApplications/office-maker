@@ -1,4 +1,4 @@
-module FloorProperty exposing(..) -- where
+module FloorProperty exposing(..)
 
 import String
 import Date exposing (Date)

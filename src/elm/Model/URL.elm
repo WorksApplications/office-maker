@@ -1,4 +1,4 @@
-module Model.URL exposing (..) -- where
+module Model.URL exposing (..)
 
 import Dict
 import String

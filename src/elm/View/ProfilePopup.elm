@@ -1,4 +1,4 @@
-module View.ProfilePopup exposing(view, innerView) -- where
+module View.ProfilePopup exposing(view, innerView)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

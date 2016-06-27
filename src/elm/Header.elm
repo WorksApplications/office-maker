@@ -1,4 +1,4 @@
-module Header exposing (..) -- where
+module Header exposing (..)
 
 import Task exposing (Task)
 

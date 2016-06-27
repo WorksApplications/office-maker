@@ -1,4 +1,4 @@
-module Model.Errors exposing (..) -- where
+module Model.Errors exposing (..)
 
 import Util.HtmlUtil as HtmlUtil
 import Util.File as File

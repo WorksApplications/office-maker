@@ -20,7 +20,7 @@ module Model.API exposing (
     , getColors
     , getPrototypes
     , Error
-  ) -- where
+  )
 
 import String
 import Http

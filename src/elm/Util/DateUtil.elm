@@ -1,4 +1,4 @@
-module Util.DateUtil exposing (..) -- where
+module Util.DateUtil exposing (..)
 
 import Date exposing (..)
 import String

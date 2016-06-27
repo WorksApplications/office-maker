@@ -1,4 +1,4 @@
-module Model exposing (..) -- where
+module Model exposing (..)
 
 import Date exposing (Date)
 import Maybe

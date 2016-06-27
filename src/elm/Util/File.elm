@@ -1,4 +1,4 @@
-module Util.File exposing (..) -- where
+module Util.File exposing (..)
 
 import Native.File
 import Json.Decode exposing (..)
