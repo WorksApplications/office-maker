@@ -3,7 +3,8 @@ module EquipmentNameInput exposing (..) -- where
 import Util.ShortCut as ShortCut
 import Html exposing (..)
 import Html.Attributes exposing (..)
--- import Html.Events exposing (..)
+import Html.Events exposing (..)
+import Json.Decode as Decode
 import Util.HtmlUtil exposing (..)
 import Model.Person exposing (Person)
 
@@ -33,6 +34,10 @@ type Event =
   | OnFinish Id String
   | OnSelectCandidate Id Id
   | None
+
+isEditing : Model -> Bool
+isEditing model =
+  model.editingEquipment /= Nothing
 
 update : ShortCut.Model -> Msg -> Model -> (Model, Event)
 update keys message model =
@@ -110,11 +115,13 @@ view screenRectOf transitionDisabled candidates model =
               Styles.transition transitionDisabled
           in
             div
-              [ ]
+              [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
+              , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
+              ]
               [ textarea
                 ([ Html.Attributes.id "name-input"
                 , style styles
-                ] ++ (inputAttributes (InputName id) KeydownOnNameInput name (Just NoOp)))
+                ] ++ (inputAttributes (InputName id) KeydownOnNameInput name))
                 [ text name ]
               , candidatesView id screenRect candidates
               -- TODO popup pointer here
@@ -146,13 +153,9 @@ candidatesView equipmentId screenRectOfDesk people =
           (List.map each people)
 
 -- TODO duplicated
-inputAttributes : (String -> msg) -> (Int -> msg) -> String -> Maybe msg -> List (Attribute msg)
-inputAttributes toInputMsg toKeydownMsg value' defence =
-  [ onInput' toInputMsg -- TODO cannot input japanese
+inputAttributes : (String -> msg) -> (Int -> msg) -> String -> List (Attribute msg)
+inputAttributes toInputMsg toKeydownMsg value' =
+  [ onInput' toInputMsg
   , onKeyDown'' toKeydownMsg
   , value value'
-  ] ++
-    ( case defence of
-        Just message -> [onMouseDown' message]
-        Nothing -> []
-    )
+  ]

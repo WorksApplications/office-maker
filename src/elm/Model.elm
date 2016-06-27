@@ -402,33 +402,37 @@ update action model =
       } ! []
     MouseDownOnEquipment lastTouchedId ->
       let
+        -- _ = Debug.log "MouseDownOnEquipment" ""
         (clientX, clientY) = model.pos
         newModel =
-          { model |
-            selectedEquipments =
-              if model.keys.ctrl then
-                if List.member lastTouchedId model.selectedEquipments
-                then List.filter ((/=) lastTouchedId) model.selectedEquipments
-                else lastTouchedId :: model.selectedEquipments
-              else if model.keys.shift then
-                let
-                  allEquipments =
-                    (currentFloor model).equipments
-                  equipmentsExcept target =
-                    List.filter (\e -> idOf e /= idOf target) allEquipments
-                in
-                  case (findEquipmentById allEquipments lastTouchedId, primarySelectedEquipment model) of
-                    (Just e, Just primary) ->
-                      List.map idOf <|
-                        primary :: (withinRange (primary, e) (equipmentsExcept primary)) --keep primary
-                    _ -> [lastTouchedId]
-              else
-                if List.member lastTouchedId model.selectedEquipments
-                then model.selectedEquipments
-                else [lastTouchedId]
-          , draggingContext = MoveEquipment lastTouchedId (clientX, clientY)
-          , selectorRect = Nothing
-          }
+          -- if EquipmentNameInput.isEditing model.equipmentNameInput then
+          --   Debug.log "isEditing" model
+          -- else
+            { model |
+              selectedEquipments =
+                if model.keys.ctrl then
+                  if List.member lastTouchedId model.selectedEquipments
+                  then List.filter ((/=) lastTouchedId) model.selectedEquipments
+                  else lastTouchedId :: model.selectedEquipments
+                else if model.keys.shift then
+                  let
+                    allEquipments =
+                      (currentFloor model).equipments
+                    equipmentsExcept target =
+                      List.filter (\e -> idOf e /= idOf target) allEquipments
+                  in
+                    case (findEquipmentById allEquipments lastTouchedId, primarySelectedEquipment model) of
+                      (Just e, Just primary) ->
+                        List.map idOf <|
+                          primary :: (withinRange (primary, e) (equipmentsExcept primary)) --keep primary
+                      _ -> [lastTouchedId]
+                else
+                  if List.member lastTouchedId model.selectedEquipments
+                  then model.selectedEquipments
+                  else [lastTouchedId]
+            , draggingContext = MoveEquipment lastTouchedId (clientX, clientY)
+            , selectorRect = Nothing
+            }
       in
         newModel ! []
     MouseUpOnCanvas ->

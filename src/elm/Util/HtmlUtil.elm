@@ -70,7 +70,7 @@ onMouseUp' e =
 onMouseDown' : a -> Attribute a
 onMouseDown' e =
   onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
-
+  
 onDblClick' : a -> Attribute a
 onDblClick' e =
   onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
