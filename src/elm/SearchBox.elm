@@ -68,21 +68,27 @@ searchCmd withPrivate query =
 
 resultsInFloor : Maybe String -> Model -> List SearchResult
 resultsInFloor maybeId model =
+  let
+    results =
+      allResults model
+    targetId =
+      Maybe.withDefault "draft" maybeId -- TODO ?
+    f { personId, equipmentIdAndFloorId } =
+      case equipmentIdAndFloorId of
+        Just (eid, fid) ->
+          fid == targetId
+        Nothing ->
+          False
+  in
+    List.filter f results
+
+allResults : Model -> List SearchResult
+allResults model =
   case model.results of
     Nothing ->
       []
     Just results ->
-      let
-        targetId =
-          Maybe.withDefault "draft" maybeId
-        f { personId, equipmentIdAndFloorId } =
-          case equipmentIdAndFloorId of
-            Just (eid, fid) ->
-              fid == targetId
-            Nothing ->
-              False
-      in
-        List.filter f results
+      results
 
 view : (Msg -> msg) -> Model -> Html msg
 view translateMsg model =

@@ -750,22 +750,26 @@ update action model =
             SearchBox.OnResults ->
               let
                 results =
-                  SearchBox.resultsInFloor (UndoRedo.data model'.floor).id model'.searchBox
-              in
-                case results of
-                  { personId, equipmentIdAndFloorId } :: [] ->
-                    let
-                      regesterPersonCmd =
-                        case personId of
-                          Just id -> regesterPerson id
-                          Nothing -> Cmd.none
-                    in
+                  SearchBox.allResults model'.searchBox
+
+                regesterPersonCmd =
+                  Cmd.batch <|
+                  List.filterMap (\r ->
+                    case r.personId of
+                      Just id -> Just (regesterPerson id)
+                      Nothing -> Nothing
+                  ) results
+                selectedResult =
+                  case results of
+                    { equipmentIdAndFloorId } :: [] ->
                       case equipmentIdAndFloorId of
                         Just (e, fid) ->
-                          (Just (idOf e), regesterPersonCmd)
+                          Just (idOf e)
                         Nothing ->
-                          (Nothing, regesterPersonCmd)
-                  _ -> (Nothing, Cmd.none)
+                          Nothing
+                    _ -> Nothing
+              in
+                (selectedResult, regesterPersonCmd)
             SearchBox.OnSelectResult { personId, equipmentIdAndFloorId } ->
               let
                 selectedResult =
