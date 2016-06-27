@@ -402,39 +402,50 @@ update action model =
       } ! []
     MouseDownOnEquipment lastTouchedId ->
       let
-        -- _ = Debug.log "MouseDownOnEquipment" ""
         (clientX, clientY) = model.pos
-        newModel =
-          -- if EquipmentNameInput.isEditing model.equipmentNameInput then
-          --   Debug.log "isEditing" model
-          -- else
-            { model |
-              selectedEquipments =
-                if model.keys.ctrl then
-                  if List.member lastTouchedId model.selectedEquipments
-                  then List.filter ((/=) lastTouchedId) model.selectedEquipments
-                  else lastTouchedId :: model.selectedEquipments
-                else if model.keys.shift then
-                  let
-                    allEquipments =
-                      (currentFloor model).equipments
-                    equipmentsExcept target =
-                      List.filter (\e -> idOf e /= idOf target) allEquipments
-                  in
-                    case (findEquipmentById allEquipments lastTouchedId, primarySelectedEquipment model) of
-                      (Just e, Just primary) ->
-                        List.map idOf <|
-                          primary :: (withinRange (primary, e) (equipmentsExcept primary)) --keep primary
-                      _ -> [lastTouchedId]
-                else
-                  if List.member lastTouchedId model.selectedEquipments
-                  then model.selectedEquipments
-                  else [lastTouchedId]
-            , draggingContext = MoveEquipment lastTouchedId (clientX, clientY)
-            , selectorRect = Nothing
-            }
+        (model', cmd) =
+          if EquipmentNameInput.isEditing model.equipmentNameInput then
+            let
+              (equipmentNameInput, ev) =
+                EquipmentNameInput.forceFinish model.equipmentNameInput
+            in
+              case ev of
+                EquipmentNameInput.OnFinish id name ->
+                  updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
+                _ ->
+                  { model | equipmentNameInput = equipmentNameInput } ! []
+          else
+            model ! []
+
+        -- TODO
+        help model =
+          { model |
+            selectedEquipments =
+              if model.keys.ctrl then
+                if List.member lastTouchedId model.selectedEquipments
+                then List.filter ((/=) lastTouchedId) model.selectedEquipments
+                else lastTouchedId :: model.selectedEquipments
+              else if model.keys.shift then
+                let
+                  allEquipments =
+                    (currentFloor model).equipments
+                  equipmentsExcept target =
+                    List.filter (\e -> idOf e /= idOf target) allEquipments
+                in
+                  case (findEquipmentById allEquipments lastTouchedId, primarySelectedEquipment model) of
+                    (Just e, Just primary) ->
+                      List.map idOf <|
+                        primary :: (withinRange (primary, e) (equipmentsExcept primary)) --keep primary
+                    _ -> [lastTouchedId]
+              else
+                if List.member lastTouchedId model.selectedEquipments
+                then model.selectedEquipments
+                else [lastTouchedId]
+          , draggingContext = MoveEquipment lastTouchedId (clientX, clientY)
+          , selectorRect = Nothing
+          }
       in
-        newModel ! []
+        help model' ! [cmd]
     MouseUpOnCanvas ->
       let
         (clientX, clientY) = model.pos
@@ -1046,50 +1057,37 @@ updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput continueEditing id name model =
   let
     allEquipments = (currentFloor model).equipments
-    (equipmentNameInput, cmd) =
+
+    equipmentNameInput =
       case findEquipmentById allEquipments id of
         Just equipment ->
-          let
-            island' =
-              island
-                [equipment]
-                (List.filter (\e -> (idOf e) /= id) allEquipments)
-            cmd =
-              case Equipments.relatedPerson equipment of
-                Just personId ->
-                  Cmd.none
-                Nothing ->
-                  let
-                    task =
-                      API.personCandidate name `andThen` \people ->
-                      Task.succeed (RegisterPeople people) `andThen` \_ ->
-                      Task.succeed (UpdatePersonCandidate id (List.map .id people))
-                  in
-                    performAPI identity task
-            newEquipmentNameInput =
-              case (continueEditing, EquipmentsOperation.nearest EquipmentsOperation.Down equipment island') of
-                (True, Just e) ->
-                  if idOf equipment == idOf e then
-                    model.equipmentNameInput
-                  else
-                    EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
-                _ ->
-                  model.equipmentNameInput
-          in
-            (newEquipmentNameInput, cmd)
+          if continueEditing then
+            startNextInput equipment allEquipments model.equipmentNameInput
+          else
+            model.equipmentNameInput
         Nothing ->
-          (model.equipmentNameInput, Cmd.none)
+          model.equipmentNameInput
+
+    updatePersonCandidateCmd =
+      case findEquipmentById allEquipments id of
+        Just equipment ->
+          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment
+        Nothing ->
+          Cmd.none
+
     selectedEquipments =
       case equipmentNameInput.editingEquipment of
         Just (id, _) ->
           [id]
         Nothing ->
           []
+
     newFloor =  --TODO if name really changed
       UndoRedo.commit model.floor (Floor.changeEquipmentName id name)
 
     cmd2 =
       saveFloorCmd (UndoRedo.data newFloor)
+
     newModel =
       { model |
         floor = newFloor
@@ -1098,7 +1096,43 @@ updateOnFinishNameInput continueEditing id name model =
       , selectedEquipments = selectedEquipments
       }
   in
-    newModel ! [ cmd, cmd2 ]
+    newModel ! [ updatePersonCandidateCmd, cmd2 ]
+
+
+updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : Equipment -> Cmd Msg
+updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment =
+  case Equipments.relatedPerson equipment of
+    Just personId ->
+      Cmd.none
+    Nothing ->
+      let
+        task =
+          API.personCandidate (nameOf equipment) `andThen` \people ->
+          Task.succeed (RegisterPeople people) `andThen` \_ ->
+          Task.succeed (UpdatePersonCandidate (idOf equipment) (List.map .id people))
+      in
+        performAPI identity task
+
+
+startNextInput : Equipment -> List Equipment -> EquipmentNameInput.Model -> EquipmentNameInput.Model
+startNextInput equipment allEquipments equipmentNameInput =
+  let
+    island' =
+      island
+        [equipment]
+        (List.filter (\e -> (idOf e) /= (idOf equipment)) allEquipments)
+  in
+    case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
+      Just e ->
+        if idOf equipment == idOf e then
+          equipmentNameInput
+        else
+          EquipmentNameInput.start (idOf e, nameOf e) equipmentNameInput
+      _ ->
+        equipmentNameInput
+
+
+
 
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model
