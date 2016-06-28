@@ -300,10 +300,6 @@ button =
     -- , ("box-shadow", "rgba(0, 0, 0, 0.12) 0px 0.1px 0.0px 0px, rgba(0, 0, 0, 0.24) 0px 0.5px 0.2px 0px")
     ]
 
-buttons : S
-buttons =
-  []
-
 
 defaultButton : S
 defaultButton =
@@ -561,7 +557,6 @@ modalBackground =
     , ("z-index", zIndex.modalBackground)
     ]
 
-
 diffPopup : S
 diffPopup =
   popup ++
@@ -570,6 +565,40 @@ diffPopup =
     , ("top", "10%")
     , ("bottom", "10%")
     ] ++ shadow
+
+diffPopupHeader : S
+diffPopupHeader =
+  [ ("margin", "0")
+  , ("position", "absolute")
+  , ("height", "60px")
+  , ("line-height", "60px")
+  , ("right", "0")
+  , ("left", "0")
+  ]
+
+diffPopupBody : S
+diffPopupBody =
+  [ ("overflow-y", "scroll")
+  , ("position", "absolute")
+  , ("top", "60px")
+  , ("bottom", "90px")
+  , ("right", "0")
+  , ("left", "0")
+  ]
+
+diffPopupFooter : S
+diffPopupFooter =
+  [ ("bottom", "0")
+  , ("position", "absolute")
+  , ("right", "0")
+  , ("left", "0")
+  ]
+
+diffPopupInnerContainer : S
+diffPopupInnerContainer =
+  [ ("position", "relative")
+  , ("height", "100%")
+  ]
 
 personDetailPopup : (Int, Int) -> S
 personDetailPopup (x, y) =

@@ -530,7 +530,6 @@ colorPropertyView model =
       (List.map viewForEach model.colorPalette)
 
 
-
 view : Model -> Html Msg
 view model =
   div
@@ -538,7 +537,13 @@ view model =
     [ Header.view (Just (model.user, model.editMode /= Viewing)) |> App.map HeaderMsg
     , mainView model
     , Maybe.withDefault (text "") <|
-        Maybe.map (DiffView.view model.visitDate model.personInfo { onClose = CloseDiff, onConfirm = ConfirmDiff }) model.diff -- TODO
+        Maybe.map
+          ( DiffView.view
+              model.visitDate
+              model.personInfo
+              { onClose = CloseDiff, onConfirm = ConfirmDiff, noOp = NoOp }
+          )
+          model.diff -- TODO
     , contextMenuView model
     ]
 

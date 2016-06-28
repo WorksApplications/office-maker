@@ -4,6 +4,7 @@ import Maybe
 import Dict exposing (Dict)
 import Date exposing (Date)
 import Html exposing (..)
+import Json.Decode as Decode
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
@@ -20,21 +21,26 @@ type alias Floor = Floor.Model
 type alias Options msg =
   { onClose : msg
   , onConfirm : msg
+  , noOp : msg
   }
 
 view : Date -> Dict String Person -> Options msg -> (Floor, Maybe Floor) -> Html msg
 view visitDate personInfo options (current, prev) =
   let
     header =
-      case prev of
-        Just { update } ->
-          case update of
-            Just { by , at } ->
-              h2 [] [ text ("Changes from " ++ formatDateOrTime visitDate at) ]
-            Nothing ->
-              Debug.crash "this should never happen"
-        Nothing ->
-          h2 [] [ text "Changes"]
+      h2 [ style Styles.diffPopupHeader ]
+        [ text
+            ( case prev of
+              Just { update } ->
+                case update of
+                  Just { by , at } ->
+                    "Changes from " ++ formatDateOrTime visitDate at
+                  Nothing ->
+                    Debug.crash "this should never happen"
+              Nothing ->
+                "Changes"
+            )
+        ]
 
     newEquipments =
       Floor.equipments current
@@ -61,15 +67,20 @@ view visitDate personInfo options (current, prev) =
     delete =
       Dict.values ramainingOldDict
 
+    body =
+      div [ style Styles.diffPopupBody ]
+        [ if List.isEmpty add then text "" else h3 [] [ text ((toString (List.length add)) ++ " Additions") ]
+        , if List.isEmpty add then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) add)
+        , if List.isEmpty modify then text "" else h3 [] [ text ((toString (List.length modify)) ++ " Modifications") ]
+        , if List.isEmpty modify then text "" else ul [] (List.map (\d -> li [] [ text (toString d) ] ) modify)
+        , if List.isEmpty delete then text "" else h3 [] [ text ((toString (List.length delete)) ++ " Deletions") ]
+        , if List.isEmpty delete then text "" else ul [] (List.map (\old -> li [] [ text (idOf old) ] ) delete)
+        ]
+
   in
-    popup options.onClose <|
+    popup options.noOp options.onClose <|
       [ header
-      , if List.isEmpty add then text "" else h3 [] [ text ((toString (List.length add)) ++ " Additions") ]
-      , if List.isEmpty add then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) add)
-      , if List.isEmpty modify then text "" else h3 [] [ text ((toString (List.length modify)) ++ " Modifications") ]
-      , if List.isEmpty modify then text "" else ul [] (List.map (\d -> li [] [ text (toString d) ] ) modify)
-      , if List.isEmpty delete then text "" else h3 [] [ text ((toString (List.length delete)) ++ " Deletions") ]
-      , if List.isEmpty delete then text "" else ul [] (List.map (\old -> li [] [ text (idOf old) ] ) delete)
+      , body
       , buttons options.onClose options.onConfirm
       ]
 
@@ -112,15 +123,20 @@ buttons onClose onConfirm =
         , style Styles.primaryButton ]
         [ text "Confirm" ]
   in
-    div [ style Styles.buttons ] [ cancelButton, confirmButton ]
+    div [ style Styles.diffPopupFooter ] [ cancelButton, confirmButton ]
 
-popup : msg -> List (Html msg) -> Html msg
-popup onClose inner =
+popup : msg -> msg -> List (Html msg) -> Html msg
+popup noOp onClose inner =
   div
     [ style Styles.modalBackground
     , onClick onClose
     ]
-    [ div [ style Styles.diffPopup ] inner ]
+    [ div
+        [ style Styles.diffPopup
+        , onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed noOp)
+        ]
+        [ div [ style Styles.diffPopupInnerContainer ] inner ]
+    ]
 
 
 
