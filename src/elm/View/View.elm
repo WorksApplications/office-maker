@@ -130,9 +130,13 @@ mainView model =
         Just CreateNewFloor
       else
         Nothing
+    filteredFloorsInfo =
+      List.filter
+      (if model.editMode /= Viewing then (always True) else (.public))
+      model.floorsInfo
   in
     main' [ style (Styles.mainView windowHeight) ]
-      [ FloorsInfoView.view createMsg (currentFloor model).id model.floorsInfo
+      [ FloorsInfoView.view createMsg (currentFloor model).id filteredFloorsInfo
       , MessageBar.view model.error
       , canvasContainerView model
       , subView model

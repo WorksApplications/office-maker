@@ -728,7 +728,11 @@ update action model =
         (newModel, cmd2) =
           case event of
             Header.LogoutDone ->
-              { model | user = User.guest } ! []
+              { model |
+                user = User.guest
+              , tab = SearchTab
+              , editMode = Viewing
+              } ! []
             Header.OnToggleEditing ->
               let
                 nextIsEditing =
