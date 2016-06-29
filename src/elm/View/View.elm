@@ -125,9 +125,14 @@ mainView : Model -> Html Msg
 mainView model =
   let
     (windowWidth, windowHeight) = model.windowSize
+    createMsg =
+      if model.editMode /= Viewing && User.isAdmin model.user then
+        Just CreateNewFloor
+      else
+        Nothing
   in
     main' [ style (Styles.mainView windowHeight) ]
-      [ FloorsInfoView.view (currentFloor model).id model.floorsInfo
+      [ FloorsInfoView.view createMsg (currentFloor model).id model.floorsInfo
       , MessageBar.view model.error
       , canvasContainerView model
       , subView model

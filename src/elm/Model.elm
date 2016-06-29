@@ -197,6 +197,7 @@ type Msg = NoOp
   | ChangeTab Tab
   | ClosePopup
   | ShowDetailForEquipment Id
+  | CreateNewFloor
   | Error GlobalError
 
 debug : Bool
@@ -893,6 +894,15 @@ update action model =
             Nothing -> Cmd.none
       in
         { model | selectedResult = Just id } ! [ cmd ]
+    CreateNewFloor ->
+      let
+        (newFloorId, newSeed) =
+          IdGenerator.new model.seed
+        newFloor = Floor.init (Just newFloorId)
+        cmd1 = Task.perform (always NoOp) (always NoOp) (API.saveEditingFloor newFloor)
+        cmd2 = Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+      in
+        { model | seed = newSeed } ! [ cmd1, cmd2 ]
     Error e ->
       let
         newModel =
