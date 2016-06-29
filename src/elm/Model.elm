@@ -69,7 +69,6 @@ type alias Model =
   , diff : Maybe (Floor, Maybe Floor)
   , candidates : List Id
   , tab : Tab
-  , showPrintView : Bool
   }
 
 type ContextMenu =
@@ -77,7 +76,7 @@ type ContextMenu =
   | Equipment (Int, Int) Id
 
 type EditMode =
-    Viewing
+    Viewing Bool
   | Select
   | Pen
   | Stamp
@@ -121,7 +120,7 @@ init randomSeed initialSize urlResult visitDate =
       , gridSize = gridSize
       , selectorRect = Nothing
       , keys = ShortCut.init
-      , editMode = Viewing
+      , editMode = Viewing False
       , colorPalette = []
       , contextMenu = NoContextMenu
       , floorsInfo = []
@@ -140,7 +139,6 @@ init randomSeed initialSize urlResult visitDate =
       , url = url
       , searchBox = searchBox
       , tab = SearchTab
-      , showPrintView = False
       }
     initCmd =
       Task.perform (always NoOp) identity (Task.succeed Init)
@@ -249,9 +247,11 @@ urlUpdate result model =
         nextIsEditing =
           not (User.isGuest model.user) && newURL.editMode
         newEditMode =
-          if nextIsEditing then Select else Viewing
+          if nextIsEditing then Select else Viewing False
         requestPrivateFloors =
-          newEditMode /= Viewing && not (User.isGuest model.user)
+          case newEditMode of
+            Viewing _ -> False
+            _ -> not (User.isGuest model.user)
       in
         { model |
           url = newURL
@@ -259,10 +259,9 @@ urlUpdate result model =
         , tab =
             -- TODO detect what is changed
             if nextIsEditing then
-              if model.editMode == Viewing then
-                EditTab
-              else
-                model.tab
+              case model.editMode of
+                Viewing _ -> EditTab
+                _ -> model.tab
             else
               SearchTab
         , searchBox = newSearchBox
@@ -287,7 +286,9 @@ update action model =
     AuthLoaded user ->
       let
         requestPrivateFloors =
-          model.editMode /= Viewing && not (User.isGuest user)
+          case model.editMode of
+            Viewing _ -> False
+            _ -> not (User.isGuest user)
         floorId = model.url.floorId
         forEdit = not (User.isGuest model.user)
         loadFloorCmd' =
@@ -308,9 +309,9 @@ update action model =
           user = user
         , editMode =
             if User.isAdmin user then
-              if model.url.editMode then Select else Viewing
+              if model.url.editMode then Select else Viewing False
             else
-              Viewing
+              Viewing False
         }
         ! [ loadFloorsInfoCmd requestPrivateFloors
           , loadFloorCmd'
@@ -513,7 +514,7 @@ update action model =
               PenFromScreenPos (clientX, clientY)
             Select ->
               ShiftOffsetPrevScreenPos
-            Viewing ->
+            Viewing _ ->
               ShiftOffsetPrevScreenPos
 
         (model'', cmd2) =
@@ -731,12 +732,14 @@ update action model =
               { model |
                 user = User.guest
               , tab = SearchTab
-              , editMode = Viewing
+              , editMode = Viewing False
               } ! []
             Header.OnToggleEditing ->
               let
                 nextIsEditing =
-                  model.editMode == Viewing
+                  case model.editMode of
+                    Viewing _ -> True
+                    _ -> False
               in
                 model !
                   [ Navigation.modifyUrl <|
@@ -744,7 +747,15 @@ update action model =
                         URL.updateEditMode nextIsEditing model.url
                   ]
             Header.OnTogglePrintView opened ->
-              { model | showPrintView = opened } ! []
+              { model |
+                editMode =
+                  if opened then
+                    Viewing True
+                  else if model.url.editMode then
+                    Select
+                  else
+                    Viewing False
+              } ! []
             Header.None ->
               model ! []
       in
@@ -1346,8 +1357,9 @@ blurCmd id =
 
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
-  model.editMode /= Viewing &&
-  List.member (idOf equipment) model.selectedEquipments
+  case model.editMode of
+    Viewing _ -> False
+    _ -> List.member (idOf equipment) model.selectedEquipments
 
 primarySelectedEquipment : Model -> Maybe Equipment
 primarySelectedEquipment model =

@@ -50,50 +50,68 @@ view maybeContext =
   header
     [ style Styles.header ]
     [ h1 [ style Styles.h1 ] [text "Office Maker" ]
-    , menu maybeContext
+    , normalMenu maybeContext
     ]
 
-menu : Maybe (User, Bool) -> Html Msg
-menu maybeContext =
-  case maybeContext of
-    Just (user, editing) ->
-      let
-        editingToggle =
-          if User.isGuest user then
-            text ""
-          else
-            editingToggleView editing
-        printButton =
-          if User.isGuest user then
-            text ""
-          else
-            printButtonView
-        login =
-          div [ style Styles.login, onClick Login ] [ text "Sign in" ]
-        logout =
-          div [ style Styles.logout, onClick Logout ] [ text "Sign out" ]
-        children =
-          editingToggle :: printButton :: greeting user ::
-            ( case user of
-                Admin _ -> [ logout ]
-                General _ -> [ logout ]
-                Guest -> [ login ]
-            )
-      in
-        div [ style Styles.headerMenu ] children
-    Nothing -> text ""
+viewPrintMode : String -> Html Msg
+viewPrintMode title =
+  header
+    [ style Styles.header ]
+    [ h1 [ style Styles.h1 ] [text title ]
+    , menu [ printButtonView True ]
+    ]
+
+normalMenu : Maybe (User, Bool) -> Html Msg
+normalMenu maybeContext =
+  menu <|
+    case maybeContext of
+      Just (user, editing) ->
+        editingToggle user editing ::
+        printButton user ::
+        greeting user ::
+        (if user == Guest then login else logout) ::
+        []
+      Nothing ->
+        []
+
+menu : List (Html Msg) -> Html Msg
+menu children =
+  div [ style Styles.headerMenu ] children
+
+editingToggle : User -> Bool -> Html Msg
+editingToggle user editing =
+  if User.isGuest user then
+    text ""
+  else
+    editingToggleView editing
+
+printButton : User -> Html Msg
+printButton user =
+  if User.isGuest user then
+    text ""
+  else
+    printButtonView False
 
 
-printButtonView : Html Msg
-printButtonView =
+login : Html Msg
+login =
+  div [ style Styles.login, onClick Login ] [ text "Sign in" ]
+
+logout : Html Msg
+logout =
+  div [ style Styles.logout, onClick Logout ] [ text "Sign out" ]
+
+
+printButtonView : Bool -> Html Msg
+printButtonView showingPrint =
   -- iconView ToggleEditing (Icons.editingToggle False) "Print"
   hover Styles.hoverHeaderIconHover
   div
-    [ onClick (TogglePrintView True)
+    [ onClick (TogglePrintView (not showingPrint))
     , style (Styles.editingToggleContainer False)
     ]
     [ div [ style Styles.editingToggleIcon ] [ Icons.printButton ]
-    , div [ style (Styles.editingToggleText) ] [ text "Print" ]
+    , div [ style (Styles.editingToggleText) ] [ text (if showingPrint then "Close" else "Print") ]
     ]
 
 editingToggleView : Bool -> Html Msg

@@ -187,11 +187,11 @@ canvasView rect =
     , ("font-family", "default")
     ]
 
-canvasContainer : S
-canvasContainer =
+canvasContainer : Bool -> S
+canvasContainer printMode =
   [ ("position", "relative")
   , ("overflow", "hidden")
-  , ("background", "#000")
+  , ("background", if printMode then "#fff" else "#000")
   , ("flex", "1")
   ]
 
@@ -404,17 +404,23 @@ greetingName =
   , ("line-height", "30px")
   ]
 
-login : S
-login = headerMenuItem ++
+closePrint : S
+closePrint =
   [ ("width", "80px")
   , ("cursor", "pointer")
-  ]
+  ] ++ headerMenuItem
+
+login : S
+login =
+  [ ("width", "80px")
+  , ("cursor", "pointer")
+  ] ++ headerMenuItem
 
 logout : S
-logout = headerMenuItem ++
+logout =
   [ ("width", "80px")
   , ("cursor", "pointer")
-  ]
+  ] ++ headerMenuItem
 
 loginContainer : S
 loginContainer =

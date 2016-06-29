@@ -73,22 +73,23 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
                 fitToGrid model.gridSize (left + dx, top + dy)
             _ -> (left, top)
         eventOptions =
-          if model.editMode == Viewing then
-            let
-              noEvents = EquipmentView.noEvents
-            in
-              { noEvents |
-                onMouseDown = Just (ShowDetailForEquipment id)
+          case model.editMode of
+            Viewing _ ->
+              let
+                noEvents = EquipmentView.noEvents
+              in
+                { noEvents |
+                  onMouseDown = Just (ShowDetailForEquipment id)
+                }
+            _ ->
+              { onContextMenu =
+                  if contextMenuDisabled then
+                    Nothing
+                  else
+                    Just (ShowContextMenuOnEquipment id)
+              , onMouseDown = Just (MouseDownOnEquipment id)
+              , onStartEditingName = Just (StartEditEquipment id)
               }
-          else
-            { onContextMenu =
-                if contextMenuDisabled then
-                  Nothing
-                else
-                  Just (ShowContextMenuOnEquipment id)
-            , onMouseDown = Just (MouseDownOnEquipment id)
-            , onStartEditingName = Just (StartEditEquipment id)
-            }
         floor = currentFloor model
         personInfo =
           model.selectedResult `Maybe.andThen` \id' ->
@@ -99,13 +100,11 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
             else
               Nothing
 
-        -- _ = Debug.log "model.personInfo" model.personInfo
-
         personMatched = personId /= Nothing
       in
         equipmentView'
           eventOptions
-          (model.editMode /= Viewing)
+          (model.editMode /= Viewing True && model.editMode /= Viewing False)
           (id ++ toString movingBool)
           (x, y, width, height)
           color
@@ -126,20 +125,20 @@ mainView model =
   let
     (windowWidth, windowHeight) = model.windowSize
     createMsg =
-      if model.editMode /= Viewing && User.isAdmin model.user then
+      if (model.editMode /= Viewing True && model.editMode /= Viewing False) && User.isAdmin model.user then
         Just CreateNewFloor
       else
         Nothing
     filteredFloorsInfo =
       List.filter
-      (if model.editMode /= Viewing then (always True) else (.public))
+      (if (model.editMode /= Viewing True && model.editMode /= Viewing False) then (always True) else (.public))
       model.floorsInfo
   in
     main' [ style (Styles.mainView windowHeight) ]
       [ FloorsInfoView.view createMsg (currentFloor model).id filteredFloorsInfo
       , MessageBar.view model.error
       , canvasContainerView model
-      , subView model
+      , if model.editMode == Viewing True then text "" else subView model
       ]
 
 subView : Model -> Html Msg
@@ -151,12 +150,12 @@ subView model =
       else
         subViewForEdit model
     tabs =
-      if model.editMode /= Viewing then
-        [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (model.tab == SearchTab)
-        , subViewTab (ChangeTab EditTab) 1 Icons.editTab (model.tab == EditTab)
-        ]
-      else
-        []
+      case model.editMode of
+        Viewing _ -> []
+        _ ->
+          [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (model.tab == SearchTab)
+          , subViewTab (ChangeTab EditTab) 1 Icons.editTab (model.tab == EditTab)
+          ]
   in
     div
       [ style (Styles.subView)
@@ -174,7 +173,6 @@ subViewForEdit model =
     [ card <| penView model
     , card <| propertyView model
     , card <| floorView
-    , card <| debugView model
     ]
 
 subViewForSearch : Model -> List (Html Msg)
@@ -295,16 +293,6 @@ propertyView model =
     , colorPropertyView model
     ]
 
-debugView : Model -> List (Html Msg)
-debugView model =
-    [ text (toString <| List.map idOf <| model.copiedEquipments)
-    , br [] []
-    , text (toString model.keys.ctrl)
-    , br [] []
-    , text (toString model.offset)
-    -- , div [ style (Styles.subViewTab 0 False )] [ text "debug"]
-    ]
-
 canvasContainerView : Model -> Html Msg
 canvasContainerView model =
   let
@@ -316,10 +304,9 @@ canvasContainerView model =
       Equipments.relatedPerson e `Maybe.andThen` \personId ->
       Dict.get personId model.personInfo `Maybe.andThen` \person ->
       Just (ProfilePopup.view ClosePopup model.scale model.offset e person)
-
   in
     div
-      [ style (Styles.canvasContainer ++
+      [ style (Styles.canvasContainer (model.editMode == Viewing True) ++
         ( if model.editMode == Stamp then
             [] -- [("cursor", "none")]
           else
@@ -541,11 +528,15 @@ colorPropertyView model =
 
 view : Model -> Html Msg
 view model =
-  div
-    []
-    [ Header.view (Just (model.user, model.editMode /= Viewing)) |> App.map HeaderMsg
-    , mainView model
-    , Maybe.withDefault (text "") <|
+  let
+    header =
+      case model.editMode of
+        Viewing True ->
+          Header.viewPrintMode (currentFloor model).name |> App.map HeaderMsg
+        _ ->
+          Header.view (Just (model.user, False)) |> App.map HeaderMsg
+    diffView =
+      Maybe.withDefault (text "") <|
         Maybe.map
           ( DiffView.view
               model.visitDate
@@ -553,7 +544,13 @@ view model =
               { onClose = CloseDiff, onConfirm = ConfirmDiff, noOp = NoOp }
           )
           model.diff -- TODO
-    , contextMenuView model
-    ]
+  in
+    div
+      []
+      [ header
+      , mainView model
+      , diffView
+      , contextMenuView model
+      ]
 
 --
