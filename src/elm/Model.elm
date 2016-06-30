@@ -11,6 +11,7 @@ import Keyboard
 import Dict exposing (Dict)
 import Navigation
 import Http
+import Time exposing (Time)
 
 import Util.UndoRedo as UndoRedo
 import Util.ShortCut as ShortCut
@@ -69,6 +70,7 @@ type alias Model =
   , diff : Maybe (Floor, Maybe Floor)
   , candidates : List Id
   , tab : Tab
+  , clickEmulator : List (Id, Bool, Time)
   }
 
 type ContextMenu =
@@ -139,6 +141,7 @@ init randomSeed initialSize urlResult visitDate =
       , url = url
       , searchBox = searchBox
       , tab = SearchTab
+      , clickEmulator = []
       }
     initCmd =
       Task.perform (always NoOp) identity (Task.succeed Init)
@@ -170,6 +173,7 @@ type Msg = NoOp
   | MouseUpOnCanvas
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
+  | MouseUpOnEquipment Id
   | StartEditEquipment Id
   | KeyCodeMsg Bool Int
   | SelectColor String
@@ -196,6 +200,7 @@ type Msg = NoOp
   | ClosePopup
   | ShowDetailForEquipment Id
   | CreateNewFloor
+  | EmulateClick Id Bool Time
   | Error GlobalError
 
 debug : Bool
@@ -447,7 +452,44 @@ update action model =
           , selectorRect = Nothing
           }
       in
-        help model' ! [cmd]
+        help model' ! [ cmd, emulateClick lastTouchedId True ]
+    MouseUpOnEquipment lastTouchedId ->
+      let
+        -- _ = Debug.log "MouseUpOnEquipment" (lastTouchedId, model.draggingContext)
+        (clientX, clientY) = model.pos
+        (model', cmd) =
+          -- TODO refactor to dedupe
+          case model.draggingContext of
+            MoveEquipment id (x, y) ->
+              let
+                newModel =
+                  updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
+                cmd =
+                  saveFloorCmd (UndoRedo.data newModel.floor)
+              in
+                newModel ! [ cmd ]
+            Selector ->
+              { model |
+                selectorRect =
+                  case model.selectorRect of
+                    Just (x, y, _, _) ->
+                      let
+                        (w, h) =
+                          ( Scale.screenToImage model.scale clientX - x
+                          , Scale.screenToImage model.scale clientY - y
+                          )
+                      in
+                        Just (x, y, w, h)
+                    _ -> model.selectorRect
+              } ! []
+            StampFromScreenPos _ ->
+              updateOnFinishStamp model
+            PenFromScreenPos pos ->
+              updateOnFinishPen pos model
+            _ -> model ! []
+      in
+        { model' | draggingContext = None } ! [ cmd, emulateClick lastTouchedId False ]
+
     MouseUpOnCanvas ->
       let
         (clientX, clientY) = model.pos
@@ -539,9 +581,9 @@ update action model =
           { model |
             equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
           , contextMenu = NoContextMenu
-          } ! [ focusCmd "name-input" ]
+          } ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas), focusCmd "name-input" ]
         Nothing ->
-          model ! []
+          model ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ]
     SelectColor color ->
       let
         newModel =
@@ -918,12 +960,39 @@ update action model =
         cmd2 = Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
       in
         { model | seed = newSeed } ! [ cmd1, cmd2 ]
+    EmulateClick id down time ->
+      let
+        (clickEmulator, event) =
+          case (id, down, time) :: model.clickEmulator of
+            (id4, False, time4) :: (id3, True, time3) :: (id2, False, time2) :: (id1, True, time1) :: _ ->
+              if List.all ((==) id1) [id2, id3, id4] && (time4 - time1 < 400) then
+                ([], "dblclick")
+              else
+                (List.take 4 <| (id, down, time) :: model.clickEmulator, "")
+            _ ->
+              (List.take 4 <| (id, down, time) :: model.clickEmulator, "")
+      in
+        { model | clickEmulator = clickEmulator }
+        ! ( if event == "dblclick" then
+              [ Task.perform identity identity (Task.succeed (StartEditEquipment id)) ]
+            else
+              []
+            )
+
     Error e ->
       let
         newModel =
           { model | error = e }
       in
         newModel ! []
+
+
+emulateClick : String -> Bool -> Cmd Msg
+emulateClick id down =
+  Task.perform identity identity <|
+  Time.now `Task.andThen` \time ->
+  (Task.succeed (EmulateClick id down time))
+
 
 currentFloor : Model -> Floor
 currentFloor model =
@@ -1249,26 +1318,7 @@ updateByKeyEvent event model =
           }
       in
         newModel ! [ saveFloorCmd (UndoRedo.data newModel.floor) ]
-    (_, ShortCut.Other 9) -> --TODO waiting for fix double-click
-      let
-        floor = currentFloor model
-      in
-        case model.selectedEquipments of
-          id :: _ ->
-            case findEquipmentById floor.equipments id of
-              Just e ->
-                let
-                  newModel =
-                    { model |
-                      equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
-                    , contextMenu = NoContextMenu
-                    }
-                in
-                  (newModel, focusCmd "name-input")
-              Nothing ->
-                model ! []
-          _ ->
-            model ! []
+    -- (_, ShortCut.Other 9) -> -- maybe "shift within island is the proper behavior"
     _ ->
       model ! []
 

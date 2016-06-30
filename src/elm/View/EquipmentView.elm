@@ -2,6 +2,8 @@ module View.EquipmentView exposing(noEvents, equipmentView')
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
+import Json.Decode as Decode
 import Util.HtmlUtil exposing (..)
 import View.Styles as Styles
 import View.Icons as Icons
@@ -12,6 +14,7 @@ type alias Id = String
 
 type alias EventOptions msg =
   { onMouseDown : Maybe msg
+  , onMouseUp : Maybe msg
   , onStartEditingName : Maybe msg
   , onContextMenu : Maybe msg
   }
@@ -19,6 +22,7 @@ type alias EventOptions msg =
 noEvents : EventOptions msg
 noEvents =
   { onMouseDown = Nothing
+  , onMouseUp = Nothing
   , onStartEditingName = Nothing
   , onContextMenu = Nothing
   }
@@ -36,11 +40,21 @@ equipmentView' eventOptions showPersonMatch key' rect color name selected alpha 
           Nothing -> []
       ) ++
       ( case eventOptions.onMouseDown of
-          Just msg -> [ onMouseDown' msg ]
+          -- Just msg -> [ onMouseDown' msg ]
+          Just msg ->
+            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            ]
+          Nothing -> []
+      ) ++
+      ( case eventOptions.onMouseUp of
+          -- Just msg -> [ onMouseDown' msg ]
+          Just msg ->
+            [ onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            ]
           Nothing -> []
       ) ++
       ( case eventOptions.onStartEditingName of
-          Just msg -> [ onDblClick' msg ]
+          Just msg -> [ onDoubleClick msg ]
           Nothing -> []
       )
   in

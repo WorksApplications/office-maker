@@ -88,7 +88,8 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
                   else
                     Just (ShowContextMenuOnEquipment id)
               , onMouseDown = Just (MouseDownOnEquipment id)
-              , onStartEditingName = Just (StartEditEquipment id)
+              , onMouseUp = Just (MouseUpOnEquipment id)
+              , onStartEditingName = Nothing -- Just (StartEditEquipment id)
               }
         floor = currentFloor model
         personInfo =
@@ -313,8 +314,8 @@ canvasContainerView model =
             []
         ))
       , onMouseMove' MoveOnCanvas
-      , onMouseDown' MouseDownOnCanvas
-      , onMouseUp' MouseUpOnCanvas
+      , onMouseDown MouseDownOnCanvas
+      , onMouseUp MouseUpOnCanvas
       , onMouseEnter' EnterCanvas
       , onMouseLeave' LeaveCanvas
       , onMouseWheel MouseWheel
