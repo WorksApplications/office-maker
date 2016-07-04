@@ -426,9 +426,9 @@ update action model =
                 EquipmentNameInput.forceFinish model.equipmentNameInput
             in
               case ev of
-                EquipmentNameInput.OnFinish id name ->
+                Just (id, name) ->
                   updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
-                _ ->
+                Nothing ->
                   { model | equipmentNameInput = equipmentNameInput } ! []
           else
             model ! []
@@ -540,7 +540,7 @@ update action model =
       let
         (model', cmd) =
           case EquipmentNameInput.forceFinish model.equipmentNameInput of
-            (equipmentNameInput, EquipmentNameInput.OnFinish id name) ->
+            (equipmentNameInput, Just (id, name)) ->
               updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
             (equipmentNameInput, _) ->
               { model | equipmentNameInput = equipmentNameInput } ! []
@@ -569,7 +569,7 @@ update action model =
 
         (model'', cmd2) =
           case EquipmentNameInput.forceFinish model.equipmentNameInput of
-            (equipmentNameInput, EquipmentNameInput.OnFinish id name) ->
+            (equipmentNameInput, Just (id, name)) ->
               updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
             (equipmentNameInput, _) ->
               { model | equipmentNameInput = equipmentNameInput } ! []
@@ -586,11 +586,18 @@ update action model =
     StartEditEquipment id ->
       case findEquipmentById (currentFloor model).equipments id of
         Just e ->
-          { model |
-            selectedResult = Nothing
-          , equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
-          , contextMenu = NoContextMenu
-          } ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas), focusCmd "name-input" ]
+          let
+            (id, name) = (idOf e, nameOf e)
+          in
+            { model |
+              selectedResult = Nothing
+            , equipmentNameInput = EquipmentNameInput.start (id, name) model.equipmentNameInput
+            , contextMenu = NoContextMenu
+            } !
+              [ requestCandidate id name
+              , Task.perform identity identity (Task.succeed MouseUpOnCanvas)
+              , focusCmd "name-input"
+              ]
         Nothing ->
           model ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ]
     SelectColor color ->
@@ -607,7 +614,7 @@ update action model =
     EquipmentNameInputMsg message ->
       let
         (equipmentNameInput, event) =
-          EquipmentNameInput.update model.keys message model.equipmentNameInput
+          EquipmentNameInput.update message model.equipmentNameInput
         model' =
           { model |
             equipmentNameInput = equipmentNameInput
@@ -615,8 +622,9 @@ update action model =
       in
         case event of
           EquipmentNameInput.OnInput id name ->
-            model' ! [ Task.perform identity identity <| Task.succeed (RequestCandidate id name) ]
-          EquipmentNameInput.OnFinish id name ->
+            model' ! [ requestCandidate id name ]
+          EquipmentNameInput.OnFinish id name candidateId ->
+            -- TODO use candidateId
             updateOnFinishNameInput True id name model'
           EquipmentNameInput.OnSelectCandidate equipmentId personId ->
             case Dict.get personId model'.personInfo of
@@ -1012,6 +1020,10 @@ update action model =
         newModel ! []
 
 
+requestCandidate : Id -> String -> Cmd Msg
+requestCandidate id name =
+  Task.perform identity identity <| Task.succeed (RequestCandidate id name)
+
 emulateClick : String -> Bool -> Cmd Msg
 emulateClick id down =
   Task.perform identity identity <|
@@ -1177,15 +1189,17 @@ updateOnFinishNameInput continueEditing id name model =
   let
     allEquipments = (currentFloor model).equipments
 
-    equipmentNameInput =
+    (equipmentNameInput, requestCandidateCmd) =
       case findEquipmentById allEquipments id of
         Just equipment ->
           if continueEditing then
-            startNextInput equipment allEquipments model.equipmentNameInput
+            ( startNextInput equipment allEquipments model.equipmentNameInput
+            , requestCandidate id name
+            )
           else
-            model.equipmentNameInput
+            (model.equipmentNameInput, Cmd.none)
         Nothing ->
-          model.equipmentNameInput
+          (model.equipmentNameInput, Cmd.none)
 
     updatePersonCandidateCmd =
       case findEquipmentById allEquipments id of
@@ -1215,7 +1229,7 @@ updateOnFinishNameInput continueEditing id name model =
       , selectedEquipments = selectedEquipments
       }
   in
-    newModel ! [ updatePersonCandidateCmd, cmd2 ]
+    newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, cmd2 ]
 
 
 updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : Equipment -> Cmd Msg

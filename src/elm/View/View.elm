@@ -51,7 +51,7 @@ contextMenuView model =
 
 contextMenuItemView : Msg -> String -> Html Msg
 contextMenuItemView action text' =
-  hover Styles.hovarableHover
+  hover Styles.contextMenuItemHover
   div
     [ style Styles.contextMenuItem
     , onMouseDown' action

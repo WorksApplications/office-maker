@@ -22,8 +22,8 @@ zIndex =
   , selectorRect = "300"
   , floorInfo = "500"
   , personDetailPopup = "550"
-  , candidatesView = "560"
   , subView = "600"
+  , candidatesView = "660"
   , messageBar = "700"
   , contextMenu = "800"
   , modalBackground = "900"
@@ -34,6 +34,9 @@ selectColor = "#69e"
 
 errorTextColor : String
 errorTextColor = "#d45"
+
+hoverBackgroundColor : String
+hoverBackgroundColor = "#9ce"
 
 noMargin : S
 noMargin =
@@ -58,13 +61,6 @@ h1 =
 ul : S
 ul =
   noMargin
-
--- TODO better name
-hovarableHover : S
-hovarableHover =
-  [ ("background-color", "#9ce")
-  , ("cursor", "pointer")
-  ]
 
 -- TODO better name
 headerIconHover : S
@@ -110,6 +106,10 @@ deskInput rect =
   (absoluteRect rect) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
   , ("box-sizing", "border-box")
   ]
+
+nameInputTextArea : Bool -> (Int, Int, Int, Int) -> S
+nameInputTextArea transitionDisabled screenRect =
+  deskInput screenRect ++ transition transitionDisabled
 
 desk : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
 desk rect color selected alpha disableTransition =
@@ -177,6 +177,12 @@ contextMenu (x, y) (windowWidth, windowHeight) rows =
 contextMenuItem : S
 contextMenuItem =
   [ ("padding", "5px")
+  , ("cursor", "pointer")
+  ]
+
+contextMenuItemHover : S
+contextMenuItemHover =
+  [ ("background-color", "#9ce")
   ]
 
 canvasView : Bool -> (Int, Int, Int, Int) -> S
@@ -189,7 +195,6 @@ canvasView isViewing rect =
 canvasContainer : Bool -> S
 canvasContainer printMode =
   [ ("position", "relative")
-  , ("overflow", "hidden")
   , ("background", if printMode then "#fff" else "#000")
   , ("flex", "1")
   ]
@@ -760,14 +765,20 @@ candidatesView (x, y) =
   , ("z-index", zIndex.candidatesView)
   ] ++ shadow
 
-candidateItem : S
-candidateItem =
+candidateItem : Bool -> S
+candidateItem selected =
   [ ("width", "300px")
   , ("height", "160px")
   , ("position", "relative")
   , ("padding", "15px")
-  , ("background-color", "#fff")
+  , ("background-color", if selected then hoverBackgroundColor else "#fff")
   ]
+
+candidateItemHover : S
+candidateItemHover =
+  [ ("background-color", hoverBackgroundColor)
+  ]
+
 
 nameInputContainer : S
 nameInputContainer =
