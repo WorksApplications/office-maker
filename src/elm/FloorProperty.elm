@@ -112,45 +112,38 @@ parsePositiveInt s =
 
 -- VIEW
 
-floorNameInputView : Model -> Html Msg
-floorNameInputView model =
+floorNameInputView : User -> Model -> Html Msg
+floorNameInputView user model =
   let
     floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
-    nameInput =
-      input
-      ([ Html.Attributes.id "floor-name-input"
-      , type' "text"
-      , style Styles.floorNameInput
-      ] ++ (inputAttributes InputFloorName (always NoOp) model.nameInput Nothing))
-      []
   in
-    div [] [ floorNameLabel, nameInput ]
+    div [] [ floorNameLabel, nameInput user model.nameInput ]
 
-floorRealSizeInputView : Model -> Html Msg
-floorRealSizeInputView model =
+nameInput : User -> String -> Html Msg
+nameInput user value =
+  if User.isAdmin user then
+    input
+    ([ Html.Attributes.id "floor-name-input"
+    , type' "text"
+    , style Styles.floorNameInput
+    ] ++ (inputAttributes InputFloorName (always NoOp) value Nothing))
+    []
+  else
+    div [] [ text value ]
+
+floorRealSizeInputView : User -> Model -> Html Msg
+floorRealSizeInputView user model =
   let
     useReal = True--TODO
-    widthInput =
-      input
-      ([ Html.Attributes.id "floor-real-width-input"
-      , type' "text"
-      , disabled (not useReal)
-      , style Styles.realSizeInput
-      ] ++ (inputAttributes InputFloorRealWidth (always NoOp) (model.realWidthInput) Nothing))
-      []
-    heightInput =
-      input
-      ([ Html.Attributes.id "floor-real-height-input"
-      , type' "text"
-      , disabled (not useReal)
-      , style Styles.realSizeInput
-      ] ++ (inputAttributes InputFloorRealHeight (always NoOp) (model.realHeightInput) Nothing))
-      []
     widthLabel = label [ style Styles.widthHeightLabel ] [ text "Width(m)" ]
     heightLabel = label [ style Styles.widthHeightLabel ] [ text "Height(m)" ]
   in
-    div [] [widthLabel, widthInput, heightLabel, heightInput ]
-
+    div []
+      [ widthLabel
+      , widthValueView user useReal model.realWidthInput
+      , heightLabel
+      , heightValueView user useReal model.realHeightInput
+      ]
 
 inputAttributes : (String -> msg) -> (Int -> msg) -> String -> Maybe msg -> List (Attribute msg)
 inputAttributes toInputMsg toKeydownMsg value' defence =
@@ -163,6 +156,31 @@ inputAttributes toInputMsg toKeydownMsg value' defence =
         Nothing -> []
     )
 
+widthValueView : User -> Bool -> String -> Html Msg
+widthValueView user useReal value =
+  if User.isAdmin user then
+    input
+    ([ Html.Attributes.id "floor-real-width-input"
+    , type' "text"
+    , disabled (not useReal)
+    , style Styles.realSizeInput
+    ] ++ (inputAttributes InputFloorRealWidth (always NoOp) value Nothing))
+    []
+  else
+    div [] [text value]
+
+heightValueView : User -> Bool -> String -> Html Msg
+heightValueView user useReal value =
+  if User.isAdmin user then
+    input
+    ([ Html.Attributes.id "floor-real-height-input"
+    , type' "text"
+    , disabled (not useReal)
+    , style Styles.realSizeInput
+    ] ++ (inputAttributes InputFloorRealHeight (always NoOp) value Nothing))
+    []
+  else
+    div [] [text value]
 
 publishButtonView : User -> Html Msg
 publishButtonView user =
@@ -188,9 +206,11 @@ floorUpdateInfoView visitDate floor =
 
 view : Date -> User -> Floor -> Model -> List (Html Msg)
 view visitDate user floor model =
-    [ fileLoadButton LoadFile Styles.imageLoadButton "Load Image"
-    , floorNameInputView model
-    , floorRealSizeInputView model
+    [ if User.isAdmin user then
+        fileLoadButton LoadFile Styles.imageLoadButton "Load Image"
+      else text ""
+    , floorNameInputView user model
+    , floorRealSizeInputView user model
     , publishButtonView user
     , floorUpdateInfoView visitDate floor
     ]
