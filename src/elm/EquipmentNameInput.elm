@@ -67,7 +67,7 @@ update keys message model =
           if keyCode == 13 && not keys.ctrl then
             case model.editingEquipment of
               Just (id, name) ->
-                (model, OnFinish id name)
+                (updateNewEdit Nothing model, OnFinish id name)
               Nothing ->
                 (model, None)
           else if keyCode == 13 then

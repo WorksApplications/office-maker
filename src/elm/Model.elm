@@ -587,7 +587,8 @@ update action model =
       case findEquipmentById (currentFloor model).equipments id of
         Just e ->
           { model |
-            equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
+            selectedResult = Nothing
+          , equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
           , contextMenu = NoContextMenu
           } ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas), focusCmd "name-input" ]
         Nothing ->
