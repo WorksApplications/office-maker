@@ -158,7 +158,7 @@ function resetImage(conn, dir, cb) {
   filestorage.empty(dir, cb);
 }
 function getPeopleLikeName(conn, name, cb) {
-  rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%'`), cb);//TODO sanitize
+  rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%' OR mail LIKE '%${name.trim()}%'`), cb);//TODO sanitize
 }
 function getCandidate(conn, name, cb) {
   getPeopleLikeName(conn, name, cb);

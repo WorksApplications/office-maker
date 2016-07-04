@@ -4,6 +4,8 @@ import Util.ShortCut as ShortCut
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Keyed as Keyed
+
 import Json.Decode as Decode
 import Util.HtmlUtil exposing (..)
 import Model.Person exposing (Person)
@@ -123,7 +125,7 @@ view screenRectOf transitionDisabled candidates model =
                 , style styles
                 ] ++ (inputAttributes (InputName id) KeydownOnNameInput name))
                 [ text name ]
-              , candidatesView id screenRect candidates
+              , candidatesView id screenRect (List.take 20 candidates)
               -- TODO popup pointer here
               ]
         Nothing -> text ""
@@ -139,18 +141,25 @@ candidatesView equipmentId screenRectOfDesk people =
         (x, y, w, h) = screenRectOfDesk
         left = x + w + 10
         top = Basics.max 10 <| y - (160 * List.length people) // 2
-        each person =
-          hover Styles.hovarableHover
-          li
-            [ style Styles.candidateItem
-            , onMouseDown' (SelectCandidate equipmentId person.id)
-            ]
-            (ProfilePopup.innerView Nothing person)
       in
-        ul
+        Keyed.ul
           [ style (Styles.ul ++ Styles.candidatesView (left, top))
           ]
-          (List.map each people)
+          (List.map (candidatesViewEach equipmentId) people)
+
+
+candidatesViewEach : Id -> Person -> (String, Html Msg)
+candidatesViewEach equipmentId person =
+  ( person.id
+  , -- hover Styles.hovarableHover
+    li
+      [ style Styles.candidateItem
+      , onMouseDown' (SelectCandidate equipmentId person.id)
+      ]
+      (ProfilePopup.innerView Nothing person)
+  )
+
+
 
 -- TODO duplicated
 inputAttributes : (String -> msg) -> (Int -> msg) -> String -> List (Attribute msg)

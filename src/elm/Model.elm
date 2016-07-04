@@ -71,6 +71,7 @@ type alias Model =
   , candidates : List Id
   , tab : Tab
   , clickEmulator : List (Id, Bool, Time)
+  , candidateRequest : CandidateRequestState
   }
 
 type ContextMenu =
@@ -93,6 +94,12 @@ type DraggingContext =
 
 type Tab =
   SearchTab | EditTab
+
+
+type CandidateRequestState
+  = Waiting (Maybe (Id, String))
+  | NotWaiting
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -142,6 +149,7 @@ init randomSeed initialSize urlResult visitDate =
       , searchBox = searchBox
       , tab = SearchTab
       , clickEmulator = []
+      , candidateRequest = NotWaiting
       }
     initCmd =
       Task.perform (always NoOp) identity (Task.succeed Init)
@@ -191,6 +199,7 @@ type Msg = NoOp
   | HeaderMsg Header.Msg
   | SearchBoxMsg SearchBox.Msg
   | RegisterPeople (List Person)
+  | RequestCandidate Id String
   | GotCandidateSelection Id (List Person)
   | UpdatePersonCandidate Id (List Id)
   | GotDiffSource (Floor, Maybe Floor)
@@ -455,7 +464,6 @@ update action model =
         help model' ! [ cmd, emulateClick lastTouchedId True ]
     MouseUpOnEquipment lastTouchedId ->
       let
-        -- _ = Debug.log "MouseUpOnEquipment" (lastTouchedId, model.draggingContext)
         (clientX, clientY) = model.pos
         (model', cmd) =
           -- TODO refactor to dedupe
@@ -606,7 +614,7 @@ update action model =
       in
         case event of
           EquipmentNameInput.OnInput id name ->
-            model' ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
+            model' ! [ Task.perform identity identity <| Task.succeed (RequestCandidate id name) ]
           EquipmentNameInput.OnFinish id name ->
             updateOnFinishNameInput True id name model'
           EquipmentNameInput.OnSelectCandidate equipmentId personId ->
@@ -632,6 +640,13 @@ update action model =
           EquipmentNameInput.None ->
             model' ! []
 
+    RequestCandidate id name ->
+      case model.candidateRequest of
+        Waiting _ ->
+          { model | candidateRequest = Waiting (Just (id, name)) } ! []
+        NotWaiting ->
+          { model | candidateRequest = Waiting Nothing }
+          ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
     ShowContextMenuOnEquipment id ->
       let
         (clientX, clientY) = model.pos
@@ -873,14 +888,23 @@ update action model =
       } ! []
     GotCandidateSelection equipmentId people ->
       let
+        newRequestCmd =
+          case model.candidateRequest of
+            Waiting (Just (id, name)) ->
+              Task.perform identity identity <| Task.succeed (RequestCandidate id name)
+            Waiting Nothing ->
+              Cmd.none
+            NotWaiting ->
+              Cmd.none
         newModel =
           { model |
-            personInfo =
+            candidateRequest = NotWaiting
+          , personInfo =
               addAll (.id) people model.personInfo
           , candidates = List.map .id people
           }
       in
-        newModel ! []
+        newModel ! [ newRequestCmd ]
     UpdatePersonCandidate equipmentId personIds ->
       let
         newFloor =
