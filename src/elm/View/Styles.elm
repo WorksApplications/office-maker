@@ -179,13 +179,12 @@ contextMenuItem =
   [ ("padding", "5px")
   ]
 
-canvasView : (Int, Int, Int, Int) -> S
-canvasView rect =
+canvasView : Bool -> (Int, Int, Int, Int) -> S
+canvasView isViewing rect =
   (absoluteRect rect) ++
     [ ("background-color", "#fff")
-    , ("overflow", "hidden")
     , ("font-family", "default")
-    ]
+    ] ++ (if isViewing then [("overflow", "hidden")] else [])
 
 canvasContainer : Bool -> S
 canvasContainer printMode =

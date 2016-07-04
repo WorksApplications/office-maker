@@ -330,6 +330,11 @@ canvasView model =
     floor = currentFloor model
     disableTransition = transitionDisabled model
 
+    isViewing =
+      case model.editMode of
+        Viewing _ -> True
+        _ -> False
+
     isDragged equipment =
       (case model.draggingContext of
         MoveEquipment _ _ -> True
@@ -415,7 +420,7 @@ canvasView model =
           model.equipmentNameInput
   in
     div
-      [ style (Styles.canvasView rect ++ Styles.transition disableTransition)
+      [ style (Styles.canvasView isViewing rect ++ Styles.transition disableTransition)
       ]
       ((image :: nameInput :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
 
