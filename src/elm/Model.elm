@@ -645,7 +645,17 @@ update action model =
                   newModel ! [ cmd, cmd2 ]
               Nothing ->
                 model' ! [] -- maybe never happen
-
+          EquipmentNameInput.OnUnsetPerson equipmentId ->
+            let
+              newFloor =
+                UndoRedo.commit model.floor (Floor.unsetPerson equipmentId)
+              newModel =
+                { model' |
+                  floor = newFloor
+                }
+              cmd = saveFloorCmd (UndoRedo.data newModel.floor)
+            in
+              newModel ! [cmd]
           EquipmentNameInput.None ->
             model' ! []
 

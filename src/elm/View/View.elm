@@ -414,7 +414,7 @@ canvasView model =
     nameInput =
       App.map EquipmentNameInputMsg <|
         EquipmentNameInput.view
-          (screenRectOf model)
+          (deskInfoOf model)
           (transitionDisabled model)
           (candidatesOf model)
           model.equipmentNameInput
@@ -424,12 +424,15 @@ canvasView model =
       ]
       ((image :: nameInput :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
 
-screenRectOf : Model -> String -> Maybe (Int, Int, Int, Int)
-screenRectOf model id =
-  case findEquipmentById (currentFloor model).equipments id of
-    Just (Desk id rect _ _ _) ->
-      Just (Scale.imageToScreenForRect model.scale rect)
-    Nothing -> Nothing
+
+deskInfoOf : Model -> String -> Maybe ((Int, Int, Int, Int), Maybe Person)
+deskInfoOf model id =
+  findEquipmentById (currentFloor model).equipments id
+  |> Maybe.map (\(Desk id rect _ _ maybePersonId) ->
+    ( Scale.imageToScreenForRect model.scale rect
+    , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
+    ))
+
 
 prototypePreviewView : List (Prototype, Bool) -> Bool -> Html Msg
 prototypePreviewView prototypes stampMode =

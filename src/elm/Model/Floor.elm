@@ -49,6 +49,7 @@ type Msg =
   | ChangeRealSize (Int, Int)
   | OnSaved Bool
   | SetPerson String String
+  | UnsetPerson String
 
 create : (List (Id, (Int, Int, Int, Int), String, String)) -> Msg
 create = Create
@@ -88,6 +89,9 @@ onSaved = OnSaved
 
 setPerson : String -> String -> Msg
 setPerson = SetPerson
+
+unsetPerson : String -> Msg
+unsetPerson = UnsetPerson
 
 update : Msg -> Model -> Model
 update action model =
@@ -149,6 +153,12 @@ update action model =
       let
         newEquipments =
           partiallyChange (Equipments.setPerson (Just personId)) [equipmentId] (equipments model)
+      in
+        setEquipments newEquipments model
+    UnsetPerson equipmentId ->
+      let
+        newEquipments =
+          partiallyChange (Equipments.setPerson Nothing) [equipmentId] (equipments model)
       in
         setEquipments newEquipments model
 

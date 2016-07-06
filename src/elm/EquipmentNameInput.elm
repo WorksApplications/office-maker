@@ -36,11 +36,13 @@ type Msg =
   | KeydownOnNameInput (List Person) Int
   | KeyupOnNameInput Int
   | SelectCandidate Id Id
+  | UnsetPerson Id
 
 type Event =
     OnInput Id String
   | OnFinish Id String (Maybe Id)
   | OnSelectCandidate Id Id
+  | OnUnsetPerson Id
   | None
 
 isEditing : Model -> Bool
@@ -121,6 +123,8 @@ update message model =
       ( { model | editingEquipment = Nothing }
       , OnSelectCandidate equipmentId personId
       )
+    UnsetPerson equipmentId ->
+      ( model, OnUnsetPerson equipmentId )
 
 selectedCandidateId : Int -> List Person -> Maybe Id
 selectedCandidateId candidateIndex candidates =
@@ -146,46 +150,75 @@ forceFinish model =
     Nothing ->
       (model, Nothing)
 
-view : (String -> Maybe (Int, Int, Int, Int)) -> Bool -> List Person -> Model -> Html Msg
-view screenRectOf transitionDisabled candidates model =
+view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> Model -> Html Msg
+view deskInfoOf transitionDisabled candidates model =
   case model.editingEquipment of
     Just (id, name) ->
-      case screenRectOf id of
-        Just screenRect ->
-          let
-            candidates' =
-              List.take 20 candidates
-          in
-            div
-              [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
-              , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
-              ]
-              [ textarea
-                ([ Html.Attributes.id "name-input"
-                , style (Styles.nameInputTextArea transitionDisabled screenRect)
-                ] ++ (inputAttributes (InputName id) (KeydownOnNameInput candidates') KeyupOnNameInput name))
-                [ text name ]
-              , candidatesView model.candidateIndex id screenRect candidates'
-              -- TODO popup pointer here
-              ]
+      case deskInfoOf id of
+        Just (screenRect, maybePerson) ->
+          view' id name maybePerson screenRect transitionDisabled candidates model
         Nothing -> text ""
     Nothing ->
       text ""
 
-candidatesView : Int -> Id -> (Int, Int, Int, Int) -> List Person -> Html Msg
-candidatesView candidateIndex equipmentId screenRectOfDesk people =
+view' : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> Model -> Html Msg
+view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
+  let
+    candidates' =
+      List.filter (\candidate -> Just candidate /= maybePerson) (List.take 20 candidates)
+    reletedpersonView' =
+      case maybePerson of
+        Just person ->
+          reletedpersonView id person
+        Nothing ->
+          text ""
+    (x, y, w, h) = screenRectOfDesk
+    left = x + w + 10
+    top = Basics.max 10 <| y - (160 * List.length candidates') // 2
+  in
+    div
+      [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
+      , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
+      ]
+      [ textarea
+        ([ Html.Attributes.id "name-input"
+        , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
+        ] ++ (inputAttributes (InputName id) (KeydownOnNameInput candidates') KeyupOnNameInput name))
+        [ text name ]
+      , div
+          [ style (Styles.candidatesViewContainer (left, top)) ]
+          [ reletedpersonView'
+          , candidatesView model.candidateIndex id candidates'
+          ]
+      -- TODO popup pointer here
+      ]
+
+
+reletedpersonView : Id -> Person -> Html Msg
+reletedpersonView equipmentId person =
+  div
+    [ style (Styles.candidatesViewRelatedPerson) ]
+    ( unsetButton equipmentId :: ProfilePopup.innerView Nothing person )
+
+
+unsetButton : Id -> Html Msg
+unsetButton equipmentId =
+  hover Styles.unsetRelatedPersonButtonHover div
+    [ onClick (UnsetPerson equipmentId)
+    , style Styles.unsetRelatedPersonButton
+    ]
+    [ text "Unset"]
+
+
+candidatesView : Int -> Id -> List Person -> Html Msg
+candidatesView candidateIndex equipmentId people =
   case people of
     [] -> text ""
     _ ->
-      let
-        (x, y, w, h) = screenRectOfDesk
-        left = x + w + 10
-        top = Basics.max 10 <| y - (160 * List.length people) // 2
-      in
-        Keyed.ul
-          [ style (Styles.ul ++ Styles.candidatesView (left, top))
-          ]
-          (List.indexedMap (candidatesViewEach candidateIndex equipmentId) people)
+      Keyed.ul
+        [ style (Styles.ul ++ Styles.candidatesView)
+        ]
+        (List.indexedMap (candidatesViewEach candidateIndex equipmentId) people)
 
 
 candidatesViewEach : Int -> Id -> Int -> Person -> (String, Html Msg)
@@ -195,8 +228,22 @@ candidatesViewEach candidateIndex equipmentId index person =
       [ style (Styles.candidateItem (candidateIndex == index))
       , onMouseDown' (SelectCandidate equipmentId person.id)
       ]
-      (ProfilePopup.innerView Nothing person)
+      [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
+      , mail person
+      , div [ style Styles.candidateItemPersonOrg ] [ text person.org ]
+      ]
   )
+
+
+mail : Person -> Html msg
+mail person =
+  div
+    [ style Styles.candidateItemPersonMail ]
+    [ div
+        [ style Styles.personDetailPopupPersonIconText ]
+        [ text (Maybe.withDefault "" person.mail) ]
+    ]
+
 
 -- TODO duplicated
 inputAttributes : (String -> msg) -> (Int -> msg) -> (Int -> msg) -> String -> List (Attribute msg)

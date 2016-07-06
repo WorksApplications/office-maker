@@ -706,6 +706,89 @@ personDetailPopupPersonIconText =
   ]
 
 
+candidatesViewContainer : (Int, Int) -> S
+candidatesViewContainer (x, y) =
+  [ ("position", "absolute")
+  , ("top", px y)
+  , ("left", px x)
+  , ("z-index", zIndex.candidatesView)
+  ] ++ shadow
+
+
+candidatesView : S
+candidatesView =
+  []
+
+
+candidatesViewRelatedPerson : S
+candidatesViewRelatedPerson =
+  [ ("width", "300px")
+  , ("height", "160px")
+  , ("position", "relative")
+  , ("padding", "15px")
+  , ("background-color", "#fff")
+  , ("border-bottom", "solid 1px #ddd")
+  ]
+
+candidateItem : Bool -> S
+candidateItem selected =
+  [ ("width", "300px")
+  , ("height", "55px")
+  , ("position", "relative")
+  , ("padding", "15px")
+  , ("border-bottom", "solid 1px #ddd")
+  , ("background-color", if selected then hoverBackgroundColor else "#fff")
+  , ("cursor", "pointer")
+  ]
+
+
+candidateItemHover : S
+candidateItemHover =
+  [ ("background-color", hoverBackgroundColor)
+  ]
+
+
+candidateItemPersonName : S
+candidateItemPersonName =
+  [ ("position", "absolute")
+  , ("fon-size", "larger")
+  , ("font-weight", "bold")
+  , ("top", "15px")
+  ]
+
+candidateItemPersonMail : S
+candidateItemPersonMail =
+  flex ++
+    [ ("position", "absolute")
+    , ("left", "100px")
+    ]
+
+candidateItemPersonOrg : S
+candidateItemPersonOrg =
+  [ ("position", "absolute")
+  , ("font-size", "small")
+  , ("top", "40px")
+  ]
+
+unsetRelatedPersonButton : S
+unsetRelatedPersonButton =
+  [ ("top", "15px")
+  , ("right", "15px")
+  , ("padding", "5px")
+  , ("background-color", "#fff")
+  , ("color", "#ddd")
+  , ("border", "solid 1px #ddd")
+  , ("cursor", "pointer")
+  , ("display", "inline-block")
+  , ("position", "absolute")
+  ]
+
+unsetRelatedPersonButtonHover : S
+unsetRelatedPersonButtonHover =
+  [ ("background-color", "#a66")
+  , ("color", "#fff")
+  ]
+
 messageBar : S
 messageBar =
     [ ("position", "absolute")
@@ -755,28 +838,6 @@ mainView windowHeight =
 searchResultItemIcon : S
 searchResultItemIcon =
   [ ("width", "30px")
-  ]
-
-candidatesView : (Int, Int) -> S
-candidatesView (x, y) =
-  [ ("position", "absolute")
-  , ("top", px y)
-  , ("left", px x)
-  , ("z-index", zIndex.candidatesView)
-  ] ++ shadow
-
-candidateItem : Bool -> S
-candidateItem selected =
-  [ ("width", "300px")
-  , ("height", "160px")
-  , ("position", "relative")
-  , ("padding", "15px")
-  , ("background-color", if selected then hoverBackgroundColor else "#fff")
-  ]
-
-candidateItemHover : S
-candidateItemHover =
-  [ ("background-color", hoverBackgroundColor)
   ]
 
 
