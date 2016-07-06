@@ -623,28 +623,14 @@ update action model =
         case event of
           EquipmentNameInput.OnInput id name ->
             model' ! [ requestCandidate id name ]
-          EquipmentNameInput.OnFinish id name candidateId ->
-            -- TODO use candidateId
-            updateOnFinishNameInput True id name model'
-          EquipmentNameInput.OnSelectCandidate equipmentId personId ->
-            case Dict.get personId model'.personInfo of
-              Just person ->
-                let
-                  newFloor =
-                    UndoRedo.commit
-                    model'.floor
-                    (Floor.setPerson equipmentId personId)
-                  cmd =
-                    saveFloorCmd (UndoRedo.data newFloor)
-                  (newModel, cmd2) =
-                    updateOnFinishNameInput True equipmentId person.name
-                      { model' |
-                        floor = newFloor
-                      }
-                in
-                  newModel ! [ cmd, cmd2 ]
+          EquipmentNameInput.OnFinish equipmentId name candidateId ->
+            case candidateId of
+              Just personId ->
+                updateOnSelectCandidate equipmentId personId model'
               Nothing ->
-                model' ! [] -- maybe never happen
+                updateOnFinishNameInput True equipmentId name model'
+          EquipmentNameInput.OnSelectCandidate equipmentId personId ->
+            updateOnSelectCandidate equipmentId personId model'
           EquipmentNameInput.OnUnsetPerson equipmentId ->
             let
               newFloor =
@@ -1030,6 +1016,28 @@ update action model =
         newModel ! []
 
 
+
+updateOnSelectCandidate : Id -> String -> Model -> (Model, Cmd Msg)
+updateOnSelectCandidate equipmentId personId model =
+  case Dict.get personId model.personInfo of
+    Just person ->
+      let
+        newFloor =
+          UndoRedo.commit
+          model.floor
+          (Floor.setPerson equipmentId personId)
+        cmd =
+          saveFloorCmd (UndoRedo.data newFloor)
+        (newModel, cmd2) =
+          updateOnFinishNameInput True equipmentId person.name
+            { model |
+              floor = newFloor
+            }
+      in
+        newModel ! [ cmd, cmd2 ]
+    Nothing ->
+      model ! [] -- maybe never happen
+
 requestCandidate : Id -> String -> Cmd Msg
 requestCandidate id name =
   Task.perform identity identity <| Task.succeed (RequestCandidate id name)
@@ -1203,19 +1211,25 @@ updateOnFinishNameInput continueEditing id name model =
       case findEquipmentById allEquipments id of
         Just equipment ->
           if continueEditing then
-            ( startNextInput equipment allEquipments model.equipmentNameInput
-            , requestCandidate id name
-            )
+            case nextEquipmentToInput equipment allEquipments of
+              Just e ->
+                ( EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
+                , requestCandidate (idOf e) (nameOf e)
+                )
+              Nothing ->
+                ( model.equipmentNameInput
+                , requestCandidate id name
+                )
           else
             (model.equipmentNameInput, Cmd.none)
         Nothing ->
           (model.equipmentNameInput, Cmd.none)
 
     updatePersonCandidateCmd =
-      case findEquipmentById allEquipments id of
-        Just equipment ->
-          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment
-        Nothing ->
+      -- case findEquipmentById allEquipments id of
+      --   Just equipment ->
+      --     updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment
+      --   Nothing ->
           Cmd.none
 
     selectedEquipments =
@@ -1256,9 +1270,8 @@ updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment =
       in
         performAPI identity task
 
-
-startNextInput : Equipment -> List Equipment -> EquipmentNameInput.Model -> EquipmentNameInput.Model
-startNextInput equipment allEquipments equipmentNameInput =
+nextEquipmentToInput : Equipment -> List Equipment -> Maybe Equipment
+nextEquipmentToInput equipment allEquipments =
   let
     island' =
       island
@@ -1268,14 +1281,11 @@ startNextInput equipment allEquipments equipmentNameInput =
     case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
       Just e ->
         if idOf equipment == idOf e then
-          equipmentNameInput
+          Nothing
         else
-          EquipmentNameInput.start (idOf e, nameOf e) equipmentNameInput
+          Just e
       _ ->
-        equipmentNameInput
-
-
-
+        Nothing
 
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model

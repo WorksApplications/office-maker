@@ -56,20 +56,20 @@ update message model =
     NoOp ->
       (model, None)
     InputName id name ->
-      let
-        newModel =
-          { model |
-            editingEquipment =
-              case model.editingEquipment of
-                Just (id', name') ->
-                  if id == id' then
-                    Just (id, name)
-                  else
-                    Just (id', name')
-                Nothing -> Nothing
-          }
-      in
-        (newModel, OnInput id name)
+      case model.editingEquipment of
+        Just (id', name') ->
+          if id == id' then
+            ({ model |
+              editingEquipment = Just (id, name)
+            }, OnInput id name)
+          else
+            ({ model |
+              editingEquipment = Just (id', name')
+            }, None)
+        Nothing ->
+            ({ model |
+              editingEquipment = Nothing
+            }, None)
     KeyupOnNameInput keyCode ->
       if keyCode == 16 then
         ({ model | shift = False }, None)
