@@ -1,5 +1,6 @@
 module EquipmentNameInput exposing (..)
 
+import String
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -33,7 +34,7 @@ init =
 type Msg =
     NoOp
   | InputName Id String
-  | KeydownOnNameInput (List Person) Int
+  | KeydownOnNameInput (List Person) (Int, Int)
   | KeyupOnNameInput Int
   | SelectCandidate Id Id
   | UnsetPerson Id
@@ -76,9 +77,8 @@ update message model =
         ({ model | ctrl = False }, None)
       else
         (model, None)
-    KeydownOnNameInput candidates keyCode ->
+    KeydownOnNameInput candidates (keyCode, selectionStart) ->
       let
-        -- _ = Debug.log "keyCode" keyCode
         (newModel, event) =
           if keyCode == 13 && not model.ctrl then
             case model.editingEquipment of
@@ -94,7 +94,7 @@ update message model =
                 { model |
                   editingEquipment =
                     case model.editingEquipment of
-                      Just (id, name) -> Just (id, name ++ "\n")
+                      Just (id, name) -> Just (id, breakLineAt selectionStart name)
                       Nothing -> Nothing
                 }
             in
@@ -125,6 +125,12 @@ update message model =
       )
     UnsetPerson equipmentId ->
       ( model, OnUnsetPerson equipmentId )
+
+
+breakLineAt : Int -> String -> String
+breakLineAt at s =
+  String.left at s ++ "\n" ++ String.right (String.length s - at) s
+
 
 selectedCandidateId : Int -> List Person -> Maybe Id
 selectedCandidateId candidateIndex candidates =
@@ -246,10 +252,10 @@ mail person =
 
 
 -- TODO duplicated
-inputAttributes : (String -> msg) -> (Int -> msg) -> (Int -> msg) -> String -> List (Attribute msg)
+inputAttributes : (String -> msg) -> ((Int, Int) -> msg) -> (Int -> msg) -> String -> List (Attribute msg)
 inputAttributes toInputMsg toKeydownMsg toKeyupMsg value' =
   [ onInput' toInputMsg
-  , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map toKeydownMsg decodeKeyCode)
+  , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map toKeydownMsg decodeKeyCodeAndSelectionStart)
   , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map toKeyupMsg decodeKeyCode)
   , value value'
   ]

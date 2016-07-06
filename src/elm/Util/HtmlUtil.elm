@@ -29,6 +29,19 @@ decodeKeyCode : Decoder Int
 decodeKeyCode =
   at [ "keyCode" ] int
 
+
+targetSelectionStart : Decoder Int
+targetSelectionStart =
+  Decode.at ["target", "selectionStart"] Decode.int
+
+
+decodeKeyCodeAndSelectionStart : Decoder (Int, Int)
+decodeKeyCodeAndSelectionStart =
+  Decode.object2 (,)
+    ("keyCode" := int)
+    ("target" := Decode.object1 identity ("selectionStart" := int))
+
+
 focus : String -> Task Error ()
 focus id =
   Process.sleep 100 `Task.andThen` \_ ->
