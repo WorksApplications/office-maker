@@ -171,16 +171,20 @@ view' : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Per
 view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
   let
     candidates' =
-      List.filter (\candidate -> Just candidate /= maybePerson) (List.take 20 candidates)
-    reletedpersonView' =
+      List.filter (\candidate -> Just candidate /= maybePerson) (List.take 15 candidates)
+    (relatedPersonExists, reletedpersonView') =
       case maybePerson of
         Just person ->
-          reletedpersonView id person
+          (True, reletedpersonView id person)
         Nothing ->
-          text ""
-    (x, y, w, h) = screenRectOfDesk
-    left = x + w + 10
-    top = Basics.max 10 <| y - (160 * List.length candidates') // 2
+          (False, text "")
+    candidatesLength = List.length candidates'
+    viewExists = relatedPersonExists || candidatesLength > 0
+    pointer =
+      if viewExists then
+        div [ style (Styles.candidateViewPointer screenRectOfDesk) ] []
+      else
+        text ""
   in
     div
       [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
@@ -192,11 +196,11 @@ view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
         ] ++ (inputAttributes (InputName id) (KeydownOnNameInput candidates') KeyupOnNameInput name))
         [ text name ]
       , div
-          [ style (Styles.candidatesViewContainer (left, top)) ]
+          [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
           [ reletedpersonView'
           , candidatesView model.candidateIndex id candidates'
           ]
-      -- TODO popup pointer here
+      , pointer
       ]
 
 

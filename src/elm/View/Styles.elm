@@ -640,6 +640,13 @@ popupPointerButtom =
       , ("box-shadow", "rgba(0, 0, 0, 0.237255) 2px 2px 5px 0px")
       ]
 
+popupPointerLeft : S
+popupPointerLeft =
+    popupPointerBase ++
+      [ ("transform", "rotate(45deg)")
+      , ("box-shadow", "rgba(0, 0, 0, 0.237255) -1.5px 1.5px 4.5px 0px")
+      ]
+
 personDetailPopupPointer : S
 personDetailPopupPointer =
   popupPointerButtom ++
@@ -707,14 +714,39 @@ personDetailPopupPersonIconText =
   ]
 
 
-candidatesViewContainer : (Int, Int) -> S
-candidatesViewContainer (x, y) =
-  [ ("position", "absolute")
-  , ("top", px y)
-  , ("left", px x)
-  , ("z-index", zIndex.candidatesView)
-  ] ++ shadow
+candidateItemHeight : Int
+candidateItemHeight = 55
 
+
+candidatesViewContainer : (Int, Int, Int, Int) -> Bool -> Int -> S
+candidatesViewContainer screenRectOfDesk relatedPersonExists candidateLength =
+  let
+    (x, y, w, h) = screenRectOfDesk
+    totalHeight =
+      (if relatedPersonExists then 160 else 0) +
+      (candidateItemHeight * candidateLength)
+    left = x + w + 15
+    top = Basics.max 10 (y - totalHeight // 2)
+  in
+    [ ("position", "absolute")
+    , ("top", px top)
+    , ("left", px left)
+    , ("z-index", zIndex.candidatesView)
+    ] ++ shadow
+
+
+candidateViewPointer : (Int, Int, Int, Int) -> S
+candidateViewPointer screenRectOfDesk =
+  let
+    (x, y, w, h) = screenRectOfDesk
+    left = x + w + 5
+    top = y + 10
+  in
+    popupPointerLeft ++
+      [ ("top", px top)
+      , ("left", px left)
+      -- , ("z-index", zIndex.candidatesView)
+      ]
 
 candidatesView : S
 candidatesView =
@@ -734,7 +766,7 @@ candidatesViewRelatedPerson =
 candidateItem : Bool -> S
 candidateItem selected =
   [ ("width", "300px")
-  , ("height", "55px")
+  , ("height", px candidateItemHeight)
   , ("position", "relative")
   , ("padding", "15px")
   , ("border-bottom", "solid 1px #ddd")
