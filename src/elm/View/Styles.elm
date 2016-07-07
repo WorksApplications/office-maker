@@ -210,15 +210,16 @@ nameLabel ratio disableTransition =
    -- TODO vertical align
   ] ++ transition disableTransition
 
+
 shadow : S
 shadow =
   [ ("box-shadow", "0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)") ]
 
+
 card : S
 card =
-  [ ("margin", "5px")
-  , ("padding", "5px")
-  ] ++ shadow
+  [("padding", "20px")]
+
 
 selection : Bool -> S
 selection selected =
@@ -493,9 +494,9 @@ floorsInfoView =
 
 floorsInfoViewItem : Bool -> Bool -> S
 floorsInfoViewItem selected private =
-    [ ("background-color", if private then "#eee" else "#fff")
-    , ("border-right", if selected then "solid 2px " ++ selectColor else "solid 1px #ddd")
-    , ("border-bottom", if selected then "solid 2px " ++ selectColor else "solid 1px #ddd")
+    [ ("background-color", if private then "#dbdbdb" else "#fff")
+    , ("border-right", if selected then "solid 2px " ++ selectColor else "solid 1px #d0d0d0")
+    , ("border-bottom", if selected then "solid 2px " ++ selectColor else "solid 1px #d0d0d0")
     , ("border-top", if selected then "solid 2px " ++ selectColor else "none")
     , ("border-left", if selected then "solid 2px " ++ selectColor else "none")
     , ("min-width", "60px")
@@ -680,7 +681,7 @@ personDetailPopupPersonOrg : S
 personDetailPopupPersonOrg =
   [ ("position", "absolute")
   , ("font-size", "small")
-  , ("bottom", "40px")
+  , ("top", "105px")
   ]
 
 personDetailPopupPersonTel : S

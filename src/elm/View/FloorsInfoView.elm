@@ -51,7 +51,7 @@ view onCreateNewFloor currentFloorId floors =
 
 isPrivate : Floor -> Bool
 isPrivate floor =
-  floor.id == Nothing -- TODO add flag
+  floor.id == Nothing || not floor.public
 
 modifiedSinceLastPublished : Floor -> Bool
 modifiedSinceLastPublished floor =

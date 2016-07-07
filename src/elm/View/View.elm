@@ -134,12 +134,16 @@ mainView model =
       List.filter
       (if (model.editMode /= Viewing True && model.editMode /= Viewing False) then (always True) else (.public))
       model.floorsInfo
+    sub =
+      if model.editMode == Viewing True then
+        text ""
+      else subView model
   in
     main' [ style (Styles.mainView windowHeight) ]
       [ FloorsInfoView.view createMsg (currentFloor model).id filteredFloorsInfo
       , MessageBar.view model.error
       , canvasContainerView model
-      , if model.editMode == Viewing True then text "" else subView model
+      , sub
       ]
 
 subView : Model -> Html Msg
@@ -151,9 +155,10 @@ subView model =
       else
         subViewForEdit model
     tabs =
-      case model.editMode of
-        Viewing _ -> []
-        _ ->
+      case (model.editMode, User.isGuest model.user) of
+        (Viewing _, _) -> []
+        (_, True) -> []
+        (_, _) ->
           [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (model.tab == SearchTab)
           , subViewTab (ChangeTab EditTab) 1 Icons.editTab (model.tab == EditTab)
           ]
@@ -245,12 +250,11 @@ subViewTab msg index icon active =
     ]
     [ icon ]
 
+
 card : List (Html msg) -> Html msg
 card children =
-  div
-    [ {-style Styles.card-}
-    style [("margin-bottom", "20px"), ("padding", "20px")]
-    ] children
+  div [ style Styles.card ] children
+
 
 penView : Model -> List (Html Msg)
 penView model =
@@ -290,8 +294,7 @@ modeSelectionView model =
 
 propertyView : Model -> List (Html Msg)
 propertyView model =
-    [ text "Properties"
-    , colorPropertyView model
+    [ colorPropertyView model
     ]
 
 canvasContainerView : Model -> Html Msg
@@ -305,6 +308,13 @@ canvasContainerView model =
       Equipments.relatedPerson e `Maybe.andThen` \personId ->
       Dict.get personId model.personInfo `Maybe.andThen` \person ->
       Just (ProfilePopup.view ClosePopup model.scale model.offset e person)
+
+    inner =
+      case (model.editMode, (currentFloor model).id) of
+        (Viewing _, Nothing) ->
+          [] -- don't show draft on Viewing mode
+        _ ->
+          [ canvasView model, popup']
   in
     div
       [ style (Styles.canvasContainer (model.editMode == Viewing True) ++
@@ -320,9 +330,7 @@ canvasContainerView model =
       , onMouseLeave' LeaveCanvas
       , onMouseWheel MouseWheel
       ]
-      [ canvasView model
-      , popup'
-      ]
+      inner
 
 canvasView : Model -> Html Msg
 canvasView model =
