@@ -99,6 +99,38 @@ function getFloorsWithEquipments(conn, withPrivate, cb) {
     }
   });
 }
+function getFloorsInfoWithEquipments (conn, cb) {
+  getFloorsWithEquipments(conn, false, (e, floorsNotIncludingLastPrivate) => {
+    if(e) {
+      cb(e)
+    } else {
+      getFloorsWithEquipments(conn, true, (e, floorsIncludingLastPrivate) => {
+        if(e) {
+          cb(e)
+        } else {
+          var floorInfos = {};
+          floorsNotIncludingLastPrivate.forEach(function(floor) {
+            floorInfos[floor.id] = floorInfos[floor.id] || [];
+            floorInfos[floor.id][0] = floor;
+          });
+          floorsIncludingLastPrivate.forEach(function(floor) {
+            floorInfos[floor.id] = floorInfos[floor.id] || [];
+            floorInfos[floor.id][1] = floor;
+          });
+        }
+        var values = Object.keys(floorInfos).map(function(key) {
+          return floorInfos[key];
+        });
+        values.forEach(function(value) {
+          value[0] = value[0] || value[1];
+          value[1] = value[1] || value[0];
+        });
+        cb(null, values);
+      });
+    }
+
+  });
+}
 function ensureFloor(conn, id, cb) {
   cb && cb();
 }
@@ -346,7 +378,8 @@ module.exports = {
   getColors: getColors,
   saveColors: saveColors,
   getFloorWithEquipments: getFloorWithEquipments,
-  getFloorsWithEquipments: getFloorsWithEquipments,
+  // getFloorsWithEquipments: getFloorsWithEquipments,
+  getFloorsInfoWithEquipments: getFloorsInfoWithEquipments,
   ensureFloor: ensureFloor,
   saveFloorWithEquipments: saveFloorWithEquipments,
   publishFloor: publishFloor,

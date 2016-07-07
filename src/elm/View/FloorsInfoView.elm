@@ -26,11 +26,11 @@ eachView isEditMode currentFloorId floorInfo =
     Just floor ->
       Just <|
       linkBox
-        (Styles.floorsInfoViewItem (currentFloorId == floor.id) (markAsPrivate isEditMode floorInfo))
+        (Styles.floorsInfoViewItem (currentFloorId == floor.id) (markAsPrivate floorInfo))
         Styles.floorsInfoViewItemLink
         (URL.hashFromFloorId floor.id)
         [ text <|
-          (floor.name ++ (if modifiedSinceLastPublished floor then "*" else ""))
+          (floor.name ++ (if markAsModified isEditMode floorInfo then "*" else ""))
         ]
     Nothing ->
       Nothing
@@ -69,15 +69,18 @@ getFloor isEditMode info =
       if isEditMode then Just floor else Nothing
 
 
-markAsPrivate : Bool -> FloorInfo -> Bool
-markAsPrivate isEditing floorInfo =
+markAsPrivate : FloorInfo -> Bool
+markAsPrivate floorInfo =
   case floorInfo of
     FloorInfo.Public _ -> False
-    FloorInfo.PublicWithEdit _ _ -> isEditing
+    FloorInfo.PublicWithEdit _ _ -> False
     FloorInfo.Private _ -> True
 
 
 
-modifiedSinceLastPublished : Floor -> Bool
-modifiedSinceLastPublished floor =
-  not floor.public
+markAsModified : Bool -> FloorInfo -> Bool
+markAsModified isEditMode floorInfo =
+  case floorInfo of
+    FloorInfo.Public _ -> False
+    FloorInfo.PublicWithEdit _ _ -> if isEditMode then True else False
+    FloorInfo.Private _ -> False

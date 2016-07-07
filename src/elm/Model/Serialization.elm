@@ -159,13 +159,14 @@ decodeFloor =
     |> optional' "updateAt" Decode.float
 
 decodeFloorInfo : Decoder FloorInfo
-decodeFloorInfo = Decode.map (\floor ->
-  if floor.public && floor.id /= Nothing then
-    FloorInfo.Public floor
+decodeFloorInfo = Decode.map (\(lastFloor, lastFloorWithEdit) ->
+  if lastFloorWithEdit.public then
+    FloorInfo.Public lastFloorWithEdit
+  else if lastFloor.public then
+    FloorInfo.PublicWithEdit lastFloor lastFloorWithEdit
   else
-    FloorInfo.Private floor
-  -- TODO private with edit
-  ) decodeFloor
+    FloorInfo.Private lastFloorWithEdit
+  ) (Decode.tuple2 (,) decodeFloor decodeFloor)
 
 decodePrototype : Decoder Prototype
 decodePrototype =

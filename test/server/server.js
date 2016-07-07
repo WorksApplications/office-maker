@@ -276,25 +276,27 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
       res.status(401).send('');
       return;
     }
-    db.getFloorsWithEquipments(conn, options.all, (e, floors) => {
+    // ignore all option for now
+    db.getFloorsInfoWithEquipments(conn, (e, floorInfoList) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
         return;
       }
-      floors = floors.filter(function(floor) {
-        if(floor.id.startsWith('tmp')) {
-          return floor.id === 'tmp-' + user.id;
+      floorInfoList = floorInfoList.filter(function(floorInfo) {
+        if(floorInfo[0].id.startsWith('tmp')) {
+          return floorInfo[0].id === 'tmp-' + user.id;
         } else {
           return true;
         }
-      })
-      floors.forEach(function(floor) {
-        if(floor.id.startsWith('tmp')) {
-          floor.id = null;
+      });
+      floorInfoList.forEach(function(floorInfo) {
+        if(floorInfo[0].id.startsWith('tmp')) {
+          floorInfo[0].id = null;
+          floorInfo[1].id = null;
         }
-      })
-      res.send(floors);
+      });
+      res.send(floorInfoList);
     });
   });
 }));
