@@ -22,18 +22,25 @@ linkBox liStyle aStyle url inner =
 
 eachView : Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
 eachView isEditMode currentFloorId floorInfo =
-  case getFloor isEditMode floorInfo of
-    Just floor ->
-      Just <|
-      linkBox
-        (Styles.floorsInfoViewItem (currentFloorId == floor.id) (markAsPrivate floorInfo))
-        Styles.floorsInfoViewItemLink
-        (URL.hashFromFloorId floor.id)
-        [ text <|
-          (floor.name ++ (if markAsModified isEditMode floorInfo then "*" else ""))
-        ]
-    Nothing ->
-      Nothing
+  Maybe.map
+    (\floor ->
+      eachView'
+        (currentFloorId == floor.id)
+        (markAsPrivate floorInfo)
+        (markAsModified isEditMode floorInfo)
+        floor
+    )
+    (getFloor isEditMode floorInfo)
+
+
+eachView' : Bool -> Bool -> Bool -> Floor -> Html msg
+eachView' selected markAsPrivate markAsModified floor =
+  linkBox
+    (Styles.floorsInfoViewItem selected markAsPrivate)
+    Styles.floorsInfoViewItemLink
+    (URL.hashFromFloorId floor.id)
+    [ text (floor.name ++ (if markAsModified then "*" else ""))
+    ]
 
 
 createButton : msg -> Html msg
@@ -42,14 +49,13 @@ createButton msg =
     (Styles.floorsInfoViewItem False False)
     Styles.floorsInfoViewItemLink
     "#"
-    [ div [ onClick msg ] [ text "+"] -- TODO ICON
-    ]
+    [ div [ onClick msg ] [ text "+"] ]
 
 
 view : msg -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
 view onCreateNewFloor isAdmin isEditMode currentFloorId floorInfoList =
   ul
-    [ style (Styles.ul ++ Styles.floorsInfoView) ]
+    [ style Styles.floorsInfoView ]
     ( List.filterMap (eachView isEditMode currentFloorId) floorInfoList ++
         if isEditMode && isAdmin then
           [ createButton onCreateNewFloor ]

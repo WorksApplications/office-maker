@@ -58,10 +58,6 @@ h1 =
     , ("line-height", px headerHeight)
     ]
 
-ul : S
-ul =
-  noMargin
-
 -- TODO better name
 headerIconHover : S
 headerIconHover =
@@ -131,6 +127,10 @@ selectorRect rect =
   , ("border-width", "2px")
   , ("border-color", selectColor)
   ]
+
+colorProperties : S
+colorProperties =
+  [("display", "flex")]
 
 colorProperty : String -> Bool -> S
 colorProperty color selected =

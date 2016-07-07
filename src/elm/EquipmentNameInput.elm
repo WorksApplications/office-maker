@@ -222,8 +222,7 @@ candidatesView candidateIndex equipmentId people =
     [] -> text ""
     _ ->
       Keyed.ul
-        [ style (Styles.ul ++ Styles.candidatesView)
-        ]
+        [ style (Styles.candidatesView) ]
         (List.indexedMap (candidatesViewEach candidateIndex equipmentId) people)
 
 

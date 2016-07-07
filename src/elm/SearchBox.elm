@@ -150,20 +150,10 @@ resultsView transformMsg thisFloorId format model =
             ) ([], [], [], []) results
           each result =
             resultView transformMsg format result
+          children =
+            List.map each (inThisFloor ++ inOtherFloor ++ inDraftFloor ++ missing)
         in
-          ul
-            [ style Styles.ul ]
-            (List.map each (inThisFloor ++ inOtherFloor ++ inDraftFloor ++ missing))
-
-
-
-
-
-
-
-
-
-
+          ul [] children
 
 
 

@@ -212,7 +212,7 @@ formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
               Just info ->
                 info.name
               Nothing ->
-                fid ++ "?" -- Seems a bug
+                "?"
         Nothing ->
           "Missing"
     isPerson =
@@ -539,7 +539,8 @@ colorPropertyView model =
         ]
         []
   in
-    ul [ style (Styles.ul ++ [("display", "flex")]) ]
+    ul
+      [ style Styles.colorProperties ]
       (List.map viewForEach model.colorPalette)
 
 
