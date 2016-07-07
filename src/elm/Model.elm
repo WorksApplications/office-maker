@@ -29,6 +29,7 @@ import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
+import Model.FloorInfo exposing (FloorInfo)
 
 import FloorProperty
 import SearchBox
@@ -55,7 +56,7 @@ type alias Model =
   , colorPalette : List String
   , contextMenu : ContextMenu
   , floor : UndoRedo.Model Floor Commit
-  , floorsInfo : List Floor
+  , floorsInfo : List FloorInfo
   , windowSize : (Int, Int)
   , scale : Scale.Model
   , offset : (Int, Int)
@@ -169,7 +170,7 @@ init randomSeed initialSize urlResult visitDate =
 type Msg = NoOp
   | Init
   | AuthLoaded User
-  | FloorsInfoLoaded (List Floor)
+  | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded Floor
   | DraftFloorLoaded (Maybe Floor)
   | ColorsLoaded (List String)

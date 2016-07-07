@@ -8,13 +8,14 @@ import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, cus
 
 import Util.DecodeUtil exposing (..)
 
-import Model.Floor as Floor
+import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
 import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
+import Model.FloorInfo exposing (FloorInfo)
 
 type alias Floor = Floor.Model
 
@@ -29,6 +30,9 @@ decodePrototypes = Decode.list decodePrototype
 
 decodeFloors : Decoder (List Floor)
 decodeFloors = Decode.list decodeFloor
+
+decodeFloorInfoList : Decoder (List FloorInfo)
+decodeFloorInfoList = Decode.list decodeFloorInfo
 
 decodePersons : Decoder (List Person)
 decodePersons = Decode.list decodePerson
@@ -153,6 +157,15 @@ decodeFloor =
     |> optional "public" Decode.bool False
     |> optional' "updateBy" Decode.string
     |> optional' "updateAt" Decode.float
+
+decodeFloorInfo : Decoder FloorInfo
+decodeFloorInfo = Decode.map (\floor ->
+  if floor.public && floor.id /= Nothing then
+    FloorInfo.Public floor
+  else
+    FloorInfo.Private floor
+  -- TODO private with edit
+  ) decodeFloor
 
 decodePrototype : Decoder Prototype
 decodePrototype =

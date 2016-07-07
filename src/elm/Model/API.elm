@@ -30,6 +30,7 @@ import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
 import Model.Floor as Floor
+import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
@@ -39,6 +40,7 @@ import Model.Serialization exposing (..)
 import Model.SearchResult exposing (SearchResult)
 
 type alias Floor = Floor.Model
+
 type alias Error = Http.Error
 
 saveEditingFloor : Floor -> Task Error ()
@@ -61,7 +63,7 @@ getEditingFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" id ++ "/edit")
 
-getFloorsInfo : Bool -> Task Error (List Floor)
+getFloorsInfo : Bool -> Task Error (List FloorInfo)
 getFloorsInfo withPrivate =
   let
     url =
@@ -70,7 +72,7 @@ getFloorsInfo withPrivate =
         (if withPrivate then [("all", "true")] else [])
   in
     getJsonWithoutCache
-      decodeFloors
+      decodeFloorInfoList
       url
 
 getPrototypes : Task Error (List Prototype)

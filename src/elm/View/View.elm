@@ -25,6 +25,7 @@ import Util.ListUtil exposing (..)
 
 import Model exposing (..)
 import Model.Floor as Floor
+import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Equipments as Equipments exposing (..)
 import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
@@ -125,22 +126,15 @@ mainView : Model -> Html Msg
 mainView model =
   let
     (windowWidth, windowHeight) = model.windowSize
-    createMsg =
-      if (model.editMode /= Viewing True && model.editMode /= Viewing False) && User.isAdmin model.user then
-        Just CreateNewFloor
-      else
-        Nothing
-    filteredFloorsInfo =
-      List.filter
-      (if (model.editMode /= Viewing True && model.editMode /= Viewing False) then (always True) else (.public))
-      model.floorsInfo
+    isEditMode =
+      model.editMode /= Viewing True && model.editMode /= Viewing False
     sub =
       if model.editMode == Viewing True then
         text ""
       else subView model
   in
     main' [ style (Styles.mainView windowHeight) ]
-      [ FloorsInfoView.view createMsg (currentFloor model).id filteredFloorsInfo
+      [ FloorsInfoView.view CreateNewFloor (User.isAdmin model.user) isEditMode (currentFloor model).id model.floorsInfo
       , MessageBar.view model.error
       , canvasContainerView model
       , sub
@@ -188,7 +182,12 @@ subViewForSearch model =
       not <| User.isGuest model.user
     floorsInfoDict =
       Dict.fromList <|
-        List.map (\f -> (Maybe.withDefault "draft" f.id, f)) model.floorsInfo
+        List.map (\f ->
+          case f of
+            FloorInfo.Public f -> (Maybe.withDefault "draft" f.id, f)
+            FloorInfo.PublicWithEdit _ f -> (Maybe.withDefault "draft" f.id, f)
+            FloorInfo.Private f -> (Maybe.withDefault "draft" f.id, f)
+          ) model.floorsInfo
     format =
       formatSearchResult floorsInfoDict model.personInfo
 
