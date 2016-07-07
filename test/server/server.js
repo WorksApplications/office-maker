@@ -408,7 +408,7 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloorWithEquipments(conn, newFloor, false, (e) => {
+    db.saveFloorWithEquipments(conn, newFloor, true, (e) => {
       if(e) {
         console.log(e);
         res.status(500).send('');

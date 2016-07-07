@@ -114,7 +114,7 @@ function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
       newFloor.version = floor ? (incrementVersion ? floor.version + 1 : floor.version) : 0;
       var sqls = [
         sql.delete('floors', sql.where('id', newFloor.id) + ' and public=0'),
-        sql.replace('floors', schema.floorKeyValues(newFloor))
+        sql.insert('floors', schema.floorKeyValues(newFloor))
       ];
       rdb.batch(conn, sqls, (e) => {
         if(e) {
