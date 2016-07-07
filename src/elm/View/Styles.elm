@@ -839,6 +839,8 @@ mainView windowHeight =
 searchResultItemIcon : S
 searchResultItemIcon =
   [ ("width", "30px")
+  , ("height", "20px")
+  , ("margin-top", "-2px")
   ]
 
 

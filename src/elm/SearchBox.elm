@@ -32,11 +32,23 @@ type alias Model =
   , results : Maybe (List SearchResult)
   }
 
-init : Maybe String -> Model
-init query =
-  { query = Maybe.withDefault "" query
-  , results = Nothing
-  }
+
+-- TODO refactor
+init : (Msg -> a) -> Maybe String -> (Model, Cmd a)
+init transformMsg query =
+  case query of
+    Just query ->
+      ({ query = query
+      , results = Nothing
+      }, if query /= "" then
+          Cmd.map transformMsg (searchCmd False query)
+        else
+          Cmd.none
+      )
+    Nothing ->
+      ({ query = ""
+      , results = Nothing
+      }, Cmd.none)
 
 doSearch : (Msg -> a) -> Bool -> String -> Model -> (Model, Cmd a)
 doSearch transformMsg withPrivate query model =

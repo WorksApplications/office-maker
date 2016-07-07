@@ -211,20 +211,16 @@ function search(conn, query, all, cb) {
           });
           floors.forEach((floor) => {
             floor.equipments.forEach((e) => {
-              if(e.name.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
-                if(e.personId) {
-                  if(!results[e.personId]) {
-                    results[e.personId] = [];
-                  }
+              if(e.personId) {
+                if(results[e.personId]) {
                   results[e.personId].push(e);
-                } else {
-                  // { Nothing, Just } -- equipments that has no person
-                  arr.push({
-                    personId : null,
-                    equipmentIdAndFloorId : [e, e.floorId]
-                  });
                 }
-
+              } else if(e.name.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
+                // { Nothing, Just } -- equipments that has no person
+                arr.push({
+                  personId : null,
+                  equipmentIdAndFloorId : [e, e.floorId]
+                });
               }
             });
           });

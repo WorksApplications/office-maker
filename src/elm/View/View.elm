@@ -2,6 +2,7 @@ module View.View exposing (view)
 
 import Dict exposing (..)
 import Maybe
+import String
 
 import Html exposing (..)
 import Html.App as App
@@ -204,14 +205,14 @@ formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
     floorName =
       case equipmentIdAndFloorId of
         Just (e, fid) ->
-          if fid == "draft" then
+          if fid == "draft" || String.left 3 fid == "tmp" then
             "draft"
           else
             case Dict.get fid floorsInfo of
               Just info ->
                 info.name
               Nothing ->
-                "?" -- Seems a bug
+                fid ++ "?" -- Seems a bug
         Nothing ->
           "Missing"
     isPerson =
@@ -238,7 +239,7 @@ formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
     div
       [ style <| Styles.searchResultItemInner
       ]
-      [ icon, text (name ++ "(" ++ floorName ++ ")") ]
+      [ icon, div [] [text (name ++ "(" ++ floorName ++ ")")] ]
 
 
 subViewTab : msg -> Int -> Html msg -> Bool -> Html msg

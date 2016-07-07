@@ -152,23 +152,26 @@ init randomSeed initialSize urlResult visitDate =
       , clickEmulator = []
       , candidateRequest = NotWaiting
       }
-    initCmd =
-      Task.perform (always NoOp) identity (Task.succeed Init)
+    initCmd = loadAuthCmd
   in
     case urlResult of
+      -- TODO refactor
       Ok url ->
-        (toModel url (SearchBox.init url.query)) ! [ initCmd ]
+        let
+          (searchBox, cmd) = SearchBox.init SearchBoxMsg url.query
+        in
+          (toModel url searchBox) ! [ initCmd, cmd ]
       Err _ ->
         let
           dummyURL = URL.dummy
+          (searchBox, cmd) = SearchBox.init SearchBoxMsg dummyURL.query
         in
-          (toModel URL.dummy (SearchBox.init dummyURL.query))
-          ! [ initCmd ] -- TODO modifyURL
+          (toModel dummyURL searchBox)
+          ! [ initCmd, cmd ] -- TODO modifyURL
 
 --
 
 type Msg = NoOp
-  | Init
   | AuthLoaded User
   | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded Floor
@@ -239,14 +242,14 @@ urlUpdate result model =
         --TODO what is changed?
 
         (newSearchBox, searchBoxCmd) =
-          case newURL.query of
-            Just query ->
+          case (model.url.query /= newURL.query, newURL.query) of
+            (True, Just query) ->
               let
                 withPrivate =
                   not (User.isGuest model.user)
               in
                 SearchBox.doSearch SearchBoxMsg withPrivate query model.searchBox
-            Nothing ->
+            _ ->
               (model.searchBox, Cmd.none)
 
         forEdit = not (User.isGuest model.user)
@@ -296,8 +299,6 @@ update action model =
   case debugMsg action of
     NoOp ->
       model ! []
-    Init ->
-      model ! [ loadAuthCmd ]
     AuthLoaded user ->
       let
         requestPrivateFloors =
@@ -846,7 +847,7 @@ update action model =
                   Cmd.batch <|
                   List.filterMap (\r ->
                     case r.personId of
-                      Just id -> Just (regesterPerson id)
+                      Just id -> Just (regesterPersonIfNotCached model'.personInfo id)
                       Nothing -> Nothing
                   ) results
                 selectedResult =
@@ -862,14 +863,20 @@ update action model =
                 (selectedResult, regesterPersonCmd)
             SearchBox.OnSelectResult { personId, equipmentIdAndFloorId } ->
               let
-                selectedResult =
-                  Maybe.map (idOf << fst) equipmentIdAndFloorId
-                cmd =
+                (selectedResult, cmd1) =
+                  case equipmentIdAndFloorId of
+                    Just (e, fid) ->
+                      ( Just (idOf e)
+                      , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just fid) model'.url)
+                      )
+                    Nothing ->
+                      (Nothing, Cmd.none)
+                cmd2 =
                   case personId of
-                    Just id -> regesterPerson id
+                    Just id -> (regesterPersonIfNotCached model'.personInfo id)
                     Nothing -> Cmd.none
               in
-                (selectedResult, cmd)
+                (selectedResult, Cmd.batch [cmd1, cmd2])
             SearchBox.OnError e ->
               (Nothing, performAPI (always NoOp) (Task.fail e))
             SearchBox.None ->
@@ -1189,6 +1196,15 @@ regesterPerson personId =
   performAPI identity <|
     API.getPerson personId `andThen` \person ->
       Task.succeed (RegisterPeople [person])
+
+
+regesterPersonIfNotCached : Dict String Person -> String -> Cmd Msg
+regesterPersonIfNotCached personInfo personId =
+  if Dict.member personId personInfo then
+    Cmd.none
+  else
+    regesterPerson personId
+
 
 loadDraftFloor : User.User -> Cmd Msg
 loadDraftFloor user =
