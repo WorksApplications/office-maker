@@ -2,7 +2,7 @@ var fs = require('fs-extra');
 
 var publicDir = __dirname + '/public';
 
-function save(path, cb) {
+function save(path, image, cb) {
   fs.writeFile(publicDir + '/' + path, image, cb);
 }
 function empty(dir, cb) {

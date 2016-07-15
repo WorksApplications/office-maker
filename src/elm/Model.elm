@@ -1167,7 +1167,7 @@ updateFloorByFloorPropertyEvent event seed floor =
           newFloor =
             UndoRedo.commit floor (Floor.setLocalFile id file dataURL)
           cmd =
-            saveFloorCmd (UndoRedo.data floor)
+            saveFloorCmd (UndoRedo.data newFloor)
         in
           (newFloor, newSeed) ! [ cmd ]
       FloorProperty.OnPreparePublish ->

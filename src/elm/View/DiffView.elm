@@ -108,6 +108,11 @@ propertyChanges current prev =
               [("Size", "", "(" ++ toString w2 ++ ", " ++ toString h2 ++ ")")]
             _ ->
               [] -- should not happen
+        imageChange =
+          if current.imageSource /= prev.imageSource then
+            [("Image", "", "")] -- TODO how to describe?
+          else
+            []
       in
         nameChange ++ sizeChange
     Nothing ->

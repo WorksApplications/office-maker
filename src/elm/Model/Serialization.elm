@@ -72,7 +72,7 @@ encodeFloor floor =
       , ("height", int floor.height)
       , ("realWidth", Maybe.withDefault null <| Maybe.map (int << fst) floor.realSize)
       , ("realHeight", Maybe.withDefault null <| Maybe.map (int << snd) floor.realSize)
-      , ("src", src)
+      , ("image", src)
       , ("public", bool floor.public)
       ]
 
@@ -153,7 +153,7 @@ decodeFloor =
     |> required "height" Decode.int
     |> optional' "realWidth" Decode.int
     |> optional' "realHeight" Decode.int
-    |> optional' "src" Decode.string
+    |> optional' "image" Decode.string
     |> optional "public" Decode.bool False
     |> optional' "updateBy" Decode.string
     |> optional' "updateAt" Decode.float
