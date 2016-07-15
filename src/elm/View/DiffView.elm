@@ -69,7 +69,8 @@ view visitDate personInfo options (current, prev) =
 
     body =
       div [ style Styles.diffPopupBody ]
-        [ if List.isEmpty add then text "" else h3 [] [ text ((toString (List.length add)) ++ " Additions") ]
+        [ propertyChangesView (propertyChanges current prev)
+        , if List.isEmpty add then text "" else h3 [] [ text ((toString (List.length add)) ++ " Additions") ]
         , if List.isEmpty add then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) add)
         , if List.isEmpty modify then text "" else h3 [] [ text ((toString (List.length modify)) ++ " Modifications") ]
         , if List.isEmpty modify then text "" else ul [] (List.map (\d -> li [] [ text (toString d) ] ) modify)
@@ -83,6 +84,56 @@ view visitDate personInfo options (current, prev) =
       , body
       , buttons options.onClose options.onConfirm
       ]
+
+
+propertyChanges : Floor -> Maybe Floor -> List (String, String, String)
+propertyChanges current prev =
+  case prev of
+    Just prev ->
+      let
+        nameChange =
+          if Floor.name current == Floor.name prev then
+            []
+          else
+            [("Name", Floor.name current, Floor.name prev)]
+        sizeChange =
+          if current.realSize == prev.realSize then
+            []
+          else case (current.realSize, prev.realSize) of
+            (Just (w1, h1), Just (w2, h2)) ->
+              [("Size", "(" ++ toString w1 ++ ", " ++ toString h1 ++ ")", "(" ++ toString w2 ++ ", " ++ toString h2 ++ ")")]
+            (Just (w1, h1), Nothing) ->
+              [("Size", "(" ++ toString w1 ++ ", " ++ toString h1 ++ ")", "")]
+            (Nothing, Just (w2, h2)) ->
+              [("Size", "", "(" ++ toString w2 ++ ", " ++ toString h2 ++ ")")]
+            _ ->
+              [] -- should not happen
+      in
+        nameChange ++ sizeChange
+    Nothing ->
+      (if Floor.name current /= "" then [ ("Name", Floor.name current, "") ] else []) ++
+      (case current.realSize of
+        Just (w2, h2) ->
+          [("Size", "(" ++ toString w2 ++ ", " ++ toString h2 ++ ")", "")]
+        Nothing -> []
+      )
+
+
+propertyChangesView : List (String, String, String) -> Html msg
+propertyChangesView list =
+  if List.isEmpty list then
+    text ""
+  else
+    div []
+      ( h3 [] [ text "Property Changes"] ::
+        List.map propertyChangesViewEach list
+      )
+
+
+propertyChangesViewEach : (String, String, String) -> Html msg
+propertyChangesViewEach (propName, new, old) =
+  div [] [ text (propName ++ ": " ++ old ++ " => " ++ new)]
+
 
 diffEquipment : Equipment -> Equipment -> List String
 diffEquipment new old =

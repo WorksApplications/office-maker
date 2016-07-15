@@ -25,7 +25,7 @@ type ImageSource =
 init : Maybe Id -> Model
 init id =
     { id = id
-    , name = "1F"
+    , name = "1F" -- TODO
     , equipments = []
     , width = 800
     , height = 600
@@ -177,12 +177,17 @@ size model =
     Just (w, h) -> (realToPixel w, realToPixel h)
     Nothing -> (model.width, model.height)
 
+
+name : Model -> String
+name model = model.name
+
 width : Model -> Int
 width model = size model |> fst
 
 height : Model -> Int
 height model = size model |> snd
 
+-- TODO confusing...
 realSize : Model -> (Int, Int)
 realSize model =
   case model.realSize of

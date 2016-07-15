@@ -370,7 +370,7 @@ update action model =
                     id
                   Nothing ->
                     Debug.crash "new id not found."
-              message = Success ("Successfully published " ++ newFloorId')
+              message = Success ("Successfully published " ++ (currentFloor model).name)
             in
               message !
                 [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
