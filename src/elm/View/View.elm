@@ -190,7 +190,7 @@ subViewForSearch model =
             FloorInfo.Private f -> (Maybe.withDefault "draft" f.id, f)
           ) model.floorsInfo
     format =
-      formatSearchResult floorsInfoDict model.personInfo
+      formatSearchResult floorsInfoDict model.personInfo model.selectedResult
 
     thisFloorId =
       (currentFloor model).id
@@ -199,9 +199,10 @@ subViewForSearch model =
     , card <| [ SearchBox.resultsView SearchBoxMsg thisFloorId format model.searchBox ]
     ]
 
-formatSearchResult : Dict String Floor -> Dict String Person -> SearchResult -> Html Msg
-formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
+formatSearchResult : Dict String Floor -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
+formatSearchResult floorsInfo personInfo selectedResult = \result ->
   let
+    { personId, equipmentIdAndFloorId } = result
     floorName =
       case equipmentIdAndFloorId of
         Just (e, fid) ->
@@ -235,9 +236,19 @@ formatSearchResult floorsInfo personInfo { personId, equipmentIdAndFloorId } =
             Just person -> person.name
             Nothing -> nameOfEquipment
         Nothing -> nameOfEquipment
+
+    selectable =
+      equipmentIdAndFloorId /= Nothing
+      
+    selected =
+      case (selectedResult, equipmentIdAndFloorId) of
+        (Just id, Just (e, _)) ->
+          idOf e == id
+        _ ->
+          False
   in
     div
-      [ style <| Styles.searchResultItemInner
+      [ style <| Styles.searchResultItemInner selectable selected
       ]
       [ icon, div [] [text (name ++ "(" ++ floorName ++ ")")] ]
 

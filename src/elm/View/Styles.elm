@@ -477,12 +477,16 @@ searchBox =
 searchResultItem : S
 searchResultItem =
     [ ("padding", "5px")
-    , ("cursor", "pointer")
     ]
 
-searchResultItemInner : S
-searchResultItemInner =
-  flex
+searchResultItemInner : Bool -> Bool -> S
+searchResultItemInner selectable selected =
+  -- [("background-color", if selected then hoverBackgroundColor else "")]
+  [ ("text-decoration", if selectable then "underline" else "")
+  , ("cursor", if selectable then "pointer" else "")
+  , ("font-weight", if selected then "bold" else "")
+  ]
+  ++ flex
 
 
 floorsInfoView : S
