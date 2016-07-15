@@ -553,13 +553,21 @@ personNotMatched : S
 personNotMatched =
     personMatchingInfo ++ [ ("background-color", "#ccc") ]
 
-popup : S
-popup =
+popup : Int -> S
+popup padding =
     [ ("box-sizing", "border-box")
-    , ("padding", "20px")
+    , ("padding", px padding)
     , ("background-color", "#fff")
     , ("position", "absolute")
     ]
+
+defaultPopup : S
+defaultPopup =
+  popup 20
+
+smallPopup : S
+smallPopup =
+  popup 10
 
 modalBackground : S
 modalBackground =
@@ -574,7 +582,7 @@ modalBackground =
 
 diffPopup : S
 diffPopup =
-  popup ++
+  defaultPopup ++
     [ ("left", "20%")
     , ("right", "20%")
     , ("top", "10%")
@@ -615,19 +623,28 @@ diffPopupInnerContainer =
   , ("height", "100%")
   ]
 
-personDetailPopup : (Int, Int) -> S
-personDetailPopup (x, y) =
+personDetailPopup : (Int, Int) -> Bool -> S
+personDetailPopup (x, y) smallMode =
   let
-    width = 300
-    height = 160
+    width = if smallMode then 80 else 300
+    height = if smallMode then 40 else 160
   in
-    popup ++ shadow ++
+    (if smallMode then smallPopup else defaultPopup) ++ shadow ++
       [ ("width", px width)
       , ("height", px height)
       , ("left", px (x - (width // 2)))
       , ("top", px (y - (height + 10)))
       , ("z-index", zIndex.personDetailPopup)
       ]
+
+
+personDetailPopupNoPerson : S
+personDetailPopupNoPerson =
+  [ ("text-align", "center")
+  , ("overflow", "hidden")
+  , ("text-overflow", "ellipsis")
+  ]
+
 
 popupPointerBase : S
 popupPointerBase =
@@ -651,11 +668,11 @@ popupPointerLeft =
       , ("box-shadow", "rgba(0, 0, 0, 0.237255) -1.5px 1.5px 4.5px 0px")
       ]
 
-personDetailPopupPointer : S
-personDetailPopupPointer =
+personDetailPopupPointer : Bool -> S
+personDetailPopupPointer smallMode =
   popupPointerButtom ++
     [ ("bottom", "-10px")
-    , ("left", px (300 // 2 - 20 // 2))
+    , ("left", if smallMode then px 30 else px (300 // 2 - 20 // 2))
     ]
 
 personDetailPopupClose : S

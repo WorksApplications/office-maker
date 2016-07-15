@@ -9,7 +9,7 @@ import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
 
-view : msg -> Scale.Model -> (Int, Int) -> Equipment -> Person -> Html msg
+view : msg -> Scale.Model -> (Int, Int) -> Equipment -> Maybe Person -> Html msg
 view closeMsg scale (offsetX, offsetY) equipment person =
   let
     (x, y, w, h) =
@@ -17,9 +17,19 @@ view closeMsg scale (offsetX, offsetY) equipment person =
     (screenX, screenY) =
       Scale.imageToScreenForPosition scale (offsetX + x + w//2, offsetY + y)
   in
-    div
-      [ style (Styles.personDetailPopup (screenX, screenY)) ]
-      (pointer :: innerView (Just closeMsg) person)
+    case person of
+      Just person ->
+        div
+          [ style (Styles.personDetailPopup (screenX, screenY) False) ]
+          (pointer False :: innerView (Just closeMsg) person)
+      Nothing ->
+        if nameOf equipment == "" then
+          text ""
+        else
+          div
+            [ style (Styles.personDetailPopup (screenX, screenY) True) ]
+            (pointer True :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text (nameOf equipment) ] ])
+
 
 innerView : Maybe msg -> Person -> List (Html msg)
 innerView maybeCloseMsg person =
@@ -46,9 +56,9 @@ innerView maybeCloseMsg person =
     , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
     ]
 
-pointer : Html msg
-pointer =
-  div [ style Styles.personDetailPopupPointer ] []
+pointer : Bool -> Html msg
+pointer smallMode =
+  div [ style (Styles.personDetailPopupPointer smallMode) ] []
 
 tel : Person -> Html msg
 tel person =

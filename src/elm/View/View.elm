@@ -239,7 +239,7 @@ formatSearchResult floorsInfo personInfo selectedResult = \result ->
 
     selectable =
       equipmentIdAndFloorId /= Nothing
-      
+
     selected =
       case (selectedResult, equipmentIdAndFloorId) of
         (Just id, Just (e, _)) ->
@@ -316,9 +316,12 @@ canvasContainerView model =
       Maybe.withDefault (text "") <|
       model.selectedResult `Maybe.andThen` \id ->
       findEquipmentById floor.equipments id `Maybe.andThen` \e ->
-      Equipments.relatedPerson e `Maybe.andThen` \personId ->
-      Dict.get personId model.personInfo `Maybe.andThen` \person ->
-      Just (ProfilePopup.view ClosePopup model.scale model.offset e person)
+        case Equipments.relatedPerson e of
+          Just personId ->
+            Dict.get personId model.personInfo `Maybe.andThen` \person ->
+            Just (ProfilePopup.view ClosePopup model.scale model.offset e (Just person))
+          Nothing ->
+            Just (ProfilePopup.view ClosePopup model.scale model.offset e Nothing)
 
     inner =
       case (model.editMode, (currentFloor model).id) of
