@@ -19,6 +19,7 @@ CREATE TABLE floors (
   id varchar(36) NOT NULL,
   version int NOT NULL,
   name varchar(128) NOT NULL,
+  ord int NOT NULL,
   image varchar(128),
   width int,
   height int,

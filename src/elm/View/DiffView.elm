@@ -170,13 +170,13 @@ buttons onClose onConfirm =
     cancelButton =
       button
         [ onClick onClose
-        , style Styles.defaultButton ]
+        , style Styles.diffPopupCancelButton ]
         [ text "Cancel" ]
 
     confirmButton =
       button
         [ onClick onConfirm
-        , style Styles.primaryButton ]
+        , style Styles.diffPopupConfirmButton ]
         [ text "Confirm" ]
   in
     div [ style Styles.diffPopupFooter ] [ cancelButton, confirmButton ]

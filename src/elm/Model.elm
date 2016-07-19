@@ -141,7 +141,7 @@ init randomSeed initialSize urlResult visitDate =
       , scaling = False
       , prototypes = Prototypes.init []
       , error = NoError
-      , floorProperty = FloorProperty.init initialFloor.name 0 0
+      , floorProperty = FloorProperty.init initialFloor.name 0 0 0
       , selectedResult = Nothing
       , personInfo = Dict.empty
       , diff = Nothing
@@ -1120,7 +1120,7 @@ updateOnFloorLoaded floor model =
     newModel =
       { model |
         floor = UndoRedo.init { data = floor, update = Floor.update }
-      , floorProperty = FloorProperty.init floor.name realWidth realHeight
+      , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
       }
     cmd =
       case floor.update of
@@ -1148,6 +1148,14 @@ updateFloorByFloorPropertyEvent event seed floor =
         let
           newFloor =
             UndoRedo.commit floor (Floor.changeName name)
+          cmd =
+            saveFloorCmd (UndoRedo.data newFloor)
+        in
+          (newFloor, seed) ! [ cmd ]
+      FloorProperty.OnOrdChange ord ->
+        let
+          newFloor =
+            UndoRedo.commit floor (Floor.changeOrd ord)
           cmd =
             saveFloorCmd (UndoRedo.data newFloor)
         in

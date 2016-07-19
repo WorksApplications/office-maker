@@ -18,9 +18,10 @@ import Model.Floor
 
 type alias Floor = Model.Floor.Model
 
-type Msg =
-    NoOp
+type Msg
+  = NoOp
   | InputFloorName String
+  | InputFloorOrd String
   | InputFloorRealWidth String
   | InputFloorRealHeight String
   | LoadFile FileList
@@ -28,8 +29,9 @@ type Msg =
   | PreparePublish
   | FileError File.Error
 
-type Event =
-    OnNameChange String
+type Event
+  = OnNameChange String
+  | OnOrdChange Int
   | OnRealSizeChange (Int, Int)
   | OnFileWithDataURL File String
   | OnPreparePublish
@@ -40,13 +42,15 @@ type alias Model =
   { nameInput : String
   , realWidthInput : String
   , realHeightInput : String
+  , ordInput : String
   }
 
-init : String -> Int -> Int -> Model
-init name realWidth realHeight =
+init : String -> Int -> Int -> Int -> Model
+init name realWidth realHeight ord =
   { nameInput = name
   , realWidthInput = toString realWidth
   , realHeightInput = toString realHeight
+  , ordInput = toString ord
   }
 
 
@@ -65,6 +69,11 @@ update message model =
           if validName name then OnNameChange name else None
       in
         (newModel, Cmd.none, event)
+    InputFloorOrd ord ->
+      let
+        newModel = { model | ordInput = ord }
+      in
+        (newModel, Cmd.none, ordEvent ord)
     InputFloorRealWidth width ->
       let
         newModel = { model | realWidthInput = width }
@@ -92,6 +101,16 @@ update message model =
     FileError err ->
         (model, Cmd.none, OnFileLoadFailed err)
 
+
+ordEvent : String -> Event
+ordEvent ord =
+  case String.toInt ord of
+    Ok ord ->
+      OnOrdChange ord
+    Err s ->
+      None
+
+
 sizeEvent : Model -> Event
 sizeEvent newModel =
   case ( parsePositiveInt newModel.realWidthInput
@@ -117,7 +136,7 @@ floorNameInputView user model =
   let
     floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
   in
-    div [] [ floorNameLabel, nameInput user model.nameInput ]
+    div [ style Styles.floorNameInputContainer ] [ floorNameLabel, nameInput user model.nameInput ]
 
 nameInput : User -> String -> Html Msg
 nameInput user value =
@@ -129,7 +148,29 @@ nameInput user value =
     ] ++ (inputAttributes InputFloorName (always NoOp) value Nothing))
     []
   else
-    div [] [ text value ]
+    div [ style Styles.floorNameText ] [ text value ]
+
+
+floorOrdInputView : User -> Model -> Html Msg
+floorOrdInputView user model =
+  let
+    floorOrdLabel = label [ style Styles.floorOrdLabel ] [ text "Order" ]
+  in
+    div [ style Styles.floorOrdInputContainer ] [ floorOrdLabel, ordInput user model.ordInput ]
+
+
+ordInput : User -> String -> Html Msg
+ordInput user value =
+  if User.isAdmin user then
+    input
+    ([ Html.Attributes.id "floor-ord-input"
+    , type' "text"
+    , style Styles.floorOrdInput
+    ] ++ (inputAttributes InputFloorOrd (always NoOp) value Nothing))
+    []
+  else
+    div [ style Styles.floorOrdText ] [ text value ]
+
 
 floorRealSizeInputView : User -> Model -> Html Msg
 floorRealSizeInputView user model =
@@ -138,7 +179,7 @@ floorRealSizeInputView user model =
     widthLabel = label [ style Styles.widthHeightLabel ] [ text "Width(m)" ]
     heightLabel = label [ style Styles.widthHeightLabel ] [ text "Height(m)" ]
   in
-    div []
+    div [ style Styles.floorSizeInputContainer ]
       [ widthLabel
       , widthValueView user useReal model.realWidthInput
       , heightLabel
@@ -167,7 +208,7 @@ widthValueView user useReal value =
     ] ++ (inputAttributes InputFloorRealWidth (always NoOp) value Nothing))
     []
   else
-    div [] [text value]
+    div [ style Styles.floorWidthText ] [text value]
 
 heightValueView : User -> Bool -> String -> Html Msg
 heightValueView user useReal value =
@@ -180,7 +221,7 @@ heightValueView user useReal value =
     ] ++ (inputAttributes InputFloorRealHeight (always NoOp) value Nothing))
     []
   else
-    div [] [text value]
+    div [ style Styles.floorHeightText ] [text value]
 
 publishButtonView : User -> Html Msg
 publishButtonView user =
@@ -200,7 +241,9 @@ floorUpdateInfoView visitDate floor =
   in
     case floor.update of
       Just { by, at } ->
-        div [] [ text ("Last Update by " ++ by ++ " at " ++ date at) ]
+        div
+          [ style Styles.floorPropertyLastUpdate ]
+          [ text ("Last Update by " ++ by ++ " at " ++ date at) ]
       Nothing ->
         text ""
 
@@ -208,8 +251,10 @@ view : Date -> User -> Floor -> Model -> List (Html Msg)
 view visitDate user floor model =
     [ if User.isAdmin user then
         fileLoadButton LoadFile Styles.imageLoadButton "Load Image"
-      else text ""
+      else
+        text ""
     , floorNameInputView user model
+    , floorOrdInputView user model
     , floorRealSizeInputView user model
     , publishButtonView user
     , floorUpdateInfoView visitDate floor

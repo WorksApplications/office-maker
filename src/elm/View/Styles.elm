@@ -285,24 +285,19 @@ prototypePreviewScroll =
 
 formControl : S
 formControl =
-  [ ("height", "34px")
-  , ("width", "100%")
-  , ("box-sizing", "border-box")
-  , ("font-size", "14px")
-  , ("line-height", "1.42857143")
-  , ("padding", "6px 12px")
-  , ("margin-bottom", "6px")
+  [ ("margin-bottom", "6px")
   ]
 
 button : S
 button =
-  formControl ++
     [ ("display", "block")
+    , ("height", "30px")
     , ("text-align", "center")
     , ("background-color", "#eee")
     , ("width", "100%")
-    -- , ("box-shadow", "0 1px 1.5px 0 rgba(0,0,0,.12),0 1px 1px 0 rgba(0,0,0,.24)")
-    -- , ("box-shadow", "rgba(0, 0, 0, 0.12) 0px 0.1px 0.0px 0px, rgba(0, 0, 0, 0.24) 0px 0.5px 0.2px 0px")
+    , ("padding", "6px 12px")
+    , ("box-sizing", "border-box")
+    , ("font-size", "14px")
     ]
 
 
@@ -313,44 +308,107 @@ defaultButton =
 
 input : S
 input =
-  formControl ++
     [ ("color", "#333")
+    , ("width", "100%")
+    , ("height", "30px")
     , ("background-color", "#fff")
     , ("box-shadow", "inset 0 1px 2px rgba(0,0,0,0.075)")
     , ("border", "1px solid #ddd")
+    , ("padding", "6px 12px")
+    , ("box-sizing", "border-box")
+    , ("font-size", "14px")
     ]
+
+
+floorPropertyLabel : S
+floorPropertyLabel =
+  [ ("display", "block")
+  , ("line-height", "30px")
+  , ("text-align", "right")
+  , ("margin-right", "10px")
+  ]
+
+floorPropertyText : S
+floorPropertyText =
+  [ ("width", "100%")
+  , ("height", "30px")
+  , ("padding", "6px 12px")
+  , ("box-sizing", "border-box")
+  , ("font-size", "14px")
+  , ("border-bottom", "1px dotted #aaa")
+  ]
 
 imageLoadButton : S
 imageLoadButton =
-  defaultButton ++
+  formControl ++ defaultButton ++
     [ ("width", "120px")
     ]
 
 publishButton : S
 publishButton =
-  primaryButton
+  formControl ++ primaryButton
+
+floorNameInputContainer : S
+floorNameInputContainer =
+  formControl ++ flex
 
 floorNameInput : S
 floorNameInput =
-  input ++ [ ("width", "177px")
-  , ("margin-right", "12px")
-  ]
+  input ++
+    [ ("display", "block")
+    , ("line-height", "30px")
+    ]
 
-realSizeInput : S
-realSizeInput =
-  input ++ [ ("width", "50px")
-  , ("margin-right", "12px")
-  ]
+floorNameText : S
+floorNameText =
+  floorPropertyText
 
 floorNameLabel : S
 floorNameLabel =
-  [ ("margin-right", "23px")
-  ]
+  [ ("width", "124px") ] ++ floorPropertyLabel
+
+floorOrdInputContainer : S
+floorOrdInputContainer =
+  floorNameInputContainer
+
+floorOrdInput : S
+floorOrdInput =
+  floorNameInput
+
+floorOrdLabel : S
+floorOrdLabel =
+  floorNameLabel
+
+floorOrdText : S
+floorOrdText =
+  floorPropertyText
+
+floorSizeInputContainer : S
+floorSizeInputContainer =
+  formControl ++ flex
+
+realSizeInput : S
+realSizeInput =
+  input ++
+    [ ("width", "50px")
+    ]
 
 widthHeightLabel : S
 widthHeightLabel =
-  [ ("margin-right", "3px")
-  ]
+  [ ("width", "80px") ] ++ floorPropertyLabel
+
+floorWidthText : S
+floorWidthText =
+  floorPropertyText
+
+floorHeightText : S
+floorHeightText =
+  floorPropertyText
+
+floorPropertyLastUpdate : S
+floorPropertyLastUpdate =
+  formControl
+
 
 headerMenu : S
 headerMenu =
@@ -604,7 +662,7 @@ diffPopupBody =
   [ ("overflow-y", "scroll")
   , ("position", "absolute")
   , ("top", "60px")
-  , ("bottom", "90px")
+  , ("bottom", "50px")
   , ("right", "0")
   , ("left", "0")
   ]
@@ -615,7 +673,15 @@ diffPopupFooter =
   , ("position", "absolute")
   , ("right", "0")
   , ("left", "0")
-  ]
+  ] ++ flex
+
+diffPopupCancelButton : S
+diffPopupCancelButton =
+  defaultButton
+
+diffPopupConfirmButton : S
+diffPopupConfirmButton =
+  primaryButton ++ [ ("margin-left", "20px") ]
 
 diffPopupInnerContainer : S
 diffPopupInnerContainer =

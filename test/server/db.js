@@ -138,7 +138,6 @@ function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
   if(!newFloor.equipments) {
     throw "invalid: ";
   }
-  console.log('newFloor.equipments.length', newFloor.equipments.length);
   getFloor(conn, true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);

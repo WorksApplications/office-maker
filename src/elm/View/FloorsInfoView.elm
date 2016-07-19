@@ -56,12 +56,22 @@ view : msg -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
 view onCreateNewFloor isAdmin isEditMode currentFloorId floorInfoList =
   ul
     [ style Styles.floorsInfoView ]
-    ( List.filterMap (eachView isEditMode currentFloorId) floorInfoList ++
+    ( List.filterMap (eachView isEditMode currentFloorId) (List.sortBy (getOrd isEditMode) floorInfoList) ++
         if isEditMode && isAdmin then
           [ createButton onCreateNewFloor ]
         else
           []
     )
+
+getOrd : Bool -> FloorInfo -> Int
+getOrd isEditMode info =
+  case info of
+    FloorInfo.Public floor ->
+      floor.ord
+    FloorInfo.PublicWithEdit lastPublicFloor currentPrivateFloor ->
+      if isEditMode then currentPrivateFloor.ord else lastPublicFloor.ord
+    FloorInfo.Private floor ->
+      if isEditMode then floor.ord else -1
 
 
 getFloor : Bool -> FloorInfo -> Maybe Floor

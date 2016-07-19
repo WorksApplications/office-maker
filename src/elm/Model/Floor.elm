@@ -10,6 +10,7 @@ type alias Id = String
 type alias Model =
   { id : Maybe Id
   , name : String
+  , ord : Int
   , equipments: List Equipment
   , width : Int
   , height : Int
@@ -26,6 +27,7 @@ init : Maybe Id -> Model
 init id =
     { id = id
     , name = "1F" -- TODO
+    , ord = 0
     , equipments = []
     , width = 800
     , height = 600
@@ -45,6 +47,7 @@ type Msg =
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
   | ChangeName String
+  | ChangeOrd Int
   | SetLocalFile String File String
   | ChangeRealSize (Int, Int)
   | OnSaved Bool
@@ -77,6 +80,9 @@ changeEquipmentName = ChangeEquipmentName
 
 changeName : String -> Msg
 changeName = ChangeName
+
+changeOrd : Int -> Msg
+changeOrd = ChangeOrd
 
 setLocalFile : String -> File -> String -> Msg
 setLocalFile = SetLocalFile
@@ -132,6 +138,8 @@ update action model =
         model
     ChangeName name ->
       { model | name = name }
+    ChangeOrd ord ->
+      { model | ord = ord }
     SetLocalFile id file dataURL ->
       setLocalFile' id file dataURL model
     ChangeRealSize (width, height) ->

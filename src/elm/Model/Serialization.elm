@@ -135,9 +135,10 @@ decodeSearchResults =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id name equipments width height realWidth realHeight src public updateBy updateAt ->
+    (\id name ord equipments width height realWidth realHeight src public updateBy updateAt ->
       { id = id
       , name = name
+      , ord = ord
       , equipments = equipments
       , width = width
       , height = height
@@ -148,6 +149,7 @@ decodeFloor =
       })
     |> optional' "id" Decode.string
     |> required "name" Decode.string
+    |> required "ord" Decode.int
     |> required "equipments" (Decode.list decodeEquipment)
     |> required "width" Decode.int
     |> required "height" Decode.int
