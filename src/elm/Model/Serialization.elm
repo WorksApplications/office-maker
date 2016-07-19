@@ -67,6 +67,7 @@ encodeFloor floor =
     object
       [ ("id", Maybe.withDefault null <| Maybe.map string <| floor.id)
       , ("name", string floor.name)
+      , ("ord", int floor.ord)
       , ("equipments", list <| List.map encodeEquipment floor.equipments)
       , ("width", int floor.width)
       , ("height", int floor.height)

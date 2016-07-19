@@ -22,7 +22,7 @@ function floorKeyValues(floor) {
     ["id", floor.id],
     ["version", floor.version || 0],//TODO
     ["name", floor.name],
-    ["ord", floor.order || 0],
+    ["ord", floor.ord || 0],
     ["image", floor.image],
     ["width", floor.width],
     ["height", floor.height],
