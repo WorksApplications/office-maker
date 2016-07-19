@@ -203,7 +203,7 @@ app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
       return;
     }
     var prototypes = req.body;
-    if(!prototypes || !prototypes_.length) {
+    if(!prototypes || !prototypes.length) {
       res.status(403).send('');
       return;
     }
@@ -213,7 +213,7 @@ app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
-      res.send();
+      res.send({});
     });
   });
 }));
@@ -260,7 +260,7 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
-      res.send();
+      res.send({});
     });
   });
 }));

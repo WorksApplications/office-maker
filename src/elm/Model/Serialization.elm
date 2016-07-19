@@ -181,6 +181,21 @@ decodePrototype =
     |> required "width" Decode.int
     |> required "height" Decode.int
 
+encodePrototype : Prototype -> Value
+encodePrototype (id, color, name, (width, height)) =
+  object
+    [ ("id", string id)
+    , ("color", string color)
+    , ("name", string name)
+    , ("width", int width)
+    , ("height", int height)
+    ]
+
+serializePrototypes : List Prototype -> String
+serializePrototypes prototypes =
+  encode 0 (Encode.list (List.map encodePrototype prototypes))
+
+
 serializeFloor : Floor -> String
 serializeFloor floor =
     encode 0 (encodeFloor floor)

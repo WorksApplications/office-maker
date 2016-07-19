@@ -330,19 +330,33 @@ function init(conn, cb) {
 
   _async.series(mock.users.map((user) => {
     return function(cb) {
+      // console.log('init 1');
       saveUser(conn, user, cb);
     };
   }).concat(mock.people.map((person) => {
     return function(cb) {
+      // console.log('init 2');
       savePerson(conn, person, cb);
     };
   })).concat([
     function(cb) {
-      savePrototypes(conn, mock.prototypes, cb);
+      // console.log('init 3');
+      getPrototypes(conn, function(e, prototypes) {
+        if(e) {
+          cb(e);
+        } else {
+          if(prototypes.length) {
+            cb();
+          } else {
+            savePrototypes(conn, mock.prototypes, cb);
+          }
+        }
+      });
     }
   ]).concat([
     function(cb) {
-      saveColors.bind(conn, mock.colors, cb)
+      // console.log('init 4');
+      saveColors(conn, mock.colors, cb)
     }
   ]), cb);
 }
@@ -353,9 +367,10 @@ rdb.forConnectionAndTransaction((e, conn, done) => {
     init(conn, (e) => {
       // console.log('init done?', e);
       if(e) {
-        done(true);
+        console.log(e);
+        done(e);
       } else {
-        done();
+        done(null, function onFinishClose() {});
       }
     });
   }

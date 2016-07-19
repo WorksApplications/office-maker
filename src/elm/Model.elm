@@ -743,23 +743,21 @@ update action model =
           { model |
             contextMenu = NoContextMenu
           }
-        newModel =
-          case equipment of
-            Just e ->
-              let
-                (_, _, w, h) = rect e
-                (newId, seed) = IdGenerator.new model.seed
-                newPrototypes =
-                  Prototypes.register (newId, colorOf e, nameOf e, (w, h)) model.prototypes
-              in
-                { model' |
-                  seed = seed
-                , prototypes = newPrototypes
-                }
-            Nothing ->
-              model'
       in
-        newModel ! []
+        case equipment of
+          Just e ->
+            let
+              (_, _, w, h) = rect e
+              (newId, seed) = IdGenerator.new model.seed
+              newPrototypes =
+                Prototypes.register (newId, colorOf e, nameOf e, (w, h)) model.prototypes
+            in
+              { model' |
+                seed = seed
+              , prototypes = newPrototypes
+              } ! [ savePrototypesCmd newPrototypes.data ]
+          Nothing ->
+            model' ! []
     FloorPropertyMsg message ->
       let
         (floorProperty, cmd1, event) =
@@ -1314,6 +1312,13 @@ nextEquipmentToInput equipment allEquipments =
 
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model
+
+
+savePrototypesCmd : List Prototype -> Cmd Msg
+savePrototypesCmd prototypes =
+  performAPI
+    (always (NoOp))
+    (API.savePrototypes prototypes)
 
 
 saveFloorCmd : Floor -> Cmd Msg

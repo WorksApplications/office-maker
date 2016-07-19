@@ -8,7 +8,7 @@ type alias PrototypeId =
   String
 
 type alias Prototype =
-  (PrototypeId, String, String, (Int, Int)) -- id color, name, size
+  (PrototypeId, String, String, (Int, Int)) -- id, color, name, size
 
 type alias StampCandidate =
   (Prototype, (Int, Int))

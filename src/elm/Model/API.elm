@@ -19,6 +19,7 @@ module Model.API exposing (
     , getPersonByUser
     , getColors
     , getPrototypes
+    , savePrototypes
     , Error
   )
 
@@ -81,17 +82,21 @@ getPrototypes =
       decodePrototypes
       (Http.url "/api/v1/prototypes" [])
 
+
+savePrototypes : List Prototype -> Task Error ()
+savePrototypes prototypes =
+  putJson
+    noResponse
+    ("/api/v1/prototypes")
+    (Http.string <| serializePrototypes prototypes)
+
+
 getColors : Task Error (List String)
 getColors =
     getJsonWithoutCache
       decodeColors
       (Http.url "/api/v1/colors" [])
 
--- getSettings : Task Error (List Prototype, List String)
--- getSettings =
---   getPrototypes
---   `Task.andThen` \prototypes -> getColors
---   `Task.andThen` \colors -> Task.succeed (prototypes, colors)
 
 getFloor : Maybe String -> Task Error Floor
 getFloor id =
