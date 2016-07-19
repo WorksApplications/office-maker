@@ -96,6 +96,11 @@ propertyChanges current prev =
             []
           else
             [("Name", Floor.name current, Floor.name prev)]
+        ordChange =
+          if current.ord == prev.ord then
+            []
+          else
+            [("Order", toString current.ord, toString prev.ord)]
         sizeChange =
           if current.realSize == prev.realSize then
             []
@@ -114,7 +119,7 @@ propertyChanges current prev =
           else
             []
       in
-        nameChange ++ sizeChange
+        nameChange ++ ordChange ++ sizeChange
     Nothing ->
       (if Floor.name current /= "" then [ ("Name", Floor.name current, "") ] else []) ++
       (case current.realSize of
