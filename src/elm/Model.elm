@@ -30,6 +30,7 @@ import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipm
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
 import Model.FloorInfo exposing (FloorInfo)
+import Model.ProfilePopupLogic as ProfilePopupLogic
 
 import FloorProperty
 import SearchBox
@@ -73,6 +74,7 @@ type alias Model =
   , tab : Tab
   , clickEmulator : List (Id, Bool, Time)
   , candidateRequest : CandidateRequestState
+  , personPopupSize : (Int, Int)
   }
 
 type ContextMenu =
@@ -151,6 +153,7 @@ init randomSeed initialSize urlResult visitDate =
       , tab = SearchTab
       , clickEmulator = []
       , candidateRequest = NotWaiting
+      , personPopupSize = (300, 160)
       }
     initCmd = loadAuthCmd
   in
@@ -841,6 +844,7 @@ update action model =
                       Just id -> Just (regesterPersonIfNotCached model'.personInfo id)
                       Nothing -> Nothing
                   ) results
+
                 selectedResult =
                   case results of
                     { equipmentIdAndFloorId } :: [] ->
@@ -873,9 +877,31 @@ update action model =
             SearchBox.None ->
               (model'.selectedResult, Cmd.none)
 
+        maybeShiftedOffset =
+          selectedResult `Maybe.andThen` \id ->
+          findEquipmentById (UndoRedo.data model'.floor).equipments id `Maybe.andThen` \e ->
+          relatedPerson e `Maybe.andThen` \personId ->
+          Just <|
+            let
+              (windowWidth, windowHeight) =
+                model.windowSize
+              containerWidth = windowWidth - 320 --TODO
+              containerHeight = windowHeight - 37 --TODO
+            in
+              ProfilePopupLogic.adjustOffset
+                (containerWidth, containerHeight)
+                model.personPopupSize
+                model.scale
+                model.offset
+                e
+
+        newOffset =
+          Maybe.withDefault model.offset maybeShiftedOffset
+
         model'' =
           { model' |
             selectedResult = selectedResult
+          , offset = newOffset
           }
 
         newModel =

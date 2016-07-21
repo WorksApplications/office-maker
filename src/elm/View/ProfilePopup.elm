@@ -8,27 +8,26 @@ import View.Icons as Icons
 import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
 import Model.Equipments as Equipments exposing (..)
+import Model.ProfilePopupLogic exposing (..)
 
-view : msg -> Scale.Model -> (Int, Int) -> Equipment -> Maybe Person -> Html msg
-view closeMsg scale (offsetX, offsetY) equipment person =
+view : msg -> (Int, Int) -> Scale.Model -> (Int, Int) -> Equipment -> Maybe Person -> Html msg
+view closeMsg (popupWidth, popupHeight) scale offsetScreenXY equipment person =
   let
-    (x, y, w, h) =
-      rect equipment
-    (screenX, screenY) =
-      Scale.imageToScreenForPosition scale (offsetX + x + w//2, offsetY + y)
+    centerTopScreenXY =
+      centerTopScreenXYOfEquipment scale offsetScreenXY equipment
   in
     case person of
       Just person ->
         div
-          [ style (Styles.personDetailPopup (screenX, screenY) False) ]
-          (pointer False :: innerView (Just closeMsg) person)
+          [ style (Styles.personDetailPopupDefault popupWidth popupHeight centerTopScreenXY) ]
+          (pointerDefault popupWidth :: innerView (Just closeMsg) person)
       Nothing ->
         if nameOf equipment == "" then
           text ""
         else
           div
-            [ style (Styles.personDetailPopup (screenX, screenY) True) ]
-            (pointer True :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text (nameOf equipment) ] ])
+            [ style (Styles.personDetailPopupSmall centerTopScreenXY) ]
+            (pointerSmall :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text (nameOf equipment) ] ])
 
 
 innerView : Maybe msg -> Person -> List (Html msg)
@@ -56,9 +55,16 @@ innerView maybeCloseMsg person =
     , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
     ]
 
-pointer : Bool -> Html msg
-pointer smallMode =
-  div [ style (Styles.personDetailPopupPointer smallMode) ] []
+
+pointerDefault : Int -> Html msg
+pointerDefault width =
+  div [ style (Styles.personDetailPopupPointerDefault width) ] []
+
+
+pointerSmall : Html msg
+pointerSmall =
+  div [ style (Styles.personDetailPopupPointerSmall) ] []
+
 
 tel : Person -> Html msg
 tel person =
@@ -69,6 +75,7 @@ tel person =
         [ style Styles.personDetailPopupPersonIconText ]
         [ text (Maybe.withDefault "" person.tel) ]
     ]
+
 
 mail : Person -> Html msg
 mail person =

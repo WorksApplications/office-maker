@@ -1,5 +1,6 @@
 module View.Styles exposing (..)
 
+import Model.ProfilePopupLogic as ProfilePopupLogic
 import Util.StyleUtil exposing (..)
 
 type alias S = List (String, String)
@@ -190,6 +191,9 @@ canvasView isViewing rect =
   (absoluteRect rect) ++
     [ ("background-color", "#fff")
     , ("font-family", "default")
+    -- TODO on select person
+    -- , ("transition-property", "top, left")
+    -- , ("transition-duration", "0.2s")
     ] ++ (if isViewing then [("overflow", "hidden")] else [])
 
 canvasContainer : Bool -> S
@@ -689,19 +693,26 @@ diffPopupInnerContainer =
   , ("height", "100%")
   ]
 
-personDetailPopup : (Int, Int) -> Bool -> S
-personDetailPopup (x, y) smallMode =
-  let
-    width = if smallMode then 80 else 300
-    height = if smallMode then 40 else 160
-  in
-    (if smallMode then smallPopup else defaultPopup) ++ shadow ++
-      [ ("width", px width)
-      , ("height", px height)
-      , ("left", px (x - (width // 2)))
-      , ("top", px (y - (height + 10)))
-      , ("z-index", zIndex.personDetailPopup)
-      ]
+
+personDetailPopup : Int -> Int -> (Int, Int) -> S
+personDetailPopup width height (x, y) =
+  shadow ++
+    [ ("width", px width)
+    , ("height", px height)
+    , ("left", px (ProfilePopupLogic.calcPopupLeftFromEquipmentCenter width x))
+    , ("top", px (ProfilePopupLogic.calcPopupTopFromEquipmentTop height y))
+    , ("z-index", zIndex.personDetailPopup)
+    ]
+
+
+personDetailPopupDefault : Int -> Int -> (Int, Int) -> S
+personDetailPopupDefault width height (x, y) =
+  defaultPopup ++ personDetailPopup width height (x, y)
+
+
+personDetailPopupSmall : (Int, Int) -> S
+personDetailPopupSmall (x, y) =
+  smallPopup ++ personDetailPopup 80 40 (x, y)
 
 
 personDetailPopupNoPerson : S
@@ -734,12 +745,24 @@ popupPointerLeft =
       , ("box-shadow", "rgba(0, 0, 0, 0.237255) -1.5px 1.5px 4.5px 0px")
       ]
 
-personDetailPopupPointer : Bool -> S
-personDetailPopupPointer smallMode =
+
+personDetailPopupPointer : Int -> S
+personDetailPopupPointer width =
   popupPointerButtom ++
     [ ("bottom", "-10px")
-    , ("left", if smallMode then px 30 else px (300 // 2 - 20 // 2))
+    , ("left", px (width // 2 - 20 // 2))
     ]
+
+
+personDetailPopupPointerDefault : Int -> S
+personDetailPopupPointerDefault width =
+  personDetailPopupPointer width
+
+
+personDetailPopupPointerSmall : S
+personDetailPopupPointerSmall =
+  personDetailPopupPointer 80
+
 
 personDetailPopupClose : S
 personDetailPopupClose =
@@ -917,9 +940,9 @@ messageBar =
     , ("z-index", zIndex.messageBar)
     , ("padding", "5px 10px")
     -- , ("height", "29px")
-    , ("transition", "height")
+    , ("transition", "height") -- TODO ?
     , ("box-sizing", "border-box")
-    , ("transition", "opacity 0.8s linear")
+    , ("transition", "opacity 0.8s linear") -- TODO ?
     ]
 
 successBar : S

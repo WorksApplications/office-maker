@@ -319,9 +319,9 @@ canvasContainerView model =
         case Equipments.relatedPerson e of
           Just personId ->
             Dict.get personId model.personInfo `Maybe.andThen` \person ->
-            Just (ProfilePopup.view ClosePopup model.scale model.offset e (Just person))
+            Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
           Nothing ->
-            Just (ProfilePopup.view ClosePopup model.scale model.offset e Nothing)
+            Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
 
     inner =
       case (model.editMode, (currentFloor model).id) of
