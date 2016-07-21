@@ -12,6 +12,7 @@ centerTopScreenXYOfEquipment scale (offsetX, offsetY) equipment =
   in
     Scale.imageToScreenForPosition scale (offsetX + x + w//2, offsetY + y)
 
+
 bottomScreenYOfEquipment : Scale.Model -> (Int, Int) -> Equipment -> Int
 bottomScreenYOfEquipment scale (offsetX, offsetY) equipment =
   let
@@ -55,19 +56,19 @@ adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale (
       bottomScreenYOfEquipment scale (offsetX, offsetY) equipment
 
     offsetX' =
-      if left < 0 then
-        offsetX - left
-      else if right > containerWidth then
-        offsetX - (right - containerWidth)
-      else
-        offsetX
+      adjust containerWidth left right offsetX
 
     offsetY' =
-      if top < 0 then
-        offsetY - top
-      else if bottom > containerHeight then
-        offsetY - (bottom - containerHeight)
-      else
-        offsetY
+      adjust containerHeight top bottom offsetY
   in
     (offsetX', offsetY')
+
+
+adjust : Int -> Int -> Int -> Int -> Int
+adjust length min max offset =
+  if min < 0 then
+    offset - min
+  else if max > length then
+    offset - (max - length)
+  else
+    offset

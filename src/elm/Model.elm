@@ -827,76 +827,10 @@ update action model =
           { model | searchBox = searchBox }
 
         (selectedResult, cmd2) =
-          case event of
-            SearchBox.OnSubmit ->
-              ( Nothing
-              , Navigation.modifyUrl ( URL.stringify <| URL.updateQuery model'.searchBox.query model'.url )
-              )
-            SearchBox.OnResults ->
-              let
-                results =
-                  SearchBox.allResults model'.searchBox
-
-                regesterPersonCmd =
-                  Cmd.batch <|
-                  List.filterMap (\r ->
-                    case r.personId of
-                      Just id -> Just (regesterPersonIfNotCached model'.personInfo id)
-                      Nothing -> Nothing
-                  ) results
-
-                selectedResult =
-                  case results of
-                    { equipmentIdAndFloorId } :: [] ->
-                      case equipmentIdAndFloorId of
-                        Just (e, fid) ->
-                          Just (idOf e)
-                        Nothing ->
-                          Nothing
-                    _ -> Nothing
-              in
-                (selectedResult, regesterPersonCmd)
-            SearchBox.OnSelectResult { personId, equipmentIdAndFloorId } ->
-              let
-                (selectedResult, cmd1) =
-                  case equipmentIdAndFloorId of
-                    Just (e, fid) ->
-                      ( Just (idOf e)
-                      , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just fid) model'.url)
-                      )
-                    Nothing ->
-                      (Nothing, Cmd.none)
-                cmd2 =
-                  case personId of
-                    Just id -> (regesterPersonIfNotCached model'.personInfo id)
-                    Nothing -> Cmd.none
-              in
-                (selectedResult, Cmd.batch [cmd1, cmd2])
-            SearchBox.OnError e ->
-              (Nothing, performAPI (always NoOp) (Task.fail e))
-            SearchBox.None ->
-              (model'.selectedResult, Cmd.none)
-
-        maybeShiftedOffset =
-          selectedResult `Maybe.andThen` \id ->
-          findEquipmentById (UndoRedo.data model'.floor).equipments id `Maybe.andThen` \e ->
-          relatedPerson e `Maybe.andThen` \personId ->
-          Just <|
-            let
-              (windowWidth, windowHeight) =
-                model.windowSize
-              containerWidth = windowWidth - 320 --TODO
-              containerHeight = windowHeight - 37 --TODO
-            in
-              ProfilePopupLogic.adjustOffset
-                (containerWidth, containerHeight)
-                model.personPopupSize
-                model.scale
-                model.offset
-                e
+          updateOnSearchBoxEvent event model'
 
         newOffset =
-          Maybe.withDefault model.offset maybeShiftedOffset
+          adjustOffset selectedResult model'
 
         model'' =
           { model' |
@@ -1003,8 +937,17 @@ update action model =
           case personId of
             Just id -> regesterPerson id
             Nothing -> Cmd.none
+
+        selectedResult =
+          Just id
+
+        newOffset =
+          adjustOffset selectedResult model
       in
-        { model | selectedResult = Just id } ! [ cmd ]
+        { model |
+          selectedResult = selectedResult
+        , offset = newOffset
+        } ! [ cmd ]
     CreateNewFloor ->
       let
         (newFloorId, newSeed) =
@@ -1040,6 +983,82 @@ update action model =
       in
         newModel ! []
 
+
+updateOnSearchBoxEvent : SearchBox.Event -> Model -> (Maybe Id, Cmd Msg)
+updateOnSearchBoxEvent event model =
+  case event of
+    SearchBox.OnSubmit ->
+      ( Nothing
+      , Navigation.modifyUrl ( URL.stringify <| URL.updateQuery model.searchBox.query model.url )
+      )
+    SearchBox.OnResults ->
+      let
+        results =
+          SearchBox.allResults model.searchBox
+
+        regesterPersonCmd =
+          Cmd.batch <|
+          List.filterMap (\r ->
+            case r.personId of
+              Just id -> Just (regesterPersonIfNotCached model.personInfo id)
+              Nothing -> Nothing
+          ) results
+
+        selectedResult =
+          case results of
+            { equipmentIdAndFloorId } :: [] ->
+              case equipmentIdAndFloorId of
+                Just (e, fid) ->
+                  Just (idOf e)
+                Nothing ->
+                  Nothing
+            _ -> Nothing
+      in
+        (selectedResult, regesterPersonCmd)
+    SearchBox.OnSelectResult { personId, equipmentIdAndFloorId } ->
+      let
+        (selectedResult, cmd1) =
+          case equipmentIdAndFloorId of
+            Just (e, fid) ->
+              ( Just (idOf e)
+              , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just fid) model.url)
+              )
+            Nothing ->
+              (Nothing, Cmd.none)
+        cmd2 =
+          case personId of
+            Just id -> (regesterPersonIfNotCached model.personInfo id)
+            Nothing -> Cmd.none
+      in
+        (selectedResult, Cmd.batch [cmd1, cmd2])
+    SearchBox.OnError e ->
+      (Nothing, performAPI (always NoOp) (Task.fail e))
+    SearchBox.None ->
+      (model.selectedResult, Cmd.none)
+
+
+adjustOffset : Maybe Id -> Model -> (Int, Int)
+adjustOffset selectedResult model =
+  let
+    maybeShiftedOffset =
+      selectedResult `Maybe.andThen` \id ->
+      findEquipmentById (UndoRedo.data model.floor).equipments id `Maybe.andThen` \e ->
+      relatedPerson e `Maybe.andThen` \personId ->
+      Just <|
+        let
+          (windowWidth, windowHeight) =
+            model.windowSize
+          containerWidth = windowWidth - 320 --TODO
+          containerHeight = windowHeight - 37 --TODO
+        in
+          ProfilePopupLogic.adjustOffset
+            (containerWidth, containerHeight)
+            model.personPopupSize
+            model.scale
+            model.offset
+            e
+    in
+      Maybe.withDefault model.offset maybeShiftedOffset
 
 
 updateOnSelectCandidate : Id -> String -> Model -> (Model, Cmd Msg)
