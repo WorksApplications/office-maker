@@ -6,7 +6,6 @@ import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events
 import Model.API as API
--- import Model.Equipments exposing (Equipment)
 import Model.SearchResult exposing (SearchResult)
 
 import Util.HtmlUtil exposing (..)
@@ -15,7 +14,7 @@ import View.Styles as Styles
 
 type Msg =
     Input String
-  | Results (List SearchResult)
+  | Results (Maybe String) (List SearchResult)
   | Submit
   | SelectResult SearchResult
   | Error API.Error
@@ -41,7 +40,7 @@ init transformMsg query =
       ({ query = query
       , results = Nothing
       }, if query /= "" then
-          Cmd.map transformMsg (searchCmd False query)
+          Cmd.map transformMsg (searchCmd False Nothing query)--TODO search here? maybe lacking information
         else
           Cmd.none
       )
@@ -51,11 +50,11 @@ init transformMsg query =
       }, Cmd.none)
 
 
-doSearch : (Msg -> a) -> Bool -> String -> Model -> (Model, Cmd a)
-doSearch transformMsg withPrivate query model =
+doSearch : (Msg -> a) -> Bool -> Maybe String -> String -> Model -> (Model, Cmd a)
+doSearch transformMsg withPrivate thisFloorId query model =
   ({ model | query = query }
   , if query /= "" then
-      Cmd.map transformMsg (searchCmd withPrivate query)
+      Cmd.map transformMsg (searchCmd withPrivate thisFloorId query)
     else
       Cmd.none
   )
@@ -68,17 +67,17 @@ update msg model =
         ({ model | query = query }, Cmd.none, None)
     Submit ->
         (model, Cmd.none, OnSubmit)
-    Results results ->
-        ({ model | results = Just results }, Cmd.none, OnResults)
+    Results thisFloorId results ->
+        ({ model | results = Just (reorderResults thisFloorId results) }, Cmd.none, OnResults)
     SelectResult result ->
         (model, Cmd.none, (OnSelectResult result))
     Error apiError ->
         (model, Cmd.none, (OnError apiError))
 
 
-searchCmd : Bool -> String -> Cmd Msg
-searchCmd withPrivate query =
-  Task.perform Error Results (API.search withPrivate query)
+searchCmd : Bool -> Maybe String -> String -> Cmd Msg
+searchCmd withPrivate thisFloorId query =
+  Task.perform Error (Results thisFloorId) (API.search withPrivate query)
 
 
 allResults : Model -> List SearchResult
@@ -88,48 +87,6 @@ allResults model =
       []
     Just results ->
       results
-
-
-view : (Msg -> msg) -> Model -> Html msg
-view translateMsg model =
-  App.map translateMsg <|
-    form' Submit
-      [ ]
-      [ input
-        [ type' "input"
-        , placeholder "Search"
-        , style Styles.searchBox
-        , value model.query
-        , onInput Input
-        ]
-        []
-      ]
-
-
-resultView : (Msg -> msg) -> (SearchResult -> Html msg) -> SearchResult -> Html msg
-resultView translateMsg format result =
-    li
-      [ Html.Events.onClick (translateMsg <| SelectResult result)
-      , style Styles.searchResultItem
-      ]
-      [ format result ]
-
-
-resultsView : (Msg -> msg) -> Maybe String -> (SearchResult -> Html msg) -> Model -> Html msg
-resultsView transformMsg thisFloorId format model =
-    case model.results of
-      Nothing ->
-        text ""
-      Just [] ->
-        div [] [ text "Nothing found." ]
-      Just results ->
-        let
-          each result =
-            resultView transformMsg format result
-          children =
-            List.map each (reorderResults thisFloorId results)
-        in
-          ul [] children
 
 
 reorderResults : Maybe String -> List SearchResult -> List SearchResult
@@ -151,6 +108,47 @@ reorderResults thisFloorId results =
   in
     inThisFloor ++ inOtherFloor ++ inDraftFloor ++ missing
 
+
+view : (Msg -> msg) -> Model -> Html msg
+view transformMsg model =
+  App.map transformMsg <|
+    form' Submit
+      [ ]
+      [ input
+        [ type' "input"
+        , placeholder "Search"
+        , style Styles.searchBox
+        , value model.query
+        , onInput Input
+        ]
+        []
+      ]
+
+
+resultView : (Msg -> msg) -> (SearchResult -> Html msg) -> SearchResult -> Html msg
+resultView transformMsg format result =
+    li
+      [ Html.Events.onClick (transformMsg <| SelectResult result)
+      , style Styles.searchResultItem
+      ]
+      [ format result ]
+
+
+resultsView : (Msg -> msg) -> Maybe String -> (SearchResult -> Html msg) -> Model -> Html msg
+resultsView transformMsg thisFloorId format model =
+    case model.results of
+      Nothing ->
+        text ""
+      Just [] ->
+        div [] [ text "Nothing found." ]
+      Just results ->
+        let
+          each result =
+            resultView transformMsg format result
+          children =
+            List.map each results
+        in
+          ul [] children
 
 
 --

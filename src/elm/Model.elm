@@ -250,8 +250,10 @@ urlUpdate result model =
               let
                 withPrivate =
                   not (User.isGuest model.user)
+                thisFloorId =
+                  Just floorId
               in
-                SearchBox.doSearch SearchBoxMsg withPrivate query model.searchBox
+                SearchBox.doSearch SearchBoxMsg withPrivate thisFloorId query model.searchBox
             _ ->
               (model.searchBox, Cmd.none)
 
