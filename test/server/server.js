@@ -310,7 +310,7 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
       return;
     }
     results.forEach(function(r) {
-      if(r.equipmentIdAndFloorId[1] && r.equipmentIdAndFloorId[1].startsWith('tmp')) {
+      if(r.equipmentIdAndFloorId && r.equipmentIdAndFloorId[1] && r.equipmentIdAndFloorId[1].startsWith('tmp')) {
         r.equipmentIdAndFloorId[1] = 'draft';
       }
     })

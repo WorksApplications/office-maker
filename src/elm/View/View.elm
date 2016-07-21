@@ -192,11 +192,12 @@ subViewForSearch model =
     format =
       formatSearchResult floorsInfoDict model.personInfo model.selectedResult
 
-    thisFloorId =
-      (currentFloor model).id
+    isEditing =
+      (model.editMode /= Viewing True && model.editMode /= Viewing False)
+
   in
     [ card <| [ SearchBox.view SearchBoxMsg model.searchBox ]
-    , card <| [ SearchBox.resultsView SearchBoxMsg thisFloorId format model.searchBox ]
+    , card <| [ SearchBox.resultsView SearchBoxMsg isEditing format model.searchBox ]
     ]
 
 formatSearchResult : Dict String Floor -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg

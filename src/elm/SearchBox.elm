@@ -134,8 +134,8 @@ resultView transformMsg format result =
       [ format result ]
 
 
-resultsView : (Msg -> msg) -> Maybe String -> (SearchResult -> Html msg) -> Model -> Html msg
-resultsView transformMsg thisFloorId format model =
+resultsView : (Msg -> msg) -> Bool -> (SearchResult -> Html msg) -> Model -> Html msg
+resultsView transformMsg isEditing format model =
     case model.results of
       Nothing ->
         text ""
@@ -145,8 +145,19 @@ resultsView transformMsg thisFloorId format model =
         let
           each result =
             resultView transformMsg format result
+
+          filter { equipmentIdAndFloorId } =
+            if isEditing then
+              True
+            else
+              case equipmentIdAndFloorId of
+                Just (_, "draft") ->
+                  False
+                _ ->
+                  True
+
           children =
-            List.map each results
+            List.map each (List.filter filter results)
         in
           ul [] children
 
