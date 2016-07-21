@@ -540,13 +540,6 @@ update action model =
         newModel ! [ cmd ]
     MouseDownOnCanvas ->
       let
-        (model', cmd) =
-          case EquipmentNameInput.forceFinish model.equipmentNameInput of
-            (equipmentNameInput, Just (id, name)) ->
-              updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
-            (equipmentNameInput, _) ->
-              { model | equipmentNameInput = equipmentNameInput } ! []
-
         (clientX, clientY) =
           model.pos
         selectorRect =
@@ -569,7 +562,7 @@ update action model =
             Viewing _ ->
               ShiftOffsetPrevScreenPos
 
-        (model'', cmd2) =
+        (model', cmd) =
           case EquipmentNameInput.forceFinish model.equipmentNameInput of
             (equipmentNameInput, Just (id, name)) ->
               updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
@@ -577,14 +570,14 @@ update action model =
               { model | equipmentNameInput = equipmentNameInput } ! []
 
         newModel =
-          { model'' |
+          { model' |
             selectedEquipments = []
           , selectorRect = selectorRect
           , contextMenu = NoContextMenu
           , draggingContext = draggingContext
           }
       in
-        newModel ! [ cmd, cmd2 ]
+        newModel ! [ cmd ]
     StartEditEquipment id ->
       case findEquipmentById (currentFloor model).equipments id of
         Just e ->
