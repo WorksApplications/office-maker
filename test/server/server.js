@@ -310,8 +310,8 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
       return;
     }
     results.forEach(function(r) {
-      if(r[1] && r[1].startsWith('tmp')) {
-        r[1] = 'draft';
+      if(r.equipmentIdAndFloorId[1] && r.equipmentIdAndFloorId[1].startsWith('tmp')) {
+        r.equipmentIdAndFloorId[1] = 'draft';
       }
     })
     res.send(results);

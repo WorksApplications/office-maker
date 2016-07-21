@@ -50,6 +50,7 @@ init transformMsg query =
       , results = Nothing
       }, Cmd.none)
 
+
 doSearch : (Msg -> a) -> Bool -> String -> Model -> (Model, Cmd a)
 doSearch transformMsg withPrivate query model =
   ({ model | query = query }
@@ -59,9 +60,10 @@ doSearch transformMsg withPrivate query model =
       Cmd.none
   )
 
+
 update : Msg -> Model -> (Model, Cmd Msg, Event)
 update msg model =
-  case {-Debug.log "searchbox"-} msg of
+  case msg of
     Input query ->
         ({ model | query = query }, Cmd.none, None)
     Submit ->
@@ -73,26 +75,11 @@ update msg model =
     Error apiError ->
         (model, Cmd.none, (OnError apiError))
 
+
 searchCmd : Bool -> String -> Cmd Msg
 searchCmd withPrivate query =
   Task.perform Error Results (API.search withPrivate query)
 
-
-resultsInFloor : Maybe String -> Model -> List SearchResult
-resultsInFloor maybeId model =
-  let
-    results =
-      allResults model
-    targetId =
-      Maybe.withDefault "draft" maybeId -- TODO ?
-    f { personId, equipmentIdAndFloorId } =
-      case equipmentIdAndFloorId of
-        Just (eid, fid) ->
-          fid == targetId
-        Nothing ->
-          False
-  in
-    List.filter f results
 
 allResults : Model -> List SearchResult
 allResults model =
@@ -101,6 +88,7 @@ allResults model =
       []
     Just results ->
       results
+
 
 view : (Msg -> msg) -> Model -> Html msg
 view translateMsg model =
@@ -116,6 +104,7 @@ view translateMsg model =
         ]
         []
       ]
+
 
 resultView : (Msg -> msg) -> (SearchResult -> Html msg) -> SearchResult -> Html msg
 resultView translateMsg format result =
@@ -135,28 +124,32 @@ resultsView transformMsg thisFloorId format model =
         div [] [ text "Nothing found." ]
       Just results ->
         let
-          (inThisFloor, inOtherFloor, inDraftFloor, missing) =
-            List.foldl (\({ personId, equipmentIdAndFloorId } as result) (this, other, draft, miss) ->
-              case equipmentIdAndFloorId of
-                Just (eid, fid) ->
-                  if Just fid == thisFloorId then -- this might be draft, but "in this floor" anyway
-                    (result :: this, other, draft, miss)
-                  else if fid == "draft" then -- this is draft, and user is not looking at it.
-                    (this, other, result :: draft, miss)
-                  else
-                    (this, result :: other, draft, miss)
-                Nothing ->
-                  (this, other, draft, result :: miss)
-            ) ([], [], [], []) results
           each result =
             resultView transformMsg format result
           children =
-            List.map each (inThisFloor ++ inOtherFloor ++ inDraftFloor ++ missing)
+            List.map each (reorderResults thisFloorId results)
         in
           ul [] children
 
 
-
+reorderResults : Maybe String -> List SearchResult -> List SearchResult
+reorderResults thisFloorId results =
+  let
+    (inThisFloor, inOtherFloor, inDraftFloor, missing) =
+      List.foldl (\({ personId, equipmentIdAndFloorId } as result) (this, other, draft, miss) ->
+        case equipmentIdAndFloorId of
+          Just (eid, fid) ->
+            if Just fid == thisFloorId then -- this might be draft, but "in this floor" anyway
+              (result :: this, other, draft, miss)
+            else if fid == "draft" then -- this is draft, and user is not looking at it.
+              (this, other, result :: draft, miss)
+            else
+              (this, result :: other, draft, miss)
+          Nothing ->
+            (this, other, draft, result :: miss)
+      ) ([], [], [], []) results
+  in
+    inThisFloor ++ inOtherFloor ++ inDraftFloor ++ missing
 
 
 
