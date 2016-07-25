@@ -59,6 +59,11 @@ h1 =
     , ("line-height", px headerHeight)
     ]
 
+
+headerLink : S
+headerLink =
+  []
+
 -- TODO better name
 headerIconHover : S
 headerIconHover =

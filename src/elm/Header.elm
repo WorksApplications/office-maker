@@ -10,10 +10,11 @@ import Model.Person exposing (..)
 import Model.User as User exposing (..)
 import Model.API as API
 
-import View.Styles as Styles
+import View.Styles as S
 import View.Icons as Icons
 
 import InlineHover exposing (hover)
+
 
 type Msg =
     Login
@@ -23,11 +24,13 @@ type Msg =
   | TogglePrintView Bool
   | NoOp
 
+
 type Event =
     LogoutDone
   | None
   | OnToggleEditing
   | OnTogglePrintView Bool
+
 
 update : Msg -> (Cmd Msg, Event)
 update action =
@@ -45,21 +48,26 @@ update action =
     LogoutSuccess ->
       (Cmd.none, LogoutDone)
 
+
 view : Maybe (User, Bool) -> Html Msg
 view maybeContext =
   header
-    [ style Styles.header ]
-    [ h1 [ style Styles.h1 ] [text "Office Maker" ]
+    [ style S.header ]
+    [ h1
+        [ style S.h1 ]
+        [ a [ style S.headerLink, href "/" ] [ text "Office Maker" ] ]
     , normalMenu maybeContext
     ]
+
 
 viewPrintMode : String -> Html Msg
 viewPrintMode title =
   header
-    [ style Styles.header ]
-    [ h1 [ style Styles.h1 ] [text title ]
+    [ style S.header ]
+    [ h1 [ style S.h1 ] [text title ]
     , menu [ printButtonView True ]
     ]
+
 
 normalMenu : Maybe (User, Bool) -> Html Msg
 normalMenu maybeContext =
@@ -76,7 +84,8 @@ normalMenu maybeContext =
 
 menu : List (Html Msg) -> Html Msg
 menu children =
-  div [ style Styles.headerMenu ] children
+  div [ style S.headerMenu ] children
+
 
 editingToggle : User -> Bool -> Html Msg
 editingToggle user editing =
@@ -84,6 +93,7 @@ editingToggle user editing =
     text ""
   else
     editingToggleView editing
+
 
 printButton : User -> Html Msg
 printButton user =
@@ -95,45 +105,48 @@ printButton user =
 
 login : Html Msg
 login =
-  div [ style Styles.login, onClick Login ] [ text "Sign in" ]
+  div [ style S.login, onClick Login ] [ text "Sign in" ]
+
 
 logout : Html Msg
 logout =
-  div [ style Styles.logout, onClick Logout ] [ text "Sign out" ]
+  div [ style S.logout, onClick Logout ] [ text "Sign out" ]
 
 
 printButtonView : Bool -> Html Msg
 printButtonView showingPrint =
   -- iconView ToggleEditing (Icons.editingToggle False) "Print"
-  hover Styles.hoverHeaderIconHover
+  hover S.hoverHeaderIconHover
   div
     [ onClick (TogglePrintView (not showingPrint))
-    , style (Styles.editingToggleContainer False)
+    , style (S.editingToggleContainer False)
     ]
-    [ div [ style Styles.editingToggleIcon ] [ Icons.printButton ]
-    , div [ style (Styles.editingToggleText) ] [ text (if showingPrint then "Close" else "Print") ]
+    [ div [ style S.editingToggleIcon ] [ Icons.printButton ]
+    , div [ style (S.editingToggleText) ] [ text (if showingPrint then "Close" else "Print") ]
     ]
+
 
 editingToggleView : Bool -> Html Msg
 editingToggleView editing =
   -- iconView ToggleEditing (Icons.editingToggle editing) "Edit"
-  hover Styles.hoverHeaderIconHover
-  div
+  hover
+    S.hoverHeaderIconHover
+    div
     [ onClick ToggleEditing
-    , style (Styles.editingToggleContainer editing)
+    , style (S.editingToggleContainer editing)
     ]
-    [ div [ style Styles.editingToggleIcon ] [ Icons.editingToggle ]
-    , div [ style (Styles.editingToggleText) ] [ text "Edit" ]
+    [ div [ style S.editingToggleIcon ] [ Icons.editingToggle ]
+    , div [ style (S.editingToggleText) ] [ text "Edit" ]
     ]
 
 -- iconView : msg -> Html msg -> String -> Html msg
 -- iconView onClickMessage icon text_ =
 --   div
 --     [ onClick onClickMessage
---     , style (Styles.editingToggleContainer)
+--     , style (S.editingToggleContainer)
 --     ]
---     [ div [ style Styles.editingToggleIcon ] [ icon ]
---     , div [ style (Styles.editingToggleText editing) ] [ text text_ ]
+--     [ div [ style S.editingToggleIcon ] [ icon ]
+--     , div [ style (S.editingToggleText editing) ] [ text text_ ]
 --     ]
 
 
@@ -147,21 +160,23 @@ greeting user =
     General person ->
       greetingForPerson person
 
+
 greetingForPerson : Person -> Html msg
 greetingForPerson person =
   let
     image =
       case person.image of
         Just url ->
-          img [ style Styles.greetingImage, src url ] []
+          img [ style S.greetingImage, src url ] []
         Nothing ->
           text ""
   in
     div
-      [ style Styles.greetingContainer ]
+      [ style S.greetingContainer ]
       [ image
-      , div [ style Styles.greetingName ] [ text person.name ]
+      , div [ style S.greetingName ] [ text person.name ]
       ]
+
 
 userName : User -> String
 userName user =
