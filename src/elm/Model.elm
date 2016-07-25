@@ -310,8 +310,10 @@ update action model =
           case model.editMode of
             Viewing _ -> False
             _ -> not (User.isGuest user)
-        floorId = model.url.floorId
-        forEdit = not (User.isGuest model.user)
+        floorId =
+          model.url.floorId
+        forEdit =
+          not (User.isGuest user)
         loadFloorCmd' =
           if String.length floorId == 36 then
             loadFloorCmd forEdit (Just floorId)
