@@ -93,7 +93,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
               , onMouseUp = Just (MouseUpOnEquipment id)
               , onStartEditingName = Nothing -- Just (StartEditEquipment id)
               }
-        floor = currentFloor model
+        floor = model.floor.present
         personInfo =
           model.selectedResult `Maybe.andThen` \id' ->
             if id' == id then
@@ -135,7 +135,7 @@ mainView model =
       else subView model
   in
     main' [ style (Styles.mainView windowHeight) ]
-      [ FloorsInfoView.view CreateNewFloor (User.isAdmin model.user) isEditMode (currentFloor model).id model.floorsInfo
+      [ FloorsInfoView.view CreateNewFloor (User.isAdmin model.user) isEditMode model.floor.present.id model.floorsInfo
       , MessageBar.view model.error
       , canvasContainerView model
       , sub
@@ -169,7 +169,7 @@ subViewForEdit model =
     floorView =
       List.map
         (App.map FloorPropertyMsg)
-        (FloorProperty.view model.visitDate model.user (currentFloor model) model.floorProperty)
+        (FloorProperty.view model.visitDate model.user model.floor.present model.floorProperty)
   in
     [ card <| penView model
     , card <| propertyView model
@@ -312,7 +312,7 @@ propertyView model =
 canvasContainerView : Model -> Html Msg
 canvasContainerView model =
   let
-    floor = currentFloor model
+    floor = model.floor.present
     popup' =
       Maybe.withDefault (text "") <|
       model.selectedResult `Maybe.andThen` \id ->
@@ -325,7 +325,7 @@ canvasContainerView model =
             Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
 
     inner =
-      case (model.editMode, (currentFloor model).id) of
+      case (model.editMode, model.floor.present.id) of
         (Viewing _, Nothing) ->
           [] -- don't show draft on Viewing mode
         _ ->
@@ -350,7 +350,7 @@ canvasContainerView model =
 canvasView : Model -> Html Msg
 canvasView model =
   let
-    floor = currentFloor model
+    floor = model.floor.present
     disableTransition = transitionDisabled model
 
     isViewing =
@@ -450,7 +450,7 @@ canvasView model =
 
 deskInfoOf : Model -> String -> Maybe ((Int, Int, Int, Int), Maybe Person)
 deskInfoOf model id =
-  findEquipmentById (currentFloor model).equipments id
+  findEquipmentById model.floor.present.equipments id
   |> Maybe.map (\(Desk id rect _ _ maybePersonId) ->
     ( Scale.imageToScreenForRect model.scale rect
     , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
@@ -565,7 +565,7 @@ view model =
     header =
       case model.editMode of
         Viewing True ->
-          Header.viewPrintMode (currentFloor model).name |> App.map HeaderMsg
+          Header.viewPrintMode model.floor.present.name |> App.map HeaderMsg
         _ ->
           Header.view (Just (model.user, False)) |> App.map HeaderMsg
     diffView =
