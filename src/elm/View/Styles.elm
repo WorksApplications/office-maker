@@ -266,7 +266,7 @@ modeSelectionViewEach selected =
   -- , ("font-weight", if selected then "bold" else "inherit")
   , ("width", "80px")
   ]
-  
+
 
 prototypePreviewView : Bool -> S
 prototypePreviewView stampMode =
@@ -293,8 +293,10 @@ prototypePreviewViewInner index =
   , ("transition-duration", "0.2s")
   ]
 
-prototypePreviewScroll : S
-prototypePreviewScroll =
+
+prototypePreviewScroll : Bool -> S
+prototypePreviewScroll isLeft =
+  (if isLeft then "left" else "right", "3px") ::
   [ ("width", "30px")
   , ("height", "30px")
   , ("font-size", "large")
@@ -308,6 +310,7 @@ prototypePreviewScroll =
   , ("background-color", "#ccc")
   , ("cursor", "pointer")
   ]
+
 
 formControl : S
 formControl =

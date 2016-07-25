@@ -251,19 +251,7 @@ prototypePreviewView prototypes stampMode =
       zipWithIndex prototypes
 
     buttons =
-      List.map (\label ->
-        let
-          position = (if label == "<" then "left" else "right", "3px")
-        in
-          div
-            [ style (position :: S.prototypePreviewScroll)
-            , onClick' (if label == "<" then PrototypesMsg Prototypes.prev else PrototypesMsg Prototypes.next)
-            ]
-            [ text label ]
-        )
-      ( (if selectedIndex > 0 then ["<"] else []) ++
-        (if selectedIndex < List.length prototypes - 1 then [">"] else [])
-      )
+      prototypePreviewViewButtons selectedIndex prototypes
 
     inner =
       div
@@ -275,31 +263,44 @@ prototypePreviewView prototypes stampMode =
       ( inner :: buttons )
 
 
+prototypePreviewViewButtons : Int -> List (Prototype, Bool) -> List (Html Msg)
+prototypePreviewViewButtons selectedIndex prototypes =
+  List.map (\isLeft ->
+    let
+      label = if isLeft then "<" else ">"
+    in
+      div
+        [ style (S.prototypePreviewScroll isLeft)
+        , onClick' (if isLeft then PrototypesMsg Prototypes.prev else PrototypesMsg Prototypes.next)
+        ]
+        [ text label ]
+    )
+  ( (if selectedIndex > 0 then [True] else []) ++
+    (if selectedIndex < List.length prototypes - 1 then [False] else [])
+  )
+
+
 modeSelectionView : Model -> Html Msg
 modeSelectionView model =
+  div
+    [ style S.modeSelectionView ]
+    [ modeSelectionViewEach Icons.selectMode model.editMode Select
+    , modeSelectionViewEach Icons.penMode model.editMode Pen
+    , modeSelectionViewEach Icons.stampMode model.editMode Stamp
+    ]
+
+
+modeSelectionViewEach : (Bool -> Html Msg) -> EditMode -> EditMode -> Html Msg
+modeSelectionViewEach viewIcon currentEditMode targetEditMode =
   let
-    selection =
-      div
-        [ style (S.modeSelectionViewEach (model.editMode == Select))
-        , onClick' (ChangeMode Select)
-        ]
-        [ Icons.selectMode (model.editMode == Select) ]
-
-    pen =
-      div
-        [ style (S.modeSelectionViewEach (model.editMode == Pen))
-        , onClick' (ChangeMode Pen)
-        ]
-        [ Icons.penMode (model.editMode == Pen) ]
-
-    stamp =
-      div
-        [ style (S.modeSelectionViewEach (model.editMode == Stamp))
-        , onClick' (ChangeMode Stamp)
-        ]
-        [ Icons.stampMode (model.editMode == Stamp) ]
+    selected =
+      currentEditMode == targetEditMode
   in
-    div [ style S.modeSelectionView ] [selection, pen, stamp]
+    div
+      [ style (S.modeSelectionViewEach selected)
+      , onClick' (ChangeMode targetEditMode)
+      ]
+      [ viewIcon selected ]
 
 
 propertyView : Model -> List (Html Msg)
