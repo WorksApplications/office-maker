@@ -124,13 +124,13 @@ desk rect color selected alpha disableTransition =
   , ("border-right-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
   ] ++ transition disableTransition
 
-selectorRect : (Int, Int, Int, Int) -> S
-selectorRect rect =
+selectorRect : Bool -> (Int, Int, Int, Int) -> S
+selectorRect transitionDisabled rect =
   (absoluteRect rect) ++ [("z-index", zIndex.selectorRect)
   , ("border-style", "solid")
   , ("border-width", "2px")
   , ("border-color", selectColor)
-  ]
+  ] ++ transition transitionDisabled
 
 colorProperties : S
 colorProperties =
@@ -189,15 +189,26 @@ contextMenuItemHover =
   [ ("background-color", "#9ce")
   ]
 
-canvasView : Bool -> (Int, Int, Int, Int) -> S
-canvasView isViewing rect =
+
+canvasView : Bool -> Bool -> (Int, Int, Int, Int) -> S
+canvasView isViewing disableTransition rect =
   (absoluteRect rect) ++
     [ ("background-color", "#fff")
     , ("font-family", "default")
     -- TODO on select person
     -- , ("transition-property", "top, left")
     -- , ("transition-duration", "0.2s")
-    ] ++ (if isViewing then [("overflow", "hidden")] else [])
+    ] ++
+    (if isViewing then [("overflow", "hidden")] else []) ++
+    transition disableTransition
+
+
+canvasImage : S
+canvasImage =
+  [ ("width", "100%")
+  , ("height", "100%")
+  ]
+
 
 canvasContainer : Bool -> S
 canvasContainer printMode =
@@ -228,8 +239,21 @@ card =
   [("padding", "20px")]
 
 
-selection : Bool -> S
-selection selected =
+transition : Bool -> S
+transition disabled =
+  if disabled then [] else
+    [ ("transition-property", "width, height, top, left")
+    , ("transition-duration", "0.2s")
+    ]
+
+
+modeSelectionView : S
+modeSelectionView =
+  [("margin-top", "10px")] ++ flex
+
+
+modeSelectionViewEach : Bool -> S
+modeSelectionViewEach selected =
   [ ("cursor", "pointer")
   , ("padding-top", "8px")
   , ("padding-bottom", "4px")
@@ -240,14 +264,9 @@ selection selected =
   , ("background-color", if selected then selectColor else "inherit")
   , ("color", if selected then "#fff" else "inherit")
   -- , ("font-weight", if selected then "bold" else "inherit")
+  , ("width", "80px")
   ]
-
-transition : Bool -> S
-transition disabled =
-  if disabled then [] else
-    [ ("transition-property", "width, height, top, left")
-    , ("transition-duration", "0.2s")
-    ]
+  
 
 prototypePreviewView : Bool -> S
 prototypePreviewView stampMode =
