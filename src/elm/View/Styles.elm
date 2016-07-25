@@ -118,7 +118,10 @@ desk rect color selected alpha disableTransition =
   , ("z-index", if selected then zIndex.selectedDesk else "")
   , ("border-style", "solid")
   , ("border-width", if selected  then "2px" else "1px")
-  , ("border-color", if selected  then "#69e" else "#666")
+  , ("border-top-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
+  , ("border-left-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
+  , ("border-bottom-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
+  , ("border-right-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
   ] ++ transition disableTransition
 
 selectorRect : (Int, Int, Int, Int) -> S
