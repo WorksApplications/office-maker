@@ -7,10 +7,11 @@ import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Keyed as Keyed
 
 import EquipmentNameInput
 import View.Styles as S
-import View.EquipmentView as EquipmentView exposing (..)
+import View.EquipmentView as EquipmentView
 import View.ProfilePopup as ProfilePopup
 
 import Util.HtmlUtil exposing (..)
@@ -24,7 +25,7 @@ import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.Person exposing (Person)
 
 
-equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg
+equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> (String, Html Msg)
 equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
     Desk id (left, top, width, height) color name personId ->
@@ -76,19 +77,21 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
         personMatched =
           personId /= Nothing
       in
-        equipmentView'
-          eventOptions
-          (model.editMode /= Viewing True && model.editMode /= Viewing False)
-          (id ++ toString movingBool)
-          (x, y, width, height)
-          color
-          name
-          selected
-          alpha
-          model.scale
-          disableTransition
-          personInfo
-          personMatched
+        ( id ++ toString movingBool
+        , EquipmentView.view
+            eventOptions
+            (model.editMode /= Viewing True && model.editMode /= Viewing False)
+            (not movingBool && model.editMode /= Viewing True && model.editMode /= Viewing False)
+            (x, y, width, height)
+            color
+            name
+            selected
+            alpha
+            model.scale
+            disableTransition
+            personInfo
+            personMatched
+        )
 
 
 transitionDisabled : Model -> Bool
@@ -234,11 +237,23 @@ canvasView model =
           (transitionDisabled model)
           (candidatesOf model)
           model.equipmentNameInput
+
+    children1 =
+      ("canvas-image", image) ::
+      ("canvas-name-input", nameInput) ::
+      ("canvas-selector-rect", selectorRect) ::
+      equipments
+
+    children2 =
+      ("canvas-temporary-pen", temporaryPen') ::
+      temporaryStamps'
+
   in
-    div
+    Keyed.node
+      "div"
       [ style (S.canvasView isViewing disableTransition rect)
       ]
-      ((image :: nameInput :: (selectorRect :: equipments)) ++ [temporaryPen'] ++ temporaryStamps')
+      ( children1 ++ children2 )
 
 
 canvasImage : Floor -> Html msg
@@ -258,12 +273,13 @@ deskInfoOf model id =
     ))
 
 
-temporaryStampView : Scale.Model -> Bool -> StampCandidate -> Html msg
+temporaryStampView : Scale.Model -> Bool -> StampCandidate -> (String, Html msg)
 temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
-    equipmentView'
+  ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight
+  , EquipmentView.view
       EquipmentView.noEvents
       False
-      ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight)
+      False
       (left, top, deskWidth, deskHeight)
       color
       name --name
@@ -273,15 +289,17 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       True -- disableTransition
       Nothing
       False -- personMatched
+  )
+
 
 temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
   case temporaryPen model from of
     Just (color, name, (left, top, width, height)) ->
-      equipmentView'
+      EquipmentView.view
         EquipmentView.noEvents
         False
-        ("temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString width ++ "_" ++ toString height)
+        False
         (left, top, width, height)
         color
         name --name
@@ -294,7 +312,8 @@ temporaryPenView model from =
     Nothing ->
       text ""
 
-temporaryStampsView : Model -> List (Html msg)
+
+temporaryStampsView : Model -> List (String, Html msg)
 temporaryStampsView model =
   List.map
     (temporaryStampView model.scale False)

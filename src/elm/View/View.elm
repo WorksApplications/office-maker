@@ -242,7 +242,7 @@ prototypePreviewView prototypes stampMode =
         left = width // 2 - w // 2
         top = height // 2 - h // 2
       in
-        CanvasView.temporaryStampView Scale.init False (prototype, (left + index * width, top))
+        snd <| CanvasView.temporaryStampView Scale.init False (prototype, (left + index * width, top))
 
     selectedIndex =
       Maybe.withDefault 0 <|

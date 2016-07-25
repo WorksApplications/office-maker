@@ -129,6 +129,18 @@ desk rect color selected alpha disableTransition =
   , ("border-right-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
   ] ++ transition disableTransition
 
+
+deskResizeGrip : S
+deskResizeGrip =
+  [ ("position", "absolute")
+  , ("width", "8px")
+  , ("height", "8px")
+  , ("bottom", "-2px")
+  , ("right", "-2px")
+  , ("cursor", "nw-resize")
+  ]
+
+
 selectorRect : Bool -> (Int, Int, Int, Int) -> S
 selectorRect transitionDisabled rect =
   (absoluteRect rect) ++ [("z-index", zIndex.selectorRect)

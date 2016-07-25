@@ -94,6 +94,7 @@ type DraggingContext =
   | ShiftOffsetPrevScreenPos
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
+  | ResizeFromScreenPos (Int, Int)
 
 type Tab =
   SearchTab | EditTab
