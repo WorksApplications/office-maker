@@ -1285,10 +1285,10 @@ updateOnFinishNameInput continueEditing id name model =
           (model.equipmentNameInput, Cmd.none)
 
     updatePersonCandidateCmd =
-      -- case findEquipmentById allEquipments id of
-      --   Just equipment ->
-      --     updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment
-      --   Nothing ->
+      case findEquipmentById allEquipments id of
+        Just equipment ->
+          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment
+        Nothing ->
           Cmd.none
 
     selectedEquipments =
