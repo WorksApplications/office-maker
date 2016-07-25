@@ -118,7 +118,7 @@ view transformMsg model =
         [ type' "input"
         , placeholder "Search"
         , style Styles.searchBox
-        , value model.query
+        , defaultValue model.query
         , onInput Input
         ]
         []
