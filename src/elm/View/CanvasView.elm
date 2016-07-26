@@ -25,6 +25,19 @@ import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.Person exposing (Person)
 
 
+adjustImagePositionOfMovingEquipment : Int -> Scale.Model -> Maybe ((Int, Int), (Int, Int)) -> (Int, Int) -> (Int, Int)
+adjustImagePositionOfMovingEquipment gridSize scale moving (left, top) =
+  case moving of
+    Just ((startX, startY), (x, y)) ->
+      let
+        (dx, dy) =
+          Scale.screenToImageForPosition scale ((x - startX), (y - startY))
+      in
+        fitToGrid gridSize (left + dx, top + dy)
+
+    _ -> (left, top)
+
+
 equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> (String, Html Msg)
 equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
@@ -34,13 +47,11 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
           moving /= Nothing
 
         (x, y) =
-          case moving of
-            Just ((startX, startY), (x, y)) ->
-              let
-                (dx, dy) = Scale.screenToImageForPosition model.scale ((x - startX), (y - startY))
-              in
-                fitToGrid model.gridSize (left + dx, top + dy)
-            _ -> (left, top)
+          adjustImagePositionOfMovingEquipment
+            model.gridSize
+            model.scale
+            moving
+            (left, top)
 
         eventOptions =
           case model.editMode of
@@ -151,28 +162,8 @@ canvasView model =
         Viewing _ -> True
         _ -> False
 
-    isDragged equipment =
-      (case model.draggingContext of
-        MoveEquipment _ _ -> True
-        _ -> False
-      ) && List.member (idOf equipment) model.selectedEquipments
-
-    normalEquipmentsView =
-      List.map
-        (\equipment ->
-          equipmentView
-            model
-            Nothing
-            (isSelected model equipment)
-            (isDragged equipment)
-            equipment
-            model.keys.ctrl
-            (transitionDisabled model)
-        )
-        floor.equipments
-
     equipments =
-      ghostEquipmentsView model ++ normalEquipmentsView
+      equipmentsView model
 
     selectorRect =
       case (model.editMode, model.selectorRect) of
@@ -225,39 +216,57 @@ canvasView model =
       ( children1 ++ children2 )
 
 
-ghostEquipmentsView : Model -> List (String, Html Msg)
-ghostEquipmentsView model =
+equipmentsView : Model -> List (String, Html Msg)
+equipmentsView model =
   case model.draggingContext of
     MoveEquipment _ from ->
-      ghostEquipmentsViewWhileMoving from model
+      let
+        isSelected equipment =
+          List.member (idOf equipment) model.selectedEquipments
+
+        ghostsView =
+          List.map
+            (\equipment ->
+              equipmentView
+                model
+                -- (Just (from, model.pos)) -- moving
+                Nothing
+                True
+                True -- alpha
+                equipment
+                model.keys.ctrl
+                (transitionDisabled model)
+            )
+            (List.filter isSelected (model.floor.present.equipments))
+
+        normalView =
+          List.map
+            (\equipment ->
+              equipmentView
+                model
+                (if isSelected equipment then Just (from, model.pos) else Nothing ) -- moving
+                (isSelected equipment)
+                False -- alpha
+                equipment
+                model.keys.ctrl
+                (transitionDisabled model)
+            )
+            (model.floor.present.equipments)
+      in
+        (ghostsView ++ normalView)
     _ ->
-      []
-
-
-ghostEquipmentsViewWhileMoving : (Int, Int) -> Model -> List (String, Html Msg)
-ghostEquipmentsViewWhileMoving from model =
-  let
-    isGhost equipment =
-      List.member (idOf equipment) model.selectedEquipments
-
-    ghosts =
-      List.filter isGhost model.floor.present.equipments
-
-    moving =
-      Just (from, model.pos)
-  in
-    List.map
-      (\equipment ->
-        equipmentView
-          model
-          moving
-          True
-          False
-          equipment
-          model.keys.ctrl
-          (transitionDisabled model)
-      )
-      ghosts
+      List.map
+        (\equipment ->
+          equipmentView
+            model
+            Nothing -- moving
+            (isSelected model equipment)
+            False -- alpha
+            equipment
+            model.keys.ctrl
+            (transitionDisabled model)
+        )
+        (model.floor.present.equipments)
 
 
 canvasImage : Floor -> Html msg
