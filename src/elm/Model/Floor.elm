@@ -109,7 +109,7 @@ update action model =
     Create candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name) =
-          Equipment.init newId (x, y, w, h) color name Nothing
+          Equipment.initDesk newId (x, y, w, h) color name Nothing
       in
         addEquipments
           (List.map create candidateWithNewIds)

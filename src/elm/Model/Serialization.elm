@@ -38,22 +38,26 @@ decodePersons : Decoder (List Person)
 decodePersons = Decode.list decodePerson
 
 encodeEquipment : Equipment -> Value
-encodeEquipment (Desk id (x, y, width, height) color name personId) =
-  object
-    [ ("id", string id)
-    , ("type", string "desk")
-    , ("x", int x)
-    , ("y", int y)
-    , ("width", int width)
-    , ("height", int height)
-    , ("color", string color)
-    , ("name", string name)
-    , ("personId"
-      , case personId of
-          Just id -> string id
-          Nothing -> null
-      )
-    ]
+encodeEquipment e =
+  case e of
+    Desk id (x, y, width, height) color name personId ->
+      object
+        [ ("id", string id)
+        , ("type", string "desk")
+        , ("x", int x)
+        , ("y", int y)
+        , ("width", int width)
+        , ("height", int height)
+        , ("color", string color)
+        , ("name", string name)
+        , ("personId"
+          , case personId of
+              Just id -> string id
+              Nothing -> null
+          )
+        ]
+    _ ->
+      Debug.crash "not implemented yet!"
 
 encodeFloor : Floor -> Value
 encodeFloor floor =
