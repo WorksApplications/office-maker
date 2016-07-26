@@ -25,33 +25,22 @@ import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.Person exposing (Person)
 
 
-adjustImagePositionOfMovingEquipment : Int -> Scale.Model -> Maybe ((Int, Int), (Int, Int)) -> (Int, Int) -> (Int, Int)
-adjustImagePositionOfMovingEquipment gridSize scale moving (left, top) =
-  case moving of
-    Just ((startX, startY), (x, y)) ->
-      let
-        (dx, dy) =
-          Scale.screenToImageForPosition scale ((x - startX), (y - startY))
-      in
-        fitToGrid gridSize (left + dx, top + dy)
-
-    _ -> (left, top)
+adjustImagePositionOfMovingEquipment : Int -> Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
+adjustImagePositionOfMovingEquipment gridSize scale (startX, startY) (x, y) (left, top) =
+  let
+    (dx, dy) =
+      Scale.screenToImageForPosition scale ((x - startX), (y - startY))
+  in
+    fitToGrid gridSize (left + dx, top + dy)
 
 
-equipmentView : Model -> Maybe ((Int, Int), (Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> (String, Html Msg)
-equipmentView model moving selected alpha equipment contextMenuDisabled disableTransition =
+equipmentView : Model -> ((Int, Int, Int, Int) -> (Int, Int, Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg
+equipmentView model adjustRect selected alpha equipment contextMenuDisabled disableTransition =
   case equipment of
-    Desk id (left, top, width, height) color name personId ->
+    Desk id rect color name personId ->
       let
-        movingBool =
-          moving /= Nothing
-
-        (x, y) =
-          adjustImagePositionOfMovingEquipment
-            model.gridSize
-            model.scale
-            moving
-            (left, top)
+        (x, y, width, height) =
+          adjustRect rect
 
         eventOptions =
           case model.editMode of
@@ -89,20 +78,18 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
         personMatched =
           personId /= Nothing
       in
-        ( id ++ toString movingBool
-        , EquipmentView.view
-            eventOptions
-            (model.editMode /= Viewing True && model.editMode /= Viewing False)
-            (x, y, width, height)
-            color
-            name
-            selected
-            alpha
-            model.scale
-            disableTransition
-            personInfo
-            personMatched
-        )
+        EquipmentView.view
+          eventOptions
+          (model.editMode /= Viewing True && model.editMode /= Viewing False)
+          (x, y, width, height)
+          color
+          name
+          selected
+          alpha
+          model.scale
+          disableTransition
+          personInfo
+          personMatched
 
 
 transitionDisabled : Model -> Bool
@@ -227,44 +214,116 @@ equipmentsView model =
         ghostsView =
           List.map
             (\equipment ->
-              equipmentView
-                model
-                -- (Just (from, model.pos)) -- moving
-                Nothing
-                True
-                True -- alpha
-                equipment
-                model.keys.ctrl
-                (transitionDisabled model)
+              ( idOf equipment ++ "ghost"
+              , equipmentView
+                  model
+                  identity
+                  True
+                  True -- alpha
+                  equipment
+                  model.keys.ctrl
+                  (transitionDisabled model)
+              )
             )
             (List.filter isSelected (model.floor.present.equipments))
+
+        adjustRect equipment (left, top, width, height) =
+          if isSelected equipment then
+            let
+              (x, y) =
+                adjustImagePositionOfMovingEquipment
+                  model.gridSize
+                  model.scale
+                  from
+                  model.pos
+                  (left, top)
+            in
+              (x, y, width, height)
+          else
+            (left, top, width, height)
 
         normalView =
           List.map
             (\equipment ->
-              equipmentView
-                model
-                (if isSelected equipment then Just (from, model.pos) else Nothing ) -- moving
-                (isSelected equipment)
-                False -- alpha
-                equipment
-                model.keys.ctrl
-                (transitionDisabled model)
+              ( idOf equipment
+              , equipmentView
+                  model
+                  (adjustRect equipment)
+                  (isSelected equipment)
+                  False -- alpha
+                  equipment
+                  True
+                  (transitionDisabled model)
+              )
             )
             (model.floor.present.equipments)
       in
         (ghostsView ++ normalView)
+
+    ResizeFromScreenPos id from ->
+      let
+        isSelected equipment =
+          List.member (idOf equipment) model.selectedEquipments
+
+        isResizing equipment =
+          idOf equipment == id
+
+        ghostsView =
+          List.map
+            (\equipment ->
+              ( idOf equipment ++ "ghost"
+              , equipmentView
+                  model
+                  identity
+                  True -- isSelected
+                  True -- alpha
+                  equipment
+                  True
+                  (transitionDisabled model)
+              )
+            )
+            (List.filter isResizing (model.floor.present.equipments))
+
+
+        adjustRect equipment (left, top, width, height) =
+          if isResizing equipment then
+            case Model.temporaryResizeRect model from (left, top, width, height) of
+              Just rect -> rect
+              _ -> (0,0,0,0)
+          else
+            (left, top, width, height)
+
+        normalView =
+          List.map
+            (\equipment ->
+              ( idOf equipment
+              , equipmentView
+                  model
+                  (adjustRect equipment)
+                  (isResizing equipment) -- isSelected TODO seems not selected?
+                  False -- alpha
+                  equipment
+                  model.keys.ctrl
+                  (transitionDisabled model)
+              )
+            )
+            (model.floor.present.equipments)
+      in
+        (normalView ++ ghostsView)
+
     _ ->
       List.map
         (\equipment ->
-          equipmentView
-            model
-            Nothing -- moving
-            (isSelected model equipment)
-            False -- alpha
-            equipment
-            model.keys.ctrl
-            (transitionDisabled model)
+          ( idOf equipment
+          , equipmentView
+              model
+              identity
+              (isSelected model equipment)
+              False -- alpha
+              equipment
+              model.keys.ctrl
+              (transitionDisabled model)
+          )
         )
         (model.floor.present.equipments)
 

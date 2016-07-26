@@ -1186,7 +1186,7 @@ updateOnFinishResize id (x, y) model =
     Just e ->
       let
         (newFloor, cmd) =
-          case temporaryResizeRect model (rect e) (x, y) of
+          case temporaryResizeRect model (x, y) (rect e) of
             Just (_, _, width, height) ->
               let
                 newFloor =
@@ -1583,15 +1583,19 @@ focusCmd : String -> Cmd Msg
 focusCmd id =
   Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
 
+
 blurCmd : String -> Cmd Msg
 blurCmd id =
   Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
 
+
+-- TODO bad naming
 isSelected : Model -> Equipment -> Bool
 isSelected model equipment =
   case model.editMode of
     Viewing _ -> False
     _ -> List.member (idOf equipment) model.selectedEquipments
+
 
 primarySelectedEquipment : Model -> Maybe Equipment
 primarySelectedEquipment model =
@@ -1599,6 +1603,7 @@ primarySelectedEquipment model =
     head :: _ ->
       findEquipmentById (equipments <| model.floor.present) head
     _ -> Nothing
+
 
 selectedEquipments : Model -> List Equipment
 selectedEquipments model =
@@ -1612,6 +1617,7 @@ screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
     ( Scale.screenToImage scale screenX - offsetX
     , Scale.screenToImage scale screenY - offsetY
     )
+
 
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
@@ -1667,8 +1673,8 @@ temporaryPenRect model from =
     validateRect (left, top, right, bottom)
 
 
-temporaryResizeRect : Model -> (Int, Int, Int, Int) -> (Int, Int) -> Maybe (Int, Int, Int, Int)
-temporaryResizeRect model (eqLeft, eqTop, eqWidth, eqHeight) (fromScreenX, fromScreenY) =
+temporaryResizeRect : Model -> (Int, Int) -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
+temporaryResizeRect model (fromScreenX, fromScreenY) (eqLeft, eqTop, eqWidth, eqHeight) =
   let
     (toScreenX, toScreenY) = model.pos
     (dx, dy) = (toScreenX - fromScreenX, toScreenY - fromScreenY)
