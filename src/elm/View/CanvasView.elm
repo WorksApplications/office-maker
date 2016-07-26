@@ -146,9 +146,6 @@ canvasView model =
     floor =
       model.floor.present
 
-    disableTransition =
-      transitionDisabled model
-
     isViewing =
       case model.editMode of
         Viewing _ -> True
@@ -160,7 +157,7 @@ canvasView model =
         _ -> False
       ) && List.member (idOf equipment) model.selectedEquipments
 
-    nonDraggingEquipments =
+    normalEquipmentsView =
       List.map
         (\equipment ->
           equipmentView
@@ -174,41 +171,13 @@ canvasView model =
         )
         floor.equipments
 
-    draggingEquipments =
-      if (case model.draggingContext of
-          MoveEquipment _ _ -> True
-          _ -> False
-        )
-      then
-        let
-          equipments = List.filter isDragged floor.equipments
-          (x, y) = model.pos
-          moving =
-            case model.draggingContext of
-              MoveEquipment _ (startX, startY) -> Just ((startX, startY), (x, y))
-              _ -> Nothing
-        in
-          List.map
-            (\equipment ->
-              equipmentView
-                model
-                moving
-                (isSelected model equipment)
-                False
-                equipment
-                model.keys.ctrl
-                disableTransition
-            )
-            equipments
-      else []
-
     equipments =
-      draggingEquipments ++ nonDraggingEquipments
+      ghostEquipmentsView model ++ normalEquipmentsView
 
     selectorRect =
       case (model.editMode, model.selectorRect) of
         (Select, Just rect) ->
-          div [style (S.selectorRect disableTransition (Scale.imageToScreenForRect model.scale rect) )] []
+          div [style (S.selectorRect (transitionDisabled model) (Scale.imageToScreenForRect model.scale rect) )] []
         _ -> text ""
 
     temporaryStamps' =
@@ -251,9 +220,44 @@ canvasView model =
   in
     Keyed.node
       "div"
-      [ style (S.canvasView isViewing disableTransition rect)
+      [ style (S.canvasView isViewing (transitionDisabled model) rect)
       ]
       ( children1 ++ children2 )
+
+
+ghostEquipmentsView : Model -> List (String, Html Msg)
+ghostEquipmentsView model =
+  case model.draggingContext of
+    MoveEquipment _ from ->
+      ghostEquipmentsViewWhileMoving from model
+    _ ->
+      []
+
+
+ghostEquipmentsViewWhileMoving : (Int, Int) -> Model -> List (String, Html Msg)
+ghostEquipmentsViewWhileMoving from model =
+  let
+    isGhost equipment =
+      List.member (idOf equipment) model.selectedEquipments
+
+    ghosts =
+      List.filter isGhost model.floor.present.equipments
+
+    moving =
+      Just (from, model.pos)
+  in
+    List.map
+      (\equipment ->
+        equipmentView
+          model
+          moving
+          True
+          False
+          equipment
+          model.keys.ctrl
+          (transitionDisabled model)
+      )
+      ghosts
 
 
 canvasImage : Floor -> Html msg
