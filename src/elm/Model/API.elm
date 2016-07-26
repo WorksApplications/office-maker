@@ -34,7 +34,7 @@ import Model.Floor as Floor
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
 import Model.Serialization exposing (..)

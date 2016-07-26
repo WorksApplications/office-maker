@@ -1,4 +1,4 @@
-module Model.Equipments exposing (..)
+module Model.Equipment exposing (..)
 
 import Model.Person as Person
 

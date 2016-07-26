@@ -1,7 +1,7 @@
 module Model.Floor exposing (..)
 
 import Date exposing (Date)
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Util.File exposing (..)
 
@@ -109,7 +109,7 @@ update action model =
     Create candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name) =
-          Equipments.init newId (x, y, w, h) color name Nothing
+          Equipment.init newId (x, y, w, h) color name Nothing
       in
         addEquipments
           (List.map create candidateWithNewIds)
@@ -127,7 +127,7 @@ update action model =
         (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
         model
     Rotate id ->
-      setEquipments (partiallyChange Equipments.rotate [id] (equipments model)) model
+      setEquipments (partiallyChange Equipment.rotate [id] (equipments model)) model
     ChangeId id ->
       { model | id = Just id }
     ChangeEquipmentColor ids color ->
@@ -172,13 +172,13 @@ update action model =
     SetPerson equipmentId personId ->
       let
         newEquipments =
-          partiallyChange (Equipments.setPerson (Just personId)) [equipmentId] (equipments model)
+          partiallyChange (Equipment.setPerson (Just personId)) [equipmentId] (equipments model)
       in
         setEquipments newEquipments model
     UnsetPerson equipmentId ->
       let
         newEquipments =
-          partiallyChange (Equipments.setPerson Nothing) [equipmentId] (equipments model)
+          partiallyChange (Equipment.setPerson Nothing) [equipmentId] (equipments model)
       in
         setEquipments newEquipments model
 

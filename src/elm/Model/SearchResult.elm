@@ -1,6 +1,6 @@
 module Model.SearchResult exposing (..)
 
-import Model.Equipments exposing (Equipment)
+import Model.Equipment exposing (Equipment)
 
 type alias Id = String
 

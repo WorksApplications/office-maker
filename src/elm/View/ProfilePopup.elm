@@ -7,7 +7,7 @@ import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 import Model.ProfilePopupLogic exposing (..)
 
 view : msg -> (Int, Int) -> Scale.Model -> (Int, Int) -> Equipment -> Maybe Person -> Html msg

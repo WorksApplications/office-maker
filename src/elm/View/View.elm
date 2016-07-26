@@ -24,7 +24,7 @@ import Util.ListUtil exposing (..)
 
 import Model exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)

@@ -21,7 +21,7 @@ import Util.DictUtil exposing (..)
 
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Scale as Scale
 import Model.API as API
@@ -1282,13 +1282,15 @@ updateFloorByFloorPropertyEvent event seed floor =
         in
           (floor, seed) ! [ cmd ]
 
+
 regesterPersonOfEquipment : Equipment -> Cmd Msg
 regesterPersonOfEquipment e =
-  case Equipments.relatedPerson e of
+  case Equipment.relatedPerson e of
     Just personId ->
       regesterPerson personId
     Nothing ->
       Cmd.none
+
 
 regesterPerson : String -> Cmd Msg
 regesterPerson personId =
@@ -1374,7 +1376,7 @@ updateOnFinishNameInput continueEditing id name model =
 
 updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : Equipment -> Cmd Msg
 updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment =
-  case Equipments.relatedPerson equipment of
+  case Equipment.relatedPerson equipment of
     Just personId ->
       Cmd.none
     Nothing ->

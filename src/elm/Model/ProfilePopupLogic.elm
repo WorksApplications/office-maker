@@ -1,7 +1,7 @@
 module Model.ProfilePopupLogic exposing (..)
 
 import Model.Scale as Scale
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 
 
 centerTopScreenXYOfEquipment : Scale.Model -> (Int, Int) -> Equipment -> (Int, Int)

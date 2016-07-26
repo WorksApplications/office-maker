@@ -18,7 +18,7 @@ import Util.HtmlUtil exposing (..)
 
 import Model exposing (..)
 import Model.Floor as Floor
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
@@ -36,60 +36,61 @@ adjustImagePositionOfMovingEquipment gridSize scale (startX, startY) (x, y) (lef
 
 equipmentView : Model -> ((Int, Int, Int, Int) -> (Int, Int, Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg
 equipmentView model adjustRect selected alpha equipment contextMenuDisabled disableTransition =
-  case equipment of
-    Desk id rect color name personId ->
-      let
-        (x, y, width, height) =
-          adjustRect rect
+  let
+    id =
+      idOf equipment
 
-        eventOptions =
-          case model.editMode of
-            Viewing _ ->
-              let
-                noEvents = EquipmentView.noEvents
-              in
-                { noEvents |
-                  onMouseDown = Just (ShowDetailForEquipment id)
-                }
-            _ ->
-              { onContextMenu =
-                  if contextMenuDisabled then
-                    Nothing
-                  else
-                    Just (ShowContextMenuOnEquipment id)
-              , onMouseDown = Just (MouseDownOnEquipment id)
-              , onMouseUp = Just (MouseUpOnEquipment id)
-              , onStartEditingName = Nothing -- Just (StartEditEquipment id)
-              , onStartResize = Just (MouseDownOnResizeGrip id)
-              }
+    (x, y, width, height) =
+      adjustRect (rect equipment)
 
-        floor =
-          model.floor.present
+    eventOptions =
+      case model.editMode of
+        Viewing _ ->
+          let
+            noEvents = EquipmentView.noEvents
+          in
+            { noEvents |
+              onMouseDown = Just (ShowDetailForEquipment id)
+            }
+        _ ->
+          { onContextMenu =
+              if contextMenuDisabled then
+                Nothing
+              else
+                Just (ShowContextMenuOnEquipment id)
+          , onMouseDown = Just (MouseDownOnEquipment id)
+          , onMouseUp = Just (MouseUpOnEquipment id)
+          , onStartEditingName = Nothing -- Just (StartEditEquipment id)
+          , onStartResize = Just (MouseDownOnResizeGrip id)
+          }
 
-        personInfo =
-          model.selectedResult `Maybe.andThen` \id' ->
-            if id' == id then
-              findEquipmentById floor.equipments id `Maybe.andThen` \equipment ->
-              Equipments.relatedPerson equipment `Maybe.andThen` \personId ->
-              Dict.get personId model.personInfo
-            else
-              Nothing
+    floor =
+      model.floor.present
 
-        personMatched =
-          personId /= Nothing
-      in
-        EquipmentView.view
-          eventOptions
-          (model.editMode /= Viewing True && model.editMode /= Viewing False)
-          (x, y, width, height)
-          color
-          name
-          selected
-          alpha
-          model.scale
-          disableTransition
-          personInfo
-          personMatched
+    personInfo =
+      model.selectedResult `Maybe.andThen` \id' ->
+        if id' == id then
+          findEquipmentById floor.equipments id `Maybe.andThen` \equipment ->
+          Equipment.relatedPerson equipment `Maybe.andThen` \personId ->
+          Dict.get personId model.personInfo
+        else
+          Nothing
+
+    personMatched =
+      Equipment.relatedPerson equipment /= Nothing
+  in
+    EquipmentView.view
+      eventOptions
+      (model.editMode /= Viewing True && model.editMode /= Viewing False)
+      (x, y, width, height)
+      (colorOf equipment)
+      (nameOf equipment)
+      selected
+      alpha
+      model.scale
+      disableTransition
+      personInfo
+      personMatched
 
 
 transitionDisabled : Model -> Bool
@@ -107,7 +108,7 @@ view model =
       Maybe.withDefault (text "") <|
       model.selectedResult `Maybe.andThen` \id ->
       findEquipmentById floor.equipments id `Maybe.andThen` \e ->
-        case Equipments.relatedPerson e of
+        case Equipment.relatedPerson e of
           Just personId ->
             Dict.get personId model.personInfo `Maybe.andThen` \person ->
             Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
@@ -176,6 +177,19 @@ canvasView model =
 
     image =
       canvasImage floor
+
+    deskInfoOf model id =
+      Maybe.map
+        (\e ->
+          let
+            id = idOf e
+            maybePersonId = relatedPerson e
+          in
+            ( Scale.imageToScreenForRect model.scale (Equipment.rect e)
+            , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
+            )
+        )
+        (findEquipmentById model.floor.present.equipments id)
 
     nameInput =
       App.map EquipmentNameInputMsg <|
@@ -334,15 +348,6 @@ canvasImage floor =
     [ style S.canvasImage
     , src (Maybe.withDefault "" (Floor.src floor))
     ] []
-
-
-deskInfoOf : Model -> String -> Maybe ((Int, Int, Int, Int), Maybe Person)
-deskInfoOf model id =
-  findEquipmentById model.floor.present.equipments id
-  |> Maybe.map (\(Desk id rect _ _ maybePersonId) ->
-    ( Scale.imageToScreenForRect model.scale rect
-    , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
-    ))
 
 
 temporaryStampView : Scale.Model -> Bool -> StampCandidate -> (String, Html msg)

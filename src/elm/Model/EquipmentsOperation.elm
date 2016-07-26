@@ -2,7 +2,7 @@ module Model.EquipmentsOperation exposing (..)
 
 {- this module does not know Model or Floor -}
 
-import Model.Equipments as Equipments exposing (..)
+import Model.Equipment as Equipment exposing (..)
 import Util.ListUtil exposing (..)
 
 rectFloat : Equipment -> (Float, Float, Float, Float)
@@ -12,6 +12,7 @@ rectFloat e =
   in
     (toFloat x, toFloat y, toFloat w, toFloat h)
 
+
 center : Equipment -> (Float, Float)
 center e =
   let
@@ -19,15 +20,18 @@ center e =
   in
     ((x + w / 2), (y + h / 2))
 
+
 linked : (number, number, number, number) -> (number, number, number, number) -> Bool
 linked (x1, y1, w1, h1) (x2, y2, w2, h2) =
   x1 <= x2+w2 && x2 <= x1+w1 && y1 <= y2+h2 && y2 <= y1+h1
+
 
 linkedByAnyOf : List Equipment -> Equipment -> Bool
 linkedByAnyOf list newEquipment =
   List.any (\e ->
     linked (rect e) (rect newEquipment)
   ) list
+
 
 island : List Equipment -> List Equipment -> List Equipment
 island current rest =
@@ -40,7 +44,9 @@ island current rest =
     else
       island (current ++ newEquipments) rest'
 
+
 type Direction = Up | Left | Right | Down
+
 
 opposite : Direction -> Direction
 opposite direction =
@@ -49,6 +55,7 @@ opposite direction =
     Right -> Left
     Up -> Down
     Down -> Up
+
 
 compareBy : Direction -> Equipment -> Equipment -> Order
 compareBy direction from new =
@@ -73,13 +80,16 @@ compareBy direction from new =
       in
         if greater then GT else LT
 
+
 lessBy : Direction -> Equipment -> Equipment -> Bool
 lessBy direction from new =
   compareBy direction from new == LT
 
+
 greaterBy : Direction -> Equipment -> Equipment -> Bool
 greaterBy direction from new =
   compareBy direction from new == GT
+
 
 minimumBy : Direction -> List Equipment -> Maybe Equipment
 minimumBy direction list =
@@ -103,6 +113,7 @@ filterCandidate : Direction -> Equipment -> Equipment -> Bool
 filterCandidate direction from new =
     greaterBy direction from new
 
+
 {-| Returns the next equipment toward given direction.
 -}
 nearest : Direction -> Equipment -> List Equipment -> Maybe Equipment
@@ -114,6 +125,7 @@ nearest direction from list =
       minimumBy direction list
     else
       minimumBy direction filtered
+
 
 withinRange : (Equipment, Equipment) -> List Equipment -> List Equipment
 withinRange range list =
@@ -137,6 +149,7 @@ withinRange range list =
   in
     List.filter isContained list
 
+
 bounds : List Equipment -> Maybe (Int, Int, Int, Int)
 bounds list =
   let
@@ -155,7 +168,6 @@ bounds list =
     List.foldl f Nothing list
 
 
-
 bound : Direction -> Equipment -> Int
 bound direction equipment =
   let
@@ -168,6 +180,7 @@ bound direction equipment =
       Down -> bottom
       Left -> left
       Right -> right
+
 
 compareBoundBy : Direction -> Equipment -> Equipment -> Order
 compareBoundBy direction e1 e2 =
@@ -185,6 +198,7 @@ compareBoundBy direction e1 e2 =
       Left -> if left1 == left2 then EQ else if left1 < left2 then GT else LT
       Right -> if right1 == right2 then EQ else if right1 > right2 then GT else LT
 
+
 minimumPartsOf : Direction -> List Equipment -> List Equipment
 minimumPartsOf direction list =
   let
@@ -198,6 +212,7 @@ minimumPartsOf direction list =
         _ -> [e]
   in
     List.foldl f [] list
+
 
 maximumPartsOf : Direction -> List Equipment -> List Equipment
 maximumPartsOf direction list =
@@ -213,12 +228,14 @@ maximumPartsOf direction list =
   in
     List.foldl f [] list
 
+
 restOfMinimumPartsOf : Direction -> List Equipment -> List Equipment
 restOfMinimumPartsOf direction list =
   let
     minimumParts = minimumPartsOf direction list
   in
     List.filter (\e -> not (List.member e minimumParts)) list
+
 
 restOfMaximumPartsOf : Direction -> List Equipment -> List Equipment
 restOfMaximumPartsOf direction list =
@@ -271,7 +288,7 @@ pasteEquipments (baseX, baseY) copiedWithNewIds allEquipments =
     (minX, minY) =
       List.foldl (\(equipment, newId) (minX, minY) ->
         let
-          (x, y) = Equipments.position equipment
+          (x, y) = Equipment.position equipment
         in
           (Basics.min minX x, Basics.min minY y)
     ) (99999, 99999) copiedWithNewIds
@@ -279,12 +296,13 @@ pasteEquipments (baseX, baseY) copiedWithNewIds allEquipments =
     newEquipments =
       List.map (\(equipment, newId) ->
         let
-          (x, y) = Equipments.position equipment
+          (x, y) = Equipment.position equipment
         in
-          Equipments.copy newId (baseX + (x - minX), baseY + (y - minY)) equipment
+          Equipment.copy newId (baseX + (x - minX), baseY + (y - minY)) equipment
     ) copiedWithNewIds
   in
     newEquipments
+
 
 partiallyChange : (Equipment -> Equipment) -> List Id -> List Equipment -> List Equipment
 partiallyChange f ids equipments =
@@ -292,24 +310,35 @@ partiallyChange f ids equipments =
     if List.member (idOf e) ids then f e else e
   ) equipments
 
+
 moveEquipments : Int -> (Int, Int) -> List Id -> List Equipment -> List Equipment
 moveEquipments gridSize (dx, dy) ids equipments =
-  partiallyChange (\(Desk id (x, y, width, height) color name personId) ->
-    let (newX, newY) = fitToGrid gridSize (x + dx, y + dy)
-    in Desk id (newX, newY, width, height) color name personId
+  partiallyChange (\e ->
+    let
+      (x, y, _, _) =
+        rect e
+
+      (newX, newY) =
+        fitToGrid gridSize (x + dx, y + dy)
+    in
+      Equipment.move (newX, newY) e
   ) ids equipments
+
 
 findEquipmentById : List Equipment -> Id -> Maybe Equipment
 findEquipmentById equipments id =
   findBy (\equipment -> id == (idOf equipment)) equipments
 
+
 fitToGrid : Int -> (Int, Int) -> (Int, Int)
 fitToGrid gridSize (x, y) =
   (x // gridSize * gridSize, y // gridSize * gridSize)
 
+
 commitInputName : (Id, String) -> List Equipment -> List Equipment
 commitInputName (id, name) equipments =
   partiallyChange (changeName name) [id] equipments
+
 
 colorProperty : List Equipment -> Maybe String
 colorProperty equipments =
