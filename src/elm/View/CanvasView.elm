@@ -60,6 +60,7 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
               , onMouseDown = Just (MouseDownOnEquipment id)
               , onMouseUp = Just (MouseUpOnEquipment id)
               , onStartEditingName = Nothing -- Just (StartEditEquipment id)
+              , onStartResize = Just (MouseDownOnResizeGrip id)
               }
 
         floor =
@@ -81,7 +82,6 @@ equipmentView model moving selected alpha equipment contextMenuDisabled disableT
         , EquipmentView.view
             eventOptions
             (model.editMode /= Viewing True && model.editMode /= Viewing False)
-            (not movingBool && model.editMode /= Viewing True && model.editMode /= Viewing False)
             (x, y, width, height)
             color
             name
@@ -279,7 +279,6 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
   , EquipmentView.view
       EquipmentView.noEvents
       False
-      False
       (left, top, deskWidth, deskHeight)
       color
       name --name
@@ -298,7 +297,6 @@ temporaryPenView model from =
     Just (color, name, (left, top, width, height)) ->
       EquipmentView.view
         EquipmentView.noEvents
-        False
         False
         (left, top, width, height)
         color

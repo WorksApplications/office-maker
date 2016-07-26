@@ -94,7 +94,7 @@ type DraggingContext =
   | ShiftOffsetPrevScreenPos
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
-  | ResizeFromScreenPos (Int, Int)
+  | ResizeFromScreenPos Id (Int, Int)
 
 type Tab =
   SearchTab | EditTab
@@ -190,6 +190,7 @@ type Msg = NoOp
   | MouseDownOnCanvas
   | MouseDownOnEquipment Id
   | MouseUpOnEquipment Id
+  | MouseDownOnResizeGrip Id
   | StartEditEquipment Id
   | KeyCodeMsg Bool Int
   | SelectColor String
@@ -504,6 +505,8 @@ update action model =
               updateOnFinishStamp model
             PenFromScreenPos pos ->
               updateOnFinishPen pos model
+            ResizeFromScreenPos id pos ->
+              updateOnFinishResize id pos model
             _ -> model ! []
       in
         { model' | draggingContext = None } ! [ cmd, emulateClick lastTouchedId False ]
@@ -539,17 +542,22 @@ update action model =
               updateOnFinishStamp model
             PenFromScreenPos pos ->
               updateOnFinishPen pos model
+            ResizeFromScreenPos id pos ->
+              updateOnFinishResize id pos model
             _ -> model ! []
+
         newModel =
           { model' |
             draggingContext = None
           }
       in
         newModel ! [ cmd ]
+
     MouseDownOnCanvas ->
       let
         (clientX, clientY) =
           model.pos
+
         selectorRect =
           case model.editMode of
             Select ->
@@ -559,6 +567,7 @@ update action model =
               in
                 Just (x, y, model.gridSize, model.gridSize)
             _ -> model.selectorRect
+
         draggingContext =
           case model.editMode of
             Stamp ->
@@ -586,6 +595,28 @@ update action model =
           }
       in
         newModel ! [ cmd ]
+
+    MouseDownOnResizeGrip id ->
+      let
+        (clientX, clientY) =
+          model.pos
+
+        (model', cmd) =
+          case EquipmentNameInput.forceFinish model.equipmentNameInput of
+            (equipmentNameInput, Just (id, name)) ->
+              updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
+            (equipmentNameInput, _) ->
+              { model | equipmentNameInput = equipmentNameInput } ! []
+
+        newModel =
+          { model' |
+            selectedEquipments = []
+          , contextMenu = NoContextMenu
+          , draggingContext = ResizeFromScreenPos id (clientX, clientY)
+          }
+      in
+        newModel ! [ cmd ]
+
     StartEditEquipment id ->
       case findEquipmentById model.floor.present.equipments id of
         Just e ->
@@ -1123,6 +1154,7 @@ updateOnFinishStamp model =
     , editMode = Select -- maybe selecting stamped desks would be better?
     } ! [ cmd ]
 
+
 updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
 updateOnFinishPen (x, y) model =
   let
@@ -1147,6 +1179,28 @@ updateOnFinishPen (x, y) model =
     , floor = newFloor
     } ! [ cmd ]
 
+
+updateOnFinishResize : Id -> (Int, Int) -> Model -> (Model, Cmd Msg)
+updateOnFinishResize id (x, y) model =
+  case findEquipmentById model.floor.present.equipments id of
+    Just e ->
+      let
+        (newFloor, cmd) =
+          case temporaryResizeRect model (rect e) (x, y) of
+            Just (_, _, width, height) ->
+              let
+                newFloor =
+                  UndoRedo.commit (Floor.resizeEquipment id (width, height)) model.floor
+              in
+                ( newFloor
+                , saveFloorCmd newFloor.present
+                )
+            Nothing ->
+              (model.floor,  Cmd.none)
+      in
+        ({ model | floor = newFloor }, cmd)
+    Nothing ->
+      (model, Cmd.none)
 
 
 updateOnFloorLoaded : Floor -> Model -> (Model, Cmd Msg)
@@ -1591,8 +1645,16 @@ stampCandidates model =
               ]
     _ -> []
 
+
 temporaryPen : Model -> (Int, Int) -> Maybe (String, String, (Int, Int, Int, Int))
 temporaryPen model from =
+  Maybe.map
+    (\rect -> ("#fff", "", rect)) -- TODO color
+    (temporaryPenRect model from)
+
+
+temporaryPenRect : Model -> (Int, Int) -> Maybe (Int, Int, Int, Int)
+temporaryPenRect model from =
   let
     (offsetX, offsetY) = model.offset
     (left, top) =
@@ -1601,15 +1663,36 @@ temporaryPen model from =
     (right, bottom) =
       fitToGrid model.gridSize <|
         screenToImageWithOffset model.scale model.pos (offsetX, offsetY)
+  in
+    validateRect (left, top, right, bottom)
+
+
+temporaryResizeRect : Model -> (Int, Int, Int, Int) -> (Int, Int) -> Maybe (Int, Int, Int, Int)
+temporaryResizeRect model (eqLeft, eqTop, eqWidth, eqHeight) (fromScreenX, fromScreenY) =
+  let
+    (toScreenX, toScreenY) = model.pos
+    (dx, dy) = (toScreenX - fromScreenX, toScreenY - fromScreenY)
+
+    (right, bottom) =
+      fitToGrid model.gridSize <|
+        ( eqLeft + eqWidth + Scale.screenToImage model.scale dx
+        , eqTop + eqHeight + Scale.screenToImage model.scale dy
+        )
+  in
+    validateRect (eqLeft, eqTop, right, bottom)
+
+
+validateRect : (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
+validateRect (left, top, right, bottom) =
+  let
     width = right - left
     height = bottom - top
-    color = "#fff" -- TODO
-    name = ""
   in
     if width > 0 && height > 0 then
-      Just (color, name, (left, top, width, height))
+      Just (left, top, width, height)
     else
       Nothing
+
 
 
 --

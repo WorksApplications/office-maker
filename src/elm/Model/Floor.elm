@@ -46,6 +46,7 @@ type Msg =
   | ChangeId Id
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentName Id String
+  | ResizeEquipment Id (Int, Int)
   | ChangeName String
   | ChangeOrd Int
   | SetLocalFile String File String
@@ -77,6 +78,9 @@ changeEquipmentColor = ChangeEquipmentColor
 
 changeEquipmentName : Id -> String -> Msg
 changeEquipmentName = ChangeEquipmentName
+
+resizeEquipment : Id -> (Int, Int) -> Msg
+resizeEquipment = ResizeEquipment
 
 changeName : String -> Msg
 changeName = ChangeName
@@ -136,6 +140,14 @@ update action model =
       setEquipments
         (commitInputName (id, name) (equipments model))
         model
+
+    ResizeEquipment id size ->
+      let
+        newEquipments =
+          partiallyChange (changeSize size) [id] (equipments model)
+      in
+        setEquipments newEquipments model
+
     ChangeName name ->
       { model | name = name }
     ChangeOrd ord ->

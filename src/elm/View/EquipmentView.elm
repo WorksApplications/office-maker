@@ -18,6 +18,7 @@ type alias EventOptions msg =
   , onMouseUp : Maybe msg
   , onStartEditingName : Maybe msg
   , onContextMenu : Maybe msg
+  , onStartResize : Maybe msg
   }
 
 
@@ -27,11 +28,12 @@ noEvents =
   , onMouseUp = Nothing
   , onStartEditingName = Nothing
   , onContextMenu = Nothing
+  , onStartResize = Nothing
   }
 
 
-view : EventOptions msg -> Bool -> Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Scale.Model -> Bool -> Maybe Person -> Bool -> Html msg
-view eventOptions showPersonMatch resizable rect color name selected alpha scale disableTransition personInfo personMatched =
+view : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Scale.Model -> Bool -> Maybe Person -> Bool -> Html msg
+view eventOptions showPersonMatch rect color name selected alpha scale disableTransition personInfo personMatched =
   let
     screenRect =
       Scale.imageToScreenForRect scale rect
@@ -59,13 +61,23 @@ view eventOptions showPersonMatch resizable rect color name selected alpha scale
       ( case eventOptions.onStartEditingName of
           Just msg -> [ onDoubleClick msg ]
           Nothing -> []
+      ) ++
+      ( case eventOptions.onStartResize of
+          Just msg -> [ onDoubleClick msg ]
+          Nothing -> []
       )
 
     resizeGrip =
-      if resizable then
-        div [ style S.deskResizeGrip ] []
-      else
-        text ""
+      case eventOptions.onStartResize of
+        Just msg ->
+          div
+            [ style S.deskResizeGrip
+            , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            ]
+            []
+        Nothing ->
+          text ""
+
   in
     div
       ( styles ++ eventHandlers )
