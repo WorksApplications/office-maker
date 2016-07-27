@@ -280,15 +280,13 @@ modeSelectionViewEach selected =
   , ("border", "solid 1px #666")
   , ("background-color", if selected then selectColor else "inherit")
   , ("color", if selected then "#fff" else "inherit")
-  -- , ("font-weight", if selected then "bold" else "inherit")
-  , ("width", "80px")
+  , ("flex-grow", "1")
   ]
 
 
 prototypePreviewView : Bool -> S
 prototypePreviewView stampMode =
-  [ ("width", "238px")
-  , ("height", "238px")
+  [ ("height", "238px")
   , ("position", "relative")
   , ("border-style", "solid")
   , ("border-width", if stampMode then "2px" else "1px")
@@ -299,13 +297,13 @@ prototypePreviewView stampMode =
   , ("overflow", "hidden")
   ]
 
-prototypePreviewViewInner : Int -> S
-prototypePreviewViewInner index =
-  [ ("width", "238px")
-  , ("height", "238px")
+
+prototypePreviewViewInner : Int -> Int -> S
+prototypePreviewViewInner containerWidth index =
+  [ ("height", "238px")
   , ("position", "relative")
   , ("top", "0")
-  , ("left", px (index * -238))
+  , ("left", px (index * -containerWidth))
   , ("transition-property", "left")
   , ("transition-duration", "0.2s")
   ]

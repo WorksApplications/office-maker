@@ -122,7 +122,7 @@ stampCandidatesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
     (indicesX, indicesY) =
       stampIndices horizontal (deskWidth, deskHeight) (x1, y1) (x2, y2)
     (centerLeft, centerTop) =
-      fitToGrid gridSize (x1 - fst deskSize // 2, y1 - snd deskSize // 2)
+      fitPositionToGrid gridSize (x1 - fst deskSize // 2, y1 - snd deskSize // 2)
     all =
       generateAllCandidatePosition
         (deskWidth, deskHeight)

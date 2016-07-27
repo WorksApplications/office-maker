@@ -319,7 +319,7 @@ moveEquipments gridSize (dx, dy) ids equipments =
         rect e
 
       (newX, newY) =
-        fitToGrid gridSize (x + dx, y + dy)
+        fitPositionToGrid gridSize (x + dx, y + dy)
     in
       Equipment.move (newX, newY) e
   ) ids equipments
@@ -330,8 +330,13 @@ findEquipmentById equipments id =
   findBy (\equipment -> id == (idOf equipment)) equipments
 
 
-fitToGrid : Int -> (Int, Int) -> (Int, Int)
-fitToGrid gridSize (x, y) =
+fitPositionToGrid : Int -> (Int, Int) -> (Int, Int)
+fitPositionToGrid gridSize (x, y) =
+  (x // gridSize * gridSize, y // gridSize * gridSize)
+
+
+fitSizeToGrid : Int -> (Int, Int) -> (Int, Int)
+fitSizeToGrid gridSize (x, y) =
   (x // gridSize * gridSize, y // gridSize * gridSize)
 
 

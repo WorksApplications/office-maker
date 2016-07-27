@@ -38,7 +38,8 @@ init id =
     }
 
 type Msg =
-    Create (List (Id, (Int, Int, Int, Int), String, String))
+    CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
+  | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Int))
   | Move (List Id) Int (Int, Int)
   | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
@@ -55,8 +56,14 @@ type Msg =
   | SetPerson String String
   | UnsetPerson String
 
-create : (List (Id, (Int, Int, Int, Int), String, String)) -> Msg
-create = Create
+
+createDesk : List (Id, (Int, Int, Int, Int), String, String) -> Msg
+createDesk = CreateDesk
+
+
+createLabel : List (Id, (Int, Int, Int, Int), String, String, Int) -> Msg
+createLabel = CreateLabel
+
 
 move : (List Id) -> Int -> (Int, Int) -> Msg
 move = Move
@@ -106,7 +113,7 @@ unsetPerson = UnsetPerson
 update : Msg -> Model -> Model
 update action model =
   case action of
-    Create candidateWithNewIds ->
+    CreateDesk candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name) =
           Equipment.initDesk newId (x, y, w, h) color name Nothing
@@ -114,6 +121,16 @@ update action model =
         addEquipments
           (List.map create candidateWithNewIds)
           model
+
+    CreateLabel candidateWithNewIds ->
+      let
+        create (newId, (x, y, w, h), color, name, fontSize) =
+          Equipment.initLabel newId (x, y, w, h) color name fontSize
+      in
+        addEquipments
+          (List.map create candidateWithNewIds)
+          model
+
     Move ids gridSize (dx, dy) ->
       setEquipments
         (moveEquipments gridSize (dx, dy) ids (equipments model))

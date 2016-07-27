@@ -77,15 +77,19 @@ type alias Model =
   , personPopupSize : (Int, Int)
   }
 
+
 type ContextMenu =
     NoContextMenu
   | Equipment (Int, Int) Id
+
 
 type EditMode =
     Viewing Bool
   | Select
   | Pen
   | Stamp
+  | LabelMode
+
 
 type DraggingContext =
     None
@@ -562,7 +566,7 @@ update action model =
           case model.editMode of
             Select ->
               let
-                (x, y) = fitToGrid model.gridSize <|
+                (x, y) = fitPositionToGrid model.gridSize <|
                   screenToImageWithOffset model.scale (clientX, clientY) model.offset
               in
                 Just (x, y, model.gridSize, model.gridSize)
@@ -570,6 +574,8 @@ update action model =
 
         draggingContext =
           case model.editMode of
+            LabelMode ->
+              None
             Stamp ->
               StampFromScreenPos (clientX, clientY)
             Pen ->
@@ -586,15 +592,21 @@ update action model =
             (equipmentNameInput, _) ->
               { model | equipmentNameInput = equipmentNameInput } ! []
 
+        (model'', cmd2) =
+          if model.editMode == LabelMode then
+            updateOnFinishLabel model
+          else
+            (model', Cmd.none)
+
         newModel =
-          { model' |
+          { model'' |
             selectedEquipments = []
           , selectorRect = selectorRect
           , contextMenu = NoContextMenu
           , draggingContext = draggingContext
           }
       in
-        newModel ! [ cmd ]
+        newModel ! [ cmd, cmd2 ]
 
     MouseDownOnResizeGrip id ->
       let
@@ -622,18 +634,25 @@ update action model =
         Just e ->
           let
             (id, name) = (idOf e, nameOf e)
+
+            model' =
+              { model |
+                selectedResult = Nothing
+              , contextMenu = NoContextMenu
+              }
+
+            (newModel, cmd) =
+              startEditAndFocus e model
           in
-            { model |
-              selectedResult = Nothing
-            , equipmentNameInput = EquipmentNameInput.start (id, name) model.equipmentNameInput
-            , contextMenu = NoContextMenu
-            } !
+            newModel !
               [ requestCandidate id name
-              , Task.perform identity identity (Task.succeed MouseUpOnCanvas)
-              , focusCmd "name-input"
+              , Task.perform identity identity (Task.succeed MouseUpOnCanvas) -- TODO get rid of this hack
+              , cmd
               ]
+
         Nothing ->
-          model ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ]
+          model ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ] -- TODO get rid of this hack
+
     SelectColor color ->
       let
         newModel =
@@ -1020,6 +1039,15 @@ update action model =
         newModel ! []
 
 
+startEditAndFocus : Equipment -> Model -> (Model, Cmd Msg)
+startEditAndFocus e model =
+  { model |
+    equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
+  } !
+    [ focusCmd "name-input"
+    ]
+
+
 updateOnSearchBoxEvent : SearchBox.Event -> Model -> (Maybe Id, Cmd Msg)
 updateOnSearchBoxEvent event model =
   case event of
@@ -1134,17 +1162,21 @@ noOpCmd : Task a () -> Cmd Msg
 noOpCmd task =
   Task.perform (always NoOp) (always NoOp) task
 
+
 updateOnFinishStamp : Model -> (Model, Cmd Msg)
 updateOnFinishStamp model =
   let
     (candidatesWithNewIds, newSeed) =
       IdGenerator.zipWithNewIds model.seed (stampCandidates model)
+
     candidatesWithNewIds' =
       List.map
         (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
         candidatesWithNewIds
+
     newFloor =
-      UndoRedo.commit (Floor.create candidatesWithNewIds') model.floor
+      UndoRedo.commit (Floor.createDesk candidatesWithNewIds') model.floor
+
     cmd =
       saveFloorCmd newFloor.present
   in
@@ -1164,8 +1196,9 @@ updateOnFinishPen (x, y) model =
           let
             (newId, newSeed) =
               IdGenerator.new model.seed
+
             newFloor =
-              UndoRedo.commit (Floor.create [(newId, (left, top, width, height), color, name)]) model.floor
+              UndoRedo.commit (Floor.createDesk [(newId, (left, top, width, height), color, name)]) model.floor
           in
             ( newFloor
             , newSeed
@@ -1201,6 +1234,48 @@ updateOnFinishResize id (x, y) model =
         ({ model | floor = newFloor }, cmd)
     Nothing ->
       (model, Cmd.none)
+
+
+updateOnFinishLabel : Model -> (Model, Cmd Msg)
+updateOnFinishLabel model =
+  let
+    (left, top) =
+      fitPositionToGrid model.gridSize <|
+        screenToImageWithOffset model.scale model.pos model.offset
+
+    (width, height) =
+      fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
+
+    color = "#000" -- text color TODO configure?
+
+    name = ""
+
+    fontSize = 40
+
+    (newId, newSeed) =
+      IdGenerator.new model.seed
+
+    newFloor =
+      UndoRedo.commit (Floor.createLabel [(newId, (left, top, width, height), color, name, fontSize)]) model.floor
+
+    model' =
+      { model |
+        seed = newSeed
+      , floor = newFloor
+      }
+
+    saveCmd =
+      saveFloorCmd newFloor.present
+  in
+    case findEquipmentById model'.floor.present.equipments newId of
+      Just e ->
+        let
+          (newModel, cmd) =
+            startEditAndFocus e model'
+        in
+          newModel ! [ saveCmd, cmd ]
+      Nothing ->
+        model' ! [ saveCmd ]
 
 
 updateOnFloorLoaded : Floor -> Model -> (Model, Cmd Msg)
@@ -1647,7 +1722,7 @@ stampCandidates model =
             let
               (deskWidth, deskHeight) = deskSize
               (left, top) =
-                fitToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+                fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
             in
               [ ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
               ]
@@ -1664,13 +1739,13 @@ temporaryPen model from =
 temporaryPenRect : Model -> (Int, Int) -> Maybe (Int, Int, Int, Int)
 temporaryPenRect model from =
   let
-    (offsetX, offsetY) = model.offset
     (left, top) =
-      fitToGrid model.gridSize <|
-        screenToImageWithOffset model.scale from (offsetX, offsetY)
+      fitPositionToGrid model.gridSize <|
+        screenToImageWithOffset model.scale from model.offset
+
     (right, bottom) =
-      fitToGrid model.gridSize <|
-        screenToImageWithOffset model.scale model.pos (offsetX, offsetY)
+      fitPositionToGrid model.gridSize <|
+        screenToImageWithOffset model.scale model.pos model.offset
   in
     validateRect (left, top, right, bottom)
 
@@ -1678,11 +1753,14 @@ temporaryPenRect model from =
 temporaryResizeRect : Model -> (Int, Int) -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
 temporaryResizeRect model (fromScreenX, fromScreenY) (eqLeft, eqTop, eqWidth, eqHeight) =
   let
-    (toScreenX, toScreenY) = model.pos
-    (dx, dy) = (toScreenX - fromScreenX, toScreenY - fromScreenY)
+    (toScreenX, toScreenY) =
+      model.pos
+
+    (dx, dy) =
+      (toScreenX - fromScreenX, toScreenY - fromScreenY)
 
     (right, bottom) =
-      fitToGrid model.gridSize <|
+      fitPositionToGrid model.gridSize <|
         ( eqLeft + eqWidth + Scale.screenToImage model.scale dx
         , eqTop + eqHeight + Scale.screenToImage model.scale dy
         )

@@ -30,7 +30,7 @@ adjustImagePositionOfMovingEquipment gridSize scale (startX, startY) (x, y) (lef
     (dx, dy) =
       Scale.screenToImageForPosition scale ((x - startX), (y - startY))
   in
-    fitToGrid gridSize (left + dx, top + dy)
+    fitPositionToGrid gridSize (left + dx, top + dy)
 
 
 equipmentView : Model -> ((Int, Int, Int, Int) -> (Int, Int, Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg

@@ -40,6 +40,11 @@ stampMode selected =
   th_large (if selected then white else modeColor) 24
 
 
+labelMode : Bool -> Svg msg
+labelMode selected =
+  font (if selected then white else modeColor) 24
+
+
 personMatched : Svg msg
 personMatched =
   check white 18

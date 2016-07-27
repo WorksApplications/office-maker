@@ -233,7 +233,7 @@ penView model =
 prototypePreviewView : List (Prototype, Bool) -> Bool -> Html Msg
 prototypePreviewView prototypes stampMode =
   let
-    width = 238 -- TODO
+    width = 320 - (20 * 2) -- TODO
     height = 238 -- TODO
 
     each index (prototype, selected) =
@@ -255,7 +255,7 @@ prototypePreviewView prototypes stampMode =
 
     inner =
       div
-        [ style (S.prototypePreviewViewInner selectedIndex) ]
+        [ style (S.prototypePreviewViewInner width selectedIndex) ]
         (List.indexedMap each prototypes)
   in
     div
@@ -287,6 +287,7 @@ modeSelectionView model =
     [ modeSelectionViewEach Icons.selectMode model.editMode Select
     , modeSelectionViewEach Icons.penMode model.editMode Pen
     , modeSelectionViewEach Icons.stampMode model.editMode Stamp
+    , modeSelectionViewEach Icons.labelMode model.editMode LabelMode
     ]
 
 

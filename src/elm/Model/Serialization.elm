@@ -56,8 +56,19 @@ encodeEquipment e =
               Nothing -> null
           )
         ]
-    _ ->
-      Debug.crash "not implemented yet!"
+        
+    Label id (x, y, width, height) color name fontSize ->
+      object
+        [ ("id", string id)
+        , ("type", string "label")
+        , ("x", int x)
+        , ("y", int y)
+        , ("width", int width)
+        , ("height", int height)
+        , ("color", string color)
+        , ("name", string name)
+        , ("fontSize", int fontSize)
+        ]
 
 encodeFloor : Floor -> Value
 encodeFloor floor =
