@@ -2,18 +2,8 @@ module View.Icons exposing (..)
 
 import Svg exposing (Svg)
 import Color exposing (Color, white, black, gray)
--- import Material.Icons.Navigation exposing (check, close)
--- import Material.Icons.Action exposing (search)
--- import Material.Icons.Editor exposing (mode_edit, border_all)
--- import Material.Icons.Image exposing (crop_square)
--- import Material.Icons.Social exposing (person)
--- import Material.Icons.Communication exposing (phone, email)
--- import Material.Icons.Maps exposing (local_printshop)
-
--- import Material.Icons.Notification exposing (priority_high) -- TODO
--- import Material.Icons.Internal exposing (icon)
-
 import FontAwesome exposing (..)
+
 
 defaultColor : Color
 defaultColor =
@@ -25,24 +15,29 @@ modeColor =
   Color.rgb 90 90 90
 
 
+mode : (Color -> Int -> Svg msg) -> (Bool -> Svg msg)
+mode f = \selected ->
+  f (if selected then white else modeColor) 24
+
+
 selectMode : Bool -> Svg msg
-selectMode selected =
-  mouse_pointer (if selected then white else modeColor) 24
+selectMode =
+  mode mouse_pointer
 
 
 penMode : Bool -> Svg msg
-penMode selected =
-  pencil (if selected then white else modeColor) 24
+penMode =
+  mode pencil
 
 
 stampMode : Bool -> Svg msg
-stampMode selected =
-  th_large (if selected then white else modeColor) 24
+stampMode =
+  mode th_large
 
 
 labelMode : Bool -> Svg msg
-labelMode selected =
-  font (if selected then white else modeColor) 24
+labelMode =
+  mode font
 
 
 personMatched : Svg msg
@@ -98,10 +93,3 @@ editingToggle =
 printButton : Svg msg
 printButton =
   print headerIconColor 22
-
-
--- TODO PR to elm-material-icons
-
--- priority_high : Color -> Int -> Svg msg
--- priority_high =
---   icon "M10 3h4v12h-4z"
