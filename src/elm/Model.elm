@@ -1261,6 +1261,7 @@ updateOnFinishLabel model =
     model' =
       { model |
         seed = newSeed
+      , editMode = Select
       , floor = newFloor
       }
 

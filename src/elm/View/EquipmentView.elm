@@ -8,7 +8,6 @@ import Util.HtmlUtil exposing (..)
 import View.Styles as S
 import View.Icons as Icons
 import Model.Scale as Scale
-import Model.Person as Person exposing (Person)
 import String
 
 type alias Id = String

@@ -961,6 +961,7 @@ candidateItemPersonName =
   , ("top", "15px")
   ]
 
+
 candidateItemPersonMail : S
 candidateItemPersonMail =
   flex ++
@@ -968,12 +969,14 @@ candidateItemPersonMail =
     , ("left", "100px")
     ]
 
+
 candidateItemPersonOrg : S
 candidateItemPersonOrg =
   [ ("position", "absolute")
   , ("font-size", "small")
   , ("top", "40px")
   ]
+  
 
 unsetRelatedPersonButton : S
 unsetRelatedPersonButton =
@@ -988,11 +991,13 @@ unsetRelatedPersonButton =
   , ("position", "absolute")
   ]
 
+
 unsetRelatedPersonButtonHover : S
 unsetRelatedPersonButtonHover =
   [ ("background-color", "#a66")
   , ("color", "#fff")
   ]
+
 
 messageBar : S
 messageBar =
@@ -1007,6 +1012,7 @@ messageBar =
     , ("transition", "opacity 0.8s linear") -- TODO ?
     ]
 
+
 successBar : S
 successBar =
   messageBar ++
@@ -1014,12 +1020,14 @@ successBar =
     , ("opacity", "1")
     ]
 
+
 errorBar : S
 errorBar =
   messageBar ++
     [ ("background-color", "#d45")
     , ("opacity", "1")
     ]
+
 
 noneBar : S
 noneBar =
@@ -1029,16 +1037,14 @@ noneBar =
     , ("background-color", "#4c5")
     ]
 
+
 mainView : Int -> S
 mainView windowHeight =
-  let
-    height = windowHeight - headerHeight
-  in
-    (flex ++
-      [ ("height", px height)
-      , ("position", "relative")
-      ]
-    )
+  [ ("height", px (windowHeight - headerHeight))
+  , ("position", "relative")
+  , ("overflow", "hidden")
+  ] ++ flex
+
 
 searchResultItemIcon : S
 searchResultItemIcon =
