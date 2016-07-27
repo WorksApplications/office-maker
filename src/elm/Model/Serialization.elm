@@ -2,7 +2,7 @@ module Model.Serialization exposing (..)
 
 import Date
 
-import Json.Encode as Encode exposing (object, encode, list, string, int, bool, null, Value)
+import Json.Encode as Encode exposing (object, encode, list, string, int, bool, null, float, Value)
 import Json.Decode as Decode exposing ((:=), object8, object7, object4, object2, oneOf, Decoder)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, custom)
 
@@ -56,7 +56,7 @@ encodeEquipment e =
               Nothing -> null
           )
         ]
-        
+
     Label id (x, y, width, height) color name fontSize ->
       object
         [ ("id", string id)
@@ -67,8 +67,9 @@ encodeEquipment e =
         , ("height", int height)
         , ("color", string color)
         , ("name", string name)
-        , ("fontSize", int fontSize)
+        , ("fontSize", float fontSize)
         ]
+
 
 encodeFloor : Floor -> Value
 encodeFloor floor =
@@ -92,6 +93,7 @@ encodeFloor floor =
       , ("public", bool floor.public)
       ]
 
+
 encodeLogin : String -> String -> Value
 encodeLogin id pass =
     object [ ("id", Encode.string id), ("pass", Encode.string pass) ]
@@ -108,6 +110,7 @@ decodeUser =
   , Decode.succeed User.guest
   ]
 
+
 decodePerson : Decoder Person
 decodePerson =
   decode
@@ -121,13 +124,20 @@ decodePerson =
     |> optional' "tel" Decode.string
     |> optional' "image" Decode.string
 
+
+
+ -- TODO andThen
 decodeEquipment : Decoder Equipment
 decodeEquipment =
   decode
-    (\id x y width height color name personId ->
-      Desk id (x, y, width, height) color name personId
+    (\id tipe x y width height color name personId fontSize ->
+      if tipe == "desk" then
+        Desk id (x, y, width, height) color name personId
+      else
+        Label id (x, y, width, height) color name fontSize
     )
     |> required "id" Decode.string
+    |> required "type" Decode.string
     |> required "x" Decode.int
     |> required "y" Decode.int
     |> required "width" Decode.int
@@ -135,6 +145,8 @@ decodeEquipment =
     |> required "color" Decode.string
     |> required "name" Decode.string
     |> optional' "personId" Decode.string
+    |> optional "fontSize" Decode.float 0
+
 
 decodeSearchResult : Decoder SearchResult
 decodeSearchResult =
@@ -142,6 +154,7 @@ decodeSearchResult =
     SearchResult
     |> optional' "personId" Decode.string
     |> optional' "equipmentIdAndFloorId" (Decode.tuple2 (,) decodeEquipment Decode.string)
+
 
 decodeSearchResults : Decoder (List SearchResult)
 decodeSearchResults =

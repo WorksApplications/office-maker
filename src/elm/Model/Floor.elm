@@ -20,8 +20,10 @@ type alias Model =
   , update : Maybe { by : Id, at : Date }
   }
 
+
 type ImageSource =
   LocalFile String File String | URL String | None
+
 
 init : Maybe Id -> Model
 init id =
@@ -37,9 +39,10 @@ init id =
     , update = Nothing
     }
 
+
 type Msg =
     CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
-  | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Int))
+  | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Float))
   | Move (List Id) Int (Int, Int)
   | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
@@ -61,7 +64,7 @@ createDesk : List (Id, (Int, Int, Int, Int), String, String) -> Msg
 createDesk = CreateDesk
 
 
-createLabel : List (Id, (Int, Int, Int, Int), String, String, Int) -> Msg
+createLabel : List (Id, (Int, Int, Int, Int), String, String, Float) -> Msg
 createLabel = CreateLabel
 
 

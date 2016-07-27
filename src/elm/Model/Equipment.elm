@@ -6,7 +6,7 @@ type alias Id = String
 
 type Equipment
   = Desk Id (Int, Int, Int, Int) String String (Maybe Person.Id) -- id (x, y, width, height) color name personId
-  | Label Id (Int, Int, Int, Int) String String Int -- id (x, y, width, height) color name fontSize
+  | Label Id (Int, Int, Int, Int) String String Float -- id (x, y, width, height) color name fontSize
 
 
 isLabel : Equipment -> Bool
@@ -23,7 +23,7 @@ initDesk =
   Desk
 
 
-initLabel : Id -> (Int, Int, Int, Int) -> String -> String -> Int -> Equipment
+initLabel : Id -> (Int, Int, Int, Int) -> String -> String -> Float -> Equipment
 initLabel =
   Label
 

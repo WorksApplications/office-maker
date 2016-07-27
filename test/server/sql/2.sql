@@ -1,0 +1,3 @@
+ALTER TABLE `map2`.`equipments`
+ADD COLUMN `type` VARCHAR(16) NOT NULL DEFAULT 'desk' AFTER `id`,
+ADD COLUMN `fontSize` DECIMAL(4,1) NOT NULL AFTER `color`;

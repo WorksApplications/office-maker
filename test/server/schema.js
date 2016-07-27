@@ -46,11 +46,13 @@ function equipmentKeyValues(floorId, floorVersion, equipment) {
   return [
     ["id", equipment.id],
     ["name", equipment.name],
+    ["type", equipment.type || 'desk'],
     ["x", equipment.x],
     ["y", equipment.y],
     ["width", equipment.width],
     ["height", equipment.height],
     ["color", equipment.color],
+    ["fontSize", equipment.fontSize || 0],
     ["personId", equipment.personId],
     ["floorId", floorId],
     ["floorVersion", floorVersion]

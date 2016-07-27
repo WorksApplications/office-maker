@@ -6,7 +6,9 @@ import Util.StyleUtil exposing (..)
 type alias S = List (String, String)
 
 zIndex :
-  { selectedDesk : String
+  { labelObject : String
+  , selectedDesk : String
+  , selectedLabelObject : String
   , deskInput : String
   , selectorRect : String
   , floorInfo : String
@@ -18,7 +20,9 @@ zIndex :
   , modalBackground : String
   }
 zIndex =
-  { selectedDesk = "100"
+  { labelObject = "50"
+  , selectedDesk = "100"
+  , selectedLabelObject = "100"
   , deskInput = "200"
   , selectorRect = "300"
   , floorInfo = "500"
@@ -138,8 +142,8 @@ labelObject rect fontColor selected rectVisible disableTransition =
   , ("background-color", if rectVisible then "rgba(255,255,255,0.2)" else "transparent")
   , ("box-sizing", "border-box")
   , ("text-align", "center")
-  , ("z-index", if selected then zIndex.selectedDesk else "")
-  , ("border-style", "dashed")
+  , ("z-index", if selected then zIndex.selectedLabelObject else zIndex.labelObject)
+  , ("border-style", if rectVisible then "dashed" else "none")
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
   ] ++ transition disableTransition

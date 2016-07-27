@@ -1250,7 +1250,7 @@ updateOnFinishLabel model =
 
     name = ""
 
-    fontSize = 40
+    fontSize = 40 -- TODO
 
     (newId, newSeed) =
       IdGenerator.new model.seed
