@@ -113,8 +113,9 @@ nameInputTextArea : Bool -> (Int, Int, Int, Int) -> S
 nameInputTextArea transitionDisabled screenRect =
   deskInput screenRect ++ transition transitionDisabled
 
-desk : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
-desk rect color selected alpha disableTransition =
+
+deskObject : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
+deskObject rect color selected alpha disableTransition =
   (absoluteRect rect) ++
   [ ("opacity", if alpha then "0.5" else "1.0")
   , ("display", "table")
@@ -127,6 +128,20 @@ desk rect color selected alpha disableTransition =
   , ("border-left-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
   , ("border-bottom-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
   , ("border-right-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
+  ] ++ transition disableTransition
+
+
+labelObject : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
+labelObject rect fontColor selected rectVisible disableTransition =
+  (absoluteRect rect) ++
+  [ ("display", "table")
+  , ("background-color", if rectVisible then "rgba(255,255,255,0.2)" else "transparent")
+  , ("box-sizing", "border-box")
+  , ("text-align", "center")
+  , ("z-index", if selected then zIndex.selectedDesk else "")
+  , ("border-style", "dashed")
+  , ("border-width", if selected  then "2px" else "1px")
+  , ("border-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
   ] ++ transition disableTransition
 
 
@@ -234,16 +249,19 @@ canvasContainer printMode =
   , ("flex", "1")
   ]
 
-nameLabel : Float -> Bool -> S
-nameLabel ratio disableTransition =
-  [ ("display", "table-cell")
+
+nameLabel : String -> Int -> Int -> number -> Bool -> S
+nameLabel color height lineCount fontSize disableTransition =
+  [ ("color", color)
+  , ("display", "table-cell")
   , ("vertical-align", "middle")
   , ("text-align", "center")
   , ("position", "absolute")
   , ("cursor", "default")
-  , ("font-size", em ratio) --TODO
-   -- TODO vertical align
-  ] ++ transition disableTransition
+  , ("font-size", px fontSize)
+  , ("width", "100%")
+  , ("line-height", px (height // lineCount))
+  ] ++ transition disableTransition ++ noMargin
 
 
 shadow : S

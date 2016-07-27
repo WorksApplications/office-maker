@@ -1,4 +1,4 @@
-module View.EquipmentView exposing (noEvents, view)
+module View.EquipmentView exposing (noEvents, viewDesk, viewLabel)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -9,6 +9,7 @@ import View.Styles as S
 import View.Icons as Icons
 import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
+import String
 
 type alias Id = String
 
@@ -32,15 +33,45 @@ noEvents =
   }
 
 
-view : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Scale.Model -> Bool -> Maybe Person -> Bool -> Html msg
-view eventOptions showPersonMatch rect color name selected alpha scale disableTransition personInfo personMatched =
+viewDesk : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Scale.Model -> Bool -> Bool -> Html msg
+viewDesk eventOptions showPersonMatch rect color name selected alpha scale disableTransition personMatched =
+  let
+    personMatchIcon =
+      if showPersonMatch then
+        personMatchingView name personMatched
+      else
+        text ""
+
+    screenRect =
+      Scale.imageToScreenForRect scale rect
+
+    styles =
+      [ style (S.deskObject screenRect color selected alpha disableTransition) ]
+
+    nameView =
+      equipmentLabelView "" 12 scale disableTransition screenRect name
+  in
+    viewInternal eventOptions styles nameView personMatchIcon
+
+
+viewLabel : EventOptions msg -> (Int, Int, Int, Int) -> String -> String -> Float -> Bool -> Bool -> Scale.Model -> Bool -> Html msg
+viewLabel eventOptions rect fontColor name fontSize selected rectVisible scale disableTransition =
   let
     screenRect =
       Scale.imageToScreenForRect scale rect
 
     styles =
-      [ style (S.desk screenRect color selected alpha disableTransition) ]
+      [ style (S.labelObject screenRect fontColor selected rectVisible disableTransition) ]
 
+    nameView =
+      equipmentLabelView fontColor fontSize scale disableTransition screenRect name
+  in
+    viewInternal eventOptions styles nameView (text "")
+
+
+viewInternal : EventOptions msg -> List (Html.Attribute msg) -> Html msg -> Html msg -> Html msg
+viewInternal eventOptions styles nameView personMatchIcon =
+  let
     eventHandlers =
       ( case eventOptions.onContextMenu of
           Just msg -> [ onContextMenu' msg ]
@@ -66,28 +97,27 @@ view eventOptions showPersonMatch rect color name selected alpha scale disableTr
           Just msg -> [ onDoubleClick msg ]
           Nothing -> []
       )
-
-    resizeGrip =
-      case eventOptions.onStartResize of
-        Just msg ->
-          div
-            [ style S.deskResizeGrip
-            , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
-            ]
-            []
-        Nothing ->
-          text ""
-
   in
     div
       ( styles ++ eventHandlers )
-      [ equipmentLabelView scale disableTransition name
-      , if showPersonMatch then
-          personMatchingView name personMatched
-        else
-          text ""
-      , resizeGrip
+      [ nameView
+      , personMatchIcon
+      , resizeGripView eventOptions.onStartResize
       ]
+
+
+resizeGripView : Maybe msg -> Html msg
+resizeGripView onStartResize =
+  case onStartResize of
+    Just msg ->
+      div
+        [ style S.deskResizeGrip
+        , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+        ]
+        []
+    Nothing ->
+      text ""
+
 
 personMatchingView : String -> Bool -> Html msg
 personMatchingView name personMatched =
@@ -99,14 +129,26 @@ personMatchingView name personMatched =
     text ""
 
 
-equipmentLabelView : Scale.Model -> Bool -> String -> Html msg
-equipmentLabelView scale disableTransition name =
+equipmentLabelView : String -> Float -> Scale.Model -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
+equipmentLabelView color fontSize scale disableTransition screenRect name =
   let
+    (_, _, _, height) =
+      screenRect
+
+    trimed =
+      String.trim name
+
+    ratio =
+      Scale.imageToScreenRatio scale
+
     styles =
       S.nameLabel
-        (Scale.imageToScreenRatio scale)
+        color
+        height
+        (List.length (String.lines trimed))
+        (ratio * fontSize)
         disableTransition  --TODO
   in
     pre
       [ style styles ]
-      [ text name ]
+      [ text trimed ]

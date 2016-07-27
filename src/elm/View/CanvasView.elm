@@ -66,30 +66,32 @@ equipmentView model adjustRect selected alpha equipment contextMenuDisabled disa
     floor =
       model.floor.present
 
-    personInfo =
-      model.selectedResult `Maybe.andThen` \id' ->
-        if id' == id then
-          findEquipmentById floor.equipments id `Maybe.andThen` \equipment ->
-          Equipment.relatedPerson equipment `Maybe.andThen` \personId ->
-          Dict.get personId model.personInfo
-        else
-          Nothing
-
     personMatched =
       Equipment.relatedPerson equipment /= Nothing
   in
-    EquipmentView.view
-      eventOptions
-      (model.editMode /= Viewing True && model.editMode /= Viewing False)
-      (x, y, width, height)
-      (colorOf equipment)
-      (nameOf equipment)
-      selected
-      alpha
-      model.scale
-      disableTransition
-      personInfo
-      personMatched
+    if Equipment.isLabel equipment then
+      EquipmentView.viewLabel
+        eventOptions
+        (x, y, width, height)
+        (colorOf equipment) -- fontColor
+        (nameOf equipment)
+        40 --  TODO
+        selected
+        (model.editMode /= Viewing True && model.editMode /= Viewing False) -- rectVisible
+        model.scale
+        disableTransition
+    else
+      EquipmentView.viewDesk
+        eventOptions
+        (model.editMode /= Viewing True && model.editMode /= Viewing False)
+        (x, y, width, height)
+        (colorOf equipment)
+        (nameOf equipment)
+        selected
+        alpha
+        model.scale
+        disableTransition
+        personMatched
 
 
 transitionDisabled : Model -> Bool
@@ -352,7 +354,7 @@ canvasImage floor =
 temporaryStampView : Scale.Model -> Bool -> StampCandidate -> (String, Html msg)
 temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
   ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight
-  , EquipmentView.view
+  , EquipmentView.viewDesk
       EquipmentView.noEvents
       False
       (left, top, deskWidth, deskHeight)
@@ -362,7 +364,6 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       False -- alpha
       scale
       True -- disableTransition
-      Nothing
       False -- personMatched
   )
 
@@ -371,7 +372,7 @@ temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
   case temporaryPen model from of
     Just (color, name, (left, top, width, height)) ->
-      EquipmentView.view
+      EquipmentView.viewDesk
         EquipmentView.noEvents
         False
         (left, top, width, height)
@@ -381,7 +382,6 @@ temporaryPenView model from =
         False -- alpha
         model.scale
         True -- disableTransition
-        Nothing
         False -- personMatched
     Nothing ->
       text ""

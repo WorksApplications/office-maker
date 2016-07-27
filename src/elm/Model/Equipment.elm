@@ -9,6 +9,15 @@ type Equipment
   | Label Id (Int, Int, Int, Int) String String Int -- id (x, y, width, height) color name fontSize
 
 
+isLabel : Equipment -> Bool
+isLabel equipment =
+  case equipment of
+    Label _ _ _ _ _ ->
+      True
+    _ ->
+      False
+
+
 initDesk : Id -> (Int, Int, Int, Int) -> String -> String -> Maybe Person.Id -> Equipment
 initDesk =
   Desk
