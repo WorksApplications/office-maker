@@ -729,15 +729,16 @@ update action model =
         NotWaiting ->
           { model | candidateRequest = Waiting Nothing }
           ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
+
     ShowContextMenuOnEquipment id ->
       let
-        (clientX, clientY) = model.pos
         newModel =
           { model |
-            contextMenu = Equipment (clientX, clientY) id
+            contextMenu = Equipment model.pos id
           }
       in
         newModel ! []
+
     SelectIsland id ->
       let
         newModel =
