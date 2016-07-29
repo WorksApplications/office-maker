@@ -43,6 +43,11 @@ init id =
   }
 
 
+copy : Maybe Id -> Model -> Model
+copy id floor =
+  { floor | name = "Copy of " ++ floor.name }
+
+
 type Msg =
     CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
   | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Float, String))
