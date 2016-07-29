@@ -14,6 +14,15 @@ type Equipment
   | Label Id (Int, Int, Int, Int) String String Float String Shape -- id (x, y, width, height) background-color name fontSize color shape
 
 
+isDesk : Equipment -> Bool
+isDesk equipment =
+  case equipment of
+    Desk _ _ _ _ _ ->
+      True
+    _ ->
+      False
+
+
 isLabel : Equipment -> Bool
 isLabel equipment =
   case equipment of
@@ -190,4 +199,29 @@ relatedPerson e =
       Nothing
 
 
+backgroundColorEditable : Equipment -> Bool
+backgroundColorEditable e =
+  case e of
+    Desk _ _ _ _ _ ->
+      True
+    Label _ _ _ _ _ _ _ ->
+      True
+
+
+colorEditable : Equipment -> Bool
+colorEditable e =
+  case e of
+    Desk _ _ _ _ _ ->
+      False
+    Label _ _ _ _ _ _ _ ->
+      True
+
+
+shapeEditable : Equipment -> Bool
+shapeEditable e =
+  case e of
+    Desk _ _ _ _ _ ->
+      False
+    Label _ _ _ _ _ _ _ ->
+      True
 --

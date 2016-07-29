@@ -67,7 +67,7 @@ encodeEquipment e =
         , ("y", int y)
         , ("width", int width)
         , ("height", int height)
-        , ("backgroundColor", string color)
+        , ("backgroundColor", string bgColor)
         , ("name", string name)
         , ("fontSize", float fontSize)
         , ("color", string color)

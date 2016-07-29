@@ -106,6 +106,7 @@ header =
     , ("justify-content", "space-between")
     ]
 
+
 rect : (Int, Int, Int, Int) -> S
 rect (x, y, w, h) =
   [ ("top", px y)
@@ -133,11 +134,11 @@ nameInputTextArea transitionDisabled screenRect =
 
 
 deskObject : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
-deskObject rect color selected alpha disableTransition =
+deskObject rect backgroundColor selected isGhost disableTransition =
   (absoluteRect rect) ++
-  [ ("opacity", if alpha then "0.5" else "1.0")
+  [ ("opacity", if isGhost then "0.5" else "1.0")
   , ("display", "table")
-  , ("background-color", color)
+  , ("background-color", backgroundColor)
   , ("box-sizing", "border-box")
   , ("z-index", if selected then zIndex.selectedDesk else "")
   , ("border-style", "solid")
@@ -149,11 +150,17 @@ deskObject rect color selected alpha disableTransition =
   ] ++ transition disableTransition
 
 
-labelObject : Bool -> (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
-labelObject isEllipse rect fontColor selected rectVisible disableTransition =
+labelObject : Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> S
+labelObject isEllipse rect backgroundColor fontColor selected isGhost rectVisible disableTransition =
   (absoluteRect rect) ++
-  [ ("display", "table")
-  , ("background-color", if rectVisible then "rgba(255,255,255,0.2)" else "transparent")
+  [ ("opacity", if isGhost then "0.5" else "1.0")
+  , ("display", "table")
+  , ("background-color",
+      if backgroundColor == "" || backgroundColor == "transparent" then
+        if rectVisible then "rgba(255,255,255,0.2)" else "transparent"
+      else
+        backgroundColor
+    )
   , ("box-sizing", "border-box")
   , ("text-align", "center")
   , ("z-index", if selected then zIndex.selectedLabelObject else zIndex.labelObject)

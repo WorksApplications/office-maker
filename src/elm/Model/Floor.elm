@@ -98,7 +98,6 @@ changeEquipmentBackgroundColor : (List Id) -> String -> Msg
 changeEquipmentBackgroundColor = ChangeEquipmentBackgroundColor
 
 
-
 changeEquipmentShape : (List Id) -> Equipment.Shape -> Msg
 changeEquipmentShape = ChangeEquipmentShape
 
@@ -216,15 +215,19 @@ update action model =
 
     ChangeName name ->
       { model | name = name }
+
     ChangeOrd ord ->
       { model | ord = ord }
+
     SetLocalFile id file dataURL ->
       setLocalFile' id file dataURL model
+
     ChangeRealSize (width, height) ->
         { model |
           realSize = Just (width, height)
         -- , useReal = True
         }
+
     OnSaved isPublish ->
       { model |
         imageSource =
@@ -235,12 +238,14 @@ update action model =
               model.imageSource
       , public = isPublish
       }
+
     SetPerson equipmentId personId ->
       let
         newEquipments =
           partiallyChange (Equipment.setPerson (Just personId)) [equipmentId] (equipments model)
       in
         setEquipments newEquipments model
+
     UnsetPerson equipmentId ->
       let
         newEquipments =
@@ -253,9 +258,11 @@ realToPixel : Int -> Int
 realToPixel real =
   Basics.floor (toFloat real * 80)
 
+
 pixelToReal : Int -> Int
 pixelToReal pixel =
   Basics.floor (toFloat pixel / 80)
+
 
 size : Model -> (Int, Int)
 size model =
@@ -267,11 +274,14 @@ size model =
 name : Model -> String
 name model = model.name
 
+
 width : Model -> Int
 width model = size model |> fst
 
+
 height : Model -> Int
 height model = size model |> snd
+
 
 -- TODO confusing...
 realSize : Model -> (Int, Int)
@@ -280,15 +290,18 @@ realSize model =
     Just (w, h) -> (w, h)
     Nothing -> (pixelToReal model.width, pixelToReal model.height)
 
+
 equipments : Model -> List Equipment
 equipments model =
   model.equipments
+
 
 setEquipments : List Equipment -> Model -> Model
 setEquipments equipments model =
   { model |
     equipments = equipments
   }
+
 
 addEquipments : List Equipment -> Model -> Model
 addEquipments equipments model =
@@ -306,6 +319,7 @@ setLocalFile' id file dataURL model =
     , height = height
     , imageSource = LocalFile id file dataURL
     }
+
 
 src : Model -> Maybe String
 src model =

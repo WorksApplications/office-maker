@@ -34,7 +34,7 @@ adjustImagePositionOfMovingEquipment gridSize scale (startX, startY) (x, y) (lef
 
 
 equipmentView : Model -> ((Int, Int, Int, Int) -> (Int, Int, Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg
-equipmentView model adjustRect selected alpha equipment contextMenuDisabled disableTransition =
+equipmentView model adjustRect selected isGhost equipment contextMenuDisabled disableTransition =
   let
     id =
       idOf equipment
@@ -73,11 +73,13 @@ equipmentView model adjustRect selected alpha equipment contextMenuDisabled disa
       EquipmentView.viewLabel
         eventOptions
         (x, y, width, height)
-        (colorOf equipment) -- fontColor
+        (backgroundColorOf equipment)
+        (colorOf equipment)
         (nameOf equipment)
         40 --  TODO fontSize
         (shapeOf equipment == Equipment.Ellipse)
         selected
+        isGhost
         (model.editMode /= Viewing True && model.editMode /= Viewing False) -- rectVisible
         model.scale
         disableTransition
@@ -89,7 +91,7 @@ equipmentView model adjustRect selected alpha equipment contextMenuDisabled disa
         (backgroundColorOf equipment)
         (nameOf equipment)
         selected
-        alpha
+        isGhost
         model.scale
         disableTransition
         personMatched

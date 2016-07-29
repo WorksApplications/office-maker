@@ -21,10 +21,16 @@ card children =
 
 view : Model -> List (Html Msg)
 view model =
-    [ row [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
-    , row [ label Icons.colorPropLabel, colorView model ]
-    , row [ label Icons.shapePropLabel, shapeView model ]
-    ]
+  [ if List.all Equipment.backgroundColorEditable (selectedEquipments model) then
+      row [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
+    else text ""
+  , if List.all Equipment.colorEditable (selectedEquipments model) then
+      row [ label Icons.colorPropLabel, colorView model ]
+    else text ""
+  , if List.all Equipment.shapeEditable (selectedEquipments model) then
+      row [ label Icons.shapePropLabel, shapeView model ]
+    else text ""
+  ]
 
 
 label : Html Msg -> Html Msg
