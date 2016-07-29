@@ -50,7 +50,7 @@ viewDesk eventOptions showPersonMatch rect color name selected alpha scale disab
     nameView =
       equipmentLabelView "" 12 scale disableTransition screenRect name
   in
-    viewInternal eventOptions styles nameView personMatchIcon
+    viewInternal selected eventOptions styles nameView personMatchIcon
 
 
 viewLabel : EventOptions msg -> (Int, Int, Int, Int) -> String -> String -> Float -> Bool -> Bool -> Bool -> Scale.Model -> Bool -> Html msg
@@ -65,11 +65,11 @@ viewLabel eventOptions rect fontColor name fontSize isEllipse selected rectVisib
     nameView =
       equipmentLabelView fontColor fontSize scale disableTransition screenRect name
   in
-    viewInternal eventOptions styles nameView (text "")
+    viewInternal selected eventOptions styles nameView (text "")
 
 
-viewInternal : EventOptions msg -> List (Html.Attribute msg) -> Html msg -> Html msg -> Html msg
-viewInternal eventOptions styles nameView personMatchIcon =
+viewInternal : Bool -> EventOptions msg -> List (Html.Attribute msg) -> Html msg -> Html msg -> Html msg
+viewInternal selected eventOptions styles nameView personMatchIcon =
   let
     eventHandlers =
       ( case eventOptions.onContextMenu of
@@ -101,16 +101,16 @@ viewInternal eventOptions styles nameView personMatchIcon =
       ( styles ++ eventHandlers )
       [ nameView
       , personMatchIcon
-      , resizeGripView eventOptions.onStartResize
+      , resizeGripView selected eventOptions.onStartResize
       ]
 
 
-resizeGripView : Maybe msg -> Html msg
-resizeGripView onStartResize =
+resizeGripView : Bool -> Maybe msg -> Html msg
+resizeGripView selected onStartResize =
   case onStartResize of
     Just msg ->
       div
-        [ style S.deskResizeGrip
+        [ style (S.deskResizeGrip selected)
         , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
         ]
         []

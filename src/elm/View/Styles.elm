@@ -164,15 +164,24 @@ labelObject isEllipse rect fontColor selected rectVisible disableTransition =
   ] ++ transition disableTransition
 
 
-deskResizeGrip : S
-deskResizeGrip =
+deskResizeGrip : Bool -> S
+deskResizeGrip selected =
   [ ("position", "absolute")
   , ("width", "8px")
   , ("height", "8px")
   , ("bottom", "-2px")
   , ("right", "-2px")
   , ("cursor", "nw-resize")
-  ]
+  ] ++
+  ( if selected then
+      [ ("border-bottom-style", "solid")
+      , ("border-right-style", "solid")
+      , ("border-width", "2px")
+      , ("border-color", "#69e")
+      ]
+    else
+      []
+  )
 
 
 selectorRect : Bool -> (Int, Int, Int, Int) -> S
