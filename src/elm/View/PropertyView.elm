@@ -7,7 +7,6 @@ import Html.Attributes exposing (..)
 
 import View.Styles as S
 import View.Icons as Icons
-import View.Common exposing (..)
 
 import Util.HtmlUtil exposing (..)
 

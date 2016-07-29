@@ -13,17 +13,30 @@ import Process
 type Error =
   IdNotFound String | Unexpected String
 
--- optional : (a -> Html msg) -> Maybe a -> Html msg
--- optional f maybe =
---   case maybe of
---     Just a -> f a
---     Nothing -> text ""
 
+-- TODO maybe pageX, pageY is better
 decodeClientXY : Decoder (Int, Int)
 decodeClientXY =
   object2 (,)
     ("clientX" := int)
     ("clientY" := int)
+
+
+decodeClientXYandButton : Decoder (Int, Int, Bool)
+decodeClientXYandButton =
+  object3 (\x y button ->
+    (x, y, button > 0)
+    )
+    ("clientX" := int)
+    ("clientY" := int)
+    ("button" := int)
+
+
+decodeRightButton : Decoder Bool
+decodeRightButton =
+  object1 (\button -> button > 0)
+    ("button" := int)
+
 
 decodeKeyCode : Decoder Int
 decodeKeyCode =
@@ -49,6 +62,7 @@ focus id =
     (always (IdNotFound id))
     (Native.HtmlUtil.focus id)
 
+
 blur : String -> Task Error ()
 blur id =
   Process.sleep 100 `Task.andThen` \_ ->
@@ -56,49 +70,60 @@ blur id =
     (always (IdNotFound id))
     (Native.HtmlUtil.blur id)
 
+
 onSubmit' : a -> Attribute a
 onSubmit' e =
   onWithOptions
     "onsubmit" { stopPropagation = True, preventDefault = False } (Decode.succeed e)
+
 
 onMouseMove' : ((Int, Int) -> a) -> Attribute a
 onMouseMove' f =
   onWithOptions
     "mousemove" { stopPropagation = True, preventDefault = True } (Decode.map f decodeClientXY)
 
+
 onMouseEnter' : a -> Attribute a
 onMouseEnter' e =
   onWithOptions
     "mouseenter" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
+
 
 onMouseLeave' : a -> Attribute a
 onMouseLeave' e =
   onWithOptions
     "mouseleave" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
-onMouseUp' : a -> Attribute a
-onMouseUp' e =
-  on "mouseup" (Decode.succeed e)
+
+-- onMouseUp' : a -> Attribute a
+-- onMouseUp' e =
+--   on "mouseup" (Decode.succeed e)
+
 
 onMouseDown' : a -> Attribute a
 onMouseDown' e =
   onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
+
 onDblClick' : a -> Attribute a
 onDblClick' e =
   onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
+
 
 onClick' : a -> Attribute a
 onClick' e =
   onWithOptions "click" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
+
 onInput : (String -> a) -> Attribute a
 onInput f =
   on "input" (Decode.map f Html.Events.targetValue)
 
+
 onInput' : (String -> a) -> Attribute a
 onInput' f =
   onWithOptions "input" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
+
 
 onChange' : (String -> a) -> Attribute a
 onChange' f =
@@ -112,17 +137,21 @@ onKeyDown' : (Int -> a) -> Attribute a
 onKeyDown' f =
   onWithOptions "keydown" { stopPropagation = True, preventDefault = True } (Decode.map f decodeKeyCode)
 
+
 onKeyDown'' : (Int -> a) -> Attribute a
 onKeyDown'' f =
   on "keydown" (Decode.map f decodeKeyCode)
+
 
 onContextMenu' : a -> Attribute a
 onContextMenu' e =
   onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
+
 onMouseWheel : (Float -> a) -> Attribute a
 onMouseWheel toAction =
   onWithOptions "wheel" { stopPropagation = True, preventDefault = True } (Decode.map toAction decodeWheelEvent)
+
 
 mouseDownDefence : a -> Attribute a
 mouseDownDefence e =
@@ -146,6 +175,7 @@ form' action attribtes children =
     , Html.Events.onSubmit action
     ] ++ attribtes)
     children
+
 
 fileLoadButton : (FileList -> msg) -> List (String, String) -> String -> Html msg
 fileLoadButton tagger styles text =

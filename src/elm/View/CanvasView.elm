@@ -23,6 +23,8 @@ import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 
+import Json.Decode as Decode
+
 
 adjustImagePositionOfMovingEquipment : Int -> Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
 adjustImagePositionOfMovingEquipment gridSize scale (startX, startY) (x, y) (left, top) =
@@ -49,7 +51,7 @@ equipmentView model adjustRect selected isGhost equipment contextMenuDisabled di
             noEvents = EquipmentView.noEvents
           in
             { noEvents |
-              onMouseDown = Just (ShowDetailForEquipment id)
+              onMouseDown = Just (always (ShowDetailForEquipment id))
             }
         _ ->
           { onContextMenu =
@@ -134,8 +136,10 @@ view model =
             []
         ))
       , onMouseMove' MoveOnCanvas
-      , onMouseDown MouseDownOnCanvas
-      , onMouseUp MouseUpOnCanvas
+      , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
+      -- , onMouseDown MouseDownOnCanvas
+      , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
+      -- , onMouseUp MouseUpOnCanvas
       , onMouseEnter' EnterCanvas
       , onMouseLeave' LeaveCanvas
       , onMouseWheel MouseWheel
@@ -239,7 +243,7 @@ equipmentsView model =
                   True
                   True -- alpha
                   equipment
-                  model.keys.ctrl
+                  False --model.keys.ctrl
                   (transitionDisabled model)
               )
             )
@@ -270,7 +274,7 @@ equipmentsView model =
                   (isSelected equipment)
                   False -- alpha
                   equipment
-                  True
+                  model.keys.ctrl
                   (transitionDisabled model)
               )
             )
@@ -296,7 +300,7 @@ equipmentsView model =
                   True -- isSelected
                   True -- alpha
                   equipment
-                  True
+                  model.keys.ctrl
                   (transitionDisabled model)
               )
             )

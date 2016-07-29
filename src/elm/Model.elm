@@ -191,8 +191,8 @@ type Msg = NoOp
   | EnterCanvas
   | LeaveCanvas
   | MouseUpOnCanvas
-  | MouseDownOnCanvas
-  | MouseDownOnEquipment Id
+  | MouseDownOnCanvas (Int, Int)
+  | MouseDownOnEquipment Id (Int, Int)
   | MouseUpOnEquipment Id
   | MouseDownOnResizeGrip Id
   | StartEditEquipment Id
@@ -398,15 +398,20 @@ update action model =
           floor = UndoRedo.commit (Floor.onSaved isPublish) model.floor
         , error = message
         } ! [ cmd ]
+
     MoveOnCanvas (clientX, clientY) ->
       let
-        (x, y) = (clientX, clientY - 37)
+        (x, y) =
+          (clientX, clientY - 37)
+
         model' =
           { model |
             pos = (x, y)
           }
+
         (prevX, prevY) =
           model.pos
+
         newModel =
           case model.draggingContext of
             ShiftOffsetPrevScreenPos ->
@@ -424,8 +429,10 @@ update action model =
             _ -> model'
       in
         newModel ! []
+
     EnterCanvas ->
       model ! []
+
     LeaveCanvas ->
       { model |
         draggingContext =
@@ -433,9 +440,11 @@ update action model =
             ShiftOffsetPrevScreenPos -> None
             _ -> model.draggingContext
       } ! []
-    MouseDownOnEquipment lastTouchedId ->
+
+    MouseDownOnEquipment lastTouchedId (clientX, clientY') ->
       let
-        (clientX, clientY) = model.pos
+        clientY = clientY' - 37
+
         (model', cmd) =
           if EquipmentNameInput.isEditing model.equipmentNameInput then
             let
@@ -453,7 +462,8 @@ update action model =
         -- TODO
         help model =
           { model |
-            selectedEquipments =
+            pos = (clientX, clientY)
+          , selectedEquipments =
               if model.keys.ctrl then
                 if List.member lastTouchedId model.selectedEquipments
                 then List.filter ((/=) lastTouchedId) model.selectedEquipments
@@ -479,9 +489,12 @@ update action model =
           }
       in
         help model' ! [ cmd, emulateClick lastTouchedId True ]
+
     MouseUpOnEquipment lastTouchedId ->
       let
-        (clientX, clientY) = model.pos
+        (clientX, clientY) =
+          model.pos
+
         (model', cmd) =
           -- TODO refactor to dedupe
           case model.draggingContext of
@@ -519,7 +532,9 @@ update action model =
 
     MouseUpOnCanvas ->
       let
-        (clientX, clientY) = model.pos
+        (clientX, clientY) =
+          model.pos
+
         (model', cmd) =
           case model.draggingContext of
             MoveEquipment id (x, y) ->
@@ -559,10 +574,9 @@ update action model =
       in
         newModel ! [ cmd ]
 
-    MouseDownOnCanvas ->
+    MouseDownOnCanvas (clientX, clientY') ->
       let
-        (clientX, clientY) =
-          model.pos
+        clientY = clientY' - 37
 
         selectorRect =
           case model.editMode of
@@ -602,7 +616,8 @@ update action model =
 
         newModel =
           { model'' |
-            selectedEquipments = []
+            pos = (clientX, clientY)
+          , selectedEquipments = []
           , selectorRect = selectorRect
           , contextMenu = NoContextMenu
           , draggingContext = draggingContext
@@ -648,12 +663,12 @@ update action model =
           in
             newModel !
               [ requestCandidate id name
-              , Task.perform identity identity (Task.succeed MouseUpOnCanvas) -- TODO get rid of this hack
+              -- , Task.perform identity identity (Task.succeed MouseUpOnCanvas) -- TODO get rid of this hack
               , cmd
               ]
 
         Nothing ->
-          model ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ] -- TODO get rid of this hack
+          model ! [] -- [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ] -- TODO get rid of this hack
 
     SelectBackgroundColor color ->
       let

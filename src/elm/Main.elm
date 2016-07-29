@@ -15,8 +15,8 @@ type alias Flags =
 
 main : Program Flags
 main =
-  TimeTravel.programWithFlags urlParser
-  -- Navigation.programWithFlags urlParser
+  -- TimeTravel.programWithFlags urlParser
+  Navigation.programWithFlags urlParser
     { init = \flags result -> Model.init flags.randomSeed flags.initialSize result flags.visitDate
     , view = View.view
     , update =  Model.update

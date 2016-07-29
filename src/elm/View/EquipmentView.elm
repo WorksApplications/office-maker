@@ -14,7 +14,7 @@ type alias Id = String
 
 
 type alias EventOptions msg =
-  { onMouseDown : Maybe msg
+  { onMouseDown : Maybe ((Int, Int) -> msg)
   , onMouseUp : Maybe msg
   , onStartEditingName : Maybe msg
   , onContextMenu : Maybe msg
@@ -73,12 +73,14 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
   let
     eventHandlers =
       ( case eventOptions.onContextMenu of
-          Just msg -> [ onContextMenu' msg ]
+          Just msg ->
+            [ onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } (Decode.succeed msg)
+            ]
           Nothing -> []
       ) ++
       ( case eventOptions.onMouseDown of
           Just msg ->
-            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map msg decodeClientXY)
             ]
           Nothing -> []
       ) ++
@@ -89,10 +91,6 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
           Nothing -> []
       ) ++
       ( case eventOptions.onStartEditingName of
-          Just msg -> [ onDoubleClick msg ]
-          Nothing -> []
-      ) ++
-      ( case eventOptions.onStartResize of
           Just msg -> [ onDoubleClick msg ]
           Nothing -> []
       )
