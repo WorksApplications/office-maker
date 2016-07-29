@@ -163,6 +163,21 @@ function publishFloor(conn, newFloor, cb) {
   saveFloorWithEquipments(conn, newFloor, true, cb);
 }
 
+function deleteFloorWithEquipments(conn, floorId, cb) {
+  var sqls = [
+    sql.delete('floors', sql.where('id', floorId)),
+    sql.delete('equipments', sql.where('floorId', floorId)),
+  ];
+  rdb.batch(conn, sqls, (e) => {
+    if(e) {
+      console.log('deleteFloorWithEquipments', e);
+      cb && cb(e);
+    } else {
+      cb && cb();
+    }
+  });
+}
+
 function saveUser(conn, user, cb) {
   if(!conn) {
     console.log('connection does not exist');
@@ -393,6 +408,7 @@ module.exports = {
   ensureFloor: ensureFloor,
   saveFloorWithEquipments: saveFloorWithEquipments,
   publishFloor: publishFloor,
+  deleteFloorWithEquipments: deleteFloorWithEquipments,
   saveImage: saveImage,
   resetImage: resetImage
 };
