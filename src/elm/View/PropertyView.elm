@@ -7,16 +7,13 @@ import Html.Attributes exposing (..)
 
 import View.Styles as S
 import View.Icons as Icons
+import View.Common exposing (..)
+
 import Util.HtmlUtil exposing (..)
 
 import Model exposing (..)
 import Model.Equipment as Equipment
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
-
-
-card : List (Html msg) -> Html msg
-card children =
-  div [ style S.card ] children
 
 
 view : Model -> List (Html Msg)

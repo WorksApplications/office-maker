@@ -18,6 +18,8 @@ import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
 import View.CanvasView as CanvasView
 import View.PropertyView as PropertyView
+import View.ContextMenu as ContextMenu
+import View.Common exposing (..)
 import FloorProperty
 
 import Util.HtmlUtil exposing (..)
@@ -31,35 +33,6 @@ import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
 import Model.Person exposing (Person)
 import Model.SearchResult exposing (SearchResult)
-
-import InlineHover exposing (hover)
-
-
-contextMenuView : Model -> Html Msg
-contextMenuView model =
-  case model.contextMenu of
-    NoContextMenu ->
-      text ""
-
-    Equipment (x, y) id ->
-      div
-        [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
-        ] -- TODO
-        [ contextMenuItemView (SelectIsland id) "Select Island"
-        , contextMenuItemView (RegisterPrototype id) "Register as stamp"
-        , contextMenuItemView (Rotate id) "Rotate"
-        ]
-
-
-contextMenuItemView : Msg -> String -> Html Msg
-contextMenuItemView action text' =
-  hover
-    S.contextMenuItemHover
-    div
-    [ style S.contextMenuItem
-    , onMouseDown' action
-    ]
-    [ text text' ]
 
 
 mainView : Model -> Html Msg
@@ -214,11 +187,6 @@ subViewTab msg index icon active =
     [ icon ]
 
 
-card : List (Html msg) -> Html msg
-card children =
-  div [ style S.card ] children
-
-
 penView : Model -> List (Html Msg)
 penView model =
   let
@@ -329,7 +297,7 @@ view model =
       [ header
       , mainView model
       , diffView
-      , contextMenuView model
+      , ContextMenu.view model
       ]
 
 --
