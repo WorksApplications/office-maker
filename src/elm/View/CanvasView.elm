@@ -78,7 +78,7 @@ equipmentView model adjustRect selected isGhost equipment contextMenuDisabled di
         (backgroundColorOf equipment)
         (colorOf equipment)
         (nameOf equipment)
-        40 --  TODO fontSize
+        (fontSizeOf equipment)
         (shapeOf equipment == Equipment.Ellipse)
         selected
         isGhost
@@ -92,6 +92,7 @@ equipmentView model adjustRect selected isGhost equipment contextMenuDisabled di
         (x, y, width, height)
         (backgroundColorOf equipment)
         (nameOf equipment)
+        (fontSizeOf equipment)
         selected
         isGhost
         model.scale
@@ -137,9 +138,7 @@ view model =
         ))
       , onMouseMove' MoveOnCanvas
       , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
-      -- , onMouseDown MouseDownOnCanvas
       , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
-      -- , onMouseUp MouseUpOnCanvas
       , onMouseEnter' EnterCanvas
       , onMouseLeave' LeaveCanvas
       , onMouseWheel MouseWheel
@@ -367,6 +366,7 @@ temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHe
       (left, top, deskWidth, deskHeight)
       color
       name --name
+      Equipment.defaultFontSize
       selected
       False -- alpha
       scale
@@ -385,6 +385,7 @@ temporaryPenView model from =
         (left, top, width, height)
         color
         name --name
+        Equipment.defaultFontSize
         False -- selected
         False -- alpha
         model.scale

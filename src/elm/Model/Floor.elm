@@ -42,7 +42,7 @@ init id =
 
 type Msg =
     CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
-  | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Float))
+  | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Float, String))
   | Move (List Id) Int (Int, Int)
   | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
@@ -66,7 +66,7 @@ createDesk : List (Id, (Int, Int, Int, Int), String, String) -> Msg
 createDesk = CreateDesk
 
 
-createLabel : List (Id, (Int, Int, Int, Int), String, String, Float) -> Msg
+createLabel : List (Id, (Int, Int, Int, Int), String, String, Float, String) -> Msg
 createLabel = CreateLabel
 
 
@@ -152,8 +152,8 @@ update action model =
 
     CreateLabel candidateWithNewIds ->
       let
-        create (newId, (x, y, w, h), color, name, fontSize) =
-          Equipment.initLabel newId (x, y, w, h) "#000" name fontSize color Equipment.Rectangle
+        create (newId, (x, y, w, h), bgColor, name, fontSize, color) =
+          Equipment.initLabel newId (x, y, w, h) bgColor name fontSize color Equipment.Rectangle
       in
         addEquipments
           (List.map create candidateWithNewIds)

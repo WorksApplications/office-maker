@@ -385,7 +385,7 @@ function init(conn, cb) {
   ]).concat([
     function(cb) {
       // console.log('init 4');
-      saveColors(conn, mock.colors, cb)
+      saveColors(conn, mock.backgroundColors, cb);
     }
   ]), cb);
 }

@@ -172,6 +172,19 @@ colorOf e =
       color
 
 
+defaultFontSize : Float
+defaultFontSize = 12
+
+
+fontSizeOf : Equipment -> Float
+fontSizeOf e =
+  case e of
+    Desk _ _ _ _ _ ->
+      defaultFontSize
+    Label _ _ _ _ fontSize _ _ ->
+      fontSize
+
+
 shapeOf : Equipment -> Shape
 shapeOf e =
   case e of
@@ -219,6 +232,15 @@ colorEditable e =
 
 shapeEditable : Equipment -> Bool
 shapeEditable e =
+  case e of
+    Desk _ _ _ _ _ ->
+      False
+    Label _ _ _ _ _ _ _ ->
+      True
+
+
+fontSizeEditable : Equipment -> Bool
+fontSizeEditable e =
   case e of
     Desk _ _ _ _ _ ->
       False

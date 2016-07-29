@@ -32,8 +32,8 @@ noEvents =
   }
 
 
-viewDesk : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Scale.Model -> Bool -> Bool -> Html msg
-viewDesk eventOptions showPersonMatch rect color name selected alpha scale disableTransition personMatched =
+viewDesk : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Float -> Bool -> Bool -> Scale.Model -> Bool -> Bool -> Html msg
+viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha scale disableTransition personMatched =
   let
     personMatchIcon =
       if showPersonMatch then
@@ -48,7 +48,7 @@ viewDesk eventOptions showPersonMatch rect color name selected alpha scale disab
       [ style (S.deskObject screenRect color selected alpha disableTransition) ]
 
     nameView =
-      equipmentLabelView "" 12 scale disableTransition screenRect name
+      equipmentLabelView "" fontSize scale disableTransition screenRect name
   in
     viewInternal selected eventOptions styles nameView personMatchIcon
 

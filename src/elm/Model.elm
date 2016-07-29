@@ -1286,7 +1286,9 @@ updateOnFinishLabel model =
     (width, height) =
       fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
 
-    color = "#000" -- text color TODO configure?
+    bgColor = "transparent" -- text color TODO configure?
+
+    color = "#000"
 
     name = ""
 
@@ -1296,7 +1298,7 @@ updateOnFinishLabel model =
       IdGenerator.new model.seed
 
     newFloor =
-      UndoRedo.commit (Floor.createLabel [(newId, (left, top, width, height), color, name, fontSize)]) model.floor
+      UndoRedo.commit (Floor.createLabel [(newId, (left, top, width, height), bgColor, name, fontSize, color)]) model.floor
 
     model' =
       { model |
