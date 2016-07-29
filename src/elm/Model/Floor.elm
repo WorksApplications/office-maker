@@ -1,5 +1,6 @@
 module Model.Floor exposing (..)
 
+import String
 import Date exposing (Date)
 import Model.Equipment as Equipment exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
@@ -46,12 +47,13 @@ type Msg =
   | Move (List Id) Int (Int, Int)
   | Paste (List (Equipment, Id)) (Int, Int)
   | Delete (List Id)
-  | Rotate Id
+  | RotateEquipment Id
   | ChangeId Id
   | ChangeEquipmentBackgroundColor (List Id) String
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentShape (List Id) Equipment.Shape
-  | ChangeEquipmentName Id String
+  | ChangeEquipmentName (List Id) String
+  | ToFirstNameOnly (List Id)
   | ResizeEquipment Id (Int, Int)
   | ChangeName String
   | ChangeOrd Int
@@ -82,28 +84,32 @@ delete : (List Id) -> Msg
 delete = Delete
 
 
-rotate : Id -> Msg
-rotate = Rotate
+rotateEquipment : Id -> Msg
+rotateEquipment = RotateEquipment
 
 
 changeId : Id -> Msg
 changeId = ChangeId
 
 
-changeEquipmentColor : (List Id) -> String -> Msg
+changeEquipmentColor : List Id -> String -> Msg
 changeEquipmentColor = ChangeEquipmentColor
 
 
-changeEquipmentBackgroundColor : (List Id) -> String -> Msg
+changeEquipmentBackgroundColor : List Id -> String -> Msg
 changeEquipmentBackgroundColor = ChangeEquipmentBackgroundColor
 
 
-changeEquipmentShape : (List Id) -> Equipment.Shape -> Msg
+changeEquipmentShape : List Id -> Equipment.Shape -> Msg
 changeEquipmentShape = ChangeEquipmentShape
 
 
-changeEquipmentName : Id -> String -> Msg
+changeEquipmentName : List Id -> String -> Msg
 changeEquipmentName = ChangeEquipmentName
+
+
+toFirstNameOnly : List Id -> Msg
+toFirstNameOnly = ToFirstNameOnly
 
 
 resizeEquipment : Id -> (Int, Int) -> Msg
@@ -174,7 +180,7 @@ update action model =
         (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
         model
 
-    Rotate id ->
+    RotateEquipment id ->
       setEquipments (partiallyChange Equipment.rotate [id] (equipments model)) model
 
     ChangeId id ->
@@ -201,10 +207,24 @@ update action model =
       in
         setEquipments newEquipments model
 
-    ChangeEquipmentName id name ->
-      setEquipments
-        (commitInputName (id, name) (equipments model))
-        model
+    ChangeEquipmentName ids name ->
+      let
+        newEquipments =
+          partiallyChange (Equipment.changeName name) ids (equipments model)
+      in
+        setEquipments newEquipments model
+
+    ToFirstNameOnly ids ->
+      let
+        change name =
+          case String.words name of
+            [] -> ""
+            x :: _ -> x
+
+        newEquipments =
+          partiallyChange (\e -> (flip Equipment.changeName) e <| change <| nameOf e) ids (equipments model)
+      in
+        setEquipments newEquipments model
 
     ResizeEquipment id size ->
       let

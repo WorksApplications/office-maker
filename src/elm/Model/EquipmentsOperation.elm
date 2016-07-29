@@ -340,11 +340,6 @@ fitSizeToGrid gridSize (x, y) =
   (x // gridSize * gridSize, y // gridSize * gridSize)
 
 
-commitInputName : (Id, String) -> List Equipment -> List Equipment
-commitInputName (id, name) equipments =
-  partiallyChange (changeName name) [id] equipments
-
-
 backgroundColorProperty : List Equipment -> Maybe String
 backgroundColorProperty selectedEquipments =
   colorPropertyHelp backgroundColorOf selectedEquipments

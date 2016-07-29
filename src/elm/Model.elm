@@ -211,6 +211,7 @@ type Msg = NoOp
   | RegisterPrototype Id
   | FloorPropertyMsg FloorProperty.Msg
   | Rotate Id
+  | FirstNameOnly (List Id)
   | HeaderMsg Header.Msg
   | SearchBoxMsg SearchBox.Msg
   | RegisterPeople (List Person)
@@ -528,7 +529,9 @@ update action model =
               updateOnFinishResize id pos model
             _ -> model ! []
       in
-        { model' | draggingContext = None } ! [ cmd, emulateClick lastTouchedId False ]
+        { model' |
+          draggingContext = None
+        } ! [ cmd, emulateClick lastTouchedId False ]
 
     MouseUpOnCanvas ->
       let
@@ -774,6 +777,7 @@ update action model =
               model
       in
         newModel ! []
+
     KeyCodeMsg isDown keyCode ->
       let
         (keys, event) = ShortCut.update isDown keyCode model.keys
@@ -781,6 +785,7 @@ update action model =
           { model | keys = keys }
       in
         updateByKeyEvent event model'
+
     MouseWheel value ->
       let
         (clientX, clientY) = model.pos
@@ -811,12 +816,16 @@ update action model =
           Task.perform (always NoOp) (always ScaleEnd) (Process.sleep 200.0)
       in
         newModel ! [ cmd ]
+
     ScaleEnd ->
         { model | scaling = False } ! []
+
     WindowSize (w, h) ->
         { model | windowSize = (w, h) } ! []
+
     ChangeMode mode ->
         { model | editMode = mode } ! []
+
     PrototypesMsg action ->
       let
         newModel =
@@ -826,6 +835,7 @@ update action model =
           }
       in
         newModel ! []
+
     RegisterPrototype id ->
       let
         equipment =
@@ -849,10 +859,12 @@ update action model =
               } ! [ savePrototypesCmd newPrototypes.data ]
           Nothing ->
             model' ! []
+
     FloorPropertyMsg message ->
       let
         (floorProperty, cmd1, event) =
           FloorProperty.update message model.floorProperty
+
         ((newFloor, newSeed), cmd2) =
           updateFloorByFloorPropertyEvent event model.seed model.floor
 
@@ -864,10 +876,12 @@ update action model =
           }
       in
         newModel ! [ Cmd.map FloorPropertyMsg cmd1, cmd2 ]
+
     Rotate id ->
       let
         newFloor =
-          UndoRedo.commit (Floor.rotate id) model.floor
+          UndoRedo.commit (Floor.rotateEquipment id) model.floor
+
         newModel =
           { model |
             floor =  newFloor
@@ -875,6 +889,20 @@ update action model =
           }
       in
         newModel ! []
+
+    FirstNameOnly ids ->
+      let
+        newFloor =
+          UndoRedo.commit (Floor.toFirstNameOnly ids) model.floor
+
+        newModel =
+          { model |
+            floor =  newFloor
+          , contextMenu = NoContextMenu
+          }
+      in
+        newModel ! []
+
     HeaderMsg action ->
       let
         (cmd, event) =
@@ -913,6 +941,7 @@ update action model =
               model ! []
       in
         newModel ! [ Cmd.map HeaderMsg cmd, cmd2 ]
+
     SearchBoxMsg msg ->
       let
         (searchBox, cmd1, event) =
@@ -940,11 +969,13 @@ update action model =
 
       in
         newModel ! [ Cmd.map SearchBoxMsg cmd1, cmd2 ]
+
     RegisterPeople people ->
       { model |
         personInfo =
           addAll (.id) people model.personInfo
       } ! []
+
     GotCandidateSelection equipmentId people ->
       let
         newRequestCmd =
@@ -964,6 +995,7 @@ update action model =
           }
       in
         newModel ! [ newRequestCmd ]
+
     UpdatePersonCandidate equipmentId personIds ->
       let
         newFloor =
@@ -982,10 +1014,13 @@ update action model =
         cmd = saveFloorCmd newModel.floor.present
       in
         newModel ! [ cmd ]
+
     GotDiffSource diffSource ->
       { model | diff = Just diffSource } ! []
+
     CloseDiff ->
       { model | diff = Nothing } ! []
+
     ConfirmDiff ->
       let
         floor =
@@ -1015,10 +1050,13 @@ update action model =
         , seed = newSeed
         , floor = newFloor
         } ! [ cmd ]
+
     ChangeTab tab ->
       { model | tab = tab } ! []
+
     ClosePopup ->
       { model | selectedResult = Nothing } ! []
+
     ShowDetailForEquipment id ->
       let
         allEquipments = model.floor.present.equipments
@@ -1043,6 +1081,7 @@ update action model =
           selectedResult = selectedResult
         , offset = newOffset
         } ! [ cmd ]
+
     CreateNewFloor ->
       let
         (newFloorId, newSeed) =
@@ -1052,6 +1091,7 @@ update action model =
         cmd2 = Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
       in
         { model | seed = newSeed } ! [ cmd1, cmd2 ]
+
     EmulateClick id down time ->
       let
         (clickEmulator, event) =
@@ -1438,6 +1478,7 @@ loadDraftFloor user =
   in
     performAPI DraftFloorLoaded loadTask
 
+
 updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput continueEditing id name model =
   let
@@ -1476,7 +1517,7 @@ updateOnFinishNameInput continueEditing id name model =
           []
 
     newFloor =  --TODO if name really changed
-      UndoRedo.commit (Floor.changeEquipmentName id name) model.floor
+      UndoRedo.commit (Floor.changeEquipmentName [id] name) model.floor
 
     cmd2 =
       saveFloorCmd newFloor.present

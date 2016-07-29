@@ -21,10 +21,11 @@ view model =
     Equipment (x, y) id ->
       div
         [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
-        ] -- TODO
+        ]
         [ contextMenuItemView (SelectIsland id) "Select Island"
         , contextMenuItemView (RegisterPrototype id) "Register as stamp"
         , contextMenuItemView (Rotate id) "Rotate"
+        , contextMenuItemView (FirstNameOnly [id]) "First name only" -- TODO keep multi select
         ]
 
 
