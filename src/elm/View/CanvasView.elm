@@ -75,7 +75,8 @@ equipmentView model adjustRect selected alpha equipment contextMenuDisabled disa
         (x, y, width, height)
         (colorOf equipment) -- fontColor
         (nameOf equipment)
-        40 --  TODO
+        40 --  TODO fontSize
+        (shapeOf equipment == Equipment.Ellipse)
         selected
         (model.editMode /= Viewing True && model.editMode /= Viewing False) -- rectVisible
         model.scale
@@ -85,7 +86,7 @@ equipmentView model adjustRect selected alpha equipment contextMenuDisabled disa
         eventOptions
         (model.editMode /= Viewing True && model.editMode /= Viewing False)
         (x, y, width, height)
-        (colorOf equipment)
+        (backgroundColorOf equipment)
         (nameOf equipment)
         selected
         alpha

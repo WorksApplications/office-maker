@@ -51,8 +51,10 @@ function equipmentKeyValues(floorId, floorVersion, equipment) {
     ["y", equipment.y],
     ["width", equipment.width],
     ["height", equipment.height],
-    ["color", equipment.color],
+    ["backgroundColor", equipment.backgroundColor],
     ["fontSize", equipment.fontSize || 0],
+    ["color", equipment.color],
+    ["shape", equipment.shape],
     ["personId", equipment.personId],
     ["floorId", floorId],
     ["floorVersion", floorVersion]

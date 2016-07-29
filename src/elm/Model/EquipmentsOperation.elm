@@ -345,23 +345,58 @@ commitInputName (id, name) equipments =
   partiallyChange (changeName name) [id] equipments
 
 
+backgroundColorProperty : List Equipment -> Maybe String
+backgroundColorProperty selectedEquipments =
+  colorPropertyHelp backgroundColorOf selectedEquipments
+
+
 colorProperty : List Equipment -> Maybe String
-colorProperty equipments =
-  case List.head equipments of
+colorProperty selectedEquipments =
+  colorPropertyHelp colorOf selectedEquipments
+
+
+-- [red, green, green] -> Nothing
+-- [blue, blue] -> Just blue
+-- [] -> Nothing
+colorPropertyHelp : (Equipment -> String) -> List Equipment -> Maybe String
+colorPropertyHelp getColor selectedEquipments =
+  case List.head selectedEquipments of
     Just e ->
       let
-        firstColor = colorOf e
+        firstColor = getColor e
       in
         List.foldl (\e maybeColor ->
           let
-            color = colorOf e
+            color = getColor e
           in
             case maybeColor of
               Just color_ ->
                 if color == color_ then Just color else Nothing
+
               Nothing -> Nothing
-        ) (Just firstColor) equipments
+        ) (Just firstColor) selectedEquipments
+
     Nothing -> Nothing
 
+
+shapeProperty : List Equipment -> Maybe Equipment.Shape
+shapeProperty selectedEquipments =
+  case List.head selectedEquipments of
+    Just e ->
+      let
+        firstShape = shapeOf e
+      in
+        List.foldl (\e maybeShape ->
+          let
+            shape = shapeOf e
+          in
+            case maybeShape of
+              Just shape_ ->
+                if shape == shape_ then Just shape else Nothing
+
+              Nothing -> Nothing
+        ) (Just firstShape) selectedEquipments
+
+    Nothing -> Nothing
 
 --

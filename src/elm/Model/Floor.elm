@@ -48,7 +48,9 @@ type Msg =
   | Delete (List Id)
   | Rotate Id
   | ChangeId Id
+  | ChangeEquipmentBackgroundColor (List Id) String
   | ChangeEquipmentColor (List Id) String
+  | ChangeEquipmentShape (List Id) Equipment.Shape
   | ChangeEquipmentName Id String
   | ResizeEquipment Id (Int, Int)
   | ChangeName String
@@ -71,47 +73,71 @@ createLabel = CreateLabel
 move : (List Id) -> Int -> (Int, Int) -> Msg
 move = Move
 
+
 paste : (List (Equipment, Id)) -> (Int, Int) -> Msg
 paste = Paste
+
 
 delete : (List Id) -> Msg
 delete = Delete
 
+
 rotate : Id -> Msg
 rotate = Rotate
+
 
 changeId : Id -> Msg
 changeId = ChangeId
 
+
 changeEquipmentColor : (List Id) -> String -> Msg
 changeEquipmentColor = ChangeEquipmentColor
+
+
+changeEquipmentBackgroundColor : (List Id) -> String -> Msg
+changeEquipmentBackgroundColor = ChangeEquipmentBackgroundColor
+
+
+
+changeEquipmentShape : (List Id) -> Equipment.Shape -> Msg
+changeEquipmentShape = ChangeEquipmentShape
+
 
 changeEquipmentName : Id -> String -> Msg
 changeEquipmentName = ChangeEquipmentName
 
+
 resizeEquipment : Id -> (Int, Int) -> Msg
 resizeEquipment = ResizeEquipment
+
 
 changeName : String -> Msg
 changeName = ChangeName
 
+
 changeOrd : Int -> Msg
 changeOrd = ChangeOrd
+
 
 setLocalFile : String -> File -> String -> Msg
 setLocalFile = SetLocalFile
 
+
 changeRealSize : (Int, Int) -> Msg
 changeRealSize = ChangeRealSize
+
 
 onSaved : Bool -> Msg
 onSaved = OnSaved
 
+
 setPerson : String -> String -> Msg
 setPerson = SetPerson
 
+
 unsetPerson : String -> Msg
 unsetPerson = UnsetPerson
+
 
 update : Msg -> Model -> Model
 update action model =
@@ -128,7 +154,7 @@ update action model =
     CreateLabel candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name, fontSize) =
-          Equipment.initLabel newId (x, y, w, h) color name fontSize
+          Equipment.initLabel newId (x, y, w, h) "#000" name fontSize color Equipment.Rectangle
       in
         addEquipments
           (List.map create candidateWithNewIds)
@@ -138,24 +164,44 @@ update action model =
       setEquipments
         (moveEquipments gridSize (dx, dy) ids (equipments model))
         model
+
     Paste copiedWithNewIds (baseX, baseY) ->
       setEquipments
         (model.equipments ++ (pasteEquipments (baseX, baseY) copiedWithNewIds (equipments model)))
         model
+
     Delete ids ->
       setEquipments
         (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
         model
+
     Rotate id ->
       setEquipments (partiallyChange Equipment.rotate [id] (equipments model)) model
+
     ChangeId id ->
       { model | id = Just id }
+
+    ChangeEquipmentBackgroundColor ids bgColor ->
+      let
+        newEquipments =
+          partiallyChange (changeBackgroundColor bgColor) ids (equipments model)
+      in
+        setEquipments newEquipments model
+
     ChangeEquipmentColor ids color ->
       let
         newEquipments =
           partiallyChange (changeColor color) ids (equipments model)
       in
         setEquipments newEquipments model
+
+    ChangeEquipmentShape ids shape ->
+      let
+        newEquipments =
+          partiallyChange (changeShape shape) ids (equipments model)
+      in
+        setEquipments newEquipments model
+
     ChangeEquipmentName id name ->
       setEquipments
         (commitInputName (id, name) (equipments model))

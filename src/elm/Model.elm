@@ -197,7 +197,9 @@ type Msg = NoOp
   | MouseDownOnResizeGrip Id
   | StartEditEquipment Id
   | KeyCodeMsg Bool Int
+  | SelectBackgroundColor String
   | SelectColor String
+  | SelectShape Equipment.Shape
   | EquipmentNameInputMsg EquipmentNameInput.Msg
   | ShowContextMenuOnEquipment Id
   | SelectIsland Id
@@ -653,11 +655,33 @@ update action model =
         Nothing ->
           model ! [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ] -- TODO get rid of this hack
 
+    SelectBackgroundColor color ->
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.commit (Floor.changeEquipmentBackgroundColor model.selectedEquipments color) model.floor
+          }
+        cmd =
+          saveFloorCmd newModel.floor.present
+      in
+        newModel ! [ cmd ]
+
     SelectColor color ->
       let
         newModel =
           { model |
             floor = UndoRedo.commit (Floor.changeEquipmentColor model.selectedEquipments color) model.floor
+          }
+        cmd =
+          saveFloorCmd newModel.floor.present
+      in
+        newModel ! [ cmd ]
+
+    SelectShape shape ->
+      let
+        newModel =
+          { model |
+            floor = UndoRedo.commit (Floor.changeEquipmentShape model.selectedEquipments shape) model.floor
           }
         cmd =
           saveFloorCmd newModel.floor.present
@@ -801,7 +825,7 @@ update action model =
               (_, _, w, h) = rect e
               (newId, seed) = IdGenerator.new model.seed
               newPrototypes =
-                Prototypes.register (newId, colorOf e, nameOf e, (w, h)) model.prototypes
+                Prototypes.register (newId, backgroundColorOf e, nameOf e, (w, h)) model.prototypes
             in
               { model' |
                 seed = seed

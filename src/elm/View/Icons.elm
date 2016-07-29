@@ -65,6 +65,36 @@ editTab =
   pencil defaultColor 20
 
 
+proplabelColor : Color
+proplabelColor =
+  defaultColor
+
+
+backgroundColorPropLabel : Svg msg
+backgroundColorPropLabel =
+  th_large proplabelColor 12
+
+
+colorPropLabel : Svg msg
+colorPropLabel =
+  font proplabelColor 12
+
+
+shapePropLabel : Svg msg
+shapePropLabel =
+  star_o proplabelColor 12
+
+
+shapeRectangle : Svg msg
+shapeRectangle =
+  square defaultColor 20
+
+
+shapeEllipse : Svg msg
+shapeEllipse =
+  circle defaultColor 20
+
+
 searchResultItemPerson : Svg msg
 searchResultItemPerson =
   user defaultColor 20

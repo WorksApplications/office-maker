@@ -17,6 +17,7 @@ import View.MessageBar as MessageBar
 import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
 import View.CanvasView as CanvasView
+import View.PropertyView as PropertyView
 import FloorProperty
 
 import Util.HtmlUtil exposing (..)
@@ -26,7 +27,6 @@ import Model exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Equipment as Equipment exposing (..)
 import Model.Scale as Scale
-import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
 import Model.Person exposing (Person)
@@ -116,7 +116,7 @@ subViewForEdit model =
         (FloorProperty.view model.visitDate model.user model.floor.present model.floorProperty)
   in
     [ card <| penView model
-    , card <| propertyView model
+    , card <| PropertyView.view model
     , card <| floorView
     ]
 
@@ -302,32 +302,6 @@ modeSelectionViewEach viewIcon currentEditMode targetEditMode =
       , onClick' (ChangeMode targetEditMode)
       ]
       [ viewIcon selected ]
-
-
-propertyView : Model -> List (Html Msg)
-propertyView model =
-    [ colorPropertyView model
-    ]
-
-
-colorPropertyView : Model -> Html Msg
-colorPropertyView model =
-  let
-    match color =
-      case colorProperty (selectedEquipments model) of
-        Just c -> color == c
-        Nothing -> False
-
-    viewForEach color =
-      li
-        [ style (S.colorProperty color (match color))
-        , onMouseDown' (SelectColor color)
-        ]
-        []
-  in
-    ul
-      [ style S.colorProperties ]
-      (List.map viewForEach model.colorPalette)
 
 
 view : Model -> Html Msg

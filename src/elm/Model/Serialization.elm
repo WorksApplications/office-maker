@@ -40,7 +40,7 @@ decodePersons = Decode.list decodePerson
 encodeEquipment : Equipment -> Value
 encodeEquipment e =
   case e of
-    Desk id (x, y, width, height) color name personId ->
+    Desk id (x, y, width, height) backgroundColor name personId ->
       object
         [ ("id", string id)
         , ("type", string "desk")
@@ -48,7 +48,9 @@ encodeEquipment e =
         , ("y", int y)
         , ("width", int width)
         , ("height", int height)
-        , ("color", string color)
+        , ("backgroundColor", string backgroundColor)
+        , ("color", string "#000")
+        , ("shape", string "rectangle")
         , ("name", string name)
         , ("personId"
           , case personId of
@@ -57,7 +59,7 @@ encodeEquipment e =
           )
         ]
 
-    Label id (x, y, width, height) color name fontSize ->
+    Label id (x, y, width, height) bgColor name fontSize color shape ->
       object
         [ ("id", string id)
         , ("type", string "label")
@@ -65,9 +67,17 @@ encodeEquipment e =
         , ("y", int y)
         , ("width", int width)
         , ("height", int height)
-        , ("color", string color)
+        , ("backgroundColor", string color)
         , ("name", string name)
         , ("fontSize", float fontSize)
+        , ("color", string color)
+        , ("shape", string (
+          case shape of
+            Equipment.Rectangle ->
+              "rectangle"
+            Equipment.Ellipse ->
+              "ellipse"
+          ))
         ]
 
 
@@ -130,11 +140,16 @@ decodePerson =
 decodeEquipment : Decoder Equipment
 decodeEquipment =
   decode
-    (\id tipe x y width height color name personId fontSize ->
+    (\id tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
-        Desk id (x, y, width, height) color name personId
+        Desk id (x, y, width, height) backgroundColor name personId
       else
-        Label id (x, y, width, height) color name fontSize
+        Label id (x, y, width, height) backgroundColor name fontSize color
+          (if shape == "rectangle" then
+            Equipment.Rectangle
+          else
+            Equipment.Ellipse
+          )
     )
     |> required "id" Decode.string
     |> required "type" Decode.string
@@ -142,10 +157,12 @@ decodeEquipment =
     |> required "y" Decode.int
     |> required "width" Decode.int
     |> required "height" Decode.int
-    |> required "color" Decode.string
+    |> required "backgroundColor" Decode.string
     |> required "name" Decode.string
     |> optional' "personId" Decode.string
     |> optional "fontSize" Decode.float 0
+    |> required "color" Decode.string
+    |> required "shape" Decode.string
 
 
 decodeSearchResult : Decoder SearchResult

@@ -34,26 +34,33 @@ zIndex =
   , modalBackground = "900"
   }
 
+
 selectColor : String
 selectColor = "#69e"
+
 
 errorTextColor : String
 errorTextColor = "#d45"
 
+
 hoverBackgroundColor : String
 hoverBackgroundColor = "#9ce"
+
 
 noMargin : S
 noMargin =
   [ ( "margin", "0") ]
 
+
 noPadding : S
 noPadding =
   [ ( "padding", "0") ]
 
+
 flex : S
 flex =
   [ ( "display", "flex") ]
+
 
 h1 : S
 h1 =
@@ -68,11 +75,13 @@ headerLink : S
 headerLink =
   []
 
+
 -- TODO better name
 headerIconHover : S
 headerIconHover =
   [ ("opacity", "0.5")
   ]
+
 
 -- TODO better name
 hoverHeaderIconHover : S
@@ -80,8 +89,10 @@ hoverHeaderIconHover =
   [ ("opacity", "0.7")
   ]
 
+
 headerHeight : Int
 headerHeight = 37
+
 
 header : S
 header =
@@ -103,15 +114,18 @@ rect (x, y, w, h) =
   , ("height", px h)
   ]
 
+
 absoluteRect : (Int, Int, Int, Int) -> S
 absoluteRect rect' =
   ("position", "absolute") :: (rect rect')
+
 
 deskInput : (Int, Int, Int, Int) -> S
 deskInput rect =
   (absoluteRect rect) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
   , ("box-sizing", "border-box")
   ]
+
 
 nameInputTextArea : Bool -> (Int, Int, Int, Int) -> S
 nameInputTextArea transitionDisabled screenRect =
@@ -135,8 +149,8 @@ deskObject rect color selected alpha disableTransition =
   ] ++ transition disableTransition
 
 
-labelObject : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
-labelObject rect fontColor selected rectVisible disableTransition =
+labelObject : Bool -> (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
+labelObject isEllipse rect fontColor selected rectVisible disableTransition =
   (absoluteRect rect) ++
   [ ("display", "table")
   , ("background-color", if rectVisible then "rgba(255,255,255,0.2)" else "transparent")
@@ -146,6 +160,7 @@ labelObject rect fontColor selected rectVisible disableTransition =
   , ("border-style", if rectVisible then "dashed" else "none")
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
+  , ("border-radius", if isEllipse  then "50%" else "")
   ] ++ transition disableTransition
 
 
@@ -168,9 +183,11 @@ selectorRect transitionDisabled rect =
   , ("border-color", selectColor)
   ] ++ transition transitionDisabled
 
+
 colorProperties : S
 colorProperties =
   [("display", "flex")]
+
 
 colorProperty : String -> Bool -> S
 colorProperty color selected =
@@ -185,6 +202,25 @@ colorProperty color selected =
   , ("border-color", if selected  then "#69e" else "#666")
   ]
 
+
+shapeProperties : S
+shapeProperties =
+  [("display", "flex")]
+
+
+shapeProperty : Bool -> S
+shapeProperty selected =
+  [ ("cursor", "pointer")
+  , ("width", "24px")
+  , ("height", "24px")
+  , ("box-sizing", "border-box")
+  , ("border-style", "solid")
+  , ("margin-right", "2px")
+  , ("border-width", if selected  then "2px" else "1px")
+  , ("border-color", if selected  then "#69e" else "#666")
+  ]
+
+
 subView : S
 subView =
     [ ("z-index", zIndex.subView)
@@ -193,6 +229,7 @@ subView =
     , ("background", "#eee")
     , ("position", "relative")
     ]
+
 
 contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
 contextMenu (x, y) (windowWidth, windowHeight) rows =
@@ -214,11 +251,13 @@ contextMenu (x, y) (windowWidth, windowHeight) rows =
     , ("border-color", "#eee")
     ]
 
+
 contextMenuItem : S
 contextMenuItem =
   [ ("padding", "5px")
   , ("cursor", "pointer")
   ]
+
 
 contextMenuItemHover : S
 contextMenuItemHover =
@@ -275,7 +314,9 @@ shadow =
 
 card : S
 card =
-  [("padding", "20px")]
+  [ ("padding", "20px")
+  , ("box-shadow", "rgba(0, 0, 0, 0.08451) 0px 2px 4px inset")
+  ]
 
 
 transition : Bool -> S
@@ -353,6 +394,7 @@ formControl : S
 formControl =
   [ ("margin-bottom", "6px")
   ]
+
 
 button : S
 button =
@@ -976,7 +1018,7 @@ candidateItemPersonOrg =
   , ("font-size", "small")
   , ("top", "40px")
   ]
-  
+
 
 unsetRelatedPersonButton : S
 unsetRelatedPersonButton =
