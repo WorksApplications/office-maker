@@ -136,6 +136,15 @@ setPerson personId e =
       e
 
 
+changeFontSize : Float -> Equipment -> Equipment
+changeFontSize fontSize e =
+  case e of
+    Label id rect bgColor name _ color shape ->
+      Label id rect bgColor name fontSize color shape
+    _ ->
+      e
+
+
 idOf : Equipment -> Id
 idOf e =
   case e of

@@ -22,23 +22,25 @@ type alias Model =
   }
 
 
-type ImageSource =
-  LocalFile String File String | URL String | None
+type ImageSource
+  = LocalFile String File String
+  | URL String
+  | None
 
 
 init : Maybe Id -> Model
 init id =
-    { id = id
-    , name = "1F" -- TODO
-    , ord = 0
-    , equipments = []
-    , width = 800
-    , height = 600
-    , realSize = Nothing
-    , imageSource = None
-    , public = False
-    , update = Nothing
-    }
+  { id = id
+  , name = "1F" -- TODO
+  , ord = 0
+  , equipments = []
+  , width = 800
+  , height = 600
+  , realSize = Nothing
+  , imageSource = None
+  , public = False
+  , update = Nothing
+  }
 
 
 type Msg =
@@ -53,6 +55,7 @@ type Msg =
   | ChangeEquipmentColor (List Id) String
   | ChangeEquipmentShape (List Id) Equipment.Shape
   | ChangeEquipmentName (List Id) String
+  | ChangeFontSize (List Id) Float
   | ToFirstNameOnly (List Id)
   | ResizeEquipment Id (Int, Int)
   | ChangeName String
@@ -114,6 +117,10 @@ toFirstNameOnly = ToFirstNameOnly
 
 resizeEquipment : Id -> (Int, Int) -> Msg
 resizeEquipment = ResizeEquipment
+
+
+changeFontSize : List Id -> Float -> Msg
+changeFontSize = ChangeFontSize
 
 
 changeName : String -> Msg
@@ -230,6 +237,13 @@ update action model =
       let
         newEquipments =
           partiallyChange (changeSize size) [id] (equipments model)
+      in
+        setEquipments newEquipments model
+
+    ChangeFontSize ids fontSize ->
+      let
+        newEquipments =
+          partiallyChange (Equipment.changeFontSize fontSize) ids (equipments model)
       in
         setEquipments newEquipments model
 

@@ -342,56 +342,52 @@ fitSizeToGrid gridSize (x, y) =
 
 backgroundColorProperty : List Equipment -> Maybe String
 backgroundColorProperty selectedEquipments =
-  colorPropertyHelp backgroundColorOf selectedEquipments
+  collectSameProperty backgroundColorOf selectedEquipments
 
 
 colorProperty : List Equipment -> Maybe String
 colorProperty selectedEquipments =
-  colorPropertyHelp colorOf selectedEquipments
+  collectSameProperty colorOf selectedEquipments
+
+
+shapeProperty : List Equipment -> Maybe Equipment.Shape
+shapeProperty selectedEquipments =
+  collectSameProperty shapeOf selectedEquipments
+
+
+nameProperty : List Equipment -> Maybe String
+nameProperty selectedEquipments =
+  collectSameProperty nameOf selectedEquipments
+
+
+fontSizeProperty : List Equipment -> Maybe Float
+fontSizeProperty selectedEquipments =
+  collectSameProperty fontSizeOf selectedEquipments
 
 
 -- [red, green, green] -> Nothing
 -- [blue, blue] -> Just blue
 -- [] -> Nothing
-colorPropertyHelp : (Equipment -> String) -> List Equipment -> Maybe String
-colorPropertyHelp getColor selectedEquipments =
+collectSameProperty : (Equipment -> a) -> List Equipment -> Maybe a
+collectSameProperty getProp selectedEquipments =
   case List.head selectedEquipments of
     Just e ->
       let
-        firstColor = getColor e
+        firstProp = getProp e
       in
-        List.foldl (\e maybeColor ->
+        List.foldl (\e maybeProp ->
           let
-            color = getColor e
+            prop = getProp e
           in
-            case maybeColor of
-              Just color_ ->
-                if color == color_ then Just color else Nothing
+            case maybeProp of
+              Just prop_ ->
+                if prop == prop_ then Just prop else Nothing
 
               Nothing -> Nothing
-        ) (Just firstColor) selectedEquipments
+        ) (Just firstProp) selectedEquipments
 
     Nothing -> Nothing
 
 
-shapeProperty : List Equipment -> Maybe Equipment.Shape
-shapeProperty selectedEquipments =
-  case List.head selectedEquipments of
-    Just e ->
-      let
-        firstShape = shapeOf e
-      in
-        List.foldl (\e maybeShape ->
-          let
-            shape = shapeOf e
-          in
-            case maybeShape of
-              Just shape_ ->
-                if shape == shape_ then Just shape else Nothing
-
-              Nothing -> Nothing
-        ) (Just firstShape) selectedEquipments
-
-    Nothing -> Nothing
 
 --

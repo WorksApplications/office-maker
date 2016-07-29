@@ -26,7 +26,7 @@ view model =
   , if List.all Equipment.shapeEditable (selectedEquipments model) then
       row [ label Icons.shapePropLabel, shapeView model ]
     else text ""
-  ]
+  ] -- TODO fontSize, name, icon?
 
 
 label : Html Msg -> Html Msg
