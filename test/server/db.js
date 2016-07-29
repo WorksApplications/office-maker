@@ -178,6 +178,20 @@ function deleteFloorWithEquipments(conn, floorId, cb) {
   });
 }
 
+function deletePrototype(conn, id, cb) {
+  var sqls = [
+    sql.delete('prototypes', sql.where('id', id))
+  ];
+  rdb.batch(conn, sqls, (e) => {
+    if(e) {
+      console.log('deletePrototype', e);
+      cb && cb(e);
+    } else {
+      cb && cb();
+    }
+  });
+}
+
 function saveUser(conn, user, cb) {
   if(!conn) {
     console.log('connection does not exist');
@@ -409,6 +423,7 @@ module.exports = {
   saveFloorWithEquipments: saveFloorWithEquipments,
   publishFloor: publishFloor,
   deleteFloorWithEquipments: deleteFloorWithEquipments,
+  deletePrototype: deletePrototype,
   saveImage: saveImage,
   resetImage: resetImage
 };

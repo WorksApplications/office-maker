@@ -9,8 +9,33 @@ commands.deleteFloor = function(floorId, cb) {
       console.log(e)
       cb(e);
     } else {
-      console.log('deleting ' + floorId + '...');
+      console.log('deleting floor ' + floorId + '...');
       db.deleteFloorWithEquipments(conn, floorId, (e) => {
+        if(e) {
+          cb(e);
+        } else {
+          done(false, function(commitFailed) {
+            if(commitFailed) {
+              console.log(commitFailed);
+              cb(commitFailed);
+            } else {
+              cb();
+            }
+          });
+        }
+      });
+    }
+  });
+};
+
+commands.deletePrototype = function(id, cb) {
+  rdb.forConnectionAndTransaction((e, conn, done) => {
+    if(e) {
+      console.log(e)
+      cb(e);
+    } else {
+      console.log('deleting prototype ' + id + '...');
+      db.deletePrototype(conn, id, (e) => {
         if(e) {
           cb(e);
         } else {
