@@ -10,21 +10,35 @@ import Model.URL as URL
 import Model.Floor
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 
+import Util.HtmlUtil exposing (..)
+
+import Json.Decode as Decode
+
+
 type alias Floor = Model.Floor.Model
 
 
-linkBox : List (String, String) -> List (String, String) -> String -> List (Html msg) -> Html msg
-linkBox liStyle aStyle url inner =
+linkBox : Maybe msg -> List (String, String) -> List (String, String) -> String -> List (Html msg) -> Html msg
+linkBox contextmenuMsg liStyle aStyle url inner =
   li
-    [ style liStyle ]
-    [ a [ href url , style aStyle ] inner ]
+    ( style liStyle ::
+      ( case contextmenuMsg of
+          Just msg ->
+            [ onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } (Decode.succeed msg) ]
+
+          Nothing ->
+            []
+      )
+    )
+    [ a [ href url, style aStyle ] inner ]
 
 
-eachView : Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
-eachView isEditMode currentFloorId floorInfo =
+eachView : (Maybe String -> msg) -> Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
+eachView contextmenuMsg isEditMode currentFloorId floorInfo =
   Maybe.map
     (\floor ->
       eachView'
+        (contextmenuMsg floor.id)
         (currentFloorId == floor.id)
         (markAsPrivate floorInfo)
         (markAsModified isEditMode floorInfo)
@@ -33,9 +47,10 @@ eachView isEditMode currentFloorId floorInfo =
     (getFloor isEditMode floorInfo)
 
 
-eachView' : Bool -> Bool -> Bool -> Floor -> Html msg
-eachView' selected markAsPrivate markAsModified floor =
+eachView' : msg -> Bool -> Bool -> Bool -> Floor -> Html msg
+eachView' contextmenuMsg selected markAsPrivate markAsModified floor =
   linkBox
+    (Just contextmenuMsg)
     (Styles.floorsInfoViewItem selected markAsPrivate)
     Styles.floorsInfoViewItemLink
     (URL.hashFromFloorId floor.id)
@@ -46,17 +61,21 @@ eachView' selected markAsPrivate markAsModified floor =
 createButton : msg -> Html msg
 createButton msg =
   linkBox
+    Nothing
     (Styles.floorsInfoViewItem False False)
     Styles.floorsInfoViewItemLink
     "#"
     [ div [ onClick msg ] [ text "+"] ]
 
 
-view : msg -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
-view onCreateNewFloor isAdmin isEditMode currentFloorId floorInfoList =
+view : (Maybe String -> msg) -> ((Int, Int) -> msg) -> msg -> msg -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
+view onContextMenu onMove onClickMsg onCreateNewFloor isAdmin isEditMode currentFloorId floorInfoList =
   ul
-    [ style Styles.floorsInfoView ]
-    ( List.filterMap (eachView isEditMode currentFloorId) (List.sortBy (getOrd isEditMode) floorInfoList) ++
+    [ style Styles.floorsInfoView
+    , onMouseMove' onMove
+    , onClick onClickMsg
+    ]
+    ( List.filterMap (eachView onContextMenu isEditMode currentFloorId) (List.sortBy (getOrd isEditMode) floorInfoList) ++
         if isEditMode && isAdmin then
           [ createButton onCreateNewFloor ]
         else

@@ -38,22 +38,48 @@ import Model.SearchResult exposing (SearchResult)
 mainView : Model -> Html Msg
 mainView model =
   let
-    (windowWidth, windowHeight) = model.windowSize
-
-    isEditMode =
-      model.editMode /= Viewing True && model.editMode /= Viewing False
+    (_, windowHeight) = model.windowSize
 
     sub =
       if model.editMode == Viewing True then
         text ""
       else subView model
+
+    floorInfo =
+      floorInfoView model
   in
     main' [ style (S.mainView windowHeight) ]
-      [ FloorsInfoView.view CreateNewFloor (User.isAdmin model.user) isEditMode model.floor.present.id model.floorsInfo
+      [ floorInfo
       , MessageBar.view model.error
       , CanvasView.view model
       , sub
       ]
+
+
+floorInfoView : Model -> Html Msg
+floorInfoView model =
+  let
+    isEditMode =
+      model.editMode /= Viewing True && model.editMode /= Viewing False
+
+    onContextmenu floorId =
+      case floorId of
+        Just id ->
+          ShowContextMenuOnFloorInfo id
+
+        Nothing ->
+          NoOp
+
+  in
+    FloorsInfoView.view
+      onContextmenu
+      MoveOnCanvas
+      HideContextMenu
+      CreateNewFloor
+      (User.isAdmin model.user)
+      isEditMode
+      model.floor.present.id
+      model.floorsInfo
 
 
 subView : Model -> Html Msg

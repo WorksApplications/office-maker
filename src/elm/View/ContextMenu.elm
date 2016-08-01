@@ -28,6 +28,13 @@ view model =
         , contextMenuItemView (FirstNameOnly [id]) "First name only" -- TODO keep multi select
         ]
 
+    FloorInfo (x, y) id ->
+      div
+        [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
+        ]
+        [ contextMenuItemView (CopyFloor id) "Copy Floor"
+        ]
+
 
 contextMenuItemView : Msg -> String -> Html Msg
 contextMenuItemView action text' =

@@ -81,6 +81,7 @@ type alias Model =
 type ContextMenu =
     NoContextMenu
   | Equipment (Int, Int) Id
+  | FloorInfo (Int, Int) Id
 
 
 type EditMode =
@@ -100,6 +101,7 @@ type DraggingContext =
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
 
+
 type Tab =
   SearchTab | EditTab
 
@@ -117,8 +119,10 @@ subscriptions model =
     , Keyboard.ups (KeyCodeMsg False)
     ]
 
+
 gridSize : Int
 gridSize = 8 -- 2^N
+
 
 init : (Int, Int) -> (Int, Int) -> (Result String URL.Model) -> Float -> (Model, Cmd Msg)
 init randomSeed initialSize urlResult visitDate =
@@ -202,6 +206,8 @@ type Msg = NoOp
   | SelectShape Equipment.Shape
   | EquipmentNameInputMsg EquipmentNameInput.Msg
   | ShowContextMenuOnEquipment Id
+  | ShowContextMenuOnFloorInfo Id
+  | HideContextMenu
   | SelectIsland Id
   | WindowSize (Int, Int)
   | MouseWheel Float
@@ -226,6 +232,7 @@ type Msg = NoOp
   | ShowDetailForEquipment Id
   | CreateNewFloor
   | EmulateClick Id Bool Time
+  | CopyFloor String
   | Error GlobalError
 
 debug : Bool
@@ -749,13 +756,20 @@ update action model =
           ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
 
     ShowContextMenuOnEquipment id ->
-      let
-        newModel =
-          { model |
-            contextMenu = Equipment model.pos id
-          }
-      in
-        newModel ! []
+      { model |
+        contextMenu = Equipment model.pos id
+      } ! []
+
+    ShowContextMenuOnFloorInfo id ->
+      { model |
+        -- contextMenu = FloorInfo model.pos id
+        contextMenu = NoContextMenu
+      } ! []
+
+    HideContextMenu ->
+      { model |
+        contextMenu = NoContextMenu
+      } ! []
 
     SelectIsland id ->
       let
@@ -1110,6 +1124,9 @@ update action model =
             else
               []
             )
+
+    CopyFloor id ->
+      model ! []
 
     Error e ->
       let
