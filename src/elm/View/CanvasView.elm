@@ -152,10 +152,10 @@ canvasView model =
     floor =
       model.floor.present
 
-    isViewing =
+    (isViewing, isPrintMode) =
       case model.editMode of
-        Viewing _ -> True
-        _ -> False
+        Viewing print -> (True, print)
+        _ -> (False, False)
 
     equipments =
       equipmentsView model
@@ -216,11 +216,16 @@ canvasView model =
       ("canvas-temporary-pen", temporaryPen') ::
       temporaryStamps'
 
+    styles =
+      if isPrintMode then
+        S.canvasViewForPrint model.windowSize rect
+      else
+        S.canvasView isViewing (transitionDisabled model) rect
+
   in
     Keyed.node
       "div"
-      [ style (S.canvasView isViewing (transitionDisabled model) rect)
-      ]
+      [ style styles ]
       ( children1 ++ children2 )
 
 

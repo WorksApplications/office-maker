@@ -58,29 +58,34 @@ mainView model =
 
 floorInfoView : Model -> Html Msg
 floorInfoView model =
-  let
-    isEditMode =
-      model.editMode /= Viewing True && model.editMode /= Viewing False
+  case model.editMode of
+    Viewing True ->
+      text ""
+      
+    _ ->
+      let
+        isEditMode =
+          model.editMode /= Viewing True && model.editMode /= Viewing False
 
-    onContextmenu floorId =
-      case floorId of
-        Just id ->
-          ShowContextMenuOnFloorInfo id
+        onContextmenu floorId =
+          case floorId of
+            Just id ->
+              ShowContextMenuOnFloorInfo id
 
-        Nothing ->
-          NoOp
+            Nothing ->
+              NoOp
 
-  in
-    FloorsInfoView.view
-      onContextmenu
-      MoveOnCanvas
-      HideContextMenu
-      CreateNewFloor
-      (model.keys.ctrl)
-      (User.isAdmin model.user)
-      isEditMode
-      model.floor.present.id
-      model.floorsInfo
+      in
+        FloorsInfoView.view
+          onContextmenu
+          MoveOnCanvas
+          HideContextMenu
+          CreateNewFloor
+          (model.keys.ctrl)
+          (User.isAdmin model.user)
+          isEditMode
+          model.floor.present.id
+          model.floorsInfo
 
 
 subView : Model -> Html Msg

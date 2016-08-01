@@ -294,6 +294,27 @@ canvasView isViewing disableTransition rect =
     transition disableTransition
 
 
+canvasViewForPrint : (Int, Int) -> (Int, Int, Int, Int) -> S
+canvasViewForPrint (windowWidth, windowHeight) (_, _, w, h) =
+  let
+    scale =
+      toString
+        ( min
+            (toFloat windowWidth / toFloat w)
+            (toFloat windowHeight / toFloat h)
+        )
+  in
+    [ ("background-color", "#fff")
+    , ("font-family", "default")
+    , ("position", "absolute")
+    , ("width", px w)
+    , ("height", px h)
+    , ("transform", "scale(" ++ scale ++ ")")
+    , ("transform-origin", "top left")
+    , ("overflow", "hidden")
+    ]
+
+
 canvasImage : S
 canvasImage =
   [ ("width", "100%")
