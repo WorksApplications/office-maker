@@ -70,17 +70,24 @@ createButton msg =
 
 view : (Maybe String -> msg) -> ((Int, Int) -> msg) -> msg -> msg -> Bool -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
 view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu isAdmin isEditMode currentFloorId floorInfoList =
-  ul
-    [ style Styles.floorsInfoView
-    , onMouseMove' onMove
-    , onClick onClickMsg
-    ]
-    ( List.filterMap (eachView onContextMenu disableContextmenu isAdmin isEditMode currentFloorId) (List.sortBy (getOrd isEditMode) floorInfoList) ++
-        if isEditMode && isAdmin then
-          [ createButton onCreateNewFloor ]
-        else
-          []
-    )
+  let
+    floorList =
+      List.filterMap
+        (eachView onContextMenu disableContextmenu isAdmin isEditMode currentFloorId)
+        (List.sortBy (getOrd isEditMode) floorInfoList)
+
+    create =
+      if isEditMode && isAdmin then
+        [ createButton onCreateNewFloor ]
+      else
+        []
+  in
+    ul
+      [ style Styles.floorsInfoView
+      , onMouseMove' onMove
+      , onClick onClickMsg
+      ]
+      ( floorList ++ create )
 
 
 getOrd : Bool -> FloorInfo -> Int

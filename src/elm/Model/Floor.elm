@@ -31,7 +31,7 @@ type ImageSource
 init : Maybe Id -> Model
 init id =
   { id = id
-  , name = "1F" -- TODO
+  , name = "New Floor"
   , ord = 0
   , equipments = []
   , width = 800
@@ -43,9 +43,22 @@ init id =
   }
 
 
+initWithOrder : Maybe Id -> Int -> Model
+initWithOrder id ord =
+  let
+    floor = init id
+  in
+    { floor |
+      ord = ord
+    }
+
+
 copy : Maybe Id -> Model -> Model
 copy id floor =
-  { floor | name = "Copy of " ++ floor.name }
+  { floor |
+    name = "Copy of " ++ floor.name
+  , public = False
+  }
 
 
 type Msg =

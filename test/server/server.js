@@ -346,6 +346,7 @@ app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
+      console.log('gotFloor: ' + id + ' ' + !!floor);
       if(floor) {
         if(floor.id.startsWith('tmp')) {
           floor.id = null;

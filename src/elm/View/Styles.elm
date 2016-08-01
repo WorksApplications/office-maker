@@ -331,7 +331,7 @@ shadow =
 card : S
 card =
   [ ("padding", "20px")
-  , ("box-shadow", "rgba(0, 0, 0, 0.08451) 0px 2px 4px inset")
+  , ("box-shadow", "rgba(0, 0, 0, 0.08451) -2px 2px 4px inset")
   ]
 
 

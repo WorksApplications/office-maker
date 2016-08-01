@@ -29,7 +29,7 @@ import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
-import Model.FloorInfo exposing (FloorInfo)
+import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.ProfilePopupLogic as ProfilePopupLogic
 
 import FloorProperty
@@ -231,8 +231,9 @@ type Msg = NoOp
   | ClosePopup
   | ShowDetailForEquipment Id
   | CreateNewFloor
-  | EmulateClick Id Bool Time
   | CopyFloor String
+  | NewFloorCreated String
+  | EmulateClick Id Bool Time
   | Error GlobalError
 
 debug : Bool
@@ -1104,21 +1105,40 @@ update action model =
       let
         (newFloorId, newSeed) =
           IdGenerator.new model.seed
-        newFloor = Floor.init (Just newFloorId)
-        cmd1 = Task.perform (always NoOp) (always NoOp) (API.saveEditingFloor newFloor)
-        cmd2 = Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+
+        lastFloorOrder =
+          case List.drop (List.length model.floorsInfo - 1) model.floorsInfo of
+            [] ->
+              0
+            x :: _ ->
+              case x of
+                FloorInfo.Public floor ->
+                  floor.ord
+                FloorInfo.PublicWithEdit publicFloor editingFloor ->
+                  editingFloor.ord
+                FloorInfo.Private floor ->
+                  floor.ord
+
+        newFloor =
+          Floor.initWithOrder (Just newFloorId) lastFloorOrder
+
+        cmd = performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
       in
-        { model | seed = newSeed } ! [ cmd1, cmd2 ]
+        { model | seed = newSeed } ! [ cmd ]
 
     CopyFloor id ->
       let
         (newFloorId, newSeed) =
           IdGenerator.new model.seed
         newFloor = Floor.copy (Just newFloorId) model.floor.present
-        cmd1 = Task.perform (always NoOp) (always NoOp) (API.saveEditingFloor newFloor)
-        cmd2 = Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+        cmd = performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
       in
-        { model | seed = newSeed } ! [ cmd1, cmd2 ]
+        { model | seed = newSeed } ! [ cmd ]
+
+    NewFloorCreated newFloorId ->
+      model !
+        [ Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+        ]
 
     EmulateClick id down time ->
       let
