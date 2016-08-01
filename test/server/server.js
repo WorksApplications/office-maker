@@ -502,8 +502,7 @@ process.on('uncaughtException', (e) => {
   console.log('uncaughtException');
   console.log(e.stack);
 });
-db.resetImage(null, 'images/floors', () => {
-  app.listen(3000, function () {
-    console.log('mock server listening on port 3000.');
-  });
+
+app.listen(3000, function () {
+  console.log('mock server listening on port 3000.');
 });

@@ -292,6 +292,8 @@ urlUpdate result model =
           case newEditMode of
             Viewing _ -> False
             _ -> not (User.isGuest model.user)
+
+        _ = Debug.log ("node test/server/commands deleteFloor " ++ newURL.floorId) ""
       in
         { model |
           url = newURL
