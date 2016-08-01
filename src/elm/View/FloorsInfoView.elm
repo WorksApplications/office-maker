@@ -33,12 +33,12 @@ linkBox contextmenuMsg liStyle aStyle url inner =
     [ a [ href url, style aStyle ] inner ]
 
 
-eachView : (Maybe String -> msg) -> Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
-eachView contextmenuMsg isEditMode currentFloorId floorInfo =
+eachView : (Maybe String -> msg) -> Bool -> Bool -> Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
+eachView contextmenuMsg disableContextmenu isAdmin isEditMode currentFloorId floorInfo =
   Maybe.map
     (\floor ->
       eachView'
-        (contextmenuMsg floor.id)
+        (if not disableContextmenu && isAdmin && isEditMode then Just (contextmenuMsg floor.id) else Nothing)
         (currentFloorId == floor.id)
         (markAsPrivate floorInfo)
         (markAsModified isEditMode floorInfo)
@@ -47,10 +47,10 @@ eachView contextmenuMsg isEditMode currentFloorId floorInfo =
     (getFloor isEditMode floorInfo)
 
 
-eachView' : msg -> Bool -> Bool -> Bool -> Floor -> Html msg
+eachView' : Maybe msg -> Bool -> Bool -> Bool -> Floor -> Html msg
 eachView' contextmenuMsg selected markAsPrivate markAsModified floor =
   linkBox
-    (Just contextmenuMsg)
+    contextmenuMsg
     (Styles.floorsInfoViewItem selected markAsPrivate)
     Styles.floorsInfoViewItemLink
     (URL.hashFromFloorId floor.id)
@@ -68,19 +68,20 @@ createButton msg =
     [ div [ onClick msg ] [ text "+"] ]
 
 
-view : (Maybe String -> msg) -> ((Int, Int) -> msg) -> msg -> msg -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
-view onContextMenu onMove onClickMsg onCreateNewFloor isAdmin isEditMode currentFloorId floorInfoList =
+view : (Maybe String -> msg) -> ((Int, Int) -> msg) -> msg -> msg -> Bool -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
+view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu isAdmin isEditMode currentFloorId floorInfoList =
   ul
     [ style Styles.floorsInfoView
     , onMouseMove' onMove
     , onClick onClickMsg
     ]
-    ( List.filterMap (eachView onContextMenu isEditMode currentFloorId) (List.sortBy (getOrd isEditMode) floorInfoList) ++
+    ( List.filterMap (eachView onContextMenu disableContextmenu isAdmin isEditMode currentFloorId) (List.sortBy (getOrd isEditMode) floorInfoList) ++
         if isEditMode && isAdmin then
           [ createButton onCreateNewFloor ]
         else
           []
     )
+
 
 getOrd : Bool -> FloorInfo -> Int
 getOrd isEditMode info =

@@ -76,6 +76,7 @@ floorInfoView model =
       MoveOnCanvas
       HideContextMenu
       CreateNewFloor
+      (model.keys.ctrl)
       (User.isAdmin model.user)
       isEditMode
       model.floor.present.id

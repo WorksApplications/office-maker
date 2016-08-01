@@ -674,9 +674,11 @@ searchResultItemInner selectable selected =
 floorsInfoView : S
 floorsInfoView =
     [ ("position", "absolute")
-    , ("display", "flex")
+    -- , ("display", "flex")
+    , ("width", "calc(100% - 300px)")
     , ("z-index", zIndex.floorInfo)
     ]
+
 
 floorsInfoViewItem : Bool -> Bool -> S
 floorsInfoViewItem selected private =
@@ -685,11 +687,14 @@ floorsInfoViewItem selected private =
     , ("border-bottom", if selected then "solid 2px " ++ selectColor else "solid 1px #d0d0d0")
     , ("border-top", if selected then "solid 2px " ++ selectColor else "none")
     , ("border-left", if selected then "solid 2px " ++ selectColor else "none")
-    , ("min-width", "60px")
+    , ("width", "72px")
     , ("box-sizing", "border-box")
-    , ("height", "37px")
+    , ("height", "30px")
     , ("position", "relative")
+    , ("font-size", "12px")
+    , ("float", "left")
     ]
+
 
 floorsInfoViewItemLink : S
 floorsInfoViewItemLink =
@@ -700,8 +705,12 @@ floorsInfoViewItemLink =
     , ("position", "absolute")
     , ("text-align", "center")
     , ("vertical-align", "middle")
-    , ("line-height", "37px")
+    , ("line-height", "30px")
+    , ("overflow", "hidden")
+    , ("white-space", "nowrap")
+    , ("text-overflow", "ellipsis")
     ]
+
 
 subViewTab : Int -> Bool -> S
 subViewTab index active =

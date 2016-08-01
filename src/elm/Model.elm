@@ -762,8 +762,12 @@ update action model =
 
     ShowContextMenuOnFloorInfo id ->
       { model |
-        -- contextMenu = FloorInfo model.pos id
-        contextMenu = NoContextMenu
+        contextMenu =
+          -- TODO idealy, change floor and show context menu
+          if model.floor.present.id == Just id then
+            FloorInfo model.pos id
+          else
+            NoContextMenu
       } ! []
 
     HideContextMenu ->
@@ -1106,6 +1110,16 @@ update action model =
       in
         { model | seed = newSeed } ! [ cmd1, cmd2 ]
 
+    CopyFloor id ->
+      let
+        (newFloorId, newSeed) =
+          IdGenerator.new model.seed
+        newFloor = Floor.copy (Just newFloorId) model.floor.present
+        cmd1 = Task.perform (always NoOp) (always NoOp) (API.saveEditingFloor newFloor)
+        cmd2 = Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+      in
+        { model | seed = newSeed } ! [ cmd1, cmd2 ]
+
     EmulateClick id down time ->
       let
         (clickEmulator, event) =
@@ -1124,9 +1138,6 @@ update action model =
             else
               []
             )
-
-    CopyFloor id ->
-      model ! []
 
     Error e ->
       let
