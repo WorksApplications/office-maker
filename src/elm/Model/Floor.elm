@@ -56,8 +56,10 @@ initWithOrder id ord =
 copy : Maybe Id -> Model -> Model
 copy id floor =
   { floor |
-    name = "Copy of " ++ floor.name
+    id = id
+  , name = "Copy of " ++ floor.name
   , public = False
+  , update = Nothing
   }
 
 

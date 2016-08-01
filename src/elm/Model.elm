@@ -1124,7 +1124,8 @@ update action model =
         newFloor =
           Floor.initWithOrder (Just newFloorId) lastFloorOrder
 
-        cmd = performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
+        cmd =
+          performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
       in
         { model | seed = newSeed } ! [ cmd ]
 
@@ -1132,10 +1133,17 @@ update action model =
       let
         (newFloorId, newSeed) =
           IdGenerator.new model.seed
-        newFloor = Floor.copy (Just newFloorId) model.floor.present
-        cmd = performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
+
+        newFloor =
+          Floor.copy (Just newFloorId) model.floor.present
+
+        cmd =
+          performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
       in
-        { model | seed = newSeed } ! [ cmd ]
+        { model |
+          seed = newSeed
+        , contextMenu = NoContextMenu
+        } ! [ cmd ]
 
     NewFloorCreated newFloorId ->
       model !
