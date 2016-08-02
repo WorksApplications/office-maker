@@ -31,6 +31,7 @@ import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.ProfilePopupLogic as ProfilePopupLogic
+import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
 import FloorProperty
 import SearchBox
@@ -54,7 +55,7 @@ type alias Model =
   , selectorRect : Maybe (Int, Int, Int, Int)
   , keys : ShortCut.Model
   , editMode : EditMode
-  , colorPalette : List String
+  , colorPalette : ColorPalette
   , contextMenu : ContextMenu
   , floor : UndoRedo.Model Floor Commit
   , floorsInfo : List FloorInfo
@@ -142,7 +143,7 @@ init randomSeed initialSize urlResult visitDate =
       , selectorRect = Nothing
       , keys = ShortCut.init
       , editMode = if url.editMode then Select else Viewing False
-      , colorPalette = []
+      , colorPalette = ColorPalette.init []
       , contextMenu = NoContextMenu
       , floorsInfo = []
       , floor = UndoRedo.init { data = initialFloor, update = Floor.update }
@@ -188,7 +189,7 @@ type Msg = NoOp
   | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded Floor
   | DraftFloorLoaded (Maybe Floor)
-  | ColorsLoaded (List String)
+  | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
   | FloorSaved Bool
   | MoveOnCanvas (Int, Int)
@@ -359,14 +360,19 @@ update action model =
           , loadFloorCmd'
           , loadSettingsCmd
           ]
-    ColorsLoaded colors ->
-      { model | colorPalette = colors } ! []
+
+    ColorsLoaded colorPalette ->
+      { model | colorPalette = colorPalette } ! []
+
     PrototypesLoaded prototypeList ->
       { model | prototypes = Prototypes.init prototypeList } ! []
+
     FloorsInfoLoaded floors ->
       { model | floorsInfo = floors } ! []
+
     FloorLoaded floor ->
       updateOnFloorLoaded floor model
+
     DraftFloorLoaded maybeFloor ->
       case maybeFloor of
         Just floor ->

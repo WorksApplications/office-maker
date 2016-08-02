@@ -16,26 +16,40 @@ import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
 import Model.FloorInfo exposing (FloorInfo)
+import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
 type alias Floor = Floor.Model
 
-noResponse : Decoder ()
-noResponse = Decode.succeed ()
 
-decodeColors : Decoder (List String)
-decodeColors = Decode.list Decode.string
+noResponse : Decoder ()
+noResponse =
+  Decode.succeed ()
+
+
+decodeColors : Decoder ColorPalette
+decodeColors =
+  Decode.map ColorPalette.init (Decode.list Decode.string)
+
 
 decodePrototypes : Decoder (List Prototype)
-decodePrototypes = Decode.list decodePrototype
+decodePrototypes =
+  Decode.list decodePrototype
+
 
 decodeFloors : Decoder (List Floor)
-decodeFloors = Decode.list decodeFloor
+decodeFloors =
+  Decode.list decodeFloor
+
 
 decodeFloorInfoList : Decoder (List FloorInfo)
-decodeFloorInfoList = Decode.list decodeFloorInfo
+decodeFloorInfoList =
+  Decode.list decodeFloorInfo
+
 
 decodePersons : Decoder (List Person)
-decodePersons = Decode.list decodePerson
+decodePersons =
+  Decode.list decodePerson
+
 
 encodeEquipment : Equipment -> Value
 encodeEquipment e =
@@ -106,19 +120,19 @@ encodeFloor floor =
 
 encodeLogin : String -> String -> Value
 encodeLogin id pass =
-    object [ ("id", Encode.string id), ("pass", Encode.string pass) ]
+  object [ ("id", Encode.string id), ("pass", Encode.string pass) ]
 
 decodeUser : Decoder User
 decodeUser =
   oneOf
-  [ object2
-      (\role person ->
-        if role == "admin" then User.admin person else User.general person
-      )
-      ("role" := Decode.string)
-      ("person" := decodePerson)
-  , Decode.succeed User.guest
-  ]
+    [ object2
+        (\role person ->
+          if role == "admin" then User.admin person else User.general person
+        )
+        ("role" := Decode.string)
+        ("person" := decodePerson)
+    , Decode.succeed User.guest
+    ]
 
 
 decodePerson : Decoder Person
@@ -133,7 +147,6 @@ decodePerson =
     |> optional' "mail" Decode.string
     |> optional' "tel" Decode.string
     |> optional' "image" Decode.string
-
 
 
  -- TODO andThen
@@ -206,6 +219,7 @@ decodeFloor =
     |> optional' "updateBy" Decode.string
     |> optional' "updateAt" Decode.float
 
+
 decodeFloorInfo : Decoder FloorInfo
 decodeFloorInfo = Decode.map (\(lastFloor, lastFloorWithEdit) ->
   if lastFloorWithEdit.public then
@@ -216,6 +230,7 @@ decodeFloorInfo = Decode.map (\(lastFloor, lastFloorWithEdit) ->
     FloorInfo.Private lastFloorWithEdit
   ) (Decode.tuple2 (,) decodeFloor decodeFloor)
 
+
 decodePrototype : Decoder Prototype
 decodePrototype =
   decode
@@ -225,6 +240,7 @@ decodePrototype =
     |> required "name" Decode.string
     |> required "width" Decode.int
     |> required "height" Decode.int
+
 
 encodePrototype : Prototype -> Value
 encodePrototype (id, color, name, (width, height)) =

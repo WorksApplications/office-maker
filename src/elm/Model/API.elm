@@ -39,6 +39,7 @@ import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
 import Model.Serialization exposing (..)
 import Model.SearchResult exposing (SearchResult)
+import Model.ColorPalette exposing (ColorPalette)
 
 type alias Floor = Floor.Model
 
@@ -91,7 +92,7 @@ savePrototypes prototypes =
     (Http.string <| serializePrototypes prototypes)
 
 
-getColors : Task Error (List String)
+getColors : Task Error ColorPalette
 getColors =
     getJsonWithoutCache
       decodeColors

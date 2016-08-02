@@ -44,7 +44,7 @@ backgroundColorView model =
   paletteView
     SelectBackgroundColor
     (backgroundColorProperty (selectedEquipments model))
-    model.colorPalette
+    model.colorPalette.backgroundColors
 
 
 colorView : Model -> Html Msg
@@ -52,11 +52,11 @@ colorView model =
   paletteView
     SelectColor
     (colorProperty (selectedEquipments model))
-    model.colorPalette
+    model.colorPalette.textColors
 
 
 paletteView : (String -> Msg) -> Maybe String -> List String -> Html Msg
-paletteView toMsg selectedColor colorPalette =
+paletteView toMsg selectedColor colors =
   let
     match color =
       case selectedColor of
@@ -65,7 +65,7 @@ paletteView toMsg selectedColor colorPalette =
   in
     ul
       [ style S.colorProperties ]
-      (List.map (paletteViewEach toMsg match) colorPalette)
+      (List.map (paletteViewEach toMsg match) colors)
 
 
 paletteViewEach : (String -> Msg) -> (String -> Bool) -> String -> Html Msg
