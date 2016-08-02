@@ -53,7 +53,7 @@ viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha sc
     viewInternal selected eventOptions styles nameView personMatchIcon
 
 
-viewLabel : EventOptions msg -> (Int, Int, Int, Int) -> String ->  String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale.Model -> Bool -> Html msg
+viewLabel : EventOptions msg -> (Int, Int, Int, Int) -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale.Model -> Bool -> Html msg
 viewLabel eventOptions rect backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale disableTransition =
   let
     screenRect =
@@ -141,11 +141,10 @@ equipmentLabelView color fontSize scale disableTransition screenRect name =
     styles =
       S.nameLabel
         color
-        height
-        (List.length (String.lines trimed))
-        (ratio * fontSize)
+        ratio
+        fontSize
         disableTransition  --TODO
   in
-    pre
+    div
       [ style styles ]
       [ text trimed ]

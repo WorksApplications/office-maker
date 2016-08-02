@@ -1,6 +1,5 @@
 module EquipmentNameInput exposing (..)
 
-import String
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -21,6 +20,7 @@ type alias Model =
   , shift : Bool
   , candidateIndex : Int
   }
+
 type alias Id = String
 
 init : Model
@@ -46,15 +46,18 @@ type Event =
   | OnUnsetPerson Id
   | None
 
+
 isEditing : Model -> Bool
 isEditing model =
   model.editingEquipment /= Nothing
+
 
 update : Msg -> Model -> (Model, Event)
 update message model =
   case message of
     NoOp ->
       (model, None)
+
     InputName id name ->
       case model.editingEquipment of
         Just (id', name') ->
@@ -70,6 +73,7 @@ update message model =
             ({ model |
               editingEquipment = Nothing
             }, None)
+
     KeyupOnNameInput keyCode ->
       if keyCode == 16 then
         ({ model | shift = False }, None)
@@ -77,10 +81,11 @@ update message model =
         ({ model | ctrl = False }, None)
       else
         (model, None)
+
     KeydownOnNameInput candidates (keyCode, selectionStart) ->
       let
         (newModel, event) =
-          if keyCode == 13 && not model.ctrl then
+          if keyCode == 13 then
             case model.editingEquipment of
               Just (id, name) ->
                 ( updateNewEdit Nothing model
@@ -88,17 +93,6 @@ update message model =
                 )
               Nothing ->
                 (model, None)
-          else if keyCode == 13 then
-            let
-              newModel =
-                { model |
-                  editingEquipment =
-                    case model.editingEquipment of
-                      Just (id, name) -> Just (id, breakLineAt selectionStart name)
-                      Nothing -> Nothing
-                }
-            in
-              (newModel, None)
           else if keyCode == 16 then
             ({ model | shift = True }, None)
           else if keyCode == 17 then
@@ -119,17 +113,14 @@ update message model =
               candidateIndex = -1
             }
         , event )
+
     SelectCandidate equipmentId personId ->
       ( { model | editingEquipment = Nothing }
       , OnSelectCandidate equipmentId personId
       )
+
     UnsetPerson equipmentId ->
       ( model, OnUnsetPerson equipmentId )
-
-
-breakLineAt : Int -> String -> String
-breakLineAt at s =
-  String.left at s ++ "\n" ++ String.right (String.length s - at) s
 
 
 selectedCandidateId : Int -> List Person -> Maybe Id
@@ -145,16 +136,21 @@ updateNewEdit : (Maybe (String, String)) -> Model -> Model
 updateNewEdit editingEquipment model =
   { model | editingEquipment = editingEquipment }
 
+
 start : (String, String) -> Model -> Model
-start = updateNewEdit << Just
+start =
+  updateNewEdit << Just
+
 
 forceFinish : Model -> (Model, Maybe (Id, String))
 forceFinish model =
   case model.editingEquipment of
     Just (id, name) ->
       (updateNewEdit Nothing model, Just (id, name))
+
     Nothing ->
       (model, Nothing)
+
 
 view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> Model -> Html Msg
 view deskInfoOf transitionDisabled candidates model =
@@ -163,44 +159,54 @@ view deskInfoOf transitionDisabled candidates model =
       case deskInfoOf id of
         Just (screenRect, maybePerson) ->
           view' id name maybePerson screenRect transitionDisabled candidates model
+
         Nothing -> text ""
+
     Nothing ->
       text ""
+
 
 view' : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> Model -> Html Msg
 view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
   let
     candidates' =
       List.filter (\candidate -> Just candidate /= maybePerson) (List.take 15 candidates)
+
     (relatedPersonExists, reletedpersonView') =
       case maybePerson of
         Just person ->
           (True, reletedpersonView id person)
         Nothing ->
           (False, text "")
-    candidatesLength = List.length candidates'
-    viewExists = relatedPersonExists || candidatesLength > 0
+
+    candidatesLength =
+      List.length candidates'
+
+    viewExists =
+      relatedPersonExists || candidatesLength > 0
+
     pointer =
       if viewExists then
         div [ style (Styles.candidateViewPointer screenRectOfDesk) ] []
       else
         text ""
   in
-    div
+    -- this is a workaround for unexpectedly remaining input.defaultValue
+    Keyed.node "div"
       [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
       , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
       ]
-      [ textarea
+      [ ("nameInput" ++ id, input
         ([ Html.Attributes.id "name-input"
         , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
         ] ++ (inputAttributes (InputName id) (KeydownOnNameInput candidates') KeyupOnNameInput name))
-        [ text name ]
-      , div
+        [ ])
+      , ("candidatesViewContainer", div
           [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
           [ reletedpersonView'
           , candidatesView model.candidateIndex id candidates'
-          ]
-      , pointer
+          ])
+      , ("pointer", pointer)
       ]
 
 
@@ -258,7 +264,8 @@ mail person =
 inputAttributes : (String -> msg) -> ((Int, Int) -> msg) -> (Int -> msg) -> String -> List (Attribute msg)
 inputAttributes toInputMsg toKeydownMsg toKeyupMsg value' =
   [ onInput' toInputMsg
+  -- , autofocus True
   , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map toKeydownMsg decodeKeyCodeAndSelectionStart)
   , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map toKeyupMsg decodeKeyCode)
-  , value value'
+  , defaultValue value'
   ]

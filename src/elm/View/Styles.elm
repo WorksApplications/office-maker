@@ -2,6 +2,7 @@ module View.Styles exposing (..)
 
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Util.StyleUtil exposing (..)
+import String
 
 type alias S = List (String, String)
 
@@ -130,7 +131,7 @@ deskInput rect =
 
 nameInputTextArea : Bool -> (Int, Int, Int, Int) -> S
 nameInputTextArea transitionDisabled screenRect =
-  deskInput screenRect ++ transition transitionDisabled
+  deskInput screenRect ++ transition ["left"] transitionDisabled
 
 
 deskObject : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
@@ -147,7 +148,7 @@ deskObject rect backgroundColor selected isGhost disableTransition =
   , ("border-left-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
   , ("border-bottom-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
   , ("border-right-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
-  ] ++ transition disableTransition
+  ] ++ transition ["width", "height", "top", "left"] disableTransition
 
 
 labelObject : Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> S
@@ -168,7 +169,7 @@ labelObject isEllipse rect backgroundColor fontColor selected isGhost rectVisibl
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
   , ("border-radius", if isEllipse  then "50%" else "")
-  ] ++ transition disableTransition
+  ] ++ transition ["width", "height", "top", "left"] disableTransition
 
 
 deskResizeGrip : Bool -> S
@@ -192,12 +193,12 @@ deskResizeGrip selected =
 
 
 selectorRect : Bool -> (Int, Int, Int, Int) -> S
-selectorRect transitionDisabled rect =
+selectorRect disableTransition rect =
   (absoluteRect rect) ++ [("z-index", zIndex.selectorRect)
   , ("border-style", "solid")
   , ("border-width", "2px")
   , ("border-color", selectColor)
-  ] ++ transition transitionDisabled
+  ] ++ transition ["width", "height", "top", "left"] disableTransition
 
 
 colorProperties : S
@@ -291,7 +292,7 @@ canvasView isViewing disableTransition rect =
     -- , ("transition-duration", "0.2s")
     ] ++
     (if isViewing then [("overflow", "hidden")] else []) ++
-    transition disableTransition
+    transition ["width", "height", "top", "left"] disableTransition
 
 
 canvasViewForPrint : (Int, Int) -> (Int, Int, Int, Int) -> S
@@ -330,18 +331,18 @@ canvasContainer printMode =
   ]
 
 
-nameLabel : String -> Int -> Int -> number -> Bool -> S
-nameLabel color height lineCount fontSize disableTransition =
+nameLabel : String -> Float -> number -> Bool -> S
+nameLabel color scale fontSize disableTransition =
   [ ("color", color)
-  , ("display", "table-cell")
-  , ("vertical-align", "middle")
   , ("text-align", "center")
   , ("position", "absolute")
   , ("cursor", "default")
   , ("font-size", px fontSize)
   , ("width", "100%")
-  , ("line-height", px (height // lineCount))
-  ] ++ transition disableTransition ++ noMargin
+  , ("word-wrap", "break-word")
+  , ("top", "50%")
+  , ("transform", "translateY(-50%) scale(" ++ toString scale ++ ")")
+  ] ++ transition ["transform"] disableTransition ++ noMargin
 
 
 shadow : S
@@ -356,10 +357,10 @@ card =
   ]
 
 
-transition : Bool -> S
-transition disabled =
+transition : List String -> Bool -> S
+transition properties disabled =
   if disabled then [] else
-    [ ("transition-property", "width, height, top, left")
+    [ ("transition-property", String.join ", " properties)
     , ("transition-duration", "0.2s")
     ]
 
@@ -750,20 +751,25 @@ subViewTab index active =
     , ("box-sizing", "border-box")
     ]
 
+
 personMatchingInfo : S
 personMatchingInfo =
     [ ("border-radius", "10px")
     , ("width", "20px")
     , ("height", "20px")
+    , ("position", "absolute")
     ]
+
 
 personMatched : S
 personMatched =
     personMatchingInfo ++ [ ("background-color", "#6a6") ]
 
+
 personNotMatched : S
 personNotMatched =
     personMatchingInfo ++ [ ("background-color", "#ccc") ]
+
 
 popup : Int -> S
 popup padding =
@@ -773,13 +779,16 @@ popup padding =
     , ("position", "absolute")
     ]
 
+
 defaultPopup : S
 defaultPopup =
   popup 20
 
+
 smallPopup : S
 smallPopup =
   popup 10
+
 
 modalBackground : S
 modalBackground =
@@ -792,6 +801,7 @@ modalBackground =
     , ("z-index", zIndex.modalBackground)
     ]
 
+
 diffPopup : S
 diffPopup =
   defaultPopup ++
@@ -800,6 +810,7 @@ diffPopup =
     , ("top", "10%")
     , ("bottom", "10%")
     ] ++ shadow
+
 
 diffPopupHeader : S
 diffPopupHeader =
@@ -811,6 +822,7 @@ diffPopupHeader =
   , ("left", "0")
   ]
 
+
 diffPopupBody : S
 diffPopupBody =
   [ ("overflow-y", "scroll")
@@ -821,6 +833,7 @@ diffPopupBody =
   , ("left", "0")
   ]
 
+
 diffPopupFooter : S
 diffPopupFooter =
   [ ("bottom", "0")
@@ -829,13 +842,16 @@ diffPopupFooter =
   , ("left", "0")
   ] ++ flex
 
+
 diffPopupCancelButton : S
 diffPopupCancelButton =
   defaultButton
 
+
 diffPopupConfirmButton : S
 diffPopupConfirmButton =
   primaryButton ++ [ ("margin-left", "20px") ]
+
 
 diffPopupInnerContainer : S
 diffPopupInnerContainer =
