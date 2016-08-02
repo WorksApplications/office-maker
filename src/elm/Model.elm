@@ -13,7 +13,7 @@ import Navigation
 import Http
 import Time exposing (Time)
 
-import Util.UndoRedo as UndoRedo
+import Util.UndoList as UndoList exposing (UndoList)
 import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -32,6 +32,7 @@ import Model.URL as URL
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
+import Model.EditingFloor as EditingFloor
 
 import FloorProperty
 import SearchBox
@@ -57,7 +58,7 @@ type alias Model =
   , editMode : EditMode
   , colorPalette : ColorPalette
   , contextMenu : ContextMenu
-  , floor : UndoRedo.Model Floor Commit
+  , floor : UndoList Floor
   , floorsInfo : List FloorInfo
   , windowSize : (Int, Int)
   , scale : Scale.Model
@@ -146,7 +147,7 @@ init randomSeed initialSize urlResult visitDate =
       , colorPalette = ColorPalette.init []
       , contextMenu = NoContextMenu
       , floorsInfo = []
-      , floor = UndoRedo.init { data = initialFloor, update = Floor.update }
+      , floor = UndoList.init initialFloor
       , windowSize = initialSize
       , scale = Scale.init
       , offset = (35, 35)
@@ -324,21 +325,26 @@ update action model =
   case debugMsg action of
     NoOp ->
       model ! []
+
     AuthLoaded user ->
       let
         requestPrivateFloors =
           case model.editMode of
             Viewing _ -> False
             _ -> not (User.isGuest user)
+
         floorId =
           model.url.floorId
+
         forEdit =
           not (User.isGuest user)
+
         loadFloorCmd' =
           if String.length floorId == 36 then
             loadFloorCmd forEdit (Just floorId)
           else
             loadDraftFloor user
+
         loadSettingsCmd =
           if User.isGuest user then
             Cmd.none
@@ -377,14 +383,15 @@ update action model =
       case maybeFloor of
         Just floor ->
           updateOnFloorLoaded floor model
+
         Nothing ->
           if not (User.isGuest model.user) then
             let
-              draftFloor = Floor.init Nothing
-              floor = UndoRedo.init { data = draftFloor, update = Floor.update }
+              floor =
+                UndoList.init (Floor.init Nothing)
             in
               { model | floor = floor }
-              ! [ saveFloorCmd draftFloor ]
+              ! [ saveFloorCmd floor.present ]
           else
             model ! []
 
@@ -402,7 +409,9 @@ update action model =
                     id
                   Nothing ->
                     Debug.crash "new id not found."
-              message = Success ("Successfully published " ++ model.floor.present.name)
+
+              message =
+                Success ("Successfully published " ++ model.floor.present.name)
             in
               message !
                 [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
@@ -410,9 +419,13 @@ update action model =
                 ]
           else
             model.error ! []
+
+        -- does not need to save
+        (newFloor, _) =
+          EditingFloor.commit saveFloorCmd (Floor.onSaved isPublish) model.floor
       in
         { model |
-          floor = UndoRedo.commit (Floor.onSaved isPublish) model.floor
+          floor = newFloor
         , error = message
         } ! [ cmd ]
 
@@ -471,6 +484,7 @@ update action model =
               case ev of
                 Just (id, name) ->
                   updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
+                  
                 Nothing ->
                   { model | equipmentNameInput = equipmentNameInput } ! []
           else
@@ -516,13 +530,8 @@ update action model =
           -- TODO refactor to dedupe
           case model.draggingContext of
             MoveEquipment id (x, y) ->
-              let
-                newModel =
-                  updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
-                cmd =
-                  saveFloorCmd newModel.floor.present
-              in
-                newModel ! [ cmd ]
+              updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
+
             Selector ->
               { model |
                 selectorRect =
@@ -537,13 +546,18 @@ update action model =
                         Just (x, y, w, h)
                     _ -> model.selectorRect
               } ! []
+
             StampFromScreenPos _ ->
               updateOnFinishStamp model
+
             PenFromScreenPos pos ->
               updateOnFinishPen pos model
+
             ResizeFromScreenPos id pos ->
               updateOnFinishResize id pos model
-            _ -> model ! []
+
+            _ ->
+              model ! []
       in
         { model' |
           draggingContext = None
@@ -557,13 +571,8 @@ update action model =
         (model', cmd) =
           case model.draggingContext of
             MoveEquipment id (x, y) ->
-              let
-                newModel =
-                  updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
-                cmd =
-                  saveFloorCmd newModel.floor.present
-              in
-                newModel ! [ cmd ]
+              updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
+
             Selector ->
               { model |
                 selectorRect =
@@ -578,12 +587,16 @@ update action model =
                         Just (x, y, w, h)
                     _ -> model.selectorRect
               } ! []
+
             StampFromScreenPos _ ->
               updateOnFinishStamp model
+
             PenFromScreenPos pos ->
               updateOnFinishPen pos model
+
             ResizeFromScreenPos id pos ->
               updateOnFinishResize id pos model
+
             _ -> model ! []
 
         newModel =
@@ -691,41 +704,36 @@ update action model =
 
     SelectBackgroundColor color ->
       let
-        newModel =
-          { model |
-            floor = UndoRedo.commit (Floor.changeEquipmentBackgroundColor model.selectedEquipments color) model.floor
-          }
-        cmd =
-          saveFloorCmd newModel.floor.present
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.changeEquipmentBackgroundColor model.selectedEquipments color) model.floor
       in
-        newModel ! [ cmd ]
+        { model |
+          floor = newFloor
+        } ! [ saveCmd ]
 
     SelectColor color ->
       let
-        newModel =
-          { model |
-            floor = UndoRedo.commit (Floor.changeEquipmentColor model.selectedEquipments color) model.floor
-          }
-        cmd =
-          saveFloorCmd newModel.floor.present
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.changeEquipmentColor model.selectedEquipments color) model.floor
       in
-        newModel ! [ cmd ]
+        { model |
+          floor = newFloor
+        } ! [ saveCmd ]
 
     SelectShape shape ->
       let
-        newModel =
-          { model |
-            floor = UndoRedo.commit (Floor.changeEquipmentShape model.selectedEquipments shape) model.floor
-          }
-        cmd =
-          saveFloorCmd newModel.floor.present
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.changeEquipmentShape model.selectedEquipments shape) model.floor
       in
-        newModel ! [ cmd ]
+        { model |
+          floor = newFloor
+        } ! [ saveCmd ]
 
     EquipmentNameInputMsg message ->
       let
         (equipmentNameInput, event) =
           EquipmentNameInput.update message model.equipmentNameInput
+
         model' =
           { model |
             equipmentNameInput = equipmentNameInput
@@ -734,25 +742,27 @@ update action model =
         case event of
           EquipmentNameInput.OnInput id name ->
             model' ! [ requestCandidate id name ]
+
           EquipmentNameInput.OnFinish equipmentId name candidateId ->
             case candidateId of
               Just personId ->
                 updateOnSelectCandidate equipmentId personId model'
+
               Nothing ->
                 updateOnFinishNameInput True equipmentId name model'
+
           EquipmentNameInput.OnSelectCandidate equipmentId personId ->
             updateOnSelectCandidate equipmentId personId model'
+
           EquipmentNameInput.OnUnsetPerson equipmentId ->
             let
-              newFloor =
-                UndoRedo.commit (Floor.unsetPerson equipmentId) model.floor
-              newModel =
-                { model' |
-                  floor = newFloor
-                }
-              cmd = saveFloorCmd newModel.floor.present
+              (newFloor, saveCmd) =
+                EditingFloor.commit saveFloorCmd (Floor.unsetPerson equipmentId) model.floor
             in
-              newModel ! [cmd]
+              { model' |
+                floor = newFloor
+              } ! [ saveCmd ]
+
           EquipmentNameInput.None ->
             model' ! []
 
@@ -760,6 +770,7 @@ update action model =
       case model.candidateRequest of
         Waiting _ ->
           { model | candidateRequest = Waiting (Just (id, name)) } ! []
+
         NotWaiting ->
           { model | candidateRequest = Waiting Nothing }
           ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
@@ -906,34 +917,29 @@ update action model =
 
     Rotate id ->
       let
-        newFloor =
-          UndoRedo.commit (Floor.rotateEquipment id) model.floor
-
-        newModel =
-          { model |
-            floor =  newFloor
-          , contextMenu = NoContextMenu
-          }
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.rotateEquipment id) model.floor
       in
-        newModel ! []
+        { model |
+          floor = newFloor
+        , contextMenu = NoContextMenu
+        } ! [ saveCmd ]
 
     FirstNameOnly ids ->
       let
-        newFloor =
-          UndoRedo.commit (Floor.toFirstNameOnly ids) model.floor
-
-        newModel =
-          { model |
-            floor =  newFloor
-          , contextMenu = NoContextMenu
-          }
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.toFirstNameOnly ids) model.floor
       in
-        newModel ! []
+        { model |
+          floor = newFloor
+        , contextMenu = NoContextMenu
+        } ! [ saveCmd ]
 
     HeaderMsg action ->
       let
         (cmd, event) =
           Header.update action
+
         (newModel, cmd2) =
           case event of
             Header.LogoutDone ->
@@ -942,6 +948,7 @@ update action model =
               , tab = SearchTab
               , editMode = Viewing False
               } ! []
+
             Header.OnToggleEditing ->
               let
                 nextIsEditing =
@@ -954,6 +961,7 @@ update action model =
                       URL.stringify <|
                         URL.updateEditMode nextIsEditing model.url
                   ]
+
             Header.OnTogglePrintView opened ->
               { model |
                 editMode =
@@ -964,6 +972,7 @@ update action model =
                   else
                     Viewing False
               } ! []
+
             Header.None ->
               model ! []
       in
@@ -1025,22 +1034,19 @@ update action model =
 
     UpdatePersonCandidate equipmentId personIds ->
       let
-        newFloor =
+        (newFloor, saveCmd) =
           case personIds of
             head :: _ :: _ ->
-              UndoRedo.commit
+              EditingFloor.commit
+                saveFloorCmd
                 (Floor.setPerson equipmentId head)
                 model.floor
             _ ->
-              model.floor
-
-        newModel =
-          { model |
-            floor = newFloor
-          }
-        cmd = saveFloorCmd newModel.floor.present
+              model.floor ! []
       in
-        newModel ! [ cmd ]
+        { model |
+          floor = newFloor
+        } ! [ saveCmd ]
 
     GotDiffSource diffSource ->
       { model | diff = Just diffSource } ! []
@@ -1052,17 +1058,20 @@ update action model =
       let
         floor =
           model.floor.present
+
         (cmd, newSeed, newFloor) =
           if floor.id == Nothing then
             let
               (newFloorId, newSeed) =
                 IdGenerator.new model.seed
-              newFloor =
-                UndoRedo.commit
+
+              (newFloor, saveCmd) =
+                EditingFloor.commit
+                  publishFloorCmd
                   (Floor.changeId newFloorId)
                   model.floor
             in
-              ( publishFloorCmd newFloor.present
+              ( saveCmd
               , newSeed
               , newFloor
               )
@@ -1274,13 +1283,12 @@ updateOnSelectCandidate equipmentId personId model =
   case Dict.get personId model.personInfo of
     Just person ->
       let
-        newFloor =
-          UndoRedo.commit
-          (Floor.setPerson equipmentId personId)
-          model.floor
+        (newFloor, cmd) =
+          EditingFloor.commit
+            saveFloorCmd
+            (Floor.setPerson equipmentId personId)
+            model.floor
 
-        cmd =
-          saveFloorCmd newFloor.present
         (newModel, cmd2) =
           updateOnFinishNameInput True equipmentId person.name
             { model |
@@ -1288,12 +1296,15 @@ updateOnSelectCandidate equipmentId personId model =
             }
       in
         newModel ! [ cmd, cmd2 ]
+
     Nothing ->
       model ! [] -- maybe never happen
+
 
 requestCandidate : Id -> String -> Cmd Msg
 requestCandidate id name =
   Task.perform identity identity <| Task.succeed (RequestCandidate id name)
+
 
 emulateClick : String -> Bool -> Cmd Msg
 emulateClick id down =
@@ -1318,11 +1329,11 @@ updateOnFinishStamp model =
         (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
         candidatesWithNewIds
 
-    newFloor =
-      UndoRedo.commit (Floor.createDesk candidatesWithNewIds') model.floor
-
-    cmd =
-      saveFloorCmd newFloor.present
+    (newFloor, cmd) =
+      EditingFloor.commit
+        saveFloorCmd
+        (Floor.createDesk candidatesWithNewIds')
+        model.floor
   in
     { model |
       seed = newSeed
@@ -1341,13 +1352,17 @@ updateOnFinishPen (x, y) model =
             (newId, newSeed) =
               IdGenerator.new model.seed
 
-            newFloor =
-              UndoRedo.commit (Floor.createDesk [(newId, (left, top, width, height), color, name)]) model.floor
+            (newFloor, cmd) =
+              EditingFloor.commit
+                saveFloorCmd
+                (Floor.createDesk [(newId, (left, top, width, height), color, name)])
+                model.floor
           in
             ( newFloor
             , newSeed
-            , saveFloorCmd newFloor.present
+            , cmd
             )
+
         Nothing ->
           (model.floor, model.seed, Cmd.none)
   in
@@ -1365,19 +1380,18 @@ updateOnFinishResize id (x, y) model =
         (newFloor, cmd) =
           case temporaryResizeRect model (x, y) (rect e) of
             Just (_, _, width, height) ->
-              let
-                newFloor =
-                  UndoRedo.commit (Floor.resizeEquipment id (width, height)) model.floor
-              in
-                ( newFloor
-                , saveFloorCmd newFloor.present
-                )
+              EditingFloor.commit
+                saveFloorCmd
+                (Floor.resizeEquipment id (width, height))
+                model.floor
+
             Nothing ->
-              (model.floor,  Cmd.none)
+              model.floor ! []
       in
-        ({ model | floor = newFloor }, cmd)
+        { model | floor = newFloor } ! [ cmd ]
+
     Nothing ->
-      (model, Cmd.none)
+      model ! []
 
 
 updateOnFinishLabel : Model -> (Model, Cmd Msg)
@@ -1401,8 +1415,11 @@ updateOnFinishLabel model =
     (newId, newSeed) =
       IdGenerator.new model.seed
 
-    newFloor =
-      UndoRedo.commit (Floor.createLabel [(newId, (left, top, width, height), bgColor, name, fontSize, color)]) model.floor
+    (newFloor, saveCmd) =
+      EditingFloor.commit
+        saveFloorCmd
+        (Floor.createLabel [(newId, (left, top, width, height), bgColor, name, fontSize, color)])
+        model.floor
 
     model' =
       { model |
@@ -1410,9 +1427,6 @@ updateOnFinishLabel model =
       , editMode = Select
       , floor = newFloor
       }
-
-    saveCmd =
-      saveFloorCmd newFloor.present
   in
     case findEquipmentById model'.floor.present.equipments newId of
       Just e ->
@@ -1421,6 +1435,7 @@ updateOnFinishLabel model =
             startEditAndFocus e model'
         in
           newModel ! [ saveCmd, cmd ]
+
       Nothing ->
         model' ! [ saveCmd ]
 
@@ -1430,11 +1445,13 @@ updateOnFloorLoaded floor model =
   let
     (realWidth, realHeight) =
       Floor.realSize floor
+
     newModel =
       { model |
-        floor = UndoRedo.init { data = floor, update = Floor.update }
+        floor = UndoList.init floor
       , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
       }
+
     cmd =
       case floor.update of
         Nothing -> Cmd.none
@@ -1452,51 +1469,62 @@ updateOnFloorLoaded floor model =
     newModel ! [ cmd ]
 
 
-updateFloorByFloorPropertyEvent : FloorProperty.Event -> Seed -> UndoRedo.Model Floor Commit -> ((UndoRedo.Model Floor Commit, Seed), Cmd Msg)
+updateFloorByFloorPropertyEvent : FloorProperty.Event -> Seed -> UndoList Floor -> ((UndoList Floor, Seed), Cmd Msg)
 updateFloorByFloorPropertyEvent event seed floor =
     case event of
       FloorProperty.None ->
         (floor, seed) ! []
+
       FloorProperty.OnNameChange name ->
         let
-          newFloor =
-            UndoRedo.commit (Floor.changeName name) floor
-          cmd =
-            saveFloorCmd newFloor.present
+          (newFloor, saveCmd) =
+            EditingFloor.commit
+              saveFloorCmd
+              (Floor.changeName name)
+              floor
         in
-          (newFloor, seed) ! [ cmd ]
+          (newFloor, seed) ! [ saveCmd ]
+
       FloorProperty.OnOrdChange ord ->
         let
-          newFloor =
-            UndoRedo.commit (Floor.changeOrd ord) floor
-          cmd =
-            saveFloorCmd newFloor.present
+          (newFloor, saveCmd) =
+            EditingFloor.commit
+              saveFloorCmd
+              (Floor.changeOrd ord)
+              floor
         in
-          (newFloor, seed) ! [ cmd ]
+          (newFloor, seed) ! [ saveCmd ]
+
       FloorProperty.OnRealSizeChange (w, h) ->
         let
-          newFloor =
-            UndoRedo.commit (Floor.changeRealSize (w, h)) floor
-          cmd =
-            saveFloorCmd newFloor.present
+          (newFloor, saveCmd) =
+            EditingFloor.commit
+              saveFloorCmd
+              (Floor.changeRealSize (w, h))
+              floor
         in
-          (newFloor, seed) ! [ cmd ]
+          (newFloor, seed) ! [ saveCmd ]
+
       FloorProperty.OnFileWithDataURL file dataURL ->
         let
           (id, newSeed) =
             IdGenerator.new seed
-          newFloor =
-            UndoRedo.commit (Floor.setLocalFile id file dataURL) floor
-          cmd =
-            saveFloorCmd newFloor.present
+
+          (newFloor, saveCmd) =
+            EditingFloor.commit
+              saveFloorCmd
+              (Floor.setLocalFile id file dataURL)
+              floor
         in
-          (newFloor, newSeed) ! [ cmd ]
+          (newFloor, newSeed) ! [ saveCmd ]
+
       FloorProperty.OnPreparePublish ->
         let
           cmd =
             performAPI GotDiffSource (API.getDiffSource floor.present.id)
         in
           (floor, seed) ! [ cmd ]
+
       FloorProperty.OnFileLoadFailed err ->
         let
           cmd =
@@ -1580,11 +1608,11 @@ updateOnFinishNameInput continueEditing id name model =
         Nothing ->
           []
 
-    newFloor =  --TODO if name really changed
-      UndoRedo.commit (Floor.changeEquipmentName [id] name) model.floor
-
-    cmd2 =
-      saveFloorCmd newFloor.present
+    (newFloor, saveCmd) =
+      EditingFloor.commit
+        saveFloorCmd
+        (Floor.changeEquipmentName [id] name)
+        model.floor
 
     newModel =
       { model |
@@ -1594,7 +1622,7 @@ updateOnFinishNameInput continueEditing id name model =
       , selectedEquipments = selectedEquipments
       }
   in
-    newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, cmd2 ]
+    newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, saveCmd ]
 
 
 updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : Equipment -> Cmd Msg
@@ -1648,7 +1676,9 @@ saveFloorCmd floor =
           API.saveEditingImage id file
         _ ->
           Task.succeed ()
-    secondTask = API.saveEditingFloor floor
+
+    secondTask =
+      API.saveEditingFloor floor
   in
     performAPI
       (always (FloorSaved False))
@@ -1671,6 +1701,7 @@ publishFloorCmd floor =
       (always (FloorSaved True))
       (firstTask `andThen` (always secondTask))
 
+
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEvent event model =
   case (model.keys.ctrl, event) of
@@ -1679,10 +1710,12 @@ updateByKeyEvent event model =
         selectedEquipments =
           List.map idOf <| Floor.equipments model.floor.present
       } ! []
+
     (True, ShortCut.C) ->
       { model |
         copiedEquipments = selectedEquipments model
       } ! []
+
     (True, ShortCut.V) ->
       let
         base =
@@ -1690,61 +1723,84 @@ updateByKeyEvent event model =
             Just (x, y, w, h) ->
               (x, y)
             Nothing -> (0, 0) --TODO
+
         (copiedIdsWithNewIds, newSeed) =
           IdGenerator.zipWithNewIds model.seed model.copiedEquipments
+
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.paste copiedIdsWithNewIds base) model.floor
       in
         { model |
-          floor = UndoRedo.commit (Floor.paste copiedIdsWithNewIds base) model.floor
+          floor = newFloor
         , seed = newSeed
         , selectedEquipments = List.map snd copiedIdsWithNewIds
         , selectorRect = Nothing
-        } ! []
+        } ! [ saveCmd ]
+
     (True, ShortCut.X) ->
-      { model |
-        floor = UndoRedo.commit (Floor.delete model.selectedEquipments) model.floor
-      , copiedEquipments = selectedEquipments model
-      , selectedEquipments = []
-      } ! []
+      let
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.delete model.selectedEquipments) model.floor
+      in
+        { model |
+          floor = newFloor
+        , copiedEquipments = selectedEquipments model
+        , selectedEquipments = []
+        } ! [ saveCmd ]
+
     (True, ShortCut.Y) ->
-      { model | floor = UndoRedo.redo model.floor } ! []
+      { model | floor = UndoList.redo model.floor } ! []
+
     (True, ShortCut.Z) ->
-      { model | floor = UndoRedo.undo model.floor } ! []
+      { model | floor = UndoList.undo model.floor } ! []
+
     (_, ShortCut.UpArrow) ->
       shiftSelectionToward EquipmentsOperation.Up model ! []
+
     (_, ShortCut.DownArrow) ->
       shiftSelectionToward EquipmentsOperation.Down model ! []
+
     (_, ShortCut.LeftArrow) ->
       shiftSelectionToward EquipmentsOperation.Left model ! []
+
     (_, ShortCut.RightArrow) ->
       shiftSelectionToward EquipmentsOperation.Right model ! []
+
     (_, ShortCut.Del) ->
       let
-        newModel =
-          { model |
-            floor = UndoRedo.commit (Floor.delete model.selectedEquipments) model.floor
-          }
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.delete model.selectedEquipments) model.floor
       in
-        newModel ! [ saveFloorCmd newModel.floor.present ]
+        { model |
+          floor = newFloor
+        } ! [ saveCmd ]
+
     -- (_, ShortCut.Other 9) -> -- maybe "shift within island is the proper behavior"
+
     _ ->
       model ! []
 
 
-updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> Model
+updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> (Model, Cmd Msg)
 updateByMoveEquipmentEnd id (x0, y0) (x1, y1) model =
   let
-    shift = Scale.screenToImageForPosition model.scale (x1 - x0, y1 - y0)
+    shift =
+      Scale.screenToImageForPosition model.scale (x1 - x0, y1 - y0)
   in
     if shift /= (0, 0) then
-      { model |
-        floor = UndoRedo.commit (Floor.move model.selectedEquipments model.gridSize shift) model.floor
-      }
+      let
+        (newFloor, saveCmd) =
+          EditingFloor.commit saveFloorCmd (Floor.move model.selectedEquipments model.gridSize shift) model.floor
+      in
+        { model |
+          floor = newFloor
+        } ! [ saveCmd ]
     else if not model.keys.ctrl && not model.keys.shift then
       { model |
         selectedEquipments = [id]
-      }
+      } ! []
     else
-      model
+      model ! []
 
 candidatesOf : Model -> List Person
 candidatesOf model =

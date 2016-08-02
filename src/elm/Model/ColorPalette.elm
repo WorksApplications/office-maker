@@ -10,7 +10,7 @@ type alias ColorPalette =
 
 init : List String -> ColorPalette
 init master =
-  { backgroundColors = Debug.log "master"
+  { backgroundColors =
       master
   , textColors =
       List.map

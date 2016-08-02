@@ -4,7 +4,9 @@ import String
 import Date exposing (Date)
 import Model.Equipment as Equipment exposing (..)
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+
 import Util.File exposing (..)
+
 
 type alias Id = String
 
@@ -172,8 +174,8 @@ unsetPerson = UnsetPerson
 
 
 update : Msg -> Model -> Model
-update action model =
-  case action of
+update msg model =
+  case msg of
     CreateDesk candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name) =
@@ -288,6 +290,7 @@ update action model =
           case model.imageSource of
             LocalFile id list dataURL ->
               URL id
+              
             _ ->
               model.imageSource
       , public = isPublish

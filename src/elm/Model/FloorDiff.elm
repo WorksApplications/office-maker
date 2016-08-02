@@ -39,6 +39,7 @@ propertyChanges current prev =
       (case current.realSize of
         Just (w2, h2) ->
           [("Size", "(" ++ toString w2 ++ ", " ++ toString h2 ++ ")", "")]
+
         Nothing -> []
       )
 
@@ -64,10 +65,13 @@ propertyChangesHelp current prev =
       else case (current.realSize, prev.realSize) of
         (Just (w1, h1), Just (w2, h2)) ->
           [("Size", "(" ++ toString w1 ++ ", " ++ toString h1 ++ ")", "(" ++ toString w2 ++ ", " ++ toString h2 ++ ")")]
+
         (Just (w1, h1), Nothing) ->
           [("Size", "(" ++ toString w1 ++ ", " ++ toString h1 ++ ")", "")]
+
         (Nothing, Just (w2, h2)) ->
           [("Size", "", "(" ++ toString w2 ++ ", " ++ toString h2 ++ ")")]
+
         _ ->
           [] -- should not happen
 
@@ -108,6 +112,7 @@ diffEquipmentsHelp newEquipments oldEquipments =
               [] -> modify
               list -> list :: modify
           )
+          
         Nothing ->
           (dict, new :: add, modify)
 
@@ -159,6 +164,12 @@ diffEquipment new old =
         Just ("shape chaged: " ++ (toString (shapeOf old)) ++ " -> " ++ (toString (shapeOf new)))
       else
         Nothing
+
+    relatedPersonChange =
+      if relatedPerson new /= relatedPerson old then
+        Just ("person chaged: " ++ (toString (relatedPerson old)) ++ " -> " ++ (toString (relatedPerson new)))
+      else
+        Nothing
   in
     List.filterMap
       identity
@@ -168,6 +179,7 @@ diffEquipment new old =
       , colorChange
       , fontSizeChange
       , shapeChange
+      , relatedPersonChange
       ]
 
 
