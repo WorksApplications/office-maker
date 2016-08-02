@@ -45,18 +45,18 @@ view visitDate personInfo options (current, prev) =
             )
         ]
 
-    (add, modify, delete) =
+    { added, modified, deleted } =
       diffEquipments current prev
 
     body =
       div [ style Styles.diffPopupBody ]
         [ propertyChangesView (propertyChanges current prev)
-        , if List.isEmpty add then text "" else h3 [] [ text ((toString (List.length add)) ++ " Additions") ]
-        , if List.isEmpty add then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) add)
-        , if List.isEmpty modify then text "" else h3 [] [ text ((toString (List.length modify)) ++ " Modifications") ]
-        , if List.isEmpty modify then text "" else ul [] (List.map (\d -> li [] [ text (toString d) ] ) modify)
-        , if List.isEmpty delete then text "" else h3 [] [ text ((toString (List.length delete)) ++ " Deletions") ]
-        , if List.isEmpty delete then text "" else ul [] (List.map (\old -> li [] [ text (idOf old) ] ) delete)
+        , if List.isEmpty added then text "" else h3 [] [ text ((toString (List.length added)) ++ " Additions") ]
+        , if List.isEmpty added then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) added)
+        , if List.isEmpty modified then text "" else h3 [] [ text ((toString (List.length modified)) ++ " Modifications") ]
+        , if List.isEmpty modified then text "" else ul [] (List.map (\mod -> li [] [ text (toString mod.changes) ] ) modified)
+        , if List.isEmpty deleted then text "" else h3 [] [ text ((toString (List.length deleted)) ++ " Deletions") ]
+        , if List.isEmpty deleted then text "" else ul [] (List.map (\old -> li [] [ text (idOf old) ] ) deleted)
         ]
 
   in

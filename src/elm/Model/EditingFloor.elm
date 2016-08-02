@@ -16,8 +16,11 @@ commit saveFloorCmd msg undoList =
     newFloor =
       Floor.update msg floor
 
+    (propChanged, equipmentsChange) =
+      FloorDiff.getChanges newFloor floor
+
     changed =
-      FloorDiff.hasChanges newFloor floor
+      propChanged || equipmentsChange == FloorDiff.noEquipmentsChange
 
     newUndoList =
       if changed then

@@ -15,16 +15,31 @@ type alias Options msg =
   , noOp : msg
   }
 
+type alias EquipmentModification =
+  { new : Equipment, old : Equipment, changes : List String }
 
-hasChanges : Floor -> Floor -> Bool
-hasChanges current prev =
-  -- TODO make faster
-  if not (List.isEmpty (propertyChangesHelp current prev)) then
-    True
-  else if diffEquipmentsHelp (Floor.equipments current) (Floor.equipments prev) /= ([], [], []) then
-    True
-  else
-    False
+type alias EquipmentsChange =
+  { added : List Equipment
+  , modified : List EquipmentModification
+  , deleted : List Equipment
+  }
+
+
+noEquipmentsChange : EquipmentsChange
+noEquipmentsChange =
+  { added = [], modified = [], deleted = [] }
+
+
+getChanges : Floor -> Floor -> (Bool, EquipmentsChange)
+getChanges current prev =
+  let
+    propChanged =
+      not (List.isEmpty (propertyChangesHelp current prev))
+
+    equipmentsChange =
+      diffEquipmentsHelp (Floor.equipments current) (Floor.equipments prev)
+  in
+    (propChanged, equipmentsChange)
 
 
 -- TODO separate model and view
@@ -84,8 +99,7 @@ propertyChangesHelp current prev =
     nameChange ++ ordChange ++ sizeChange
 
 
--- TODO separate model and view
-diffEquipments : Floor -> Maybe Floor -> (List Equipment, List (List String), List Equipment)
+diffEquipments : Floor -> Maybe Floor -> EquipmentsChange
 diffEquipments current prev =
   let
     newEquipments =
@@ -98,7 +112,7 @@ diffEquipments current prev =
     diffEquipmentsHelp newEquipments oldEquipments
 
 
-diffEquipmentsHelp : List Equipment -> List Equipment -> (List Equipment, List (List String), List Equipment)
+diffEquipmentsHelp : List Equipment -> List Equipment -> EquipmentsChange
 diffEquipmentsHelp newEquipments oldEquipments =
   let
     oldDict =
@@ -110,9 +124,9 @@ diffEquipmentsHelp newEquipments oldEquipments =
           ( Dict.remove (idOf new) dict, add,
             case diffEquipment new old of
               [] -> modify
-              list -> list :: modify
+              list -> { new = new, old = old, changes = list } :: modify
           )
-          
+
         Nothing ->
           (dict, new :: add, modify)
 
@@ -122,7 +136,10 @@ diffEquipmentsHelp newEquipments oldEquipments =
     delete =
       Dict.values ramainingOldDict
   in
-    (add, modify, delete)
+    { added = add
+    , modified = modify
+    , deleted = delete
+    }
 
 
 -- TODO separate model and view
