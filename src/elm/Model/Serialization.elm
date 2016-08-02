@@ -8,14 +8,14 @@ import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, cus
 
 import Util.DecodeUtil exposing (..)
 
+import Model.Floor as Floor exposing (ImageSource(..))
+import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
 import Model.Equipment as Equipment exposing (..)
-import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
-import Model.FloorInfo exposing (FloorInfo)
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
 type alias Floor = Floor.Model
@@ -95,8 +95,16 @@ encodeEquipment e =
         ]
 
 
-encodeFloor : Floor -> Value
-encodeFloor floor =
+encodeEquipmentModification : EquipmentModification -> Value
+encodeEquipmentModification mod =
+  object
+    [ ("old", encodeEquipment mod.old)
+    , ("new", encodeEquipment mod.new)
+    ]
+
+
+encodeFloor : Floor -> EquipmentsChange -> Value
+encodeFloor floor change =
   let
     src =
       case floor.imageSource of
@@ -108,7 +116,10 @@ encodeFloor floor =
       [ ("id", Maybe.withDefault null <| Maybe.map string <| floor.id)
       , ("name", string floor.name)
       , ("ord", int floor.ord)
-      , ("equipments", list <| List.map encodeEquipment floor.equipments)
+      -- , ("equipments", list <| List.map encodeEquipment floor.equipments)
+      , ("added", list (List.map encodeEquipment change.added))
+      , ("modified", list (List.map encodeEquipmentModification change.modified))
+      , ("deleted", list (List.map encodeEquipment change.deleted))
       , ("width", int floor.width)
       , ("height", int floor.height)
       , ("realWidth", Maybe.withDefault null <| Maybe.map (int << fst) floor.realSize)
@@ -121,6 +132,7 @@ encodeFloor floor =
 encodeLogin : String -> String -> Value
 encodeLogin id pass =
   object [ ("id", Encode.string id), ("pass", Encode.string pass) ]
+
 
 decodeUser : Decoder User
 decodeUser =
@@ -257,9 +269,9 @@ serializePrototypes prototypes =
   encode 0 (Encode.list (List.map encodePrototype prototypes))
 
 
-serializeFloor : Floor -> String
-serializeFloor floor =
-    encode 0 (encodeFloor floor)
+serializeFloor : Floor -> EquipmentsChange -> String
+serializeFloor floor change =
+    encode 0 (encodeFloor floor change)
 
 
 serializeLogin : String -> String -> String

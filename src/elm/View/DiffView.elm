@@ -14,7 +14,7 @@ import View.Styles as Styles
 
 import Model.Equipment as Equipment exposing (..)
 import Model.Floor as Floor
-import Model.FloorDiff exposing (..)
+import Model.FloorDiff as FloorDiff
 import Model.Person exposing (Person)
 
 
@@ -45,12 +45,12 @@ view visitDate personInfo options (current, prev) =
             )
         ]
 
-    { added, modified, deleted } =
-      diffEquipments current prev
+    (propertyChanges, { added, modified, deleted }) =
+      FloorDiff.diff current prev
 
     body =
       div [ style Styles.diffPopupBody ]
-        [ propertyChangesView (propertyChanges current prev)
+        [ propertyChangesView propertyChanges
         , if List.isEmpty added then text "" else h3 [] [ text ((toString (List.length added)) ++ " Additions") ]
         , if List.isEmpty added then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) added)
         , if List.isEmpty modified then text "" else h3 [] [ text ((toString (List.length modified)) ++ " Modifications") ]

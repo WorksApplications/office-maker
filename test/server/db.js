@@ -8,17 +8,33 @@ var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
 
-function saveEquipments(conn, floorId, floorVersion, equipments, cb) {
-  var sqls = equipments.map((equipment) => {
-    return sql.replace('equipments', schema.equipmentKeyValues(floorId, floorVersion, equipment));
+function saveEquipments(conn, data, cb) {
+  getEquipments(conn, data.floorId, data.oldFloorVersion, function(e, equipments) {
+    var deleted = {};
+    var modified = {};
+    data.deleted.forEach((e) => {
+      deleted[e.id] = true;
+    });
+    data.modified.forEach((mod) => {
+      modified[mod.new.id] = mod.new;
+    });
+    // TODO check if modified equipments has been modifed or deleted by others
+    var sqls = equipments.concat(data.added).filter((e) => {
+      return !deleted[e.id];
+    }).map((equipment) => {
+      equipment = modified[equipment.id] || equipment;
+      return sql.replace('equipments', schema.equipmentKeyValues(data.floorId, data.newFloorVersion, equipment));
+    });
+    sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
+    rdb.batch(conn, sqls, cb);
   });
-  sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]])));
-  rdb.batch(conn, sqls, cb);
 }
+
 function getEquipments(conn, floorId, floorVersion, cb) {
   var q = sql.select('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]]));
   rdb.exec(conn, q, cb);
 }
+
 function getFloorWithEquipments(conn, withPrivate, id, cb) {
   getFloor(conn, withPrivate, id, (e, floor) => {
     if(e) {
@@ -135,9 +151,6 @@ function ensureFloor(conn, id, cb) {
   cb && cb();
 }
 function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
-  if(!newFloor.equipments) {
-    throw "invalid: ";
-  }
   getFloor(conn, true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);
@@ -152,7 +165,14 @@ function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
           console.log('saveFloorWithEquipments', e);
           cb && cb(e);
         } else {
-          saveEquipments(conn, newFloor.id, newFloor.version, newFloor.equipments, cb);
+          saveEquipments(conn, {
+            floorId: newFloor.id,
+            oldFloorVersion: floor.version,
+            newFloorVersion: newFloor.version,
+            added: newFloor.added,
+            modified: newFloor.modified,
+            deleted: newFloor.deleted
+          }, cb);
         }
       });
     }

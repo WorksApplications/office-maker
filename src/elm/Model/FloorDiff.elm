@@ -24,27 +24,32 @@ type alias EquipmentsChange =
   , deleted : List Equipment
   }
 
+type alias PropChanges =
+  List (String, String, String)
+
 
 noEquipmentsChange : EquipmentsChange
 noEquipmentsChange =
   { added = [], modified = [], deleted = [] }
 
 
-getChanges : Floor -> Floor -> (Bool, EquipmentsChange)
-getChanges current prev =
+diff : Floor -> Maybe Floor -> (PropChanges, EquipmentsChange)
+diff current prev =
   let
-    propChanged =
-      not (List.isEmpty (propertyChangesHelp current prev))
+    newEquipments =
+      Floor.equipments current
 
-    equipmentsChange =
-      diffEquipmentsHelp (Floor.equipments current) (Floor.equipments prev)
+    oldEquipments =
+      Maybe.withDefault [] <| Maybe.map Floor.equipments prev
+
   in
-    (propChanged, equipmentsChange)
+    ( diffPropertyChanges current prev
+    , diffEquipments newEquipments oldEquipments
+    )
 
 
--- TODO separate model and view
-propertyChanges : Floor -> Maybe Floor -> List (String, String, String)
-propertyChanges current prev =
+diffPropertyChanges : Floor -> Maybe Floor -> List (String, String, String)
+diffPropertyChanges current prev =
   case prev of
     Just prev ->
       propertyChangesHelp current prev
@@ -99,21 +104,8 @@ propertyChangesHelp current prev =
     nameChange ++ ordChange ++ sizeChange
 
 
-diffEquipments : Floor -> Maybe Floor -> EquipmentsChange
-diffEquipments current prev =
-  let
-    newEquipments =
-      Floor.equipments current
-
-    oldEquipments =
-      Maybe.withDefault [] <| Maybe.map Floor.equipments prev
-
-  in
-    diffEquipmentsHelp newEquipments oldEquipments
-
-
-diffEquipmentsHelp : List Equipment -> List Equipment -> EquipmentsChange
-diffEquipmentsHelp newEquipments oldEquipments =
+diffEquipments : List Equipment -> List Equipment -> EquipmentsChange
+diffEquipments newEquipments oldEquipments =
   let
     oldDict =
       List.foldl (\e dict -> Dict.insert (idOf e) e dict) Dict.empty oldEquipments

@@ -27,9 +27,11 @@ import Model.Scale as Scale
 import Model.API as API
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
+import Model.FloorDiff as FloorDiff exposing (EquipmentsChange)
+import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
-import Model.FloorInfo as FloorInfo exposing (FloorInfo)
+
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor
@@ -387,11 +389,10 @@ update action model =
         Nothing ->
           if not (User.isGuest model.user) then
             let
-              floor =
-                UndoList.init (Floor.init Nothing)
+              (newFloor, saveCmd) =
+                EditingFloor.init saveFloorCmd (Floor.init Nothing)
             in
-              { model | floor = floor }
-              ! [ saveFloorCmd floor.present ]
+              { model | floor = newFloor } ! [ saveCmd ]
           else
             model ! []
 
@@ -484,7 +485,7 @@ update action model =
               case ev of
                 Just (id, name) ->
                   updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
-                  
+
                 Nothing ->
                   { model | equipmentNameInput = equipmentNameInput } ! []
           else
@@ -1076,7 +1077,7 @@ update action model =
               , newFloor
               )
           else
-            ( publishFloorCmd floor
+            ( publishFloorCmd floor FloorDiff.noEquipmentsChange
             , model.seed
             , model.floor
             )
@@ -1140,7 +1141,9 @@ update action model =
           Floor.initWithOrder (Just newFloorId) lastFloorOrder
 
         cmd =
-          performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
+          performAPI
+            (always (NewFloorCreated newFloorId))
+            (API.saveEditingFloor newFloor (snd <| FloorDiff.diff newFloor Nothing))
       in
         { model | seed = newSeed } ! [ cmd ]
 
@@ -1153,7 +1156,9 @@ update action model =
           Floor.copy (Just newFloorId) model.floor.present
 
         cmd =
-          performAPI (always (NewFloorCreated newFloorId)) (API.saveEditingFloor newFloor)
+          performAPI
+            (always (NewFloorCreated newFloorId))
+            (API.saveEditingFloor newFloor (snd <| FloorDiff.diff newFloor Nothing))
       in
         { model |
           seed = newSeed
@@ -1667,8 +1672,8 @@ savePrototypesCmd prototypes =
     (API.savePrototypes prototypes)
 
 
-saveFloorCmd : Floor -> Cmd Msg
-saveFloorCmd floor =
+saveFloorCmd : Floor -> EquipmentsChange -> Cmd Msg
+saveFloorCmd floor change =
   let
     firstTask =
       case floor.imageSource of
@@ -1678,15 +1683,15 @@ saveFloorCmd floor =
           Task.succeed ()
 
     secondTask =
-      API.saveEditingFloor floor
+      API.saveEditingFloor floor change
   in
     performAPI
       (always (FloorSaved False))
       (firstTask `andThen` (always secondTask))
 
 
-publishFloorCmd : Floor -> Cmd Msg
-publishFloorCmd floor =
+publishFloorCmd : Floor -> EquipmentsChange -> Cmd Msg
+publishFloorCmd floor change =
   let
     firstTask =
       case floor.imageSource of
@@ -1694,8 +1699,9 @@ publishFloorCmd floor =
           API.saveEditingImage id file
         _ ->
           Task.succeed ()
+
     secondTask =
-      API.publishEditingFloor floor
+      API.publishEditingFloor floor change
   in
     performAPI
       (always (FloorSaved True))

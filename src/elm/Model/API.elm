@@ -31,6 +31,7 @@ import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
 import Model.Floor as Floor
+import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
@@ -45,25 +46,29 @@ type alias Floor = Floor.Model
 
 type alias Error = Http.Error
 
-saveEditingFloor : Floor -> Task Error ()
-saveEditingFloor floor =
+
+saveEditingFloor : Floor -> EquipmentsChange -> Task Error ()
+saveEditingFloor floor change =
     putJson
       noResponse
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id ++ "/edit")
-      (Http.string <| serializeFloor floor)
+      (Http.string <| serializeFloor floor change)
 
-publishEditingFloor : Floor -> Task Error ()
-publishEditingFloor floor =
+
+publishEditingFloor : Floor -> EquipmentsChange -> Task Error ()
+publishEditingFloor floor change =
     postJson
       noResponse
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id)
-      (Http.string <| serializeFloor floor)
+      (Http.string <| serializeFloor floor change)
+
 
 getEditingFloor : Maybe String -> Task Error Floor
 getEditingFloor id =
     getJsonWithoutCache
       decodeFloor
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" id ++ "/edit")
+
 
 getFloorsInfo : Bool -> Task Error (List FloorInfo)
 getFloorsInfo withPrivate =
@@ -76,6 +81,7 @@ getFloorsInfo withPrivate =
     getJsonWithoutCache
       decodeFloorInfoList
       url
+
 
 getPrototypes : Task Error (List Prototype)
 getPrototypes =
@@ -105,9 +111,11 @@ getFloor id =
       decodeFloor
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" id)
 
+
 getEditingDraftFloor : Task Error (Maybe Floor)
 getEditingDraftFloor =
   getEditingFloorMaybe Nothing
+
 
 getFloorMaybe : Maybe String -> Task Error (Maybe Floor)
 getFloorMaybe id =
@@ -126,17 +134,20 @@ getEditingFloorMaybe id =
     Http.BadResponse 404 _ -> Task.succeed Nothing
     _ -> Task.fail e
 
+
 getDiffSource : Maybe String -> Task Error (Floor, Maybe Floor)
 getDiffSource id =
   getEditingFloor id
   `Task.andThen` \current -> getFloorMaybe id
   `Task.andThen` \prev -> Task.succeed (current, prev)
 
+
 getAuth : Task Error User
 getAuth =
     Http.get
       decodeUser
       ("/api/v1/auth")
+
 
 search : Bool -> String -> Task Error (List SearchResult)
 search withPrivate query =
@@ -150,6 +161,7 @@ search withPrivate query =
       decodeSearchResults
       url
 
+
 personCandidate : String -> Task Error (List Person)
 personCandidate name =
   if String.isEmpty name then
@@ -159,6 +171,7 @@ personCandidate name =
       decodePersons <| -- Debug.log "url" <|
       ("/api/v1/candidate/" ++ Http.uriEncode name)
 
+
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =
     HttpUtil.sendFile
@@ -166,11 +179,13 @@ saveEditingImage id file =
       ("/api/v1/image/" ++ id)
       file
 
+
 getPerson : Id -> Task Error Person
 getPerson id =
     Http.get
       decodePerson
       ("/api/v1/people/" ++ id)
+
 
 getPersonByUser : Id -> Task Error Person
 getPersonByUser id =
@@ -187,12 +202,14 @@ getPersonByUser id =
         User.Guest -> Debug.crash ("user " ++ id ++ " has no person")
       )
 
+
 login : String -> String -> Task Error ()
 login id pass =
     postJson
       noResponse
       ("/api/v1/login")
       (Http.string <| serializeLogin id pass)
+
 
 logout : Task Error ()
 logout =
@@ -201,13 +218,16 @@ logout =
       ("/api/v1/logout")
       (Http.string "")
 
+
 goToLogin : Task a ()
 goToLogin =
   HttpUtil.goTo "/login"
 
+
 goToLogout : Task a ()
 goToLogout =
   HttpUtil.goTo "/logout"
+
 
 gotoTop : Task a ()
 gotoTop =
