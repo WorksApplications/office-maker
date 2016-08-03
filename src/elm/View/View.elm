@@ -33,6 +33,7 @@ import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
 import Model.Person exposing (Person)
 import Model.SearchResult exposing (SearchResult)
+import Model.EditingFloor as EditingFloor
 
 
 mainView : Model -> Html Msg
@@ -61,7 +62,7 @@ floorInfoView model =
   case model.editMode of
     Viewing True ->
       text ""
-      
+
     _ ->
       let
         isEditMode =
@@ -84,7 +85,7 @@ floorInfoView model =
           (model.keys.ctrl)
           (User.isAdmin model.user)
           isEditMode
-          model.floor.present.id
+          (EditingFloor.present model.floor).id
           model.floorsInfo
 
 
@@ -118,7 +119,7 @@ subViewForEdit model =
     floorView =
       List.map
         (App.map FloorPropertyMsg)
-        (FloorProperty.view model.visitDate model.user model.floor.present model.floorProperty)
+        (FloorProperty.view model.visitDate model.user (EditingFloor.present model.floor) model.floorProperty)
   in
     [ card <| penView model
     , card <| PropertyView.view model
@@ -310,7 +311,7 @@ view model =
     header =
       case model.editMode of
         Viewing True ->
-          App.map HeaderMsg (Header.viewPrintMode model.floor.present.name)
+          App.map HeaderMsg (Header.viewPrintMode (EditingFloor.present model.floor).name)
         _ ->
           App.map HeaderMsg (Header.view (Just (model.user, False)))
 

@@ -7,3 +7,7 @@ ALTER TABLE `map2`.`equipments`
 CHANGE COLUMN `color` `color` VARCHAR(64) NOT NULL DEFAULT '#000' ,
 ADD COLUMN `backgroundColor` VARCHAR(64) NOT NULL DEFAULT '#fff' AFTER `height`,
 ADD COLUMN `shape` VARCHAR(64) NOT NULL DEFAULT 'rectangle' AFTER `fontSize`;
+
+
+ALTER TABLE `map2`.`equipments`
+ADD COLUMN `modifiedVersion` INT(11) NOT NULL AFTER `floorVersion`;

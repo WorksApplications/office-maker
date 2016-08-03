@@ -22,6 +22,7 @@ import Model.Equipment as Equipment exposing (..)
 import Model.Scale as Scale
 import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
+import Model.EditingFloor as EditingFloor
 
 import Json.Decode as Decode
 
@@ -66,7 +67,7 @@ equipmentView model adjustRect selected isGhost equipment contextMenuDisabled di
           }
 
     floor =
-      model.floor.present
+      (EditingFloor.present model.floor)
 
     personMatched =
       Equipment.relatedPerson equipment /= Nothing
@@ -109,7 +110,7 @@ view : Model -> Html Msg
 view model =
   let
     floor =
-      model.floor.present
+      (EditingFloor.present model.floor)
 
     popup' =
       Maybe.withDefault (text "") <|
@@ -123,7 +124,7 @@ view model =
             Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
 
     inner =
-      case (model.editMode, model.floor.present.id) of
+      case (model.editMode, (EditingFloor.present model.floor).id) of
         (Viewing _, Nothing) ->
           [] -- don't show draft on Viewing mode
         _ ->
@@ -150,7 +151,7 @@ canvasView : Model -> Html Msg
 canvasView model =
   let
     floor =
-      model.floor.present
+      (EditingFloor.present model.floor)
 
     (isViewing, isPrintMode) =
       case model.editMode of
@@ -196,7 +197,7 @@ canvasView model =
             , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
             )
         )
-        (findEquipmentById model.floor.present.equipments id)
+        (findEquipmentById (EditingFloor.present model.floor).equipments id)
 
     nameInput =
       App.map EquipmentNameInputMsg <|
@@ -251,7 +252,7 @@ equipmentsView model =
                   (transitionDisabled model)
               )
             )
-            (List.filter isSelected (model.floor.present.equipments))
+            (List.filter isSelected ((EditingFloor.present model.floor).equipments))
 
         adjustRect equipment (left, top, width, height) =
           if isSelected equipment then
@@ -282,7 +283,7 @@ equipmentsView model =
                   (transitionDisabled model)
               )
             )
-            (model.floor.present.equipments)
+            ((EditingFloor.present model.floor).equipments)
       in
         (ghostsView ++ normalView)
 
@@ -308,7 +309,7 @@ equipmentsView model =
                   (transitionDisabled model)
               )
             )
-            (List.filter isResizing (model.floor.present.equipments))
+            (List.filter isResizing ((EditingFloor.present model.floor).equipments))
 
 
         adjustRect equipment (left, top, width, height) =
@@ -333,7 +334,7 @@ equipmentsView model =
                   (transitionDisabled model)
               )
             )
-            (model.floor.present.equipments)
+            ((EditingFloor.present model.floor).equipments)
       in
         (normalView ++ ghostsView)
 
@@ -351,7 +352,7 @@ equipmentsView model =
               (transitionDisabled model)
           )
         )
-        (model.floor.present.equipments)
+        ((EditingFloor.present model.floor).equipments)
 
 
 canvasImage : Floor -> Html msg

@@ -12,6 +12,7 @@ type alias Id = String
 
 type alias Model =
   { id : Maybe Id
+  , version : Int
   , name : String
   , ord : Int
   , equipments: List Equipment
@@ -33,6 +34,7 @@ type ImageSource
 init : Maybe Id -> Model
 init id =
   { id = id
+  , version = 0
   , name = "New Floor"
   , ord = 0
   , equipments = []
@@ -59,6 +61,7 @@ copy : Maybe Id -> Model -> Model
 copy id floor =
   { floor |
     id = id
+  , version = 0
   , name = "Copy of " ++ floor.name
   , public = False
   , update = Nothing
@@ -84,7 +87,6 @@ type Msg =
   | ChangeOrd Int
   | SetLocalFile String File String
   | ChangeRealSize (Int, Int)
-  | OnSaved Bool
   | SetPerson String String
   | UnsetPerson String
 
@@ -159,10 +161,6 @@ setLocalFile = SetLocalFile
 
 changeRealSize : (Int, Int) -> Msg
 changeRealSize = ChangeRealSize
-
-
-onSaved : Bool -> Msg
-onSaved = OnSaved
 
 
 setPerson : String -> String -> Msg
@@ -283,18 +281,6 @@ update msg model =
           realSize = Just (width, height)
         -- , useReal = True
         }
-
-    OnSaved isPublish ->
-      { model |
-        imageSource =
-          case model.imageSource of
-            LocalFile id list dataURL ->
-              URL id
-              
-            _ ->
-              model.imageSource
-      , public = isPublish
-      }
 
     SetPerson equipmentId personId ->
       let

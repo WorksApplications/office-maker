@@ -16,17 +16,30 @@ function saveEquipments(conn, data, cb) {
       deleted[e.id] = true;
     });
     data.modified.forEach((mod) => {
+      mod.new.modifiedVersion = data.newFloorVersion;
       modified[mod.new.id] = mod.new;
     });
-    // TODO check if modified equipments has been modifed or deleted by others
-    var sqls = equipments.concat(data.added).filter((e) => {
-      return !deleted[e.id];
-    }).map((equipment) => {
-      equipment = modified[equipment.id] || equipment;
-      return sql.replace('equipments', schema.equipmentKeyValues(data.floorId, data.newFloorVersion, equipment));
+    data.added.forEach((mod) => {
+      mod.new.modifiedVersion = data.newFloorVersion;
     });
-    sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
-    rdb.batch(conn, sqls, cb);
+    var conflict = false;
+    equipments.forEach(function(e) {
+      if(deleted[e.id] || modified[e.id] && data.baseFloorVersion < e.modifiedVersion) {
+        conflict = true;
+      }
+    });
+    if(conflict) {
+      cb(409);
+    } else {
+      var sqls = equipments.concat(data.added).filter((e) => {
+        return !deleted[e.id];
+      }).map((equipment) => {
+        equipment = modified[equipment.id] || equipment
+        return sql.replace('equipments', schema.equipmentKeyValues(data.floorId, data.newFloorVersion, equipment));
+      });
+      sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
+      rdb.batch(conn, sqls, cb);
+    }
   });
 }
 
@@ -150,11 +163,13 @@ function getFloorsInfoWithEquipments (conn, cb) {
 function ensureFloor(conn, id, cb) {
   cb && cb();
 }
+
 function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
   getFloor(conn, true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);
     } else {
+      var baseVersion = newFloor.version;
       newFloor.version = floor ? (incrementVersion ? floor.version + 1 : floor.version) : 0;
       var sqls = [
         sql.delete('floors', sql.where('id', newFloor.id) + ' and public=0'),
@@ -167,12 +182,19 @@ function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
         } else {
           saveEquipments(conn, {
             floorId: newFloor.id,
+            baseFloorVersion: baseVersion,
             oldFloorVersion: floor.version,
             newFloorVersion: newFloor.version,
             added: newFloor.added,
             modified: newFloor.modified,
             deleted: newFloor.deleted
-          }, cb);
+          }, function(e) {
+            if(e) {
+              cb(e);
+            } else {
+              cb(null, newFloor.version);
+            }
+          });
         }
       });
     }

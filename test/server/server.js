@@ -36,7 +36,8 @@ function inTransaction(f) {
         var newRes = Object.assign({}, res, {
           status: function() {
             var args = arguments;
-            return originalStatus.apply(res, args);
+            originalStatus.apply(res, args);
+            return newRes;
           },
           send: function() {
             var args = arguments;
@@ -52,7 +53,6 @@ function inTransaction(f) {
                 if(commitFailed) {
                   console.log(commitFailed);
                   newRes.status(500);
-                  // res.status(500);
                 }
                 originalSend.apply(res, args);
               });
@@ -411,7 +411,11 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloorWithEquipments(conn, newFloor, true, (e) => {
+    db.saveFloorWithEquipments(conn, newFloor, true, (e, newVersion) => {
+      if(e === 409) {
+        res.status(409).send('');
+        return;
+      }
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -419,7 +423,9 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
       }
       console.log('saved floor: ' + id);
       // console.log(newFloor);
-      res.send({});
+      res.send({
+        version: newVersion
+      });
     });
   });
 }));
@@ -454,8 +460,7 @@ app.post('/api/v1/floor/:id', inTransaction((conn, req, res) => {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-
-    db.publishFloor(conn, newFloor, (e) => {
+    db.publishFloor(conn, newFloor, (e, newVersion) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -463,7 +468,9 @@ app.post('/api/v1/floor/:id', inTransaction((conn, req, res) => {
       }
       console.log('published floor: ' + id);
       // console.log(newFloor);
-      res.send({});
+      res.send({
+        version: newVersion
+      });
     });
 
   });

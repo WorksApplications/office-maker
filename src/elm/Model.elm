@@ -13,7 +13,6 @@ import Navigation
 import Http
 import Time exposing (Time)
 
-import Util.UndoList as UndoList exposing (UndoList)
 import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -34,7 +33,7 @@ import Model.URL as URL
 
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
-import Model.EditingFloor as EditingFloor
+import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 
 import FloorProperty
 import SearchBox
@@ -60,7 +59,7 @@ type alias Model =
   , editMode : EditMode
   , colorPalette : ColorPalette
   , contextMenu : ContextMenu
-  , floor : UndoList Floor
+  , floor : EditingFloor
   , floorsInfo : List FloorInfo
   , windowSize : (Int, Int)
   , scale : Scale.Model
@@ -149,7 +148,7 @@ init randomSeed initialSize urlResult visitDate =
       , colorPalette = ColorPalette.init []
       , contextMenu = NoContextMenu
       , floorsInfo = []
-      , floor = UndoList.init initialFloor
+      , floor = EditingFloor.init initialFloor
       , windowSize = initialSize
       , scale = Scale.init
       , offset = (35, 35)
@@ -194,7 +193,7 @@ type Msg = NoOp
   | DraftFloorLoaded (Maybe Floor)
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
-  | FloorSaved Bool
+  | FloorSaved Bool Int
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
@@ -390,16 +389,16 @@ update action model =
           if not (User.isGuest model.user) then
             let
               (newFloor, saveCmd) =
-                EditingFloor.init saveFloorCmd (Floor.init Nothing)
+                EditingFloor.create saveFloorCmd (Floor.init Nothing)
             in
               { model | floor = newFloor } ! [ saveCmd ]
           else
             model ! []
 
-    FloorSaved isPublish ->
+    FloorSaved isPublish newVersion ->
       let
         newFloorId =
-          model.floor.present.id
+          (EditingFloor.present model.floor).id
 
         (message, cmd) =
           if isPublish then
@@ -412,7 +411,7 @@ update action model =
                     Debug.crash "new id not found."
 
               message =
-                Success ("Successfully published " ++ model.floor.present.name)
+                Success ("Successfully published " ++ (EditingFloor.present model.floor).name)
             in
               message !
                 [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
@@ -421,9 +420,8 @@ update action model =
           else
             model.error ! []
 
-        -- does not need to save
-        (newFloor, _) =
-          EditingFloor.commit saveFloorCmd (Floor.onSaved isPublish) model.floor
+        newFloor =
+          EditingFloor.changeFloorAfterSave isPublish newVersion model.floor
       in
         { model |
           floor = newFloor
@@ -503,7 +501,7 @@ update action model =
               else if model.keys.shift then
                 let
                   allEquipments =
-                    model.floor.present.equipments
+                    (EditingFloor.present model.floor).equipments
                   equipmentsExcept target =
                     List.filter (\e -> idOf e /= idOf target) allEquipments
                 in
@@ -680,7 +678,7 @@ update action model =
         newModel ! [ cmd ]
 
     StartEditEquipment id ->
-      case findEquipmentById model.floor.present.equipments id of
+      case findEquipmentById (EditingFloor.present model.floor).equipments id of
         Just e ->
           let
             (id, name) = (idOf e, nameOf e)
@@ -785,7 +783,7 @@ update action model =
       { model |
         contextMenu =
           -- TODO idealy, change floor and show context menu
-          if model.floor.present.id == Just id then
+          if (EditingFloor.present model.floor).id == Just id then
             FloorInfo model.pos id
           else
             NoContextMenu
@@ -799,14 +797,14 @@ update action model =
     SelectIsland id ->
       let
         newModel =
-          case findEquipmentById model.floor.present.equipments id of
+          case findEquipmentById (EditingFloor.present model.floor).equipments id of
             Just equipment ->
               let
                 island' =
                   island
                     [equipment]
                     (List.filter (\e -> (idOf e) /= id)
-                    model.floor.present.equipments)
+                    (EditingFloor.present model.floor).equipments)
               in
                 { model |
                   selectedEquipments = List.map idOf island'
@@ -878,7 +876,7 @@ update action model =
     RegisterPrototype id ->
       let
         equipment =
-          findEquipmentById model.floor.present.equipments id
+          findEquipmentById (EditingFloor.present model.floor).equipments id
         model' =
           { model |
             contextMenu = NoContextMenu
@@ -1058,7 +1056,7 @@ update action model =
     ConfirmDiff ->
       let
         floor =
-          model.floor.present
+          (EditingFloor.present model.floor)
 
         (cmd, newSeed, newFloor) =
           if floor.id == Nothing then
@@ -1096,7 +1094,7 @@ update action model =
 
     ShowDetailForEquipment id ->
       let
-        allEquipments = model.floor.present.equipments
+        allEquipments = (EditingFloor.present model.floor).equipments
         personId =
           case findEquipmentById allEquipments id of
             Just e ->
@@ -1153,7 +1151,7 @@ update action model =
           IdGenerator.new model.seed
 
         newFloor =
-          Floor.copy (Just newFloorId) model.floor.present
+          Floor.copy (Just newFloorId) (EditingFloor.present model.floor)
 
         cmd =
           performAPI
@@ -1264,7 +1262,7 @@ adjustOffset selectedResult model =
   let
     maybeShiftedOffset =
       selectedResult `Maybe.andThen` \id ->
-      findEquipmentById model.floor.present.equipments id `Maybe.andThen` \e ->
+      findEquipmentById (EditingFloor.present model.floor).equipments id `Maybe.andThen` \e ->
       relatedPerson e `Maybe.andThen` \personId ->
       Just <|
         let
@@ -1379,7 +1377,7 @@ updateOnFinishPen (x, y) model =
 
 updateOnFinishResize : Id -> (Int, Int) -> Model -> (Model, Cmd Msg)
 updateOnFinishResize id (x, y) model =
-  case findEquipmentById model.floor.present.equipments id of
+  case findEquipmentById (EditingFloor.present model.floor).equipments id of
     Just e ->
       let
         (newFloor, cmd) =
@@ -1433,7 +1431,7 @@ updateOnFinishLabel model =
       , floor = newFloor
       }
   in
-    case findEquipmentById model'.floor.present.equipments newId of
+    case findEquipmentById (EditingFloor.present model'.floor).equipments newId of
       Just e ->
         let
           (newModel, cmd) =
@@ -1453,7 +1451,7 @@ updateOnFloorLoaded floor model =
 
     newModel =
       { model |
-        floor = UndoList.init floor
+        floor = EditingFloor.init floor
       , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
       }
 
@@ -1474,11 +1472,11 @@ updateOnFloorLoaded floor model =
     newModel ! [ cmd ]
 
 
-updateFloorByFloorPropertyEvent : FloorProperty.Event -> Seed -> UndoList Floor -> ((UndoList Floor, Seed), Cmd Msg)
-updateFloorByFloorPropertyEvent event seed floor =
+updateFloorByFloorPropertyEvent : FloorProperty.Event -> Seed -> EditingFloor -> ((EditingFloor, Seed), Cmd Msg)
+updateFloorByFloorPropertyEvent event seed efloor =
     case event of
       FloorProperty.None ->
-        (floor, seed) ! []
+        (efloor, seed) ! []
 
       FloorProperty.OnNameChange name ->
         let
@@ -1486,7 +1484,7 @@ updateFloorByFloorPropertyEvent event seed floor =
             EditingFloor.commit
               saveFloorCmd
               (Floor.changeName name)
-              floor
+              efloor
         in
           (newFloor, seed) ! [ saveCmd ]
 
@@ -1496,7 +1494,7 @@ updateFloorByFloorPropertyEvent event seed floor =
             EditingFloor.commit
               saveFloorCmd
               (Floor.changeOrd ord)
-              floor
+              efloor
         in
           (newFloor, seed) ! [ saveCmd ]
 
@@ -1506,7 +1504,7 @@ updateFloorByFloorPropertyEvent event seed floor =
             EditingFloor.commit
               saveFloorCmd
               (Floor.changeRealSize (w, h))
-              floor
+              efloor
         in
           (newFloor, seed) ! [ saveCmd ]
 
@@ -1519,23 +1517,23 @@ updateFloorByFloorPropertyEvent event seed floor =
             EditingFloor.commit
               saveFloorCmd
               (Floor.setLocalFile id file dataURL)
-              floor
+              efloor
         in
           (newFloor, newSeed) ! [ saveCmd ]
 
       FloorProperty.OnPreparePublish ->
         let
           cmd =
-            performAPI GotDiffSource (API.getDiffSource floor.present.id)
+            performAPI GotDiffSource (API.getDiffSource (EditingFloor.present efloor).id)
         in
-          (floor, seed) ! [ cmd ]
+          (efloor, seed) ! [ cmd ]
 
       FloorProperty.OnFileLoadFailed err ->
         let
           cmd =
             Task.perform (Error << FileError) (always NoOp) (Task.fail err)
         in
-          (floor, seed) ! [ cmd ]
+          (efloor, seed) ! [ cmd ]
 
 
 regesterPersonOfEquipment : Equipment -> Cmd Msg
@@ -1579,7 +1577,7 @@ loadDraftFloor user =
 updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput continueEditing id name model =
   let
-    allEquipments = model.floor.present.equipments
+    allEquipments = (EditingFloor.present model.floor).equipments
 
     (equipmentNameInput, requestCandidateCmd) =
       case findEquipmentById allEquipments id of
@@ -1686,7 +1684,7 @@ saveFloorCmd floor change =
       API.saveEditingFloor floor change
   in
     performAPI
-      (always (FloorSaved False))
+      (FloorSaved False)
       (firstTask `andThen` (always secondTask))
 
 
@@ -1704,7 +1702,7 @@ publishFloorCmd floor change =
       API.publishEditingFloor floor change
   in
     performAPI
-      (always (FloorSaved True))
+      (FloorSaved True)
       (firstTask `andThen` (always secondTask))
 
 
@@ -1714,7 +1712,7 @@ updateByKeyEvent event model =
     (True, ShortCut.A) ->
       { model |
         selectedEquipments =
-          List.map idOf <| Floor.equipments model.floor.present
+          List.map idOf <| Floor.equipments (EditingFloor.present model.floor)
       } ! []
 
     (True, ShortCut.C) ->
@@ -1755,10 +1753,10 @@ updateByKeyEvent event model =
         } ! [ saveCmd ]
 
     (True, ShortCut.Y) ->
-      { model | floor = UndoList.redo model.floor } ! []
+      { model | floor = EditingFloor.redo model.floor } ! []
 
     (True, ShortCut.Z) ->
-      { model | floor = UndoList.undo model.floor } ! []
+      { model | floor = EditingFloor.undo model.floor } ! []
 
     (_, ShortCut.UpArrow) ->
       shiftSelectionToward EquipmentsOperation.Up model ! []
@@ -1816,7 +1814,7 @@ candidatesOf model =
 shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =
   let
-    floor = model.floor.present
+    floor = (EditingFloor.present model.floor)
     selected = selectedEquipments model
   in
     case selected of
@@ -1888,14 +1886,14 @@ primarySelectedEquipment : Model -> Maybe Equipment
 primarySelectedEquipment model =
   case model.selectedEquipments of
     head :: _ ->
-      findEquipmentById (equipments <| model.floor.present) head
+      findEquipmentById (equipments <| (EditingFloor.present model.floor)) head
     _ -> Nothing
 
 
 selectedEquipments : Model -> List Equipment
 selectedEquipments model =
   List.filterMap (\id ->
-    findEquipmentById model.floor.present.equipments id
+    findEquipmentById (EditingFloor.present model.floor).equipments id
   ) model.selectedEquipments
 
 

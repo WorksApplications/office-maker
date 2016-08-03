@@ -57,7 +57,8 @@ function equipmentKeyValues(floorId, floorVersion, equipment) {
     ["shape", equipment.shape],
     ["personId", equipment.personId],
     ["floorId", floorId],
-    ["floorVersion", floorVersion]
+    ["floorVersion", floorVersion],
+    ["modifiedVersion", equipment.modifiedVersion]
   ];
 }
 

@@ -26,6 +26,11 @@ noResponse =
   Decode.succeed ()
 
 
+decodeFloorVersion : Decoder Int
+decodeFloorVersion =
+  Decode.object1 identity ("version" := Decode.int)
+
+
 decodeColors : Decoder ColorPalette
 decodeColors =
   Decode.map ColorPalette.init (Decode.list Decode.string)
@@ -114,6 +119,7 @@ encodeFloor floor change =
   in
     object
       [ ("id", Maybe.withDefault null <| Maybe.map string <| floor.id)
+      , ("version", int floor.version)
       , ("name", string floor.name)
       , ("ord", int floor.ord)
       -- , ("equipments", list <| List.map encodeEquipment floor.equipments)
@@ -206,8 +212,9 @@ decodeSearchResults =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id name ord equipments width height realWidth realHeight src public updateBy updateAt ->
+    (\id version name ord equipments width height realWidth realHeight src public updateBy updateAt ->
       { id = id
+      , version = version
       , name = name
       , ord = ord
       , equipments = equipments
@@ -219,6 +226,7 @@ decodeFloor =
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
       })
     |> optional' "id" Decode.string
+    |> required "version" Decode.int
     |> required "name" Decode.string
     |> required "ord" Decode.int
     |> required "equipments" (Decode.list decodeEquipment)

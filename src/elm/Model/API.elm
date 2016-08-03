@@ -47,18 +47,18 @@ type alias Floor = Floor.Model
 type alias Error = Http.Error
 
 
-saveEditingFloor : Floor -> EquipmentsChange -> Task Error ()
+saveEditingFloor : Floor -> EquipmentsChange -> Task Error Int
 saveEditingFloor floor change =
     putJson
-      noResponse
+      decodeFloorVersion
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id ++ "/edit")
       (Http.string <| serializeFloor floor change)
 
 
-publishEditingFloor : Floor -> EquipmentsChange -> Task Error ()
+publishEditingFloor : Floor -> EquipmentsChange -> Task Error Int
 publishEditingFloor floor change =
     postJson
-      noResponse
+      decodeFloorVersion
       ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id)
       (Http.string <| serializeFloor floor change)
 
@@ -168,7 +168,7 @@ personCandidate name =
     Task.succeed []
   else
     getJsonWithoutCache
-      decodePersons <| -- Debug.log "url" <|
+      decodePersons <|
       ("/api/v1/candidate/" ++ Http.uriEncode name)
 
 

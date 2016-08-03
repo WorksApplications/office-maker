@@ -1,9 +1,7 @@
 module View.MessageBar exposing(view)
 
 import Html exposing (..)
--- import Html.App
 import Html.Attributes exposing (..)
--- import Html.Events exposing (..)
 
 import View.Styles as Styles
 
@@ -16,18 +14,23 @@ view e =
   case e of
     NoError ->
       noneView
+
     Success message ->
       successView message
+
     APIError e ->
       errorView (describeAPIError e)
+
     FileError e ->
       errorView ("Unexpected FileError: " ++ toString e)
+
     HtmlError e ->
       errorView ("Unexpected HtmlError: " ++ toString e)
 
 noneView : Html msg
 noneView =
   div [ style Styles.noneBar ] [ ]
+
 
 successView : String -> Html msg
 successView msg =
@@ -38,17 +41,24 @@ errorView : String -> Html msg
 errorView message =
   div [ style Styles.errorBar ] [ text message ]
 
+
 describeAPIError : API.Error -> String
 describeAPIError e =
   case e of
     Http.Timeout ->
       "Timeout"
+
     Http.NetworkError ->
       "NetworkError detected. Please refresh and try again."
+
     Http.UnexpectedPayload str ->
       "UnexpectedPayload: " ++ str
+      
     Http.BadResponse code str ->
-      "Unexpected BadResponse: " ++ toString code ++ " " ++ str
+      if code == 409 then
+        "Conflict: Someone has already changed. Please refresh and try again."
+      else
+        "Unexpected BadResponse: " ++ toString code ++ " " ++ str
 
 
 
