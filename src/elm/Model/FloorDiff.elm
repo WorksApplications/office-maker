@@ -107,8 +107,10 @@ propertyChangesHelp current prev =
 diffObjects : List Object -> List Object -> ObjectsChange
 diffObjects newObjects oldObjects =
   let
+    -- _ = Debug.log "newObjects oldObjects" (newObjects, oldObjects)
+
     oldDict =
-      List.foldl (\e dict -> Dict.insert (idOf e) e dict) Dict.empty oldObjects
+      Dict.fromList (List.map (\obj -> (idOf obj, obj)) oldObjects)
 
     f new (dict, add, modify) =
       case Dict.get (idOf new) dict of

@@ -323,7 +323,7 @@ view model =
               model.personInfo
               { onClose = CloseDiff, onConfirm = ConfirmDiff, noOp = NoOp }
           )
-          model.diff -- TODO
+          model.diff
   in
     div
       []

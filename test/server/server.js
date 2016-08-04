@@ -340,13 +340,13 @@ app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
       return;
     }
     var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
-    console.log('get: ' + id);
+    console.log('get(edit): ' + id);
     db.getFloorWithObjects(conn, true, id, (e, floor) => {
       if(e) {
         res.status(500).send('');
         return;
       }
-      console.log('gotFloor: ' + id + ' ' + !!floor);
+      console.log('gotFloor(edit): ' + id + ' ' + floor.objects.length);
       if(floor) {
         if(floor.id.startsWith('tmp')) {
           floor.id = null;
@@ -365,14 +365,14 @@ app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
       return;
     }
     var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
-    // console.log('get: ' + id);
+    console.log('get: ' + id);
     db.getFloorWithObjects(conn, false, id, (e, floor) => {
-      // console.log("floor:", floor)
       if(e) {
         console.log(e);
         res.status(500).send('');
         return;
       }
+      console.log('gotFloor: ' + id + ' ' + floor.objects.length);
       if(floor) {
         if(floor.id.startsWith('tmp')) {
           floor.id = null;
@@ -411,7 +411,7 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloorWithObjects(conn, newFloor, true, (e, newVersion) => {
+    db.saveFloorWithObjects(conn, newFloor, (e, newVersion) => {
       if(e === 409) {
         res.status(409).send('');
         return;

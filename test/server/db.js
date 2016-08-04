@@ -24,7 +24,7 @@ function saveObjects(conn, data, cb) {
     });
     var conflict = false;
     objects.forEach(function(e) {
-      if(deleted[e.id] || modified[e.id] && data.baseFloorVersion < e.modifiedVersion) {
+      if((deleted[e.id] || modified[e.id]) && data.baseFloorVersion < e.modifiedVersion) {
         conflict = true;
       }
     });
@@ -37,7 +37,7 @@ function saveObjects(conn, data, cb) {
         object = modified[object.id] || object
         return sql.replace('objects', schema.objectKeyValues(data.floorId, data.newFloorVersion, object));
       });
-      sqls.unshift(sql.delete('objects', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
+      // sqls.unshift(sql.delete('objects', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
       rdb.batch(conn, sqls, cb);
     }
   });
@@ -164,15 +164,14 @@ function ensureFloor(conn, id, cb) {
   cb && cb();
 }
 
-function saveFloorWithObjects(conn, newFloor, incrementVersion, cb) {
+function saveFloorWithObjects(conn, newFloor, cb) {
   getFloor(conn, true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);
     } else {
       var baseVersion = newFloor.version;
-      newFloor.version = floor ? (incrementVersion ? floor.version + 1 : floor.version) : 0;
+      newFloor.version = floor ? floor.version + 1 : 0;
       var sqls = [
-        sql.delete('floors', sql.where('id', newFloor.id) + ' and public=0'),
         sql.insert('floors', schema.floorKeyValues(newFloor))
       ];
       rdb.batch(conn, sqls, (e) => {
@@ -202,7 +201,22 @@ function saveFloorWithObjects(conn, newFloor, incrementVersion, cb) {
 }
 
 function publishFloor(conn, newFloor, cb) {
-  saveFloorWithObjects(conn, newFloor, true, cb);
+  saveFloorWithObjects(conn, newFloor, (e, version) => {
+    if(e) {
+      cb(e);
+    } else {
+      var sqls = [
+        sql.delete('floors', sql.where('id', newFloor.id) + ' and public=0')
+      ];
+      rdb.batch(conn, sqls, (e) => {
+        if(e) {
+          cb(e);
+        } else {
+          cb(null, version);
+        }
+      });
+    }
+  });
 }
 
 function deleteFloorWithObjects(conn, floorId, cb) {

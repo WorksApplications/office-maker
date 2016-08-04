@@ -31,19 +31,7 @@ view : Date -> Dict String Person -> Options msg -> (Floor, Maybe Floor) -> Html
 view visitDate personInfo options (current, prev) =
   let
     header =
-      h2 [ style Styles.diffPopupHeader ]
-        [ text
-            ( case prev of
-              Just { update } ->
-                case update of
-                  Just { by , at } ->
-                    "Changes from " ++ formatDateOrTime visitDate at
-                  Nothing ->
-                    Debug.crash "this should never happen"
-              Nothing ->
-                "Changes"
-            )
-        ]
+      headerView visitDate current prev
 
     (propertyChanges, { added, modified, deleted }) =
       FloorDiff.diff current prev
@@ -65,6 +53,23 @@ view visitDate personInfo options (current, prev) =
       , body
       , buttons options.onClose options.onConfirm
       ]
+
+
+headerView : Date -> Floor -> Maybe Floor -> Html msg
+headerView visitDate current prev =
+  h2 [ style Styles.diffPopupHeader ]
+    [ text
+        ( case prev of
+          Just { update } ->
+            case update of
+              Just { by , at } ->
+                "Changes from " ++ formatDateOrTime visitDate at
+              Nothing ->
+                Debug.crash "this should never happen"
+          Nothing ->
+            "Changes"
+        )
+    ]
 
 
 propertyChangesView : List (String, String, String) -> Html msg
