@@ -277,7 +277,7 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
       return;
     }
     // ignore all option for now
-    db.getFloorsInfoWithEquipments(conn, (e, floorInfoList) => {
+    db.getFloorsInfoWithObjects(conn, (e, floorInfoList) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -310,8 +310,8 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
       return;
     }
     results.forEach(function(r) {
-      if(r.equipmentIdAndFloorId && r.equipmentIdAndFloorId[1] && r.equipmentIdAndFloorId[1].startsWith('tmp')) {
-        r.equipmentIdAndFloorId[1] = 'draft';
+      if(r.objectIdAndFloorId && r.objectIdAndFloorId[1] && r.objectIdAndFloorId[1].startsWith('tmp')) {
+        r.objectIdAndFloorId[1] = 'draft';
       }
     })
     res.send(results);
@@ -341,7 +341,7 @@ app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
     }
     var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
     console.log('get: ' + id);
-    db.getFloorWithEquipments(conn, true, id, (e, floor) => {
+    db.getFloorWithObjects(conn, true, id, (e, floor) => {
       if(e) {
         res.status(500).send('');
         return;
@@ -366,7 +366,7 @@ app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
     }
     var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
     // console.log('get: ' + id);
-    db.getFloorWithEquipments(conn, false, id, (e, floor) => {
+    db.getFloorWithObjects(conn, false, id, (e, floor) => {
       // console.log("floor:", floor)
       if(e) {
         console.log(e);
@@ -411,7 +411,7 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
     newFloor.updateBy = req.session.user;
     newFloor.updateAt = new Date().getTime();
 
-    db.saveFloorWithEquipments(conn, newFloor, true, (e, newVersion) => {
+    db.saveFloorWithObjects(conn, newFloor, true, (e, newVersion) => {
       if(e === 409) {
         res.status(409).send('');
         return;

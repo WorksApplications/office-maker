@@ -12,7 +12,7 @@ import Util.DateUtil exposing (..)
 
 import View.Styles as Styles
 
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Model.Floor as Floor
 import Model.FloorDiff as FloorDiff
 import Model.Person exposing (Person)

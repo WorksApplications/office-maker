@@ -10,7 +10,7 @@ commands.deleteFloor = function(floorId, cb) {
       cb(e);
     } else {
       console.log('deleting floor ' + floorId + '...');
-      db.deleteFloorWithEquipments(conn, floorId, (e) => {
+      db.deleteFloorWithObjects(conn, floorId, (e) => {
         if(e) {
           cb(e);
         } else {

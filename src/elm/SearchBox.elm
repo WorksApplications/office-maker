@@ -93,8 +93,8 @@ reorderResults : Maybe String -> List SearchResult -> List SearchResult
 reorderResults thisFloorId results =
   let
     (inThisFloor, inOtherFloor, inDraftFloor, missing) =
-      List.foldl (\({ personId, equipmentIdAndFloorId } as result) (this, other, draft, miss) ->
-        case equipmentIdAndFloorId of
+      List.foldl (\({ personId, objectIdAndFloorId } as result) (this, other, draft, miss) ->
+        case objectIdAndFloorId of
           Just (eid, fid) ->
             if Just fid == thisFloorId then -- this might be draft, but "in this floor" anyway
               (result :: this, other, draft, miss)
@@ -146,11 +146,11 @@ resultsView transformMsg isEditing format model =
           each result =
             resultView transformMsg format result
 
-          filter { equipmentIdAndFloorId } =
+          filter { objectIdAndFloorId } =
             if isEditing then
               True
             else
-              case equipmentIdAndFloorId of
+              case objectIdAndFloorId of
                 Just (_, "draft") ->
                   False
                 _ ->

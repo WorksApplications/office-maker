@@ -8,8 +8,8 @@ var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
 
-function saveEquipments(conn, data, cb) {
-  getEquipments(conn, data.floorId, data.oldFloorVersion, function(e, equipments) {
+function saveObjects(conn, data, cb) {
+  getObjects(conn, data.floorId, data.oldFloorVersion, function(e, objects) {
     var deleted = {};
     var modified = {};
     data.deleted.forEach((e) => {
@@ -20,10 +20,10 @@ function saveEquipments(conn, data, cb) {
       modified[mod.new.id] = mod.new;
     });
     data.added.forEach((mod) => {
-      mod.new.modifiedVersion = data.newFloorVersion;
+      mod.modifiedVersion = data.newFloorVersion;
     });
     var conflict = false;
-    equipments.forEach(function(e) {
+    objects.forEach(function(e) {
       if(deleted[e.id] || modified[e.id] && data.baseFloorVersion < e.modifiedVersion) {
         conflict = true;
       }
@@ -31,35 +31,35 @@ function saveEquipments(conn, data, cb) {
     if(conflict) {
       cb(409);
     } else {
-      var sqls = equipments.concat(data.added).filter((e) => {
+      var sqls = objects.concat(data.added).filter((e) => {
         return !deleted[e.id];
-      }).map((equipment) => {
-        equipment = modified[equipment.id] || equipment
-        return sql.replace('equipments', schema.equipmentKeyValues(data.floorId, data.newFloorVersion, equipment));
+      }).map((object) => {
+        object = modified[object.id] || object
+        return sql.replace('objects', schema.objectKeyValues(data.floorId, data.newFloorVersion, object));
       });
-      sqls.unshift(sql.delete('equipments', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
+      sqls.unshift(sql.delete('objects', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
       rdb.batch(conn, sqls, cb);
     }
   });
 }
 
-function getEquipments(conn, floorId, floorVersion, cb) {
-  var q = sql.select('equipments', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]]));
+function getObjects(conn, floorId, floorVersion, cb) {
+  var q = sql.select('objects', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]]));
   rdb.exec(conn, q, cb);
 }
 
-function getFloorWithEquipments(conn, withPrivate, id, cb) {
+function getFloorWithObjects(conn, withPrivate, id, cb) {
   getFloor(conn, withPrivate, id, (e, floor) => {
     if(e) {
       cb(e);
     } else if(!floor) {
       cb(null, null);
     } else {
-      getEquipments(conn, floor.id, floor.version, (e, equipments) => {
+      getObjects(conn, floor.id, floor.version, (e, objects) => {
         if(e) {
           cb(e);
         } else {
-          floor.equipments = equipments;
+          floor.objects = objects;
           cb(null, floor);
         }
       });
@@ -105,22 +105,22 @@ function getFloors(conn, withPrivate, cb) {
     }
   });
 }
-function getFloorsWithEquipments(conn, withPrivate, cb) {
+function getFloorsWithObjects(conn, withPrivate, cb) {
   getFloors(conn, withPrivate, (e, floors) => {
     if(e) {
       cb(e);
     } else {
       var functions = floors.map(function(floor) {
         return function(cb) {
-          return getEquipments(conn, floor.id, floor.version, cb);
+          return getObjects(conn, floor.id, floor.version, cb);
         };
       });
-      _async.parallel(functions, function(e, equipmentsList) {
+      _async.parallel(functions, function(e, objectsList) {
         if(e) {
           cb(e);
         } else {
-          equipmentsList.forEach(function(equipments, i) {
-            floors[i].equipments = equipments;//TODO don't mutate
+          objectsList.forEach(function(objects, i) {
+            floors[i].objects = objects;//TODO don't mutate
           });
           cb(null, floors);
         }
@@ -128,12 +128,12 @@ function getFloorsWithEquipments(conn, withPrivate, cb) {
     }
   });
 }
-function getFloorsInfoWithEquipments (conn, cb) {
-  getFloorsWithEquipments(conn, false, (e, floorsNotIncludingLastPrivate) => {
+function getFloorsInfoWithObjects (conn, cb) {
+  getFloorsWithObjects(conn, false, (e, floorsNotIncludingLastPrivate) => {
     if(e) {
       cb(e)
     } else {
-      getFloorsWithEquipments(conn, true, (e, floorsIncludingLastPrivate) => {
+      getFloorsWithObjects(conn, true, (e, floorsIncludingLastPrivate) => {
         if(e) {
           cb(e)
         } else {
@@ -164,7 +164,7 @@ function ensureFloor(conn, id, cb) {
   cb && cb();
 }
 
-function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
+function saveFloorWithObjects(conn, newFloor, incrementVersion, cb) {
   getFloor(conn, true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);
@@ -177,10 +177,10 @@ function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
       ];
       rdb.batch(conn, sqls, (e) => {
         if(e) {
-          console.log('saveFloorWithEquipments', e);
+          console.log('saveFloorWithObjects', e);
           cb && cb(e);
         } else {
-          saveEquipments(conn, {
+          saveObjects(conn, {
             floorId: newFloor.id,
             baseFloorVersion: baseVersion,
             oldFloorVersion: floor.version,
@@ -202,17 +202,17 @@ function saveFloorWithEquipments(conn, newFloor, incrementVersion, cb) {
 }
 
 function publishFloor(conn, newFloor, cb) {
-  saveFloorWithEquipments(conn, newFloor, true, cb);
+  saveFloorWithObjects(conn, newFloor, true, cb);
 }
 
-function deleteFloorWithEquipments(conn, floorId, cb) {
+function deleteFloorWithObjects(conn, floorId, cb) {
   var sqls = [
     sql.delete('floors', sql.where('id', floorId)),
-    sql.delete('equipments', sql.where('floorId', floorId)),
+    sql.delete('objects', sql.where('floorId', floorId)),
   ];
   rdb.batch(conn, sqls, (e) => {
     if(e) {
-      console.log('deleteFloorWithEquipments', e);
+      console.log('deleteFloorWithObjects', e);
       cb && cb(e);
     } else {
       cb && cb();
@@ -270,7 +270,7 @@ function search(conn, query, all, cb) {
     if(e) {
       cb(e);
     } else {
-      getFloorsWithEquipments(conn, all, (e, floors) => {
+      getFloorsWithObjects(conn, all, (e, floors) => {
         if(e) {
           cb(e);
         } else {
@@ -280,35 +280,35 @@ function search(conn, query, all, cb) {
             results[person.id] = [];
           });
           floors.forEach((floor) => {
-            floor.equipments.forEach((e) => {
+            floor.objects.forEach((e) => {
               if(e.personId) {
                 if(results[e.personId]) {
                   results[e.personId].push(e);
                 }
               } else if(e.name.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
-                // { Nothing, Just } -- equipments that has no person
+                // { Nothing, Just } -- objects that has no person
                 arr.push({
                   personId : null,
-                  equipmentIdAndFloorId : [e, e.floorId]
+                  objectIdAndFloorId : [e, e.floorId]
                 });
               }
             });
           });
 
           Object.keys(results).forEach((personId) => {
-            var equipments = results[personId];
-            equipments.forEach(e => {
+            var objects = results[personId];
+            objects.forEach(e => {
               // { Just, Just } -- people who exist in map
               arr.push({
                 personId : personId,
-                equipmentIdAndFloorId : [e, e.floorId]
+                objectIdAndFloorId : [e, e.floorId]
               });
             })
             // { Just, Nothing } -- missing people
-            if(!equipments.length) {
+            if(!objects.length) {
               arr.push({
                 personId : personId,
-                equipmentIdAndFloorId : null
+                objectIdAndFloorId : null
               });
             }
           });
@@ -458,13 +458,13 @@ module.exports = {
   savePrototypes: savePrototypes,
   getColors: getColors,
   saveColors: saveColors,
-  getFloorWithEquipments: getFloorWithEquipments,
-  // getFloorsWithEquipments: getFloorsWithEquipments,
-  getFloorsInfoWithEquipments: getFloorsInfoWithEquipments,
+  getFloorWithObjects: getFloorWithObjects,
+  // getFloorsWithObjects: getFloorsWithObjects,
+  getFloorsInfoWithObjects: getFloorsInfoWithObjects,
   ensureFloor: ensureFloor,
-  saveFloorWithEquipments: saveFloorWithEquipments,
+  saveFloorWithObjects: saveFloorWithObjects,
   publishFloor: publishFloor,
-  deleteFloorWithEquipments: deleteFloorWithEquipments,
+  deleteFloorWithObjects: deleteFloorWithObjects,
   deletePrototype: deletePrototype,
   saveImage: saveImage,
   resetImage: resetImage

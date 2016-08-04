@@ -3,7 +3,7 @@ module Model.FloorDiff exposing(..)
 import Maybe
 import Dict exposing (Dict)
 
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Model.Floor as Floor
 
 
@@ -15,36 +15,36 @@ type alias Options msg =
   , noOp : msg
   }
 
-type alias EquipmentModification =
-  { new : Equipment, old : Equipment, changes : List String }
+type alias ObjectModification =
+  { new : Object, old : Object, changes : List String }
 
-type alias EquipmentsChange =
-  { added : List Equipment
-  , modified : List EquipmentModification
-  , deleted : List Equipment
+type alias ObjectsChange =
+  { added : List Object
+  , modified : List ObjectModification
+  , deleted : List Object
   }
 
 type alias PropChanges =
   List (String, String, String)
 
 
-noEquipmentsChange : EquipmentsChange
-noEquipmentsChange =
+noObjectsChange : ObjectsChange
+noObjectsChange =
   { added = [], modified = [], deleted = [] }
 
 
-diff : Floor -> Maybe Floor -> (PropChanges, EquipmentsChange)
+diff : Floor -> Maybe Floor -> (PropChanges, ObjectsChange)
 diff current prev =
   let
-    newEquipments =
-      Floor.equipments current
+    newObjects =
+      Floor.objects current
 
-    oldEquipments =
-      Maybe.withDefault [] <| Maybe.map Floor.equipments prev
+    oldObjects =
+      Maybe.withDefault [] <| Maybe.map Floor.objects prev
 
   in
     ( diffPropertyChanges current prev
-    , diffEquipments newEquipments oldEquipments
+    , diffObjects newObjects oldObjects
     )
 
 
@@ -104,17 +104,17 @@ propertyChangesHelp current prev =
     nameChange ++ ordChange ++ sizeChange
 
 
-diffEquipments : List Equipment -> List Equipment -> EquipmentsChange
-diffEquipments newEquipments oldEquipments =
+diffObjects : List Object -> List Object -> ObjectsChange
+diffObjects newObjects oldObjects =
   let
     oldDict =
-      List.foldl (\e dict -> Dict.insert (idOf e) e dict) Dict.empty oldEquipments
+      List.foldl (\e dict -> Dict.insert (idOf e) e dict) Dict.empty oldObjects
 
     f new (dict, add, modify) =
       case Dict.get (idOf new) dict of
         Just old ->
           ( Dict.remove (idOf new) dict, add,
-            case diffEquipment new old of
+            case diffObject new old of
               [] -> modify
               list -> { new = new, old = old, changes = list } :: modify
           )
@@ -123,7 +123,7 @@ diffEquipments newEquipments oldEquipments =
           (dict, new :: add, modify)
 
     (ramainingOldDict, add, modify) =
-      List.foldl f (oldDict, [], []) newEquipments
+      List.foldl f (oldDict, [], []) newObjects
 
     delete =
       Dict.values ramainingOldDict
@@ -135,8 +135,8 @@ diffEquipments newEquipments oldEquipments =
 
 
 -- TODO separate model and view
-diffEquipment : Equipment -> Equipment -> List String
-diffEquipment new old =
+diffObject : Object -> Object -> List String
+diffObject new old =
   let
     nameChange =
       if nameOf new /= nameOf old then

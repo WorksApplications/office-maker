@@ -1,59 +1,59 @@
 module Model.ProfilePopupLogic exposing (..)
 
 import Model.Scale as Scale
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 
 
-centerTopScreenXYOfEquipment : Scale.Model -> (Int, Int) -> Equipment -> (Int, Int)
-centerTopScreenXYOfEquipment scale (offsetX, offsetY) equipment =
+centerTopScreenXYOfObject : Scale.Model -> (Int, Int) -> Object -> (Int, Int)
+centerTopScreenXYOfObject scale (offsetX, offsetY) object =
   let
     (x, y, w, h) =
-      rect equipment
+      rect object
   in
     Scale.imageToScreenForPosition scale (offsetX + x + w//2, offsetY + y)
 
 
-bottomScreenYOfEquipment : Scale.Model -> (Int, Int) -> Equipment -> Int
-bottomScreenYOfEquipment scale (offsetX, offsetY) equipment =
+bottomScreenYOfObject : Scale.Model -> (Int, Int) -> Object -> Int
+bottomScreenYOfObject scale (offsetX, offsetY) object =
   let
     (x, y, w, h) =
-      rect equipment
+      rect object
   in
     Scale.imageToScreen scale (offsetY + y + h)
 
 
-calcPopupLeftFromEquipmentCenter : Int -> Int -> Int
-calcPopupLeftFromEquipmentCenter popupWidth eqCenter =
+calcPopupLeftFromObjectCenter : Int -> Int -> Int
+calcPopupLeftFromObjectCenter popupWidth eqCenter =
   eqCenter - (popupWidth // 2)
 
 
-calcPopupRightFromEquipmentCenter : Int -> Int -> Int
-calcPopupRightFromEquipmentCenter popupWidth eqCenter =
+calcPopupRightFromObjectCenter : Int -> Int -> Int
+calcPopupRightFromObjectCenter popupWidth eqCenter =
   eqCenter + (popupWidth // 2)
 
 
-calcPopupTopFromEquipmentTop : Int -> Int -> Int
-calcPopupTopFromEquipmentTop popupHeight eqTop =
+calcPopupTopFromObjectTop : Int -> Int -> Int
+calcPopupTopFromObjectTop popupHeight eqTop =
   eqTop - (popupHeight + 10)
 
 
-adjustOffset : (Int, Int) -> (Int, Int) -> Scale.Model -> (Int, Int) -> Equipment -> (Int, Int)
-adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale (offsetX, offsetY) equipment =
+adjustOffset : (Int, Int) -> (Int, Int) -> Scale.Model -> (Int, Int) -> Object -> (Int, Int)
+adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale (offsetX, offsetY) object =
   let
     (eqCenter, eqTop) =
-      centerTopScreenXYOfEquipment scale (offsetX, offsetY) equipment
+      centerTopScreenXYOfObject scale (offsetX, offsetY) object
 
     left =
-      calcPopupLeftFromEquipmentCenter popupWidth eqCenter
+      calcPopupLeftFromObjectCenter popupWidth eqCenter
 
     top =
-      calcPopupTopFromEquipmentTop popupHeight eqTop
+      calcPopupTopFromObjectTop popupHeight eqTop
 
     right =
-      calcPopupRightFromEquipmentCenter popupWidth eqCenter
+      calcPopupRightFromObjectCenter popupWidth eqCenter
 
     bottom =
-      bottomScreenYOfEquipment scale (offsetX, offsetY) equipment
+      bottomScreenYOfObject scale (offsetX, offsetY) object
 
     offsetX' =
       adjust containerWidth left right offsetX

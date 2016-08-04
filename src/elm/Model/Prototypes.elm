@@ -1,8 +1,8 @@
 module Model.Prototypes exposing (..)
 
 import Util.ListUtil exposing (..)
--- import Equipments exposing (..)
-import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+-- import Objects exposing (..)
+import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 type alias PrototypeId =
   String

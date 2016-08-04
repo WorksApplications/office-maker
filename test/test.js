@@ -48,7 +48,7 @@ describe('admin', () => {
         server.send(admin, 'PUT', `/api/v1/floor/${floorId}/edit`, {
           id: floorId,
           name: 'F1',
-          equipments: []
+          objects: []
         }, status(200)),
         server.send(admin, 'GET', `/api/v1/floor/${floorId}/edit`, {
         }, status(200)),
@@ -72,7 +72,7 @@ describe('private floor', () => {
         server.send(admin, 'PUT', `/api/v1/floor/${floorId}/edit`, {
           id: floorId,
           name: 'F1',
-          equipments: []
+          objects: []
         }, status(200)),
         server.send(admin, 'GET', `/api/v1/floors`, {
         }, length(0)),
@@ -87,7 +87,7 @@ describe('private floor', () => {
         server.send(admin, 'POST', `/api/v1/floor/${floorId}`, {
           id: floorId,
           name: 'F2',
-          equipments: []
+          objects: []
         }, status(200)),
         server.send(guest, 'GET', `/api/v1/floors`, {
         }, length(1)),

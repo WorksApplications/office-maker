@@ -13,7 +13,7 @@ import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Model.Prototypes exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
@@ -56,8 +56,8 @@ decodePersons =
   Decode.list decodePerson
 
 
-encodeEquipment : Equipment -> Value
-encodeEquipment e =
+encodeObject : Object -> Value
+encodeObject e =
   case e of
     Desk id (x, y, width, height) backgroundColor name personId ->
       object
@@ -92,23 +92,23 @@ encodeEquipment e =
         , ("color", string color)
         , ("shape", string (
           case shape of
-            Equipment.Rectangle ->
+            Object.Rectangle ->
               "rectangle"
-            Equipment.Ellipse ->
+            Object.Ellipse ->
               "ellipse"
           ))
         ]
 
 
-encodeEquipmentModification : EquipmentModification -> Value
-encodeEquipmentModification mod =
+encodeObjectModification : ObjectModification -> Value
+encodeObjectModification mod =
   object
-    [ ("old", encodeEquipment mod.old)
-    , ("new", encodeEquipment mod.new)
+    [ ("old", encodeObject mod.old)
+    , ("new", encodeObject mod.new)
     ]
 
 
-encodeFloor : Floor -> EquipmentsChange -> Value
+encodeFloor : Floor -> ObjectsChange -> Value
 encodeFloor floor change =
   let
     src =
@@ -122,10 +122,10 @@ encodeFloor floor change =
       , ("version", int floor.version)
       , ("name", string floor.name)
       , ("ord", int floor.ord)
-      -- , ("equipments", list <| List.map encodeEquipment floor.equipments)
-      , ("added", list (List.map encodeEquipment change.added))
-      , ("modified", list (List.map encodeEquipmentModification change.modified))
-      , ("deleted", list (List.map encodeEquipment change.deleted))
+      -- , ("objects", list <| List.map encodeObject floor.objects)
+      , ("added", list (List.map encodeObject change.added))
+      , ("modified", list (List.map encodeObjectModification change.modified))
+      , ("deleted", list (List.map encodeObject change.deleted))
       , ("width", int floor.width)
       , ("height", int floor.height)
       , ("realWidth", Maybe.withDefault null <| Maybe.map (int << fst) floor.realSize)
@@ -168,8 +168,8 @@ decodePerson =
 
 
  -- TODO andThen
-decodeEquipment : Decoder Equipment
-decodeEquipment =
+decodeObject : Decoder Object
+decodeObject =
   decode
     (\id tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
@@ -177,9 +177,9 @@ decodeEquipment =
       else
         Label id (x, y, width, height) backgroundColor name fontSize color
           (if shape == "rectangle" then
-            Equipment.Rectangle
+            Object.Rectangle
           else
-            Equipment.Ellipse
+            Object.Ellipse
           )
     )
     |> required "id" Decode.string
@@ -201,7 +201,7 @@ decodeSearchResult =
   decode
     SearchResult
     |> optional' "personId" Decode.string
-    |> optional' "equipmentIdAndFloorId" (Decode.tuple2 (,) decodeEquipment Decode.string)
+    |> optional' "objectIdAndFloorId" (Decode.tuple2 (,) decodeObject Decode.string)
 
 
 decodeSearchResults : Decoder (List SearchResult)
@@ -212,12 +212,12 @@ decodeSearchResults =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id version name ord equipments width height realWidth realHeight src public updateBy updateAt ->
+    (\id version name ord objects width height realWidth realHeight src public updateBy updateAt ->
       { id = id
       , version = version
       , name = name
       , ord = ord
-      , equipments = equipments
+      , objects = objects
       , width = width
       , height = height
       , imageSource = Maybe.withDefault None (Maybe.map URL src)
@@ -229,7 +229,7 @@ decodeFloor =
     |> required "version" Decode.int
     |> required "name" Decode.string
     |> required "ord" Decode.int
-    |> required "equipments" (Decode.list decodeEquipment)
+    |> required "objects" (Decode.list decodeObject)
     |> required "width" Decode.int
     |> required "height" Decode.int
     |> optional' "realWidth" Decode.int
@@ -277,7 +277,7 @@ serializePrototypes prototypes =
   encode 0 (Encode.list (List.map encodePrototype prototypes))
 
 
-serializeFloor : Floor -> EquipmentsChange -> String
+serializeFloor : Floor -> ObjectsChange -> String
 serializeFloor floor change =
     encode 0 (encodeFloor floor change)
 

@@ -42,11 +42,11 @@ CAUTION: This product is under construction.
 |Type|Structure|
 |:--|:--|
 |User| { id : UUID, name : Person.name, role : Role, personId : Person.id } |
-|Floor| { id : UUID, version : int, name : string, image? : URL, realSize? : (int, int), equipments : [ Equipment ], public : boolean, publishedBy? : User.id, publishedAt? : Date } |
-|Equipment| { id : UUID, name : string, size : (int, int), color : Color, personId? : Person.id } |
+|Floor| { id : UUID, version : int, name : string, image? : URL, realSize? : (int, int), objects : [ Object ], public : boolean, publishedBy? : User.id, publishedAt? : Date } |
+|Object| { id : UUID, name : string, size : (int, int), color : Color, personId? : Person.id } |
 |Prototype| { id : UUID, name : string, size : (int, int), color : Color } |
 |Image| binary |
-|SearchResult| [(Equipment, string)] |
+|SearchResult| [(Object, string)] |
 |Person| { id : string, name : string, org : string, tel? : string, mail? : string, image? : URL } |
 |Role| "admin" "general" |
 |Color| string |
@@ -66,7 +66,7 @@ CAUTION: This product is under construction.
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
 |string|string|string|string|int|int|int|int|bool|User.id|bigint|
 
-#### Equipment
+#### Object
 |id|name|width|height|color|personId|floorId|
 |:--|:--|:--|:--|:--|:--|:--|
 |string|string|int|int|string|Person.id|Floor.id|

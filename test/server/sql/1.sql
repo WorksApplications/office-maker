@@ -31,7 +31,7 @@ CREATE TABLE floors (
   UNIQUE(id, version)
 );
 
-CREATE TABLE equipments (
+CREATE TABLE objects (
   id varchar(36) NOT NULL,
   name varchar(128) NOT NULL,
   x int NOT NULL,

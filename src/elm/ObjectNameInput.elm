@@ -1,4 +1,4 @@
-module EquipmentNameInput exposing (..)
+module ObjectNameInput exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -15,7 +15,7 @@ import View.ProfilePopup as ProfilePopup
 import InlineHover exposing (hover)
 
 type alias Model =
-  { editingEquipment : Maybe (String, String)
+  { editingObject : Maybe (String, String)
   , ctrl : Bool
   , shift : Bool
   , candidateIndex : Int
@@ -25,7 +25,7 @@ type alias Id = String
 
 init : Model
 init =
-  { editingEquipment = Nothing
+  { editingObject = Nothing
   , ctrl = False
   , shift = False
   , candidateIndex = -1
@@ -49,7 +49,7 @@ type Event =
 
 isEditing : Model -> Bool
 isEditing model =
-  model.editingEquipment /= Nothing
+  model.editingObject /= Nothing
 
 
 update : Msg -> Model -> (Model, Event)
@@ -59,19 +59,19 @@ update message model =
       (model, None)
 
     InputName id name ->
-      case model.editingEquipment of
+      case model.editingObject of
         Just (id', name') ->
           if id == id' then
             ({ model |
-              editingEquipment = Just (id, name)
+              editingObject = Just (id, name)
             }, OnInput id name)
           else
             ({ model |
-              editingEquipment = Just (id', name')
+              editingObject = Just (id', name')
             }, None)
         Nothing ->
             ({ model |
-              editingEquipment = Nothing
+              editingObject = Nothing
             }, None)
 
     KeyupOnNameInput keyCode ->
@@ -86,7 +86,7 @@ update message model =
       let
         (newModel, event) =
           if keyCode == 13 then
-            case model.editingEquipment of
+            case model.editingObject of
               Just (id, name) ->
                 ( updateNewEdit Nothing model
                 , OnFinish id name (selectedCandidateId model.candidateIndex candidates)
@@ -114,13 +114,13 @@ update message model =
             }
         , event )
 
-    SelectCandidate equipmentId personId ->
-      ( { model | editingEquipment = Nothing }
-      , OnSelectCandidate equipmentId personId
+    SelectCandidate objectId personId ->
+      ( { model | editingObject = Nothing }
+      , OnSelectCandidate objectId personId
       )
 
-    UnsetPerson equipmentId ->
-      ( model, OnUnsetPerson equipmentId )
+    UnsetPerson objectId ->
+      ( model, OnUnsetPerson objectId )
 
 
 selectedCandidateId : Int -> List Person -> Maybe Id
@@ -133,8 +133,8 @@ selectedCandidateId candidateIndex candidates =
 
 
 updateNewEdit : (Maybe (String, String)) -> Model -> Model
-updateNewEdit editingEquipment model =
-  { model | editingEquipment = editingEquipment }
+updateNewEdit editingObject model =
+  { model | editingObject = editingObject }
 
 
 start : (String, String) -> Model -> Model
@@ -144,7 +144,7 @@ start =
 
 forceFinish : Model -> (Model, Maybe (Id, String))
 forceFinish model =
-  case model.editingEquipment of
+  case model.editingObject of
     Just (id, name) ->
       (updateNewEdit Nothing model, Just (id, name))
 
@@ -154,7 +154,7 @@ forceFinish model =
 
 view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> Model -> Html Msg
 view deskInfoOf transitionDisabled candidates model =
-  case model.editingEquipment of
+  case model.editingObject of
     Just (id, name) ->
       case deskInfoOf id of
         Just (screenRect, maybePerson) ->
@@ -211,37 +211,37 @@ view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
 
 
 reletedpersonView : Id -> Person -> Html Msg
-reletedpersonView equipmentId person =
+reletedpersonView objectId person =
   div
     [ style (Styles.candidatesViewRelatedPerson) ]
-    ( unsetButton equipmentId :: ProfilePopup.innerView Nothing person )
+    ( unsetButton objectId :: ProfilePopup.innerView Nothing person )
 
 
 unsetButton : Id -> Html Msg
-unsetButton equipmentId =
+unsetButton objectId =
   hover Styles.unsetRelatedPersonButtonHover div
-    [ onClick (UnsetPerson equipmentId)
+    [ onClick (UnsetPerson objectId)
     , style Styles.unsetRelatedPersonButton
     ]
     [ text "Unset"]
 
 
 candidatesView : Int -> Id -> List Person -> Html Msg
-candidatesView candidateIndex equipmentId people =
+candidatesView candidateIndex objectId people =
   case people of
     [] -> text ""
     _ ->
       Keyed.ul
         [ style (Styles.candidatesView) ]
-        (List.indexedMap (candidatesViewEach candidateIndex equipmentId) people)
+        (List.indexedMap (candidatesViewEach candidateIndex objectId) people)
 
 
 candidatesViewEach : Int -> Id -> Int -> Person -> (String, Html Msg)
-candidatesViewEach candidateIndex equipmentId index person =
+candidatesViewEach candidateIndex objectId index person =
   ( person.id
   , hover Styles.candidateItemHover li
       [ style (Styles.candidateItem (candidateIndex == index))
-      , onMouseDown' (SelectCandidate equipmentId person.id)
+      , onMouseDown' (SelectCandidate objectId person.id)
       ]
       [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
       , mail person

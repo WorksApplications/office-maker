@@ -1,10 +1,10 @@
 module Model.SearchResult exposing (..)
 
-import Model.Equipment exposing (Equipment)
+import Model.Object exposing (Object)
 
 type alias Id = String
 
 type alias SearchResult =
   { personId : Maybe Id
-  , equipmentIdAndFloorId : Maybe (Equipment, Id)
+  , objectIdAndFloorId : Maybe (Object, Id)
   }

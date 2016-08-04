@@ -1,11 +1,11 @@
-module Model.EquipmentsOperation exposing (..)
+module Model.ObjectsOperation exposing (..)
 
 {- this module does not know Model or Floor -}
 
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Util.ListUtil exposing (..)
 
-rectFloat : Equipment -> (Float, Float, Float, Float)
+rectFloat : Object -> (Float, Float, Float, Float)
 rectFloat e =
   let
     (x, y, w, h) = rect e
@@ -13,7 +13,7 @@ rectFloat e =
     (toFloat x, toFloat y, toFloat w, toFloat h)
 
 
-center : Equipment -> (Float, Float)
+center : Object -> (Float, Float)
 center e =
   let
     (x, y, w, h) = rectFloat e
@@ -26,23 +26,23 @@ linked (x1, y1, w1, h1) (x2, y2, w2, h2) =
   x1 <= x2+w2 && x2 <= x1+w1 && y1 <= y2+h2 && y2 <= y1+h1
 
 
-linkedByAnyOf : List Equipment -> Equipment -> Bool
-linkedByAnyOf list newEquipment =
+linkedByAnyOf : List Object -> Object -> Bool
+linkedByAnyOf list newObject =
   List.any (\e ->
-    linked (rect e) (rect newEquipment)
+    linked (rect e) (rect newObject)
   ) list
 
 
-island : List Equipment -> List Equipment -> List Equipment
+island : List Object -> List Object -> List Object
 island current rest =
   let
-    (newEquipments, rest') =
+    (newObjects, rest') =
       List.partition (linkedByAnyOf current) rest
   in
-    if List.isEmpty newEquipments then
-      current ++ newEquipments
+    if List.isEmpty newObjects then
+      current ++ newObjects
     else
-      island (current ++ newEquipments) rest'
+      island (current ++ newObjects) rest'
 
 
 type Direction = Up | Left | Right | Down
@@ -57,7 +57,7 @@ opposite direction =
     Down -> Up
 
 
-compareBy : Direction -> Equipment -> Equipment -> Order
+compareBy : Direction -> Object -> Object -> Order
 compareBy direction from new =
   let
     (centerX, centerY) = center from
@@ -81,17 +81,17 @@ compareBy direction from new =
         if greater then GT else LT
 
 
-lessBy : Direction -> Equipment -> Equipment -> Bool
+lessBy : Direction -> Object -> Object -> Bool
 lessBy direction from new =
   compareBy direction from new == LT
 
 
-greaterBy : Direction -> Equipment -> Equipment -> Bool
+greaterBy : Direction -> Object -> Object -> Bool
 greaterBy direction from new =
   compareBy direction from new == GT
 
 
-minimumBy : Direction -> List Equipment -> Maybe Equipment
+minimumBy : Direction -> List Object -> Maybe Object
 minimumBy direction list =
   let
     f e1 memo =
@@ -107,16 +107,16 @@ minimumBy direction list =
     List.foldl f Nothing list
 
 
-{-| Defines if given equipment can be selected next.
+{-| Defines if given object can be selected next.
 -}
-filterCandidate : Direction -> Equipment -> Equipment -> Bool
+filterCandidate : Direction -> Object -> Object -> Bool
 filterCandidate direction from new =
     greaterBy direction from new
 
 
-{-| Returns the next equipment toward given direction.
+{-| Returns the next object toward given direction.
 -}
-nearest : Direction -> Equipment -> List Equipment -> Maybe Equipment
+nearest : Direction -> Object -> List Object -> Maybe Object
 nearest direction from list =
   let
     filtered = List.filter (filterCandidate direction from) list
@@ -127,7 +127,7 @@ nearest direction from list =
       minimumBy direction filtered
 
 
-withinRange : (Equipment, Equipment) -> List Equipment -> List Equipment
+withinRange : (Object, Object) -> List Object -> List Object
 withinRange range list =
   let
     (start, end) = range
@@ -150,7 +150,7 @@ withinRange range list =
     List.filter isContained list
 
 
-bounds : List Equipment -> Maybe (Int, Int, Int, Int)
+bounds : List Object -> Maybe (Int, Int, Int, Int)
 bounds list =
   let
     f e1 memo =
@@ -168,10 +168,10 @@ bounds list =
     List.foldl f Nothing list
 
 
-bound : Direction -> Equipment -> Int
-bound direction equipment =
+bound : Direction -> Object -> Int
+bound direction object =
   let
-    (left, top, w, h) = rect equipment
+    (left, top, w, h) = rect object
     right = left + w
     bottom = top + h
   in
@@ -182,7 +182,7 @@ bound direction equipment =
       Right -> right
 
 
-compareBoundBy : Direction -> Equipment -> Equipment -> Order
+compareBoundBy : Direction -> Object -> Object -> Order
 compareBoundBy direction e1 e2 =
   let
     (left1, top1, w1, h1) = rect e1
@@ -199,7 +199,7 @@ compareBoundBy direction e1 e2 =
       Right -> if right1 == right2 then EQ else if right1 > right2 then GT else LT
 
 
-minimumPartsOf : Direction -> List Equipment -> List Equipment
+minimumPartsOf : Direction -> List Object -> List Object
 minimumPartsOf direction list =
   let
     f e memo =
@@ -214,7 +214,7 @@ minimumPartsOf direction list =
     List.foldl f [] list
 
 
-maximumPartsOf : Direction -> List Equipment -> List Equipment
+maximumPartsOf : Direction -> List Object -> List Object
 maximumPartsOf direction list =
   let
     f e memo =
@@ -229,7 +229,7 @@ maximumPartsOf direction list =
     List.foldl f [] list
 
 
-restOfMinimumPartsOf : Direction -> List Equipment -> List Equipment
+restOfMinimumPartsOf : Direction -> List Object -> List Object
 restOfMinimumPartsOf direction list =
   let
     minimumParts = minimumPartsOf direction list
@@ -237,7 +237,7 @@ restOfMinimumPartsOf direction list =
     List.filter (\e -> not (List.member e minimumParts)) list
 
 
-restOfMaximumPartsOf : Direction -> List Equipment -> List Equipment
+restOfMaximumPartsOf : Direction -> List Object -> List Object
 restOfMaximumPartsOf direction list =
   let
     maximumParts = maximumPartsOf direction list
@@ -245,7 +245,7 @@ restOfMaximumPartsOf direction list =
     List.filter (\e -> not (List.member e maximumParts)) list
 
 
-expandOrShrink : Direction -> Equipment -> List Equipment -> List Equipment -> List Equipment
+expandOrShrink : Direction -> Object -> List Object -> List Object -> List Object
 expandOrShrink direction primary current all =
   let
     (left0, top0, w0, h0) = rect primary
@@ -282,37 +282,37 @@ expandOrShrink direction primary current all =
       restOfMaximumPartsOf (opposite direction) current
 
 
-pasteEquipments : (Int, Int) -> List (Equipment, Id) -> List Equipment -> List Equipment
-pasteEquipments (baseX, baseY) copiedWithNewIds allEquipments =
+pasteObjects : (Int, Int) -> List (Object, Id) -> List Object -> List Object
+pasteObjects (baseX, baseY) copiedWithNewIds allObjects =
   let
     (minX, minY) =
-      List.foldl (\(equipment, newId) (minX, minY) ->
+      List.foldl (\(object, newId) (minX, minY) ->
         let
-          (x, y) = Equipment.position equipment
+          (x, y) = Object.position object
         in
           (Basics.min minX x, Basics.min minY y)
     ) (99999, 99999) copiedWithNewIds
 
-    newEquipments =
-      List.map (\(equipment, newId) ->
+    newObjects =
+      List.map (\(object, newId) ->
         let
-          (x, y) = Equipment.position equipment
+          (x, y) = Object.position object
         in
-          Equipment.copy newId (baseX + (x - minX), baseY + (y - minY)) equipment
+          Object.copy newId (baseX + (x - minX), baseY + (y - minY)) object
     ) copiedWithNewIds
   in
-    newEquipments
+    newObjects
 
 
-partiallyChange : (Equipment -> Equipment) -> List Id -> List Equipment -> List Equipment
-partiallyChange f ids equipments =
+partiallyChange : (Object -> Object) -> List Id -> List Object -> List Object
+partiallyChange f ids objects =
   List.map (\e ->
     if List.member (idOf e) ids then f e else e
-  ) equipments
+  ) objects
 
 
-moveEquipments : Int -> (Int, Int) -> List Id -> List Equipment -> List Equipment
-moveEquipments gridSize (dx, dy) ids equipments =
+moveObjects : Int -> (Int, Int) -> List Id -> List Object -> List Object
+moveObjects gridSize (dx, dy) ids objects =
   partiallyChange (\e ->
     let
       (x, y, _, _) =
@@ -321,13 +321,13 @@ moveEquipments gridSize (dx, dy) ids equipments =
       (newX, newY) =
         fitPositionToGrid gridSize (x + dx, y + dy)
     in
-      Equipment.move (newX, newY) e
-  ) ids equipments
+      Object.move (newX, newY) e
+  ) ids objects
 
 
-findEquipmentById : List Equipment -> Id -> Maybe Equipment
-findEquipmentById equipments id =
-  findBy (\equipment -> id == (idOf equipment)) equipments
+findObjectById : List Object -> Id -> Maybe Object
+findObjectById objects id =
+  findBy (\object -> id == (idOf object)) objects
 
 
 fitPositionToGrid : Int -> (Int, Int) -> (Int, Int)
@@ -340,37 +340,37 @@ fitSizeToGrid gridSize (x, y) =
   (x // gridSize * gridSize, y // gridSize * gridSize)
 
 
-backgroundColorProperty : List Equipment -> Maybe String
-backgroundColorProperty selectedEquipments =
-  collectSameProperty backgroundColorOf selectedEquipments
+backgroundColorProperty : List Object -> Maybe String
+backgroundColorProperty selectedObjects =
+  collectSameProperty backgroundColorOf selectedObjects
 
 
-colorProperty : List Equipment -> Maybe String
-colorProperty selectedEquipments =
-  collectSameProperty colorOf selectedEquipments
+colorProperty : List Object -> Maybe String
+colorProperty selectedObjects =
+  collectSameProperty colorOf selectedObjects
 
 
-shapeProperty : List Equipment -> Maybe Equipment.Shape
-shapeProperty selectedEquipments =
-  collectSameProperty shapeOf selectedEquipments
+shapeProperty : List Object -> Maybe Object.Shape
+shapeProperty selectedObjects =
+  collectSameProperty shapeOf selectedObjects
 
 
-nameProperty : List Equipment -> Maybe String
-nameProperty selectedEquipments =
-  collectSameProperty nameOf selectedEquipments
+nameProperty : List Object -> Maybe String
+nameProperty selectedObjects =
+  collectSameProperty nameOf selectedObjects
 
 
-fontSizeProperty : List Equipment -> Maybe Float
-fontSizeProperty selectedEquipments =
-  collectSameProperty fontSizeOf selectedEquipments
+fontSizeProperty : List Object -> Maybe Float
+fontSizeProperty selectedObjects =
+  collectSameProperty fontSizeOf selectedObjects
 
 
 -- [red, green, green] -> Nothing
 -- [blue, blue] -> Just blue
 -- [] -> Nothing
-collectSameProperty : (Equipment -> a) -> List Equipment -> Maybe a
-collectSameProperty getProp selectedEquipments =
-  case List.head selectedEquipments of
+collectSameProperty : (Object -> a) -> List Object -> Maybe a
+collectSameProperty getProp selectedObjects =
+  case List.head selectedObjects of
     Just e ->
       let
         firstProp = getProp e
@@ -384,7 +384,7 @@ collectSameProperty getProp selectedEquipments =
                 if prop == prop_ then Just prop else Nothing
 
               Nothing -> Nothing
-        ) (Just firstProp) selectedEquipments
+        ) (Just firstProp) selectedObjects
 
     Nothing -> Nothing
 

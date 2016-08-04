@@ -42,23 +42,23 @@ function prototypeKeyValues(proto) {
     ["color", proto.color]
   ];
 }
-function equipmentKeyValues(floorId, floorVersion, equipment) {
+function objectKeyValues(floorId, floorVersion, object) {
   return [
-    ["id", equipment.id],
-    ["name", equipment.name],
-    ["type", equipment.type || 'desk'],
-    ["x", equipment.x],
-    ["y", equipment.y],
-    ["width", equipment.width],
-    ["height", equipment.height],
-    ["backgroundColor", equipment.backgroundColor],
-    ["fontSize", equipment.fontSize || 0],
-    ["color", equipment.color],
-    ["shape", equipment.shape],
-    ["personId", equipment.personId],
+    ["id", object.id],
+    ["name", object.name],
+    ["type", object.type || 'desk'],
+    ["x", object.x],
+    ["y", object.y],
+    ["width", object.width],
+    ["height", object.height],
+    ["backgroundColor", object.backgroundColor],
+    ["fontSize", object.fontSize || 0],
+    ["color", object.color],
+    ["shape", object.shape],
+    ["personId", object.personId],
     ["floorId", floorId],
     ["floorVersion", floorVersion],
-    ["modifiedVersion", equipment.modifiedVersion]
+    ["modifiedVersion", object.modifiedVersion]
   ];
 }
 
@@ -67,5 +67,5 @@ module.exports = {
   personKeyValues: personKeyValues,
   floorKeyValues: floorKeyValues,
   prototypeKeyValues: prototypeKeyValues,
-  equipmentKeyValues: equipmentKeyValues
+  objectKeyValues: objectKeyValues
 };

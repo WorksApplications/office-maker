@@ -20,13 +20,13 @@ import Util.DictUtil exposing (..)
 
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
-import Model.Equipment as Equipment exposing (..)
-import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.Object as Object exposing (..)
+import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Scale as Scale
 import Model.API as API
 import Model.Prototypes as Prototypes exposing (..)
-import Model.Floor as Floor exposing (Model, setEquipments, setLocalFile, equipments, addEquipments)
-import Model.FloorDiff as FloorDiff exposing (EquipmentsChange)
+import Model.Floor as Floor exposing (Model, setObjects, setLocalFile, objects, addObjects)
+import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
@@ -38,7 +38,7 @@ import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import FloorProperty
 import SearchBox
 import Header exposing (..)
-import EquipmentNameInput
+import ObjectNameInput
 
 type alias Floor = Floor.Model
 
@@ -50,9 +50,9 @@ type alias Model =
   , user : User
   , pos : (Int, Int)
   , draggingContext : DraggingContext
-  , selectedEquipments : List Id
-  , copiedEquipments : List Equipment
-  , equipmentNameInput : EquipmentNameInput.Model
+  , selectedObjects : List Id
+  , copiedObjects : List Object
+  , objectNameInput : ObjectNameInput.Model
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
   , keys : ShortCut.Model
@@ -83,7 +83,7 @@ type alias Model =
 
 type ContextMenu =
     NoContextMenu
-  | Equipment (Int, Int) Id
+  | Object (Int, Int) Id
   | FloorInfo (Int, Int) Id
 
 
@@ -97,7 +97,7 @@ type EditMode =
 
 type DraggingContext =
     None
-  | MoveEquipment Id (Int, Int)
+  | MoveObject Id (Int, Int)
   | Selector
   | ShiftOffsetPrevScreenPos
   | PenFromScreenPos (Int, Int)
@@ -138,9 +138,9 @@ init randomSeed initialSize urlResult visitDate =
       , user = User.guest
       , pos = (0, 0)
       , draggingContext = None
-      , selectedEquipments = []
-      , copiedEquipments = []
-      , equipmentNameInput = EquipmentNameInput.init
+      , selectedObjects = []
+      , copiedObjects = []
+      , objectNameInput = ObjectNameInput.init
       , gridSize = gridSize
       , selectorRect = Nothing
       , keys = ShortCut.init
@@ -199,16 +199,16 @@ type Msg = NoOp
   | LeaveCanvas
   | MouseUpOnCanvas
   | MouseDownOnCanvas (Int, Int)
-  | MouseDownOnEquipment Id (Int, Int)
-  | MouseUpOnEquipment Id
+  | MouseDownOnObject Id (Int, Int)
+  | MouseUpOnObject Id
   | MouseDownOnResizeGrip Id
-  | StartEditEquipment Id
+  | StartEditObject Id
   | KeyCodeMsg Bool Int
   | SelectBackgroundColor String
   | SelectColor String
-  | SelectShape Equipment.Shape
-  | EquipmentNameInputMsg EquipmentNameInput.Msg
-  | ShowContextMenuOnEquipment Id
+  | SelectShape Object.Shape
+  | ObjectNameInputMsg ObjectNameInput.Msg
+  | ShowContextMenuOnObject Id
   | ShowContextMenuOnFloorInfo Id
   | HideContextMenu
   | SelectIsland Id
@@ -232,7 +232,7 @@ type Msg = NoOp
   | ConfirmDiff
   | ChangeTab Tab
   | ClosePopup
-  | ShowDetailForEquipment Id
+  | ShowDetailForObject Id
   | CreateNewFloor
   | CopyFloor String
   | NewFloorCreated String
@@ -470,22 +470,22 @@ update action model =
             _ -> model.draggingContext
       } ! []
 
-    MouseDownOnEquipment lastTouchedId (clientX, clientY') ->
+    MouseDownOnObject lastTouchedId (clientX, clientY') ->
       let
         clientY = clientY' - 37
 
         (model', cmd) =
-          if EquipmentNameInput.isEditing model.equipmentNameInput then
+          if ObjectNameInput.isEditing model.objectNameInput then
             let
-              (equipmentNameInput, ev) =
-                EquipmentNameInput.forceFinish model.equipmentNameInput
+              (objectNameInput, ev) =
+                ObjectNameInput.forceFinish model.objectNameInput
             in
               case ev of
                 Just (id, name) ->
-                  updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
+                  updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
 
                 Nothing ->
-                  { model | equipmentNameInput = equipmentNameInput } ! []
+                  { model | objectNameInput = objectNameInput } ! []
           else
             model ! []
 
@@ -493,34 +493,34 @@ update action model =
         help model =
           { model |
             pos = (clientX, clientY)
-          , selectedEquipments =
+          , selectedObjects =
               if model.keys.ctrl then
-                if List.member lastTouchedId model.selectedEquipments
-                then List.filter ((/=) lastTouchedId) model.selectedEquipments
-                else lastTouchedId :: model.selectedEquipments
+                if List.member lastTouchedId model.selectedObjects
+                then List.filter ((/=) lastTouchedId) model.selectedObjects
+                else lastTouchedId :: model.selectedObjects
               else if model.keys.shift then
                 let
-                  allEquipments =
-                    (EditingFloor.present model.floor).equipments
-                  equipmentsExcept target =
-                    List.filter (\e -> idOf e /= idOf target) allEquipments
+                  allObjects =
+                    (EditingFloor.present model.floor).objects
+                  objectsExcept target =
+                    List.filter (\e -> idOf e /= idOf target) allObjects
                 in
-                  case (findEquipmentById allEquipments lastTouchedId, primarySelectedEquipment model) of
+                  case (findObjectById allObjects lastTouchedId, primarySelectedObject model) of
                     (Just e, Just primary) ->
                       List.map idOf <|
-                        primary :: (withinRange (primary, e) (equipmentsExcept primary)) --keep primary
+                        primary :: (withinRange (primary, e) (objectsExcept primary)) --keep primary
                     _ -> [lastTouchedId]
               else
-                if List.member lastTouchedId model.selectedEquipments
-                then model.selectedEquipments
+                if List.member lastTouchedId model.selectedObjects
+                then model.selectedObjects
                 else [lastTouchedId]
-          , draggingContext = MoveEquipment lastTouchedId (clientX, clientY)
+          , draggingContext = MoveObject lastTouchedId (clientX, clientY)
           , selectorRect = Nothing
           }
       in
         help model' ! [ cmd, emulateClick lastTouchedId True ]
 
-    MouseUpOnEquipment lastTouchedId ->
+    MouseUpOnObject lastTouchedId ->
       let
         (clientX, clientY) =
           model.pos
@@ -528,8 +528,8 @@ update action model =
         (model', cmd) =
           -- TODO refactor to dedupe
           case model.draggingContext of
-            MoveEquipment id (x, y) ->
-              updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
+            MoveObject id (x, y) ->
+              updateByMoveObjectEnd id (x, y) (clientX, clientY) model
 
             Selector ->
               { model |
@@ -569,8 +569,8 @@ update action model =
 
         (model', cmd) =
           case model.draggingContext of
-            MoveEquipment id (x, y) ->
-              updateByMoveEquipmentEnd id (x, y) (clientX, clientY) model
+            MoveObject id (x, y) ->
+              updateByMoveObjectEnd id (x, y) (clientX, clientY) model
 
             Selector ->
               { model |
@@ -633,11 +633,11 @@ update action model =
               ShiftOffsetPrevScreenPos
 
         (model', cmd) =
-          case EquipmentNameInput.forceFinish model.equipmentNameInput of
-            (equipmentNameInput, Just (id, name)) ->
-              updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
-            (equipmentNameInput, _) ->
-              { model | equipmentNameInput = equipmentNameInput } ! []
+          case ObjectNameInput.forceFinish model.objectNameInput of
+            (objectNameInput, Just (id, name)) ->
+              updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
+            (objectNameInput, _) ->
+              { model | objectNameInput = objectNameInput } ! []
 
         (model'', cmd2) =
           if model.editMode == LabelMode then
@@ -648,7 +648,7 @@ update action model =
         newModel =
           { model'' |
             pos = (clientX, clientY)
-          , selectedEquipments = []
+          , selectedObjects = []
           , selectorRect = selectorRect
           , contextMenu = NoContextMenu
           , draggingContext = draggingContext
@@ -662,23 +662,23 @@ update action model =
           model.pos
 
         (model', cmd) =
-          case EquipmentNameInput.forceFinish model.equipmentNameInput of
-            (equipmentNameInput, Just (id, name)) ->
-              updateOnFinishNameInput False id name { model | equipmentNameInput = equipmentNameInput }
-            (equipmentNameInput, _) ->
-              { model | equipmentNameInput = equipmentNameInput } ! []
+          case ObjectNameInput.forceFinish model.objectNameInput of
+            (objectNameInput, Just (id, name)) ->
+              updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
+            (objectNameInput, _) ->
+              { model | objectNameInput = objectNameInput } ! []
 
         newModel =
           { model' |
-            selectedEquipments = []
+            selectedObjects = []
           , contextMenu = NoContextMenu
           , draggingContext = ResizeFromScreenPos id (clientX, clientY)
           }
       in
         newModel ! [ cmd ]
 
-    StartEditEquipment id ->
-      case findEquipmentById (EditingFloor.present model.floor).equipments id of
+    StartEditObject id ->
+      case findObjectById (EditingFloor.present model.floor).objects id of
         Just e ->
           let
             (id, name) = (idOf e, nameOf e)
@@ -704,7 +704,7 @@ update action model =
     SelectBackgroundColor color ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit saveFloorCmd (Floor.changeEquipmentBackgroundColor model.selectedEquipments color) model.floor
+          EditingFloor.commit saveFloorCmd (Floor.changeObjectBackgroundColor model.selectedObjects color) model.floor
       in
         { model |
           floor = newFloor
@@ -713,7 +713,7 @@ update action model =
     SelectColor color ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit saveFloorCmd (Floor.changeEquipmentColor model.selectedEquipments color) model.floor
+          EditingFloor.commit saveFloorCmd (Floor.changeObjectColor model.selectedObjects color) model.floor
       in
         { model |
           floor = newFloor
@@ -722,47 +722,47 @@ update action model =
     SelectShape shape ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit saveFloorCmd (Floor.changeEquipmentShape model.selectedEquipments shape) model.floor
+          EditingFloor.commit saveFloorCmd (Floor.changeObjectShape model.selectedObjects shape) model.floor
       in
         { model |
           floor = newFloor
         } ! [ saveCmd ]
 
-    EquipmentNameInputMsg message ->
+    ObjectNameInputMsg message ->
       let
-        (equipmentNameInput, event) =
-          EquipmentNameInput.update message model.equipmentNameInput
+        (objectNameInput, event) =
+          ObjectNameInput.update message model.objectNameInput
 
         model' =
           { model |
-            equipmentNameInput = equipmentNameInput
+            objectNameInput = objectNameInput
           }
       in
         case event of
-          EquipmentNameInput.OnInput id name ->
+          ObjectNameInput.OnInput id name ->
             model' ! [ requestCandidate id name ]
 
-          EquipmentNameInput.OnFinish equipmentId name candidateId ->
+          ObjectNameInput.OnFinish objectId name candidateId ->
             case candidateId of
               Just personId ->
-                updateOnSelectCandidate equipmentId personId model'
+                updateOnSelectCandidate objectId personId model'
 
               Nothing ->
-                updateOnFinishNameInput True equipmentId name model'
+                updateOnFinishNameInput True objectId name model'
 
-          EquipmentNameInput.OnSelectCandidate equipmentId personId ->
-            updateOnSelectCandidate equipmentId personId model'
+          ObjectNameInput.OnSelectCandidate objectId personId ->
+            updateOnSelectCandidate objectId personId model'
 
-          EquipmentNameInput.OnUnsetPerson equipmentId ->
+          ObjectNameInput.OnUnsetPerson objectId ->
             let
               (newFloor, saveCmd) =
-                EditingFloor.commit saveFloorCmd (Floor.unsetPerson equipmentId) model.floor
+                EditingFloor.commit saveFloorCmd (Floor.unsetPerson objectId) model.floor
             in
               { model' |
                 floor = newFloor
               } ! [ saveCmd ]
 
-          EquipmentNameInput.None ->
+          ObjectNameInput.None ->
             model' ! []
 
     RequestCandidate id name ->
@@ -774,9 +774,9 @@ update action model =
           { model | candidateRequest = Waiting Nothing }
           ! [ performAPI (GotCandidateSelection id) (API.personCandidate name) ]
 
-    ShowContextMenuOnEquipment id ->
+    ShowContextMenuOnObject id ->
       { model |
-        contextMenu = Equipment model.pos id
+        contextMenu = Object model.pos id
       } ! []
 
     ShowContextMenuOnFloorInfo id ->
@@ -797,17 +797,17 @@ update action model =
     SelectIsland id ->
       let
         newModel =
-          case findEquipmentById (EditingFloor.present model.floor).equipments id of
-            Just equipment ->
+          case findObjectById (EditingFloor.present model.floor).objects id of
+            Just object ->
               let
                 island' =
                   island
-                    [equipment]
+                    [object]
                     (List.filter (\e -> (idOf e) /= id)
-                    (EditingFloor.present model.floor).equipments)
+                    (EditingFloor.present model.floor).objects)
               in
                 { model |
-                  selectedEquipments = List.map idOf island'
+                  selectedObjects = List.map idOf island'
                 , contextMenu = NoContextMenu
                 }
             Nothing ->
@@ -875,14 +875,14 @@ update action model =
 
     RegisterPrototype id ->
       let
-        equipment =
-          findEquipmentById (EditingFloor.present model.floor).equipments id
+        object =
+          findObjectById (EditingFloor.present model.floor).objects id
         model' =
           { model |
             contextMenu = NoContextMenu
           }
       in
-        case equipment of
+        case object of
           Just e ->
             let
               (_, _, w, h) = rect e
@@ -917,7 +917,7 @@ update action model =
     Rotate id ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit saveFloorCmd (Floor.rotateEquipment id) model.floor
+          EditingFloor.commit saveFloorCmd (Floor.rotateObject id) model.floor
       in
         { model |
           floor = newFloor
@@ -1011,7 +1011,7 @@ update action model =
           addAll (.id) people model.personInfo
       } ! []
 
-    GotCandidateSelection equipmentId people ->
+    GotCandidateSelection objectId people ->
       let
         newRequestCmd =
           case model.candidateRequest of
@@ -1031,14 +1031,14 @@ update action model =
       in
         newModel ! [ newRequestCmd ]
 
-    UpdatePersonCandidate equipmentId personIds ->
+    UpdatePersonCandidate objectId personIds ->
       let
         (newFloor, saveCmd) =
           case personIds of
             head :: _ :: _ ->
               EditingFloor.commit
                 saveFloorCmd
-                (Floor.setPerson equipmentId head)
+                (Floor.setPerson objectId head)
                 model.floor
             _ ->
               model.floor ! []
@@ -1075,7 +1075,7 @@ update action model =
               , newFloor
               )
           else
-            ( publishFloorCmd floor FloorDiff.noEquipmentsChange
+            ( publishFloorCmd floor FloorDiff.noObjectsChange
             , model.seed
             , model.floor
             )
@@ -1092,11 +1092,11 @@ update action model =
     ClosePopup ->
       { model | selectedResult = Nothing } ! []
 
-    ShowDetailForEquipment id ->
+    ShowDetailForObject id ->
       let
-        allEquipments = (EditingFloor.present model.floor).equipments
+        allObjects = (EditingFloor.present model.floor).objects
         personId =
-          case findEquipmentById allEquipments id of
+          case findObjectById allObjects id of
             Just e ->
               relatedPerson e
             Nothing ->
@@ -1182,7 +1182,7 @@ update action model =
       in
         { model | clickEmulator = clickEmulator }
         ! ( if event == "dblclick" then
-              [ Task.perform identity identity (Task.succeed (StartEditEquipment id)) ]
+              [ Task.perform identity identity (Task.succeed (StartEditObject id)) ]
             else
               []
             )
@@ -1195,10 +1195,10 @@ update action model =
         newModel ! []
 
 
-startEditAndFocus : Equipment -> Model -> (Model, Cmd Msg)
+startEditAndFocus : Object -> Model -> (Model, Cmd Msg)
 startEditAndFocus e model =
   { model |
-    equipmentNameInput = EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
+    objectNameInput = ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
   } !
     [ focusCmd "name-input"
     ]
@@ -1226,8 +1226,8 @@ updateOnSearchBoxEvent event model =
 
         selectedResult =
           case results of
-            { equipmentIdAndFloorId } :: [] ->
-              case equipmentIdAndFloorId of
+            { objectIdAndFloorId } :: [] ->
+              case objectIdAndFloorId of
                 Just (e, fid) ->
                   Just (idOf e)
                 Nothing ->
@@ -1235,10 +1235,10 @@ updateOnSearchBoxEvent event model =
             _ -> Nothing
       in
         (selectedResult, regesterPersonCmd)
-    SearchBox.OnSelectResult { personId, equipmentIdAndFloorId } ->
+    SearchBox.OnSelectResult { personId, objectIdAndFloorId } ->
       let
         (selectedResult, cmd1) =
-          case equipmentIdAndFloorId of
+          case objectIdAndFloorId of
             Just (e, fid) ->
               ( Just (idOf e)
               , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just fid) model.url)
@@ -1262,7 +1262,7 @@ adjustOffset selectedResult model =
   let
     maybeShiftedOffset =
       selectedResult `Maybe.andThen` \id ->
-      findEquipmentById (EditingFloor.present model.floor).equipments id `Maybe.andThen` \e ->
+      findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \e ->
       relatedPerson e `Maybe.andThen` \personId ->
       Just <|
         let
@@ -1282,18 +1282,18 @@ adjustOffset selectedResult model =
 
 
 updateOnSelectCandidate : Id -> String -> Model -> (Model, Cmd Msg)
-updateOnSelectCandidate equipmentId personId model =
+updateOnSelectCandidate objectId personId model =
   case Dict.get personId model.personInfo of
     Just person ->
       let
         (newFloor, cmd) =
           EditingFloor.commit
             saveFloorCmd
-            (Floor.setPerson equipmentId personId)
+            (Floor.setPerson objectId personId)
             model.floor
 
         (newModel, cmd2) =
-          updateOnFinishNameInput True equipmentId person.name
+          updateOnFinishNameInput True objectId person.name
             { model |
               floor = newFloor
             }
@@ -1377,7 +1377,7 @@ updateOnFinishPen (x, y) model =
 
 updateOnFinishResize : Id -> (Int, Int) -> Model -> (Model, Cmd Msg)
 updateOnFinishResize id (x, y) model =
-  case findEquipmentById (EditingFloor.present model.floor).equipments id of
+  case findObjectById (EditingFloor.present model.floor).objects id of
     Just e ->
       let
         (newFloor, cmd) =
@@ -1385,7 +1385,7 @@ updateOnFinishResize id (x, y) model =
             Just (_, _, width, height) ->
               EditingFloor.commit
                 saveFloorCmd
-                (Floor.resizeEquipment id (width, height))
+                (Floor.resizeObject id (width, height))
                 model.floor
 
             Nothing ->
@@ -1431,7 +1431,7 @@ updateOnFinishLabel model =
       , floor = newFloor
       }
   in
-    case findEquipmentById (EditingFloor.present model'.floor).equipments newId of
+    case findObjectById (EditingFloor.present model'.floor).objects newId of
       Just e ->
         let
           (newModel, cmd) =
@@ -1536,9 +1536,9 @@ updateFloorByFloorPropertyEvent event seed efloor =
           (efloor, seed) ! [ cmd ]
 
 
-regesterPersonOfEquipment : Equipment -> Cmd Msg
-regesterPersonOfEquipment e =
-  case Equipment.relatedPerson e of
+regesterPersonOfObject : Object -> Cmd Msg
+regesterPersonOfObject e =
+  case Object.relatedPerson e of
     Just personId ->
       regesterPerson personId
     Nothing ->
@@ -1577,35 +1577,35 @@ loadDraftFloor user =
 updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput continueEditing id name model =
   let
-    allEquipments = (EditingFloor.present model.floor).equipments
+    allObjects = (EditingFloor.present model.floor).objects
 
-    (equipmentNameInput, requestCandidateCmd) =
-      case findEquipmentById allEquipments id of
-        Just equipment ->
+    (objectNameInput, requestCandidateCmd) =
+      case findObjectById allObjects id of
+        Just object ->
           if continueEditing then
-            case nextEquipmentToInput equipment allEquipments of
+            case nextObjectToInput object allObjects of
               Just e ->
-                ( EquipmentNameInput.start (idOf e, nameOf e) model.equipmentNameInput
+                ( ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
                 , requestCandidate (idOf e) (nameOf e)
                 )
               Nothing ->
-                ( model.equipmentNameInput
+                ( model.objectNameInput
                 , requestCandidate id name
                 )
           else
-            (model.equipmentNameInput, Cmd.none)
+            (model.objectNameInput, Cmd.none)
         Nothing ->
-          (model.equipmentNameInput, Cmd.none)
+          (model.objectNameInput, Cmd.none)
 
     updatePersonCandidateCmd =
-      case findEquipmentById allEquipments id of
-        Just equipment ->
-          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment
+      case findObjectById allObjects id of
+        Just object ->
+          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo object
         Nothing ->
           Cmd.none
 
-    selectedEquipments =
-      case equipmentNameInput.editingEquipment of
+    selectedObjects =
+      case objectNameInput.editingObject of
         Just (id, _) ->
           [id]
         Nothing ->
@@ -1614,45 +1614,45 @@ updateOnFinishNameInput continueEditing id name model =
     (newFloor, saveCmd) =
       EditingFloor.commit
         saveFloorCmd
-        (Floor.changeEquipmentName [id] name)
+        (Floor.changeObjectName [id] name)
         model.floor
 
     newModel =
       { model |
         floor = newFloor
-      , equipmentNameInput = equipmentNameInput
+      , objectNameInput = objectNameInput
       , candidates = []
-      , selectedEquipments = selectedEquipments
+      , selectedObjects = selectedObjects
       }
   in
     newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, saveCmd ]
 
 
-updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : Equipment -> Cmd Msg
-updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo equipment =
-  case Equipment.relatedPerson equipment of
+updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : Object -> Cmd Msg
+updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo object =
+  case Object.relatedPerson object of
     Just personId ->
       Cmd.none
     Nothing ->
       let
         task =
-          API.personCandidate (nameOf equipment) `andThen` \people ->
+          API.personCandidate (nameOf object) `andThen` \people ->
           Task.succeed (RegisterPeople people) `andThen` \_ ->
-          Task.succeed (UpdatePersonCandidate (idOf equipment) (List.map .id people))
+          Task.succeed (UpdatePersonCandidate (idOf object) (List.map .id people))
       in
         performAPI identity task
 
-nextEquipmentToInput : Equipment -> List Equipment -> Maybe Equipment
-nextEquipmentToInput equipment allEquipments =
+nextObjectToInput : Object -> List Object -> Maybe Object
+nextObjectToInput object allObjects =
   let
     island' =
       island
-        [equipment]
-        (List.filter (\e -> (idOf e) /= (idOf equipment)) allEquipments)
+        [object]
+        (List.filter (\e -> (idOf e) /= (idOf object)) allObjects)
   in
-    case EquipmentsOperation.nearest EquipmentsOperation.Down equipment island' of
+    case ObjectsOperation.nearest ObjectsOperation.Down object island' of
       Just e ->
-        if idOf equipment == idOf e then
+        if idOf object == idOf e then
           Nothing
         else
           Just e
@@ -1670,7 +1670,7 @@ savePrototypesCmd prototypes =
     (API.savePrototypes prototypes)
 
 
-saveFloorCmd : Floor -> EquipmentsChange -> Cmd Msg
+saveFloorCmd : Floor -> ObjectsChange -> Cmd Msg
 saveFloorCmd floor change =
   let
     firstTask =
@@ -1688,7 +1688,7 @@ saveFloorCmd floor change =
       (firstTask `andThen` (always secondTask))
 
 
-publishFloorCmd : Floor -> EquipmentsChange -> Cmd Msg
+publishFloorCmd : Floor -> ObjectsChange -> Cmd Msg
 publishFloorCmd floor change =
   let
     firstTask =
@@ -1711,13 +1711,13 @@ updateByKeyEvent event model =
   case (model.keys.ctrl, event) of
     (True, ShortCut.A) ->
       { model |
-        selectedEquipments =
-          List.map idOf <| Floor.equipments (EditingFloor.present model.floor)
+        selectedObjects =
+          List.map idOf <| Floor.objects (EditingFloor.present model.floor)
       } ! []
 
     (True, ShortCut.C) ->
       { model |
-        copiedEquipments = selectedEquipments model
+        copiedObjects = selectedObjects model
       } ! []
 
     (True, ShortCut.V) ->
@@ -1729,7 +1729,7 @@ updateByKeyEvent event model =
             Nothing -> (0, 0) --TODO
 
         (copiedIdsWithNewIds, newSeed) =
-          IdGenerator.zipWithNewIds model.seed model.copiedEquipments
+          IdGenerator.zipWithNewIds model.seed model.copiedObjects
 
         (newFloor, saveCmd) =
           EditingFloor.commit saveFloorCmd (Floor.paste copiedIdsWithNewIds base) model.floor
@@ -1737,19 +1737,19 @@ updateByKeyEvent event model =
         { model |
           floor = newFloor
         , seed = newSeed
-        , selectedEquipments = List.map snd copiedIdsWithNewIds
+        , selectedObjects = List.map snd copiedIdsWithNewIds
         , selectorRect = Nothing
         } ! [ saveCmd ]
 
     (True, ShortCut.X) ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit saveFloorCmd (Floor.delete model.selectedEquipments) model.floor
+          EditingFloor.commit saveFloorCmd (Floor.delete model.selectedObjects) model.floor
       in
         { model |
           floor = newFloor
-        , copiedEquipments = selectedEquipments model
-        , selectedEquipments = []
+        , copiedObjects = selectedObjects model
+        , selectedObjects = []
         } ! [ saveCmd ]
 
     (True, ShortCut.Y) ->
@@ -1759,21 +1759,21 @@ updateByKeyEvent event model =
       { model | floor = EditingFloor.undo model.floor } ! []
 
     (_, ShortCut.UpArrow) ->
-      shiftSelectionToward EquipmentsOperation.Up model ! []
+      shiftSelectionToward ObjectsOperation.Up model ! []
 
     (_, ShortCut.DownArrow) ->
-      shiftSelectionToward EquipmentsOperation.Down model ! []
+      shiftSelectionToward ObjectsOperation.Down model ! []
 
     (_, ShortCut.LeftArrow) ->
-      shiftSelectionToward EquipmentsOperation.Left model ! []
+      shiftSelectionToward ObjectsOperation.Left model ! []
 
     (_, ShortCut.RightArrow) ->
-      shiftSelectionToward EquipmentsOperation.Right model ! []
+      shiftSelectionToward ObjectsOperation.Right model ! []
 
     (_, ShortCut.Del) ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit saveFloorCmd (Floor.delete model.selectedEquipments) model.floor
+          EditingFloor.commit saveFloorCmd (Floor.delete model.selectedObjects) model.floor
       in
         { model |
           floor = newFloor
@@ -1785,8 +1785,8 @@ updateByKeyEvent event model =
       model ! []
 
 
-updateByMoveEquipmentEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> (Model, Cmd Msg)
-updateByMoveEquipmentEnd id (x0, y0) (x1, y1) model =
+updateByMoveObjectEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> (Model, Cmd Msg)
+updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
   let
     shift =
       Scale.screenToImageForPosition model.scale (x1 - x0, y1 - y0)
@@ -1794,14 +1794,14 @@ updateByMoveEquipmentEnd id (x0, y0) (x1, y1) model =
     if shift /= (0, 0) then
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit saveFloorCmd (Floor.move model.selectedEquipments model.gridSize shift) model.floor
+          EditingFloor.commit saveFloorCmd (Floor.move model.selectedObjects model.gridSize shift) model.floor
       in
         { model |
           floor = newFloor
         } ! [ saveCmd ]
     else if not model.keys.ctrl && not model.keys.shift then
       { model |
-        selectedEquipments = [id]
+        selectedObjects = [id]
       } ! []
     else
       model ! []
@@ -1811,11 +1811,11 @@ candidatesOf model =
   List.filterMap (\personId -> Dict.get personId model.personInfo) model.candidates
 
 
-shiftSelectionToward : EquipmentsOperation.Direction -> Model -> Model
+shiftSelectionToward : ObjectsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =
   let
     floor = (EditingFloor.present model.floor)
-    selected = selectedEquipments model
+    selected = selectedObjects model
   in
     case selected of
       primary :: tail ->
@@ -1823,18 +1823,18 @@ shiftSelectionToward direction model =
           toBeSelected =
             if model.keys.shift then
               List.map idOf <|
-                expandOrShrink direction primary selected floor.equipments
+                expandOrShrink direction primary selected floor.objects
             else
-              case nearest direction primary floor.equipments of
+              case nearest direction primary floor.objects of
                 Just e ->
                   let
-                    newEquipments = [e]
+                    newObjects = [e]
                   in
-                    List.map idOf newEquipments
-                _ -> model.selectedEquipments
+                    List.map idOf newObjects
+                _ -> model.selectedObjects
         in
           { model |
-            selectedEquipments = toBeSelected
+            selectedObjects = toBeSelected
           }
       _ -> model
 
@@ -1875,26 +1875,26 @@ blurCmd id =
 
 
 -- TODO bad naming
-isSelected : Model -> Equipment -> Bool
-isSelected model equipment =
+isSelected : Model -> Object -> Bool
+isSelected model object =
   case model.editMode of
     Viewing _ -> False
-    _ -> List.member (idOf equipment) model.selectedEquipments
+    _ -> List.member (idOf object) model.selectedObjects
 
 
-primarySelectedEquipment : Model -> Maybe Equipment
-primarySelectedEquipment model =
-  case model.selectedEquipments of
+primarySelectedObject : Model -> Maybe Object
+primarySelectedObject model =
+  case model.selectedObjects of
     head :: _ ->
-      findEquipmentById (equipments <| (EditingFloor.present model.floor)) head
+      findObjectById (objects <| (EditingFloor.present model.floor)) head
     _ -> Nothing
 
 
-selectedEquipments : Model -> List Equipment
-selectedEquipments model =
+selectedObjects : Model -> List Object
+selectedObjects model =
   List.filterMap (\id ->
-    findEquipmentById (EditingFloor.present model.floor).equipments id
-  ) model.selectedEquipments
+    findObjectById (EditingFloor.present model.floor).objects id
+  ) model.selectedObjects
 
 
 screenToImageWithOffset : Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int)
@@ -1959,7 +1959,7 @@ temporaryPenRect model from =
 
 
 temporaryResizeRect : Model -> (Int, Int) -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
-temporaryResizeRect model (fromScreenX, fromScreenY) (eqLeft, eqTop, eqWidth, eqHeight) =
+temporaryResizeRect model (fromScreenX, fromScreenY) (eqLeft, eqTop, objWidth, objHeight) =
   let
     (toScreenX, toScreenY) =
       model.pos
@@ -1969,8 +1969,8 @@ temporaryResizeRect model (fromScreenX, fromScreenY) (eqLeft, eqTop, eqWidth, eq
 
     (right, bottom) =
       fitPositionToGrid model.gridSize <|
-        ( eqLeft + eqWidth + Scale.screenToImage model.scale dx
-        , eqTop + eqHeight + Scale.screenToImage model.scale dy
+        ( eqLeft + objWidth + Scale.screenToImage model.scale dx
+        , eqTop + objHeight + Scale.screenToImage model.scale dy
         )
   in
     validateRect (eqLeft, eqTop, right, bottom)

@@ -9,26 +9,26 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed as Keyed
 
-import EquipmentNameInput
+import ObjectNameInput
 import View.Styles as S
-import View.EquipmentView as EquipmentView
+import View.ObjectView as ObjectView
 import View.ProfilePopup as ProfilePopup
 
 import Util.HtmlUtil exposing (..)
 
 import Model exposing (..)
 import Model.Floor as Floor
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Model.Scale as Scale
-import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.EditingFloor as EditingFloor
 
 import Json.Decode as Decode
 
 
-adjustImagePositionOfMovingEquipment : Int -> Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
-adjustImagePositionOfMovingEquipment gridSize scale (startX, startY) (x, y) (left, top) =
+adjustImagePositionOfMovingObject : Int -> Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
+adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, top) =
   let
     (dx, dy) =
       Scale.screenToImageForPosition scale ((x - startX), (y - startY))
@@ -36,33 +36,33 @@ adjustImagePositionOfMovingEquipment gridSize scale (startX, startY) (x, y) (lef
     fitPositionToGrid gridSize (left + dx, top + dy)
 
 
-equipmentView : Model -> ((Int, Int, Int, Int) -> (Int, Int, Int, Int)) -> Bool -> Bool -> Equipment -> Bool -> Bool -> Html Msg
-equipmentView model adjustRect selected isGhost equipment contextMenuDisabled disableTransition =
+objectView : Model -> ((Int, Int, Int, Int) -> (Int, Int, Int, Int)) -> Bool -> Bool -> Object -> Bool -> Bool -> Html Msg
+objectView model adjustRect selected isGhost object contextMenuDisabled disableTransition =
   let
     id =
-      idOf equipment
+      idOf object
 
     (x, y, width, height) =
-      adjustRect (rect equipment)
+      adjustRect (rect object)
 
     eventOptions =
       case model.editMode of
         Viewing _ ->
           let
-            noEvents = EquipmentView.noEvents
+            noEvents = ObjectView.noEvents
           in
             { noEvents |
-              onMouseDown = Just (always (ShowDetailForEquipment id))
+              onMouseDown = Just (always (ShowDetailForObject id))
             }
         _ ->
           { onContextMenu =
               if contextMenuDisabled then
                 Nothing
               else
-                Just (ShowContextMenuOnEquipment id)
-          , onMouseDown = Just (MouseDownOnEquipment id)
-          , onMouseUp = Just (MouseUpOnEquipment id)
-          , onStartEditingName = Nothing -- Just (StartEditEquipment id)
+                Just (ShowContextMenuOnObject id)
+          , onMouseDown = Just (MouseDownOnObject id)
+          , onMouseUp = Just (MouseUpOnObject id)
+          , onStartEditingName = Nothing -- Just (StartEditObject id)
           , onStartResize = Just (MouseDownOnResizeGrip id)
           }
 
@@ -70,30 +70,30 @@ equipmentView model adjustRect selected isGhost equipment contextMenuDisabled di
       (EditingFloor.present model.floor)
 
     personMatched =
-      Equipment.relatedPerson equipment /= Nothing
+      Object.relatedPerson object /= Nothing
   in
-    if Equipment.isLabel equipment then
-      EquipmentView.viewLabel
+    if Object.isLabel object then
+      ObjectView.viewLabel
         eventOptions
         (x, y, width, height)
-        (backgroundColorOf equipment)
-        (colorOf equipment)
-        (nameOf equipment)
-        (fontSizeOf equipment)
-        (shapeOf equipment == Equipment.Ellipse)
+        (backgroundColorOf object)
+        (colorOf object)
+        (nameOf object)
+        (fontSizeOf object)
+        (shapeOf object == Object.Ellipse)
         selected
         isGhost
         (model.editMode /= Viewing True && model.editMode /= Viewing False) -- rectVisible
         model.scale
         disableTransition
     else
-      EquipmentView.viewDesk
+      ObjectView.viewDesk
         eventOptions
         (model.editMode /= Viewing True && model.editMode /= Viewing False)
         (x, y, width, height)
-        (backgroundColorOf equipment)
-        (nameOf equipment)
-        (fontSizeOf equipment)
+        (backgroundColorOf object)
+        (nameOf object)
+        (fontSizeOf object)
         selected
         isGhost
         model.scale
@@ -115,8 +115,8 @@ view model =
     popup' =
       Maybe.withDefault (text "") <|
       model.selectedResult `Maybe.andThen` \id ->
-      findEquipmentById floor.equipments id `Maybe.andThen` \e ->
-        case Equipment.relatedPerson e of
+      findObjectById floor.objects id `Maybe.andThen` \e ->
+        case Object.relatedPerson e of
           Just personId ->
             Dict.get personId model.personInfo `Maybe.andThen` \person ->
             Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
@@ -158,8 +158,8 @@ canvasView model =
         Viewing print -> (True, print)
         _ -> (False, False)
 
-    equipments =
-      equipmentsView model
+    objects =
+      objectsView model
 
     selectorRect =
       case (model.editMode, model.selectorRect) of
@@ -193,25 +193,25 @@ canvasView model =
             id = idOf e
             maybePersonId = relatedPerson e
           in
-            ( Scale.imageToScreenForRect model.scale (Equipment.rect e)
+            ( Scale.imageToScreenForRect model.scale (Object.rect e)
             , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
             )
         )
-        (findEquipmentById (EditingFloor.present model.floor).equipments id)
+        (findObjectById (EditingFloor.present model.floor).objects id)
 
     nameInput =
-      App.map EquipmentNameInputMsg <|
-        EquipmentNameInput.view
+      App.map ObjectNameInputMsg <|
+        ObjectNameInput.view
           (deskInfoOf model)
           (transitionDisabled model)
           (candidatesOf model)
-          model.equipmentNameInput
+          model.objectNameInput
 
     children1 =
       ("canvas-image", image) ::
       ("canvas-name-input", nameInput) ::
       ("canvas-selector-rect", selectorRect) ::
-      equipments
+      objects
 
     children2 =
       ("canvas-temporary-pen", temporaryPen') ::
@@ -230,35 +230,35 @@ canvasView model =
       ( children1 ++ children2 )
 
 
-equipmentsView : Model -> List (String, Html Msg)
-equipmentsView model =
+objectsView : Model -> List (String, Html Msg)
+objectsView model =
   case model.draggingContext of
-    MoveEquipment _ from ->
+    MoveObject _ from ->
       let
-        isSelected equipment =
-          List.member (idOf equipment) model.selectedEquipments
+        isSelected object =
+          List.member (idOf object) model.selectedObjects
 
         ghostsView =
           List.map
-            (\equipment ->
-              ( idOf equipment ++ "ghost"
-              , equipmentView
+            (\object ->
+              ( idOf object ++ "ghost"
+              , objectView
                   model
                   identity
                   True
                   True -- alpha
-                  equipment
+                  object
                   False --model.keys.ctrl
                   (transitionDisabled model)
               )
             )
-            (List.filter isSelected ((EditingFloor.present model.floor).equipments))
+            (List.filter isSelected ((EditingFloor.present model.floor).objects))
 
-        adjustRect equipment (left, top, width, height) =
-          if isSelected equipment then
+        adjustRect object (left, top, width, height) =
+          if isSelected object then
             let
               (x, y) =
-                adjustImagePositionOfMovingEquipment
+                adjustImagePositionOfMovingObject
                   model.gridSize
                   model.scale
                   from
@@ -271,49 +271,49 @@ equipmentsView model =
 
         normalView =
           List.map
-            (\equipment ->
-              ( idOf equipment
-              , equipmentView
+            (\object ->
+              ( idOf object
+              , objectView
                   model
-                  (adjustRect equipment)
-                  (isSelected equipment)
+                  (adjustRect object)
+                  (isSelected object)
                   False -- alpha
-                  equipment
+                  object
                   model.keys.ctrl
                   (transitionDisabled model)
               )
             )
-            ((EditingFloor.present model.floor).equipments)
+            ((EditingFloor.present model.floor).objects)
       in
         (ghostsView ++ normalView)
 
     ResizeFromScreenPos id from ->
       let
-        isSelected equipment =
-          List.member (idOf equipment) model.selectedEquipments
+        isSelected object =
+          List.member (idOf object) model.selectedObjects
 
-        isResizing equipment =
-          idOf equipment == id
+        isResizing object =
+          idOf object == id
 
         ghostsView =
           List.map
-            (\equipment ->
-              ( idOf equipment ++ "ghost"
-              , equipmentView
+            (\object ->
+              ( idOf object ++ "ghost"
+              , objectView
                   model
                   identity
                   True -- isSelected
                   True -- alpha
-                  equipment
+                  object
                   model.keys.ctrl
                   (transitionDisabled model)
               )
             )
-            (List.filter isResizing ((EditingFloor.present model.floor).equipments))
+            (List.filter isResizing ((EditingFloor.present model.floor).objects))
 
 
-        adjustRect equipment (left, top, width, height) =
-          if isResizing equipment then
+        adjustRect object (left, top, width, height) =
+          if isResizing object then
             case Model.temporaryResizeRect model from (left, top, width, height) of
               Just rect -> rect
               _ -> (0,0,0,0)
@@ -322,37 +322,37 @@ equipmentsView model =
 
         normalView =
           List.map
-            (\equipment ->
-              ( idOf equipment
-              , equipmentView
+            (\object ->
+              ( idOf object
+              , objectView
                   model
-                  (adjustRect equipment)
-                  (isResizing equipment) -- isSelected TODO seems not selected?
+                  (adjustRect object)
+                  (isResizing object) -- isSelected TODO seems not selected?
                   False -- alpha
-                  equipment
+                  object
                   model.keys.ctrl
                   (transitionDisabled model)
               )
             )
-            ((EditingFloor.present model.floor).equipments)
+            ((EditingFloor.present model.floor).objects)
       in
         (normalView ++ ghostsView)
 
     _ ->
       List.map
-        (\equipment ->
-          ( idOf equipment
-          , equipmentView
+        (\object ->
+          ( idOf object
+          , objectView
               model
               identity
-              (isSelected model equipment)
+              (isSelected model object)
               False -- alpha
-              equipment
+              object
               model.keys.ctrl
               (transitionDisabled model)
           )
         )
-        ((EditingFloor.present model.floor).equipments)
+        ((EditingFloor.present model.floor).objects)
 
 
 canvasImage : Floor -> Html msg
@@ -366,13 +366,13 @@ canvasImage floor =
 temporaryStampView : Scale.Model -> Bool -> StampCandidate -> (String, Html msg)
 temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
   ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight
-  , EquipmentView.viewDesk
-      EquipmentView.noEvents
+  , ObjectView.viewDesk
+      ObjectView.noEvents
       False
       (left, top, deskWidth, deskHeight)
       color
       name --name
-      Equipment.defaultFontSize
+      Object.defaultFontSize
       selected
       False -- alpha
       scale
@@ -385,13 +385,13 @@ temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
   case temporaryPen model from of
     Just (color, name, (left, top, width, height)) ->
-      EquipmentView.viewDesk
-        EquipmentView.noEvents
+      ObjectView.viewDesk
+        ObjectView.noEvents
         False
         (left, top, width, height)
         color
         name --name
-        Equipment.defaultFontSize
+        Object.defaultFontSize
         False -- selected
         False -- alpha
         model.scale

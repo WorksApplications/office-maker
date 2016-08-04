@@ -2,8 +2,8 @@ module Model.Floor exposing (..)
 
 import String
 import Date exposing (Date)
-import Model.Equipment as Equipment exposing (..)
-import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.Object as Object exposing (..)
+import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 import Util.File exposing (..)
 
@@ -15,7 +15,7 @@ type alias Model =
   , version : Int
   , name : String
   , ord : Int
-  , equipments: List Equipment
+  , objects: List Object
   , width : Int
   , height : Int
   , realSize : Maybe (Int, Int)
@@ -37,7 +37,7 @@ init id =
   , version = 0
   , name = "New Floor"
   , ord = 0
-  , equipments = []
+  , objects = []
   , width = 800
   , height = 600
   , realSize = Nothing
@@ -72,17 +72,17 @@ type Msg =
     CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
   | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Float, String))
   | Move (List Id) Int (Int, Int)
-  | Paste (List (Equipment, Id)) (Int, Int)
+  | Paste (List (Object, Id)) (Int, Int)
   | Delete (List Id)
-  | RotateEquipment Id
+  | RotateObject Id
   | ChangeId Id
-  | ChangeEquipmentBackgroundColor (List Id) String
-  | ChangeEquipmentColor (List Id) String
-  | ChangeEquipmentShape (List Id) Equipment.Shape
-  | ChangeEquipmentName (List Id) String
+  | ChangeObjectBackgroundColor (List Id) String
+  | ChangeObjectColor (List Id) String
+  | ChangeObjectShape (List Id) Object.Shape
+  | ChangeObjectName (List Id) String
   | ChangeFontSize (List Id) Float
   | ToFirstNameOnly (List Id)
-  | ResizeEquipment Id (Int, Int)
+  | ResizeObject Id (Int, Int)
   | ChangeName String
   | ChangeOrd Int
   | SetLocalFile String File String
@@ -103,7 +103,7 @@ move : (List Id) -> Int -> (Int, Int) -> Msg
 move = Move
 
 
-paste : (List (Equipment, Id)) -> (Int, Int) -> Msg
+paste : (List (Object, Id)) -> (Int, Int) -> Msg
 paste = Paste
 
 
@@ -111,36 +111,36 @@ delete : (List Id) -> Msg
 delete = Delete
 
 
-rotateEquipment : Id -> Msg
-rotateEquipment = RotateEquipment
+rotateObject : Id -> Msg
+rotateObject = RotateObject
 
 
 changeId : Id -> Msg
 changeId = ChangeId
 
 
-changeEquipmentColor : List Id -> String -> Msg
-changeEquipmentColor = ChangeEquipmentColor
+changeObjectColor : List Id -> String -> Msg
+changeObjectColor = ChangeObjectColor
 
 
-changeEquipmentBackgroundColor : List Id -> String -> Msg
-changeEquipmentBackgroundColor = ChangeEquipmentBackgroundColor
+changeObjectBackgroundColor : List Id -> String -> Msg
+changeObjectBackgroundColor = ChangeObjectBackgroundColor
 
 
-changeEquipmentShape : List Id -> Equipment.Shape -> Msg
-changeEquipmentShape = ChangeEquipmentShape
+changeObjectShape : List Id -> Object.Shape -> Msg
+changeObjectShape = ChangeObjectShape
 
 
-changeEquipmentName : List Id -> String -> Msg
-changeEquipmentName = ChangeEquipmentName
+changeObjectName : List Id -> String -> Msg
+changeObjectName = ChangeObjectName
 
 
 toFirstNameOnly : List Id -> Msg
 toFirstNameOnly = ToFirstNameOnly
 
 
-resizeEquipment : Id -> (Int, Int) -> Msg
-resizeEquipment = ResizeEquipment
+resizeObject : Id -> (Int, Int) -> Msg
+resizeObject = ResizeObject
 
 
 changeFontSize : List Id -> Float -> Msg
@@ -177,69 +177,69 @@ update msg model =
     CreateDesk candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), color, name) =
-          Equipment.initDesk newId (x, y, w, h) color name Nothing
+          Object.initDesk newId (x, y, w, h) color name Nothing
       in
-        addEquipments
+        addObjects
           (List.map create candidateWithNewIds)
           model
 
     CreateLabel candidateWithNewIds ->
       let
         create (newId, (x, y, w, h), bgColor, name, fontSize, color) =
-          Equipment.initLabel newId (x, y, w, h) bgColor name fontSize color Equipment.Rectangle
+          Object.initLabel newId (x, y, w, h) bgColor name fontSize color Object.Rectangle
       in
-        addEquipments
+        addObjects
           (List.map create candidateWithNewIds)
           model
 
     Move ids gridSize (dx, dy) ->
-      setEquipments
-        (moveEquipments gridSize (dx, dy) ids (equipments model))
+      setObjects
+        (moveObjects gridSize (dx, dy) ids (objects model))
         model
 
     Paste copiedWithNewIds (baseX, baseY) ->
-      setEquipments
-        (model.equipments ++ (pasteEquipments (baseX, baseY) copiedWithNewIds (equipments model)))
+      setObjects
+        (model.objects ++ (pasteObjects (baseX, baseY) copiedWithNewIds (objects model)))
         model
 
     Delete ids ->
-      setEquipments
-        (List.filter (\equipment -> not (List.member (idOf equipment) ids)) (equipments model))
+      setObjects
+        (List.filter (\object -> not (List.member (idOf object) ids)) (objects model))
         model
 
-    RotateEquipment id ->
-      setEquipments (partiallyChange Equipment.rotate [id] (equipments model)) model
+    RotateObject id ->
+      setObjects (partiallyChange Object.rotate [id] (objects model)) model
 
     ChangeId id ->
       { model | id = Just id }
 
-    ChangeEquipmentBackgroundColor ids bgColor ->
+    ChangeObjectBackgroundColor ids bgColor ->
       let
-        newEquipments =
-          partiallyChange (changeBackgroundColor bgColor) ids (equipments model)
+        newObjects =
+          partiallyChange (changeBackgroundColor bgColor) ids (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
-    ChangeEquipmentColor ids color ->
+    ChangeObjectColor ids color ->
       let
-        newEquipments =
-          partiallyChange (changeColor color) ids (equipments model)
+        newObjects =
+          partiallyChange (changeColor color) ids (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
-    ChangeEquipmentShape ids shape ->
+    ChangeObjectShape ids shape ->
       let
-        newEquipments =
-          partiallyChange (changeShape shape) ids (equipments model)
+        newObjects =
+          partiallyChange (changeShape shape) ids (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
-    ChangeEquipmentName ids name ->
+    ChangeObjectName ids name ->
       let
-        newEquipments =
-          partiallyChange (Equipment.changeName name) ids (equipments model)
+        newObjects =
+          partiallyChange (Object.changeName name) ids (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
     ToFirstNameOnly ids ->
       let
@@ -248,24 +248,24 @@ update msg model =
             [] -> ""
             x :: _ -> x
 
-        newEquipments =
-          partiallyChange (\e -> (flip Equipment.changeName) e <| change <| nameOf e) ids (equipments model)
+        newObjects =
+          partiallyChange (\e -> (flip Object.changeName) e <| change <| nameOf e) ids (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
-    ResizeEquipment id size ->
+    ResizeObject id size ->
       let
-        newEquipments =
-          partiallyChange (changeSize size) [id] (equipments model)
+        newObjects =
+          partiallyChange (changeSize size) [id] (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
     ChangeFontSize ids fontSize ->
       let
-        newEquipments =
-          partiallyChange (Equipment.changeFontSize fontSize) ids (equipments model)
+        newObjects =
+          partiallyChange (Object.changeFontSize fontSize) ids (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
     ChangeName name ->
       { model | name = name }
@@ -282,19 +282,19 @@ update msg model =
         -- , useReal = True
         }
 
-    SetPerson equipmentId personId ->
+    SetPerson objectId personId ->
       let
-        newEquipments =
-          partiallyChange (Equipment.setPerson (Just personId)) [equipmentId] (equipments model)
+        newObjects =
+          partiallyChange (Object.setPerson (Just personId)) [objectId] (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
-    UnsetPerson equipmentId ->
+    UnsetPerson objectId ->
       let
-        newEquipments =
-          partiallyChange (Equipment.setPerson Nothing) [equipmentId] (equipments model)
+        newObjects =
+          partiallyChange (Object.setPerson Nothing) [objectId] (objects model)
       in
-        setEquipments newEquipments model
+        setObjects newObjects model
 
 {- 10cm -> 8px -}
 realToPixel : Int -> Int
@@ -334,21 +334,21 @@ realSize model =
     Nothing -> (pixelToReal model.width, pixelToReal model.height)
 
 
-equipments : Model -> List Equipment
-equipments model =
-  model.equipments
+objects : Model -> List Object
+objects model =
+  model.objects
 
 
-setEquipments : List Equipment -> Model -> Model
-setEquipments equipments model =
+setObjects : List Object -> Model -> Model
+setObjects objects model =
   { model |
-    equipments = equipments
+    objects = objects
   }
 
 
-addEquipments : List Equipment -> Model -> Model
-addEquipments equipments model =
-  setEquipments (model.equipments ++ equipments) model
+addObjects : List Object -> Model -> Model
+addObjects objects model =
+  setObjects (model.objects ++ objects) model
 
 
 setLocalFile' : String -> File -> String -> Model -> Model

@@ -35,7 +35,7 @@ import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Model.Floor as Floor exposing (ImageSource(..))
 import Model.Prototypes exposing (Prototype)
 import Model.Serialization exposing (..)
@@ -47,7 +47,7 @@ type alias Floor = Floor.Model
 type alias Error = Http.Error
 
 
-saveEditingFloor : Floor -> EquipmentsChange -> Task Error Int
+saveEditingFloor : Floor -> ObjectsChange -> Task Error Int
 saveEditingFloor floor change =
     putJson
       decodeFloorVersion
@@ -55,7 +55,7 @@ saveEditingFloor floor change =
       (Http.string <| serializeFloor floor change)
 
 
-publishEditingFloor : Floor -> EquipmentsChange -> Task Error Int
+publishEditingFloor : Floor -> ObjectsChange -> Task Error Int
 publishEditingFloor floor change =
     postJson
       decodeFloorVersion

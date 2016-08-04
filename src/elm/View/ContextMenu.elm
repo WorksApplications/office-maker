@@ -18,7 +18,7 @@ view model =
     NoContextMenu ->
       text ""
 
-    Equipment (x, y) id ->
+    Object (x, y) id ->
       div
         [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
         ]

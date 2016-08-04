@@ -11,19 +11,19 @@ import View.Icons as Icons
 import Util.HtmlUtil exposing (..)
 
 import Model exposing (..)
-import Model.Equipment as Equipment
-import Model.EquipmentsOperation as EquipmentsOperation exposing (..)
+import Model.Object as Object
+import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 
 view : Model -> List (Html Msg)
 view model =
-  [ if List.all Equipment.backgroundColorEditable (selectedEquipments model) then
+  [ if List.all Object.backgroundColorEditable (selectedObjects model) then
       row [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
     else text ""
-  , if List.all Equipment.colorEditable (selectedEquipments model) then
+  , if List.all Object.colorEditable (selectedObjects model) then
       row [ label Icons.colorPropLabel, colorView model ]
     else text ""
-  , if List.all Equipment.shapeEditable (selectedEquipments model) then
+  , if List.all Object.shapeEditable (selectedObjects model) then
       row [ label Icons.shapePropLabel, shapeView model ]
     else text ""
   ] -- TODO fontSize, name, icon?
@@ -43,7 +43,7 @@ backgroundColorView : Model -> Html Msg
 backgroundColorView model =
   paletteView
     SelectBackgroundColor
-    (backgroundColorProperty (selectedEquipments model))
+    (backgroundColorProperty (selectedObjects model))
     model.colorPalette.backgroundColors
 
 
@@ -51,7 +51,7 @@ colorView : Model -> Html Msg
 colorView model =
   paletteView
     SelectColor
-    (colorProperty (selectedEquipments model))
+    (colorProperty (selectedObjects model))
     model.colorPalette.textColors
 
 
@@ -81,10 +81,10 @@ shapeView : Model -> Html Msg
 shapeView model =
   let
     selectedShape =
-      shapeProperty (selectedEquipments model)
+      shapeProperty (selectedObjects model)
 
     shapes =
-      [ Equipment.Rectangle, Equipment.Ellipse ]
+      [ Object.Rectangle, Object.Ellipse ]
 
     match shape =
       case selectedShape of
@@ -93,15 +93,15 @@ shapeView model =
 
     toIcon shape =
       case shape of
-        Equipment.Rectangle -> Icons.shapeRectangle
-        Equipment.Ellipse -> Icons.shapeEllipse
+        Object.Rectangle -> Icons.shapeRectangle
+        Object.Ellipse -> Icons.shapeEllipse
   in
     ul
       [ style S.shapeProperties ]
       (List.map (shapeViewEach SelectShape match toIcon) shapes)
 
 
-shapeViewEach : (Equipment.Shape -> Msg) -> (Equipment.Shape -> Bool) -> (Equipment.Shape -> Html Msg) -> Equipment.Shape -> Html Msg
+shapeViewEach : (Object.Shape -> Msg) -> (Object.Shape -> Bool) -> (Object.Shape -> Html Msg) -> Object.Shape -> Html Msg
 shapeViewEach toMsg match toIcon shape =
   li
     [ style (S.shapeProperty (match shape))

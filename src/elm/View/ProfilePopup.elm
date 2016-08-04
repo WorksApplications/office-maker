@@ -7,14 +7,14 @@ import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale
 import Model.Person as Person exposing (Person)
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Model.ProfilePopupLogic exposing (..)
 
-view : msg -> (Int, Int) -> Scale.Model -> (Int, Int) -> Equipment -> Maybe Person -> Html msg
-view closeMsg (popupWidth, popupHeight) scale offsetScreenXY equipment person =
+view : msg -> (Int, Int) -> Scale.Model -> (Int, Int) -> Object -> Maybe Person -> Html msg
+view closeMsg (popupWidth, popupHeight) scale offsetScreenXY object person =
   let
     centerTopScreenXY =
-      centerTopScreenXYOfEquipment scale offsetScreenXY equipment
+      centerTopScreenXYOfObject scale offsetScreenXY object
   in
     case person of
       Just person ->
@@ -22,12 +22,12 @@ view closeMsg (popupWidth, popupHeight) scale offsetScreenXY equipment person =
           [ style (Styles.personDetailPopupDefault popupWidth popupHeight centerTopScreenXY) ]
           (pointerDefault popupWidth :: innerView (Just closeMsg) person)
       Nothing ->
-        if nameOf equipment == "" then
+        if nameOf object == "" then
           text ""
         else
           div
             [ style (Styles.personDetailPopupSmall centerTopScreenXY) ]
-            (pointerSmall :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text (nameOf equipment) ] ])
+            (pointerSmall :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text (nameOf object) ] ])
 
 
 innerView : Maybe msg -> Person -> List (Html msg)

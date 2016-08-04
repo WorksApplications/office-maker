@@ -1,4 +1,4 @@
-module View.EquipmentView exposing (noEvents, viewDesk, viewLabel)
+module View.ObjectView exposing (noEvents, viewDesk, viewLabel)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -48,7 +48,7 @@ viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha sc
       [ style (S.deskObject screenRect color selected alpha disableTransition) ]
 
     nameView =
-      equipmentLabelView "" fontSize scale disableTransition screenRect name
+      objectLabelView "" fontSize scale disableTransition screenRect name
   in
     viewInternal selected eventOptions styles nameView personMatchIcon
 
@@ -63,7 +63,7 @@ viewLabel eventOptions rect backgroundColor fontColor name fontSize isEllipse se
       [ style (S.labelObject isEllipse screenRect backgroundColor fontColor selected isGhost rectVisible disableTransition) ]
 
     nameView =
-      equipmentLabelView fontColor fontSize scale disableTransition screenRect name
+      objectLabelView fontColor fontSize scale disableTransition screenRect name
   in
     viewInternal selected eventOptions styles nameView (text "")
 
@@ -126,8 +126,8 @@ personMatchingView name personMatched =
     text ""
 
 
-equipmentLabelView : String -> Float -> Scale.Model -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
-equipmentLabelView color fontSize scale disableTransition screenRect name =
+objectLabelView : String -> Float -> Scale.Model -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
+objectLabelView color fontSize scale disableTransition screenRect name =
   let
     (_, _, _, height) =
       screenRect

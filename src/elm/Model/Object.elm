@@ -1,4 +1,4 @@
-module Model.Equipment exposing (..)
+module Model.Object exposing (..)
 
 import Model.Person as Person
 
@@ -9,54 +9,54 @@ type Shape
   | Ellipse
 
 
-type Equipment
+type Object
   = Desk Id (Int, Int, Int, Int) String String (Maybe Person.Id) -- id (x, y, width, height) background-color name personId
   | Label Id (Int, Int, Int, Int) String String Float String Shape -- id (x, y, width, height) background-color name fontSize color shape
 
 
-isDesk : Equipment -> Bool
-isDesk equipment =
-  case equipment of
+isDesk : Object -> Bool
+isDesk object =
+  case object of
     Desk _ _ _ _ _ ->
       True
     _ ->
       False
 
 
-isLabel : Equipment -> Bool
-isLabel equipment =
-  case equipment of
+isLabel : Object -> Bool
+isLabel object =
+  case object of
     Label _ _ _ _ _ _ _ ->
       True
     _ ->
       False
 
 
-initDesk : Id -> (Int, Int, Int, Int) -> String -> String -> Maybe Person.Id -> Equipment
+initDesk : Id -> (Int, Int, Int, Int) -> String -> String -> Maybe Person.Id -> Object
 initDesk =
   Desk
 
 
-initLabel : Id -> (Int, Int, Int, Int) -> String -> String -> Float -> String -> Shape -> Equipment
+initLabel : Id -> (Int, Int, Int, Int) -> String -> String -> Float -> String -> Shape -> Object
 initLabel =
   Label
 
 
-copy : Id -> (Int, Int) -> Equipment -> Equipment
-copy newId pos equipment =
-  (changeId newId << move pos) equipment
+copy : Id -> (Int, Int) -> Object -> Object
+copy newId pos object =
+  (changeId newId << move pos) object
 
 
-position : Equipment -> (Int, Int)
-position equipment =
-  case equipment of
+position : Object -> (Int, Int)
+position object =
+  case object of
     Desk _ (x, y, w, h) bgColor name personId ->
       (x, y)
     Label _ (x, y, w, h) bgColor name fontSize color shape ->
       (x, y)
 
 
-changeId : String -> Equipment -> Equipment
+changeId : String -> Object -> Object
 changeId id e =
   case e of
     Desk _ rect color name personId ->
@@ -65,7 +65,7 @@ changeId id e =
       Label id rect bgColor name fontSize color shape
 
 
-changeBackgroundColor : String -> Equipment -> Equipment
+changeBackgroundColor : String -> Object -> Object
 changeBackgroundColor bgColor e =
   case e of
     Desk id rect _ name personId ->
@@ -74,7 +74,7 @@ changeBackgroundColor bgColor e =
       Label id rect bgColor name fontSize color shape
 
 
-changeColor : String -> Equipment -> Equipment
+changeColor : String -> Object -> Object
 changeColor color e =
   case e of
     Desk id rect bgColor name personId ->
@@ -83,7 +83,7 @@ changeColor color e =
       Label id rect bgColor name fontSize color shape
 
 
-changeShape : Shape -> Equipment -> Equipment
+changeShape : Shape -> Object -> Object
 changeShape shape e =
   case e of
     Desk id rect bgColor name personId ->
@@ -92,7 +92,7 @@ changeShape shape e =
       Label id rect bgColor name fontSize color shape
 
 
-changeName : String -> Equipment -> Equipment
+changeName : String -> Object -> Object
 changeName name e =
   case e of
     Desk id rect bgColor _ personId ->
@@ -101,7 +101,7 @@ changeName name e =
       Label id rect bgColor name fontSize color shape
 
 
-changeSize : (Int, Int) -> Equipment -> Equipment
+changeSize : (Int, Int) -> Object -> Object
 changeSize (w, h) e =
   case e of
     Desk id (x, y, _, _) bgColor name personId ->
@@ -110,7 +110,7 @@ changeSize (w, h) e =
       Label id (x, y, w, h) bgColor name fontSize color shape
 
 
-move : (Int, Int) -> Equipment -> Equipment
+move : (Int, Int) -> Object -> Object
 move (newX, newY) e =
   case e of
     Desk id (_, _, width, height) bgColor name personId ->
@@ -119,7 +119,7 @@ move (newX, newY) e =
       Label id (newX, newY, width, height) bgColor name fontSize color shape
 
 
-rotate : Equipment -> Equipment
+rotate : Object -> Object
 rotate e =
   let
     (x, y, w, h) = rect e
@@ -127,7 +127,7 @@ rotate e =
     changeSize (h, w) e
 
 
-setPerson : Maybe Person.Id -> Equipment -> Equipment
+setPerson : Maybe Person.Id -> Object -> Object
 setPerson personId e =
   case e of
     Desk id rect bgColor name _ ->
@@ -136,7 +136,7 @@ setPerson personId e =
       e
 
 
-changeFontSize : Float -> Equipment -> Equipment
+changeFontSize : Float -> Object -> Object
 changeFontSize fontSize e =
   case e of
     Label id rect bgColor name _ color shape ->
@@ -145,7 +145,7 @@ changeFontSize fontSize e =
       e
 
 
-idOf : Equipment -> Id
+idOf : Object -> Id
 idOf e =
   case e of
     Desk id _ _ _ _ ->
@@ -154,7 +154,7 @@ idOf e =
       id
 
 
-nameOf : Equipment -> String
+nameOf : Object -> String
 nameOf e =
   case e of
     Desk _ _ _ name _ ->
@@ -163,7 +163,7 @@ nameOf e =
       name
 
 
-backgroundColorOf : Equipment -> String
+backgroundColorOf : Object -> String
 backgroundColorOf e =
   case e of
     Desk _ _ bgColor _ _ ->
@@ -172,7 +172,7 @@ backgroundColorOf e =
       bgColor
 
 
-colorOf : Equipment -> String
+colorOf : Object -> String
 colorOf e =
   case e of
     Desk _ _ _ _ _ ->
@@ -185,7 +185,7 @@ defaultFontSize : Float
 defaultFontSize = 12
 
 
-fontSizeOf : Equipment -> Float
+fontSizeOf : Object -> Float
 fontSizeOf e =
   case e of
     Desk _ _ _ _ _ ->
@@ -194,7 +194,7 @@ fontSizeOf e =
       fontSize
 
 
-shapeOf : Equipment -> Shape
+shapeOf : Object -> Shape
 shapeOf e =
   case e of
     Desk _ _ _ _ _ ->
@@ -203,7 +203,7 @@ shapeOf e =
       shape
 
 
-rect : Equipment -> (Int, Int, Int, Int)
+rect : Object -> (Int, Int, Int, Int)
 rect e =
   case e of
     Desk _ rect _ _ _ ->
@@ -212,7 +212,7 @@ rect e =
       rect
 
 
-relatedPerson : Equipment -> Maybe Person.Id
+relatedPerson : Object -> Maybe Person.Id
 relatedPerson e =
   case e of
     Desk _ _ _ _ personId ->
@@ -221,7 +221,7 @@ relatedPerson e =
       Nothing
 
 
-backgroundColorEditable : Equipment -> Bool
+backgroundColorEditable : Object -> Bool
 backgroundColorEditable e =
   case e of
     Desk _ _ _ _ _ ->
@@ -230,7 +230,7 @@ backgroundColorEditable e =
       True
 
 
-colorEditable : Equipment -> Bool
+colorEditable : Object -> Bool
 colorEditable e =
   case e of
     Desk _ _ _ _ _ ->
@@ -239,7 +239,7 @@ colorEditable e =
       True
 
 
-shapeEditable : Equipment -> Bool
+shapeEditable : Object -> Bool
 shapeEditable e =
   case e of
     Desk _ _ _ _ _ ->
@@ -248,7 +248,7 @@ shapeEditable e =
       True
 
 
-fontSizeEditable : Equipment -> Bool
+fontSizeEditable : Object -> Bool
 fontSizeEditable e =
   case e of
     Desk _ _ _ _ _ ->

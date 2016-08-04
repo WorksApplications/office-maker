@@ -1,7 +1,7 @@
 module Model.EditingFloor exposing (..)
 
 import Model.Floor as Floor exposing (ImageSource(..))
-import Model.FloorDiff as FloorDiff exposing (EquipmentsChange)
+import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 
 import Util.UndoList as UndoList exposing (UndoList)
 
@@ -21,22 +21,22 @@ init floor =
   }
 
 
-create : (Floor -> EquipmentsChange -> Cmd msg) -> Floor -> (EditingFloor, Cmd msg)
+create : (Floor -> ObjectsChange -> Cmd msg) -> Floor -> (EditingFloor, Cmd msg)
 create saveFloorCmd newFloor =
   let
-    (propChanged, equipmentsChange) =
+    (propChanged, objectsChange) =
       FloorDiff.diff newFloor Nothing
 
     newUndoList =
       UndoList.init newFloor
 
     cmd =
-      saveFloorCmd newFloor equipmentsChange
+      saveFloorCmd newFloor objectsChange
   in
     ({ version = newFloor.version, undoList = newUndoList }, cmd)
 
 
-commit : (Floor -> EquipmentsChange -> Cmd msg) -> Floor.Msg -> EditingFloor -> (EditingFloor, Cmd msg)
+commit : (Floor -> ObjectsChange -> Cmd msg) -> Floor.Msg -> EditingFloor -> (EditingFloor, Cmd msg)
 commit saveFloorCmd msg efloor =
   let
     floor =
@@ -45,11 +45,11 @@ commit saveFloorCmd msg efloor =
     newFloor =
       Floor.update msg floor
 
-    (propChanged, equipmentsChange) =
+    (propChanged, objectsChange) =
       FloorDiff.diff newFloor (Just floor)
 
     changed =
-      propChanged /= [] || equipmentsChange /= FloorDiff.noEquipmentsChange
+      propChanged /= [] || objectsChange /= FloorDiff.noObjectsChange
 
     newUndoList =
       if changed then
@@ -63,7 +63,7 @@ commit saveFloorCmd msg efloor =
           { newFloor |
             version = efloor.version -- TODO better API
           }
-          equipmentsChange
+          objectsChange
       else
         Cmd.none
   in

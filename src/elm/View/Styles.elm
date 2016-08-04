@@ -865,8 +865,8 @@ personDetailPopup width height (x, y) =
   shadow ++
     [ ("width", px width)
     , ("height", px height)
-    , ("left", px (ProfilePopupLogic.calcPopupLeftFromEquipmentCenter width x))
-    , ("top", px (ProfilePopupLogic.calcPopupTopFromEquipmentTop height y))
+    , ("left", px (ProfilePopupLogic.calcPopupLeftFromObjectCenter width x))
+    , ("top", px (ProfilePopupLogic.calcPopupTopFromObjectTop height y))
     , ("z-index", zIndex.personDetailPopup)
     ]
 

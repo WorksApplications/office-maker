@@ -27,7 +27,7 @@ import Util.ListUtil exposing (..)
 
 import Model exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
-import Model.Equipment as Equipment exposing (..)
+import Model.Object as Object exposing (..)
 import Model.Scale as Scale
 import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
 import Model.User as User
@@ -157,10 +157,10 @@ subViewForSearch model =
 formatSearchResult : Dict String Floor -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
 formatSearchResult floorsInfo personInfo selectedResult = \result ->
   let
-    { personId, equipmentIdAndFloorId } = result
+    { personId, objectIdAndFloorId } = result
 
     floorName =
-      case equipmentIdAndFloorId of
+      case objectIdAndFloorId of
         Just (e, fid) ->
           if fid == "draft" || String.left 3 fid == "tmp" then
             "draft"
@@ -182,8 +182,8 @@ formatSearchResult floorsInfo personInfo selectedResult = \result ->
         ]
         [ if isPerson then Icons.searchResultItemPerson else text "" ]
 
-    nameOfEquipment =
-      case equipmentIdAndFloorId of
+    nameOfObject =
+      case objectIdAndFloorId of
         Just (e, fid) -> nameOf e
         Nothing -> ""
 
@@ -192,14 +192,14 @@ formatSearchResult floorsInfo personInfo selectedResult = \result ->
         Just id ->
           case Dict.get id personInfo of
             Just person -> person.name
-            Nothing -> nameOfEquipment
-        Nothing -> nameOfEquipment
+            Nothing -> nameOfObject
+        Nothing -> nameOfObject
 
     selectable =
-      equipmentIdAndFloorId /= Nothing
+      objectIdAndFloorId /= Nothing
 
     selected =
-      case (selectedResult, equipmentIdAndFloorId) of
+      case (selectedResult, objectIdAndFloorId) of
         (Just id, Just (e, _)) ->
           idOf e == id
         _ ->
