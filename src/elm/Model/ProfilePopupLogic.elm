@@ -23,34 +23,34 @@ bottomScreenYOfObject scale (offsetX, offsetY) object =
 
 
 calcPopupLeftFromObjectCenter : Int -> Int -> Int
-calcPopupLeftFromObjectCenter popupWidth eqCenter =
-  eqCenter - (popupWidth // 2)
+calcPopupLeftFromObjectCenter popupWidth objCenter =
+  objCenter - (popupWidth // 2)
 
 
 calcPopupRightFromObjectCenter : Int -> Int -> Int
-calcPopupRightFromObjectCenter popupWidth eqCenter =
-  eqCenter + (popupWidth // 2)
+calcPopupRightFromObjectCenter popupWidth objCenter =
+  objCenter + (popupWidth // 2)
 
 
 calcPopupTopFromObjectTop : Int -> Int -> Int
-calcPopupTopFromObjectTop popupHeight eqTop =
-  eqTop - (popupHeight + 10)
+calcPopupTopFromObjectTop popupHeight objTop =
+  objTop - (popupHeight + 10)
 
 
 adjustOffset : (Int, Int) -> (Int, Int) -> Scale.Model -> (Int, Int) -> Object -> (Int, Int)
 adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale (offsetX, offsetY) object =
   let
-    (eqCenter, eqTop) =
+    (objCenter, objTop) =
       centerTopScreenXYOfObject scale (offsetX, offsetY) object
 
     left =
-      calcPopupLeftFromObjectCenter popupWidth eqCenter
+      calcPopupLeftFromObjectCenter popupWidth objCenter
 
     top =
-      calcPopupTopFromObjectTop popupHeight eqTop
+      calcPopupTopFromObjectTop popupHeight objTop
 
     right =
-      calcPopupRightFromObjectCenter popupWidth eqCenter
+      calcPopupRightFromObjectCenter popupWidth objCenter
 
     bottom =
       bottomScreenYOfObject scale (offsetX, offsetY) object

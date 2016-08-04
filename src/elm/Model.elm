@@ -1959,7 +1959,7 @@ temporaryPenRect model from =
 
 
 temporaryResizeRect : Model -> (Int, Int) -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
-temporaryResizeRect model (fromScreenX, fromScreenY) (eqLeft, eqTop, objWidth, objHeight) =
+temporaryResizeRect model (fromScreenX, fromScreenY) (objLeft, objTop, objWidth, objHeight) =
   let
     (toScreenX, toScreenY) =
       model.pos
@@ -1969,11 +1969,11 @@ temporaryResizeRect model (fromScreenX, fromScreenY) (eqLeft, eqTop, objWidth, o
 
     (right, bottom) =
       fitPositionToGrid model.gridSize <|
-        ( eqLeft + objWidth + Scale.screenToImage model.scale dx
-        , eqTop + objHeight + Scale.screenToImage model.scale dy
+        ( objLeft + objWidth + Scale.screenToImage model.scale dx
+        , objTop + objHeight + Scale.screenToImage model.scale dy
         )
   in
-    validateRect (eqLeft, eqTop, right, bottom)
+    validateRect (objLeft, objTop, right, bottom)
 
 
 validateRect : (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
