@@ -1040,6 +1040,7 @@ update action model =
                 saveFloorCmd
                 (Floor.setPerson objectId head)
                 model.floor
+
             _ ->
               model.floor ! []
       in
@@ -1588,12 +1589,14 @@ updateOnFinishNameInput continueEditing id name model =
                 ( ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
                 , requestCandidate (idOf e) (nameOf e)
                 )
+
               Nothing ->
                 ( model.objectNameInput
                 , requestCandidate id name
                 )
           else
             (model.objectNameInput, Cmd.none)
+
         Nothing ->
           (model.objectNameInput, Cmd.none)
 
@@ -1601,6 +1604,7 @@ updateOnFinishNameInput continueEditing id name model =
       case findObjectById allObjects id of
         Just object ->
           updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo object
+
         Nothing ->
           Cmd.none
 
@@ -1608,6 +1612,7 @@ updateOnFinishNameInput continueEditing id name model =
       case objectNameInput.editingObject of
         Just (id, _) ->
           [id]
+
         Nothing ->
           []
 
@@ -1633,6 +1638,7 @@ updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo object =
   case Object.relatedPerson object of
     Just personId ->
       Cmd.none
+
     Nothing ->
       let
         task =

@@ -71,6 +71,7 @@ encodeObject e =
         , ("color", string "#000")
         , ("shape", string "rectangle")
         , ("name", string name)
+        , ("fontSize", float Object.defaultFontSize)
         , ("personId"
           , case personId of
               Just id -> string id
@@ -122,7 +123,6 @@ encodeFloor floor change =
       , ("version", int floor.version)
       , ("name", string floor.name)
       , ("ord", int floor.ord)
-      -- , ("objects", list <| List.map encodeObject floor.objects)
       , ("added", list (List.map encodeObject change.added))
       , ("modified", list (List.map encodeObjectModification change.modified))
       , ("deleted", list (List.map encodeObject change.deleted))

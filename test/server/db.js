@@ -9,7 +9,7 @@ var filestorage = require('./filestorage.js');
 var mock = require('./mock.js');
 
 function saveObjects(conn, data, cb) {
-  getObjects(conn, data.floorId, data.oldFloorVersion, function(e, objects) {
+  getObjects(conn, data.floorId, data.oldFloorVersion, (e, objects) => {
     var deleted = {};
     var modified = {};
     data.deleted.forEach((e) => {
@@ -23,7 +23,7 @@ function saveObjects(conn, data, cb) {
       mod.modifiedVersion = data.newFloorVersion;
     });
     var conflict = false;
-    objects.forEach(function(e) {
+    objects.forEach((e) => {
       if((deleted[e.id] || modified[e.id]) && data.baseFloorVersion < e.modifiedVersion) {
         conflict = true;
       }
@@ -34,10 +34,9 @@ function saveObjects(conn, data, cb) {
       var sqls = objects.concat(data.added).filter((e) => {
         return !deleted[e.id];
       }).map((object) => {
-        object = modified[object.id] || object
-        return sql.replace('objects', schema.objectKeyValues(data.floorId, data.newFloorVersion, object));
+        object = modified[object.id] || object;
+        return sql.insert('objects', schema.objectKeyValues(data.floorId, data.newFloorVersion, object));
       });
-      // sqls.unshift(sql.delete('objects', sql.whereList([['floorId', data.floorId], ['floorVersion', data.oldFloorVersion]])));
       rdb.batch(conn, sqls, cb);
     }
   });
@@ -169,8 +168,9 @@ function saveFloorWithObjects(conn, newFloor, cb) {
     if(e) {
       cb && cb(e);
     } else {
-      var baseVersion = newFloor.version;
+      var baseVersion = newFloor.version;//TODO
       newFloor.version = floor ? floor.version + 1 : 0;
+      console.log('newFloor=', newFloor.id, newFloor.version);
       var sqls = [
         sql.insert('floors', schema.floorKeyValues(newFloor))
       ];
