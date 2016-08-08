@@ -61,11 +61,20 @@ function objectKeyValues(floorId, floorVersion, object) {
     ["modifiedVersion", object.modifiedVersion]
   ];
 }
+function colorKeyValues(c) {
+  return [
+    ["id", c.id],
+    ["ord", c.ord],
+    ["type", c.type],
+    ["color", c.color]
+  ];
+}
 
 module.exports = {
   userKeyValues: userKeyValues,
   personKeyValues: personKeyValues,
   floorKeyValues: floorKeyValues,
   prototypeKeyValues: prototypeKeyValues,
-  objectKeyValues: objectKeyValues
+  objectKeyValues: objectKeyValues,
+  colorKeyValues: colorKeyValues
 };

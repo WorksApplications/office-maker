@@ -346,8 +346,8 @@ app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
-      console.log('gotFloor(edit): ' + id + ' ' + floor.objects.length);
       if(floor) {
+        console.log('gotFloor(edit): ' + id + ' ' + floor.objects.length);
         if(floor.id.startsWith('tmp')) {
           floor.id = null;
         }
@@ -372,8 +372,8 @@ app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
-      console.log('gotFloor: ' + id + ' ' + floor.objects.length);
       if(floor) {
+        console.log('gotFloor: ' + id + ' ' + floor.objects.length);
         if(floor.id.startsWith('tmp')) {
           floor.id = null;
         }

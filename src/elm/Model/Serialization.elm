@@ -16,7 +16,7 @@ import Model.Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.Prototypes exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
-import Model.ColorPalette as ColorPalette exposing (ColorPalette)
+import Model.ColorPalette as ColorPalette exposing (ColorPalette, ColorEntity)
 
 type alias Floor = Floor.Model
 
@@ -33,7 +33,7 @@ decodeFloorVersion =
 
 decodeColors : Decoder ColorPalette
 decodeColors =
-  Decode.map ColorPalette.init (Decode.list Decode.string)
+  Decode.map ColorPalette.init (Decode.list decodeColorEntity)
 
 
 decodePrototypes : Decoder (List Prototype)
@@ -151,6 +151,16 @@ decodeUser =
         ("person" := decodePerson)
     , Decode.succeed User.guest
     ]
+
+
+decodeColorEntity : Decoder ColorEntity
+decodeColorEntity =
+  decode
+    ColorEntity
+    |> required "id" Decode.string
+    |> required "ord" Decode.int
+    |> required "type" Decode.string
+    |> required "color" Decode.string
 
 
 decodePerson : Decoder Person

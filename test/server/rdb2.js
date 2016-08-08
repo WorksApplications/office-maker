@@ -8,6 +8,7 @@ var pool = mysql.createPool({
 });
 
 function exec(conn, sql, cb) {
+  // console.log(sql);
   conn.query(sql, (e, rows, fields) => {
     if(e) {
       cb(e);
@@ -25,7 +26,7 @@ function exec(conn, sql, cb) {
         cb && cb(null, rows);
       } catch(e) {
         // console.trace();
-        console.log(e);
+        console.log('db2.exec', e);
       }
     }
   });
@@ -42,17 +43,17 @@ function forConnection(onGetConnection) {
             // console.log('release 1');
             conn.release();
           } catch(e) {
-            console.log(e);
+            console.log('rdb2.forConnection1', e);
           }
           onClose && onClose();
         });
       } catch(e) {
-        console.log(e);
+        console.log('rdb2.forConnection2', e);
         try {
           // console.log('release 2');
           conn.release();
         } catch(e) {
-          console.log(e);
+          console.log('rdb2.forConnection3', e);
         }
       }
     }
@@ -91,6 +92,8 @@ function forTransaction(conn, onBeginTransaction) {
     }
   });
 }
+
+// maybe logic is incorrect
 function forConnectionAndTransaction(f) {
   forConnection(function(e, conn, connectionDone) {
     if(e) {

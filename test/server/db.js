@@ -6,7 +6,6 @@ var sql = require('./sql.js');
 var rdb = require('./rdb2.js');
 var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
-var mock = require('./mock.js');
 
 function saveObjects(conn, data, cb) {
   getObjects(conn, data.floorId, data.oldFloorVersion, (e, objects) => {
@@ -385,87 +384,21 @@ function getPerson(conn, id, cb) {
   });
 }
 function getColors(conn, cb) {
-  rdb.exec(conn, sql.select('colors', sql.where('id', '1')), (e, colors) => {
-    if(e) {
-      cb(e);
-    } else {
-      var _colors = [];
-      [1,2,3,4,5,6,7,8,9,10].forEach((i) => {
-        var c = colors[0]['color' + i];
-        if(c) {
-          _colors.push(c);
-        }
-      });
-      cb(null, _colors);
-    }
+  rdb.exec(conn, sql.select('colors'), cb);
+}
+function saveColors(conn, colors, cb) {
+  var sqls = colors.map(schema.colorKeyValues).map(function(keyValues) {
+    return sql.replace('colors', keyValues);
   });
+  rdb.batch(conn, sqls, cb);
 }
-function saveColors(conn, newColors, cb) {
-  var keyValues = newColors.map((c, index) => {
-    return ['color' + index, c];
-  });
-  keyValues.unshift(['id', '1']);
-  rdb.batch(conn, [
-    // sql.delete('colors'),
-    sql.replace('colors', keyValues)
-  ], cb);
-}
-
-function init(conn, cb) {
-
-  _async.series(mock.users.map((user) => {
-    return function(cb) {
-      // console.log('init 1');
-      saveUser(conn, user, cb);
-    };
-  }).concat(mock.people.map((person) => {
-    return function(cb) {
-      // console.log('init 2');
-      savePerson(conn, person, cb);
-    };
-  })).concat([
-    function(cb) {
-      // console.log('init 3');
-      getPrototypes(conn, function(e, prototypes) {
-        if(e) {
-          cb(e);
-        } else {
-          if(prototypes.length) {
-            cb();
-          } else {
-            savePrototypes(conn, mock.prototypes, cb);
-          }
-        }
-      });
-    }
-  ]).concat([
-    function(cb) {
-      // console.log('init 4');
-      saveColors(conn, mock.backgroundColors, cb);
-    }
-  ]), cb);
-}
-rdb.forConnectionAndTransaction((e, conn, done) => {
-  if(e) {
-    done(e);
-  } else {
-    init(conn, (e) => {
-      // console.log('init done?', e);
-      if(e) {
-        console.log(e);
-        done(e);
-      } else {
-        done(null, function onFinishClose() {});
-      }
-    });
-  }
-});
-
 
 module.exports = {
   getUser: getUser,
+  saveUser: saveUser,
   getUserWithPerson: getUserWithPerson,
   getPerson: getPerson,
+  savePerson: savePerson,
   getCandidate: getCandidate,
   search: search,
   getPrototypes: getPrototypes,

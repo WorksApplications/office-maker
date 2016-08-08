@@ -1,19 +1,43 @@
 module Model.ColorPalette exposing (..)
 
-import String
-
 type alias ColorPalette =
   { backgroundColors : List String
   , textColors : List String
   }
 
 
-init : List String -> ColorPalette
-init master =
-  { backgroundColors =
-      master
-  , textColors =
-      List.map
-        (\color -> if color == "transparent" || String.startsWith "rgba" color then "#000" else color)
-        master
+type alias ColorEntity =
+  { id : String
+  , ord : Int
+  , type_ : String
+  , color : String
   }
+
+
+init : List ColorEntity -> ColorPalette
+init entities =
+  let
+    sorted =
+      List.sortBy (.ord) entities
+
+    backgroundColors =
+      List.filterMap (\e ->
+        if e.type_ == "backgroundColor" then
+          Just e.color
+        else
+          Nothing
+      )
+      sorted
+
+    textColors =
+      List.filterMap (\e ->
+        if e.type_ == "color" then
+          Just e.color
+        else
+          Nothing
+      )
+      sorted
+  in
+    { backgroundColors = backgroundColors
+    , textColors = textColors
+    }

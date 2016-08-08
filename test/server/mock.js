@@ -32,14 +32,13 @@ var backgroundColors = [
   "#eda", "#baf", "#fba", "#9bd", "#af8", "#8df", "#bbb", "#fff", "rgba(255,255,255,0.5)"
 ];
 var colors = [
-  "#875", "#75a", "#c57", "#69a", "#8c5", "#5ab", "#666", "#000", "rgba(255,255,255,0.5)"
+  "#875", "#75a", "#c57", "#69a", "#8c5", "#5ab", "#666", "#000"
 ];
 var prototypes = [
   { id: "1", color: "#8bd", name: "", width : gridSize*7, height: gridSize*12 }
 ];
 module.exports = {
   users: users,
-  // floors: floors,
   people: people,
   backgroundColors: backgroundColors,
   colors: colors,
