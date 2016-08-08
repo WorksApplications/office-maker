@@ -47,11 +47,15 @@ type alias Floor = Floor.Model
 type alias Error = Http.Error
 
 
+apiRoot : String
+apiRoot = ""
+
+
 saveEditingFloor : Floor -> ObjectsChange -> Task Error Int
 saveEditingFloor floor change =
     putJson
       decodeFloorVersion
-      ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id ++ "/edit")
+      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id ++ "/edit")
       (Http.string <| serializeFloor floor change)
 
 
@@ -59,7 +63,7 @@ publishEditingFloor : Floor -> ObjectsChange -> Task Error Int
 publishEditingFloor floor change =
     postJson
       decodeFloorVersion
-      ("/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id)
+      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id)
       (Http.string <| serializeFloor floor change)
 
 
@@ -67,7 +71,7 @@ getEditingFloor : Maybe String -> Task Error Floor
 getEditingFloor id =
     getJsonWithoutCache
       decodeFloor
-      ("/api/v1/floor/" ++ Maybe.withDefault "draft" id ++ "/edit")
+      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" id ++ "/edit")
 
 
 getFloorsInfo : Bool -> Task Error (List FloorInfo)
@@ -75,7 +79,7 @@ getFloorsInfo withPrivate =
   let
     url =
       Http.url
-        "/api/v1/floors"
+        (apiRoot ++ "/api/v1/floors")
         (if withPrivate then [("all", "true")] else [])
   in
     getJsonWithoutCache
@@ -87,14 +91,14 @@ getPrototypes : Task Error (List Prototype)
 getPrototypes =
     getJsonWithoutCache
       decodePrototypes
-      (Http.url "/api/v1/prototypes" [])
+      (Http.url (apiRoot ++ "/api/v1/prototypes") [])
 
 
 savePrototypes : List Prototype -> Task Error ()
 savePrototypes prototypes =
   putJson
     noResponse
-    ("/api/v1/prototypes")
+    (apiRoot ++ "/api/v1/prototypes")
     (Http.string <| serializePrototypes prototypes)
 
 
@@ -102,14 +106,14 @@ getColors : Task Error ColorPalette
 getColors =
     getJsonWithoutCache
       decodeColors
-      (Http.url "/api/v1/colors" [])
+      (Http.url (apiRoot ++ "/api/v1/colors") [])
 
 
 getFloor : Maybe String -> Task Error Floor
 getFloor id =
     getJsonWithoutCache
       decodeFloor
-      ("/api/v1/floor/" ++ Maybe.withDefault "draft" id)
+      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" id)
 
 
 getEditingDraftFloor : Task Error (Maybe Floor)
@@ -146,7 +150,7 @@ getAuth : Task Error User
 getAuth =
     Http.get
       decodeUser
-      ("/api/v1/auth")
+      (apiRoot ++ "/api/v1/auth")
 
 
 search : Bool -> String -> Task Error (List SearchResult)
@@ -154,7 +158,7 @@ search withPrivate query =
   let
     url =
       Http.url
-        ("/api/v1/search/" ++ Http.uriEncode query)
+        (apiRoot ++ "/api/v1/search/" ++ Http.uriEncode query)
         (if withPrivate then [("all", "true")] else [])
   in
     Http.get
@@ -169,14 +173,14 @@ personCandidate name =
   else
     getJsonWithoutCache
       decodePersons <|
-      ("/api/v1/candidate/" ++ Http.uriEncode name)
+      (apiRoot ++ "/api/v1/candidate/" ++ Http.uriEncode name)
 
 
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =
     HttpUtil.sendFile
       "PUT"
-      ("/api/v1/image/" ++ id)
+      (apiRoot ++ "/api/v1/image/" ++ id)
       file
 
 
@@ -184,7 +188,7 @@ getPerson : Id -> Task Error Person
 getPerson id =
     Http.get
       decodePerson
-      ("/api/v1/people/" ++ id)
+      (apiRoot ++ "/api/v1/people/" ++ id)
 
 
 getPersonByUser : Id -> Task Error Person
@@ -193,7 +197,7 @@ getPersonByUser id =
     getUser =
       Http.get
         decodeUser
-        ("/api/v1/users/" ++ id)
+        (apiRoot ++ "/api/v1/users/" ++ id)
   in
     getUser
     `Task.andThen` (\user -> case user of
@@ -207,7 +211,7 @@ login : String -> String -> Task Error ()
 login id pass =
     postJson
       noResponse
-      ("/api/v1/login")
+      (apiRoot ++ "/api/v1/login")
       (Http.string <| serializeLogin id pass)
 
 
@@ -215,7 +219,7 @@ logout : Task Error ()
 logout =
     postJson
       noResponse
-      ("/api/v1/logout")
+      (apiRoot ++ "/api/v1/logout")
       (Http.string "")
 
 
