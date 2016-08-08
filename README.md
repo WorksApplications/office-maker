@@ -1,4 +1,4 @@
-Office Maker (WIP)
+Office Maker
 ----
 
 CAUTION: This product is under construction.
@@ -33,48 +33,32 @@ CAUTION: This product is under construction.
 |DELETE| /api/v1/floors/:id||||||✓|
 |PUT| /api/v1/images/:id|Image|||||✓|
 
-<!-- 
+<!--
 |GET| /api/v1/floors/:id/versions||||✓|✓|✓|
-|GET| /api/v1/floors/:id/version/:version||||✓|✓|✓| 
+|GET| /api/v1/floors/:id/version/:version||||✓|✓|✓|
 -->
 
 ### Types
+
 |Type|Structure|
 |:--|:--|
-|User| { id : UUID, name : Person.name, role : Role, personId : Person.id } |
-|Floor| { id : UUID, version : int, name : string, image? : URL, realSize? : (int, int), objects : [ Object ], public : boolean, publishedBy? : User.id, publishedAt? : Date } |
-|Object| { id : UUID, name : string, size : (int, int), color : Color, personId? : Person.id } |
-|Prototype| { id : UUID, name : string, size : (int, int), color : Color } |
-|Image| binary |
-|SearchResult| [(Object, string)] |
-|Person| { id : string, name : string, org : string, tel? : string, mail? : string, image? : URL } |
+|User| { id : UUID, name : Person.name, role : Role, personId : String } |
+|Floor| { id : UUID, ord : Int, version : Int, name : String, image? : URL, realSize? : (Int, Int), objects : [ Object ], public : Bool, publishedBy? : User.id, publishedAt? : Date } |
+|Object| { id : UUID, type: String, name : String, size : (Int, Int), color : String, fontSize : Float, shape : String, personId? : String } |
+|Prototype| { id : UUID, name : String, size : (Int, Int), color : String } |
+|Image| Binary |
+|SearchResult| [(Object, String)] |
+|Person| { id : String, name : String, org : String, tel? : String, mail? : String, image? : URL } |
 |Role| "admin" "general" |
-|Color| string |
-|UUID| string |
-|Date| int |
-|URL| string |
+|Color| { id : String, ord : Int, type : String, color : String } |
+|UUID| String |
+|Date| Int |
+|URL| String |
 
-### Tables
+### Server Implementations
 
-#### User
-|id|pass|role|personId|
-|:--|:--|:--|:--|
-|string|string|string|Person.id|
+There is only one server implementation which is made for debugging.See [here](./test/server/README.md).
 
-#### Floor
-|id*|version*|name|image|width|height|realWidth|realHeight|public|updateBy|updateAt|
-|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-|string|string|string|string|int|int|int|int|bool|User.id|bigint|
-
-#### Object
-|id|name|width|height|color|personId|floorId|
-|:--|:--|:--|:--|:--|:--|:--|
-|string|string|int|int|string|Person.id|Floor.id|
-
-#### Person
-|id|name|org|tel|mail|image|
-|:--|:--|:--|:--|:--|:--|
-|string|string|string|string|string|string|
 
 ## Development
 
