@@ -5,7 +5,9 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var filestorage = require('./filestorage.js');
 var db = require('./db.js');
-var rdb = require('./rdb2.js');
+var rdb = require('./rdb.js');
+
+var rdbEnv = rdb.createEnv('localhost', 'root', '', 'map2');
 
 var publicDir = __dirname + '/public';
 

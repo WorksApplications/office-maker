@@ -1,12 +1,14 @@
 var db = require('./db.js');
-var rdb = require('./rdb2.js');
+var rdb = require('./rdb.js');
 var mock = require('./mock.js');
 var _async = require('async');
+
+var rdbEnv = rdb.createEnv('localhost', 'root', '', 'map2');
 
 var commands = {};
 
 commands.createDataForDebug = function(cb) {
-  rdb.forConnectionAndTransaction((e, conn, done) => {
+  rdbEnv.forConnectionAndTransaction((e, conn, done) => {
     if(e) {
       cb(e);
     } else {
@@ -29,7 +31,7 @@ commands.createDataForDebug = function(cb) {
 };
 
 commands.deleteFloor = function(floorId, cb) {
-  rdb.forConnectionAndTransaction((e, conn, done) => {
+  rdbEnv.forConnectionAndTransaction((e, conn, done) => {
     if(e) {
       cb(e);
     } else {
@@ -53,7 +55,7 @@ commands.deleteFloor = function(floorId, cb) {
 };
 
 commands.deletePrototype = function(id, cb) {
-  rdb.forConnectionAndTransaction((e, conn, done) => {
+  rdbEnv.forConnectionAndTransaction((e, conn, done) => {
     if(e) {
       cb(e);
     } else {

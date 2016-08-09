@@ -3,7 +3,7 @@ var fs = require('fs-extra');
 var _async = require('async');
 
 var sql = require('./sql.js');
-var rdb = require('./rdb2.js');
+var rdb = require('./rdb.js');
 var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 
