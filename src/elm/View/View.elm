@@ -116,7 +116,15 @@ subViewForEdit model =
     floorView =
       List.map
         (App.map FloorPropertyMsg)
-        (FloorProperty.view model.visitDate model.user (EditingFloor.present model.floor) model.floorProperty)
+        (if (EditingFloor.present model.floor).id == "" then
+          []
+        else
+          FloorProperty.view
+            model.visitDate
+            model.user
+            (EditingFloor.present model.floor)
+            model.floorProperty
+        )
   in
     [ card <| penView model
     , card <| PropertyView.view model

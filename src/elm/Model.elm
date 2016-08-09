@@ -11,6 +11,7 @@ import Keyboard
 import Dict exposing (Dict)
 import Navigation
 import Time exposing (Time)
+import Http
 
 import Util.ShortCut as ShortCut
 import Util.HtmlUtil as HtmlUtil exposing (..)
@@ -337,12 +338,9 @@ update action model =
         floorId =
           model.url.floorId
 
-        forEdit =
-          not (User.isGuest user)
-
         loadFloorCmd' =
           if String.length floorId > 0 then
-            loadFloorCmd forEdit floorId
+            loadFloorCmd requestPrivateFloors floorId
           else
             Cmd.none
 
@@ -1806,16 +1804,17 @@ loadFloorsInfoCmd withPrivate =
 loadFloorCmd : Bool -> String -> Cmd Msg
 loadFloorCmd forEdit floorId =
   let
-    _ =
-      if floorId == "" then
-        Debug.crash "floorId is not defined"
-      else
-        ""
+    recover404 e =
+      case e of
+        Http.BadResponse 404 _ ->
+          FloorLoaded (Floor.init floorId)
+        _ ->
+          Error (APIError e)
 
     task =
-      (if forEdit then API.getEditingFloor floorId else API.getFloor floorId)
+      if forEdit then API.getEditingFloor floorId else API.getFloor floorId
   in
-    performAPI FloorLoaded task
+    Task.perform recover404 FloorLoaded task
 
 
 focusCmd : String -> Cmd Msg

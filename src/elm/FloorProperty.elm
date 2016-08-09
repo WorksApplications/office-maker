@@ -38,12 +38,14 @@ type Event
   | OnFileLoadFailed File.Error
   | None
 
+
 type alias Model =
   { nameInput : String
   , realWidthInput : String
   , realHeightInput : String
   , ordInput : String
   }
+
 
 init : String -> Int -> Int -> Int -> Model
 init name realWidth realHeight ord =
@@ -57,11 +59,13 @@ init name realWidth realHeight ord =
 validName : String -> Bool
 validName s = True -- TODO
 
+
 update : Msg -> Model -> (Model, Cmd Msg, Event)
 update message model =
   case message of
     NoOp ->
         (model, Cmd.none, None)
+
     InputFloorName name ->
       let
         newModel = { model | nameInput = name }
@@ -69,21 +73,25 @@ update message model =
           if validName name then OnNameChange name else None
       in
         (newModel, Cmd.none, event)
+
     InputFloorOrd ord ->
       let
         newModel = { model | ordInput = ord }
       in
         (newModel, Cmd.none, ordEvent ord)
+
     InputFloorRealWidth width ->
       let
         newModel = { model | realWidthInput = width }
       in
         (newModel, Cmd.none, sizeEvent newModel)
+
     InputFloorRealHeight height ->
       let
         newModel = { model | realHeightInput = height }
       in
         (newModel, Cmd.none, sizeEvent newModel)
+
     LoadFile fileList ->
       case File.getAt 0 fileList of
         Just file ->
@@ -94,10 +102,13 @@ update message model =
             (model, cmd, None)
         Nothing ->
           (model, Cmd.none, None)
+
     GotDataURL file url ->
         (model, Cmd.none, OnFileWithDataURL file url)
+
     PreparePublish ->
         (model, Cmd.none, OnPreparePublish)
+
     FileError err ->
         (model, Cmd.none, OnFileLoadFailed err)
 
@@ -137,6 +148,7 @@ floorNameInputView user model =
     floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
   in
     div [ style Styles.floorNameInputContainer ] [ floorNameLabel, nameInput user model.nameInput ]
+
 
 nameInput : User -> String -> Html Msg
 nameInput user value =
@@ -186,6 +198,7 @@ floorRealSizeInputView user model =
       , heightValueView user useReal model.realHeightInput
       ]
 
+
 inputAttributes : (String -> msg) -> (Int -> msg) -> String -> Maybe msg -> List (Attribute msg)
 inputAttributes toInputMsg toKeydownMsg value' defence =
   [ onInput' toInputMsg -- TODO cannot input japanese
@@ -196,6 +209,7 @@ inputAttributes toInputMsg toKeydownMsg value' defence =
         Just message -> [onMouseDown' message]
         Nothing -> []
     )
+
 
 widthValueView : User -> Bool -> String -> Html Msg
 widthValueView user useReal value =
@@ -210,6 +224,7 @@ widthValueView user useReal value =
   else
     div [ style Styles.floorWidthText ] [text value]
 
+
 heightValueView : User -> Bool -> String -> Html Msg
 heightValueView user useReal value =
   if User.isAdmin user then
@@ -223,6 +238,7 @@ heightValueView user useReal value =
   else
     div [ style Styles.floorHeightText ] [text value]
 
+
 publishButtonView : User -> Html Msg
 publishButtonView user =
   if User.isAdmin user then
@@ -232,6 +248,7 @@ publishButtonView user =
       [ text "Publish" ]
   else
     text ""
+
 
 floorUpdateInfoView : Date -> Floor -> Html Msg
 floorUpdateInfoView visitDate floor =
@@ -246,6 +263,7 @@ floorUpdateInfoView visitDate floor =
           [ text ("Last Update by " ++ by ++ " at " ++ date at) ]
       Nothing ->
         text ""
+
 
 view : Date -> User -> Floor -> Model -> List (Html Msg)
 view visitDate user floor model =

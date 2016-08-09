@@ -316,6 +316,7 @@ app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
 app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   role(conn, req, (e, role, user) => {
+    console.log(role);
     if(role === 'guest') {
       res.status(404).send('not found by id: ' + req.params.id);//401?
       return;
