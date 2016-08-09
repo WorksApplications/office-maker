@@ -283,23 +283,11 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
-      floorInfoList = floorInfoList.filter(function(floorInfo) {
-        if(floorInfo[0].id.startsWith('tmp')) {
-          return user && floorInfo[0].id === 'tmp-' + user.id;
-        } else {
-          return true;
-        }
-      });
-      floorInfoList.forEach(function(floorInfo) {
-        if(floorInfo[0].id.startsWith('tmp')) {
-          floorInfo[0].id = null;
-          floorInfo[1].id = null;
-        }
-      });
       res.send(floorInfoList);
     });
   });
 }));
+
 app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
@@ -309,15 +297,11 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
       res.status(500).send('');
       return;
     }
-    results.forEach(function(r) {
-      if(r.objectIdAndFloorId && r.objectIdAndFloorId[1] && r.objectIdAndFloorId[1].startsWith('tmp')) {
-        r.objectIdAndFloorId[1] = 'draft';
-      }
-    })
     res.send(results);
   });
 }));
-app.get('/api/v1/candidate/:name', inTransaction((conn, req, res) => {
+
+app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
   var name = req.params.name;
   db.getCandidate(conn, name, (e, results) => {
     if(e) {
@@ -328,45 +312,17 @@ app.get('/api/v1/candidate/:name', inTransaction((conn, req, res) => {
     res.send(results);
   });
 }));
-app.get('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
+
+app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
+  var options = url.parse(req.url, true).query;
   role(conn, req, (e, role, user) => {
-    if(e) {
-      console.log(e);
-      res.status(500).send('');
-      return;
-    }
     if(role === 'guest') {
-      res.status(401).send('');
-      return;
-    }
-    var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
-    console.log('get(edit): ' + id);
-    db.getFloorWithObjects(conn, true, id, (e, floor) => {
-      if(e) {
-        res.status(500).send('');
-        return;
-      }
-      if(floor) {
-        console.log('gotFloor(edit): ' + id + ' ' + floor.objects.length);
-        if(floor.id.startsWith('tmp')) {
-          floor.id = null;
-        }
-        res.send(floor);
-      } else {
-        res.status(404).send('not found by id: ' + id);
-      }
-    });
-  });
-}));
-app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
-  role(conn, req, (e, role, user) => {
-    if(role === 'guest' && req.params.id === 'draft') {
       res.status(404).send('not found by id: ' + req.params.id);//401?
       return;
     }
-    var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
+    var id = req.params.id;
     console.log('get: ' + id);
-    db.getFloorWithObjects(conn, false, id, (e, floor) => {
+    db.getFloorWithObjects(conn, options.all, id, (e, floor) => {
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -374,18 +330,14 @@ app.get('/api/v1/floor/:id', inTransaction((conn, req, res) => {
       }
       if(floor) {
         console.log('gotFloor: ' + id + ' ' + floor.objects.length);
-        if(floor.id.startsWith('tmp')) {
-          floor.id = null;
-        }
         res.send(floor);
       } else {
         res.status(404).send({ message : 'not found by id: ' + id });
       }
     });
   });
-
 }));
-app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
+app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   role(conn, req, (e, role, user) => {
     if(e) {
       console.log(e);
@@ -405,13 +357,9 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
       res.status(400).send('');
       return;
     }
-    var id = req.params.id === 'draft' ? 'tmp-' + user.id : req.params.id;
-    newFloor.id = id
-    newFloor.public = false;
-    newFloor.updateBy = req.session.user;
-    newFloor.updateAt = new Date().getTime();
-
-    db.saveFloorWithObjects(conn, newFloor, (e, newVersion) => {
+    var updateBy = user.id;
+    console.log(newFloor);
+    db.saveFloorWithObjects(conn, newFloor, updateBy, (e, newId, newVersion) => {
       if(e === 409) {
         res.status(409).send('');
         return;
@@ -421,7 +369,7 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
         res.status(500).send('');
         return;
       }
-      console.log('saved floor: ' + id);
+      console.log('saved floor: ' + newId);
       // console.log(newFloor);
       res.send({
         version: newVersion
@@ -431,7 +379,7 @@ app.put('/api/v1/floor/:id/edit', inTransaction((conn, req, res) => {
 }));
 
 // publish
-app.post('/api/v1/floor/:id', inTransaction((conn, req, res) => {
+app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
   role(conn, req, (e, role) => {
     if(e) {
       console.log(e);
@@ -443,24 +391,12 @@ app.post('/api/v1/floor/:id', inTransaction((conn, req, res) => {
       return;
     }
     var id = req.params.id;
-    var newFloor = req.body;
-    if(id !== newFloor.id) {
-      res.status(400).send('');
-      return;
-    }
-    if(!id || id.length !== 36) {// must be UUID
-      res.status(400).send('');
-      return;
-    }
-    if(!isValidFloor(newFloor)) {
-      res.status(400).send('');
-      return;
-    }
-    newFloor.public = true;
-    newFloor.updateBy = req.session.user;
-    newFloor.updateAt = new Date().getTime();
-
-    db.publishFloor(conn, newFloor, (e, newVersion) => {
+    var updateBy = req.session.user;
+    db.publishFloor(conn, id, updateBy, (e, newVersion) => {
+      if(e === 409) {
+        res.status(409).send('');
+        return;
+      }
       if(e) {
         console.log(e);
         res.status(500).send('');
@@ -477,7 +413,7 @@ app.post('/api/v1/floor/:id', inTransaction((conn, req, res) => {
 
 }));
 
-app.put('/api/v1/image/:id', inTransaction((conn, req, res) => {
+app.put('/api/v1/images/:id', inTransaction((conn, req, res) => {
   role(conn, req, (e, role) => {
     if(e) {
       console.log(e);

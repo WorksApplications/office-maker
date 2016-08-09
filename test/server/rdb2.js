@@ -21,13 +21,13 @@ function exec(conn, sql, cb) {
         });
       });
       var _res = rows.length || rows.affectedRows || '';
-      // console.log(`${sql.split('\n').join()} => ${_res}`);
-      try {
+      console.log(`${sql.split('\n').join()} => ${_res}`);
+      // try {
         cb && cb(null, rows);
-      } catch(e) {
-        // console.trace();
-        console.log('db2.exec', e);
-      }
+      // } catch(e) {
+      //   // console.trace();
+      //   console.log('db2.exec', e);
+      // }
     }
   });
 }

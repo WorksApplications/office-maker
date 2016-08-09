@@ -5,7 +5,6 @@ module Model.API exposing (
     , publishEditingFloor
     , getEditingFloor
     , getFloor
-    , getEditingDraftFloor
     , getFloorsInfo
     , saveEditingImage
     , gotoTop
@@ -51,27 +50,62 @@ apiRoot : String
 apiRoot = ""
 
 
+-- createNewFloor : Task Error Int
+-- createNewFloor =
+--   postJson
+--     decodeFloorVersion
+--     (apiRoot ++ "/api/v1/floors")
+--     (Http.string "")
+
+
 saveEditingFloor : Floor -> ObjectsChange -> Task Error Int
 saveEditingFloor floor change =
-    putJson
-      decodeFloorVersion
-      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id ++ "/edit")
-      (Http.string <| serializeFloor floor change)
+  putJson
+    decodeFloorVersion
+    (apiRoot ++ "/api/v1/floors/" ++ floor.id)
+    (Http.string <| serializeFloor floor change)
 
 
-publishEditingFloor : Floor -> ObjectsChange -> Task Error Int
-publishEditingFloor floor change =
-    postJson
-      decodeFloorVersion
-      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" floor.id)
-      (Http.string <| serializeFloor floor change)
+publishEditingFloor : String -> Task Error Int
+publishEditingFloor id =
+  putJson
+    decodeFloorVersion
+    (apiRoot ++ "/api/v1/floors/" ++ id ++ "/public")
+    (Http.string "")
 
 
-getEditingFloor : Maybe String -> Task Error Floor
-getEditingFloor id =
-    getJsonWithoutCache
-      decodeFloor
-      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" id ++ "/edit")
+getEditingFloor : String -> Task Error Floor
+getEditingFloor = getFloorHelp True
+
+
+getFloor : String -> Task Error Floor
+getFloor = getFloorHelp False
+
+
+getFloorHelp : Bool -> String -> Task Error Floor
+getFloorHelp withPrivate id =
+  let
+    _ =
+      if id == "" then
+        Debug.crash "id is not defined"
+      else
+        ""
+
+    url =
+      Http.url
+        (apiRoot ++ "/api/v1/floors/" ++ id)
+        (if withPrivate then [("all", "true")] else [])
+  in
+    getJsonWithoutCache decodeFloor url
+
+
+getFloorMaybe : String -> Task Error (Maybe Floor)
+getFloorMaybe id =
+  getFloor id
+  `Task.andThen` (\floor -> Task.succeed (Just floor))
+  `Task.onError` \e -> case e of
+    Http.BadResponse 404 _ -> Task.succeed Nothing
+    _ -> Task.fail e
 
 
 getFloorsInfo : Bool -> Task Error (List FloorInfo)
@@ -109,37 +143,7 @@ getColors =
       (Http.url (apiRoot ++ "/api/v1/colors") [])
 
 
-getFloor : Maybe String -> Task Error Floor
-getFloor id =
-    getJsonWithoutCache
-      decodeFloor
-      (apiRoot ++ "/api/v1/floor/" ++ Maybe.withDefault "draft" id)
-
-
-getEditingDraftFloor : Task Error (Maybe Floor)
-getEditingDraftFloor =
-  getEditingFloorMaybe Nothing
-
-
-getFloorMaybe : Maybe String -> Task Error (Maybe Floor)
-getFloorMaybe id =
-  getFloor id
-  `Task.andThen` (\floor -> Task.succeed (Just floor))
-  `Task.onError` \e -> case e of
-    Http.BadResponse 404 _ -> Task.succeed Nothing
-    _ -> Task.fail e
-
-
-getEditingFloorMaybe : Maybe String -> Task Error (Maybe Floor)
-getEditingFloorMaybe id =
-  getEditingFloor id
-  `Task.andThen` (\floor -> Task.succeed (Just floor))
-  `Task.onError` \e -> case e of
-    Http.BadResponse 404 _ -> Task.succeed Nothing
-    _ -> Task.fail e
-
-
-getDiffSource : Maybe String -> Task Error (Floor, Maybe Floor)
+getDiffSource : String -> Task Error (Floor, Maybe Floor)
 getDiffSource id =
   getEditingFloor id
   `Task.andThen` \current -> getFloorMaybe id
@@ -173,14 +177,14 @@ personCandidate name =
   else
     getJsonWithoutCache
       decodePersons <|
-      (apiRoot ++ "/api/v1/candidate/" ++ Http.uriEncode name)
+      (apiRoot ++ "/api/v1/candidates/" ++ Http.uriEncode name)
 
 
 saveEditingImage : Id -> File -> Task a ()
 saveEditingImage id file =
     HttpUtil.sendFile
       "PUT"
-      (apiRoot ++ "/api/v1/image/" ++ id)
+      (apiRoot ++ "/api/v1/images/" ++ id)
       file
 
 

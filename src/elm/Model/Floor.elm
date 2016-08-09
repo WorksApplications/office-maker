@@ -11,7 +11,7 @@ import Util.File exposing (..)
 type alias Id = String
 
 type alias Model =
-  { id : Maybe Id
+  { id : Id
   , version : Int
   , name : String
   , ord : Int
@@ -31,7 +31,7 @@ type ImageSource
   | None
 
 
-init : Maybe Id -> Model
+init : Id -> Model
 init id =
   { id = id
   , version = 0
@@ -47,7 +47,7 @@ init id =
   }
 
 
-initWithOrder : Maybe Id -> Int -> Model
+initWithOrder : Id -> Int -> Model
 initWithOrder id ord =
   let
     floor = init id
@@ -57,7 +57,7 @@ initWithOrder id ord =
     }
 
 
-copy : Maybe Id -> Model -> Model
+copy : Id -> Model -> Model
 copy id floor =
   { floor |
     id = id
@@ -211,7 +211,7 @@ update msg model =
       setObjects (partiallyChange Object.rotate [id] (objects model)) model
 
     ChangeId id ->
-      { model | id = Just id }
+      { model | id = id }
 
     ChangeObjectBackgroundColor ids bgColor ->
       let

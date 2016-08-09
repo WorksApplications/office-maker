@@ -12,6 +12,7 @@ type alias Model =
   , editMode : Bool
   }
 
+
 parse : Navigation.Location -> Result String Model
 parse location =
   let
@@ -28,6 +29,7 @@ parse location =
     else
       Err ("invalid floorId: " ++ floorId)
 
+
 dummy : Model
 dummy =
     { floorId = ""
@@ -35,6 +37,7 @@ dummy =
     , personId = Nothing
     , editMode = False
     }
+
 
 stringify : Model -> String
 stringify { floorId, query, personId, editMode } =
@@ -49,12 +52,14 @@ stringify { floorId, query, personId, editMode } =
   in
     stringifyParams params ++ "#" ++ floorId
 
+
 stringifyParams : List (String, String) -> String
 stringifyParams params =
     "?" ++
       ( String.join "&" <|
         List.map (\(k, v) -> k ++ "=" ++ v) params
       )
+
 
 validate : Model -> Model
 validate model =
@@ -63,20 +68,24 @@ validate model =
   else
     updateFloorId Nothing model
 
+
 updateQuery : String -> Model -> Model
 updateQuery newQuery model =
   { model | query = Just newQuery }
+
 
 updateEditMode : Bool -> Model -> Model
 updateEditMode editMode model =
   { model | editMode = editMode }
 
+
 updateFloorId : Maybe String -> Model -> Model
 updateFloorId newId model =
   { model | floorId = Maybe.withDefault "" newId }
 
-hashFromFloorId : Maybe String -> String
+
+hashFromFloorId : String -> String
 hashFromFloorId floorId =
-  "#" ++ Maybe.withDefault "" floorId
+  "#" ++ floorId
 
 --

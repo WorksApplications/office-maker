@@ -33,7 +33,7 @@ linkBox contextmenuMsg liStyle aStyle url inner =
     [ a [ href url, style aStyle ] inner ]
 
 
-eachView : (Maybe String -> msg) -> Bool -> Bool -> Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
+eachView : (String -> msg) -> Bool -> Bool -> Bool -> String -> FloorInfo -> Maybe (Html msg)
 eachView contextmenuMsg disableContextmenu isAdmin isEditMode currentFloorId floorInfo =
   Maybe.map
     (\floor ->
@@ -68,7 +68,7 @@ createButton msg =
     [ div [ onClick msg ] [ text "+"] ]
 
 
-view : (Maybe String -> msg) -> ((Int, Int) -> msg) -> msg -> msg -> Bool -> Bool -> Bool -> Maybe String -> List FloorInfo -> Html msg
+view : (String -> msg) -> ((Int, Int) -> msg) -> msg -> msg -> Bool -> Bool -> Bool -> String -> List FloorInfo -> Html msg
 view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu isAdmin isEditMode currentFloorId floorInfoList =
   let
     floorList =
@@ -118,7 +118,6 @@ markAsPrivate floorInfo =
     FloorInfo.Public _ -> False
     FloorInfo.PublicWithEdit _ _ -> False
     FloorInfo.Private _ -> True
-
 
 
 markAsModified : Bool -> FloorInfo -> Bool

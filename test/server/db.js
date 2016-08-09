@@ -162,14 +162,18 @@ function ensureFloor(conn, id, cb) {
   cb && cb();
 }
 
-function saveFloorWithObjects(conn, newFloor, cb) {
+function saveFloorWithObjects(conn, newFloor, updateBy, cb) {
+  newFloor.public = false;
+  newFloor.updateBy = updateBy;
+  newFloor.updateAt = new Date().getTime();
+
   getFloor(conn, true, newFloor.id, (e, floor) => {
     if(e) {
       cb && cb(e);
     } else {
       var baseVersion = newFloor.version;//TODO
-      newFloor.version = floor ? floor.version + 1 : 0;
-      console.log('newFloor=', newFloor.id, newFloor.version);
+      var oldFloorVersion = floor ? floor.version : 0;
+      newFloor.version = oldFloorVersion + 1;
       var sqls = [
         sql.insert('floors', schema.floorKeyValues(newFloor))
       ];
@@ -181,7 +185,7 @@ function saveFloorWithObjects(conn, newFloor, cb) {
           saveObjects(conn, {
             floorId: newFloor.id,
             baseFloorVersion: baseVersion,
-            oldFloorVersion: floor.version,
+            oldFloorVersion: oldFloorVersion,
             newFloorVersion: newFloor.version,
             added: newFloor.added,
             modified: newFloor.modified,
@@ -190,7 +194,7 @@ function saveFloorWithObjects(conn, newFloor, cb) {
             if(e) {
               cb(e);
             } else {
-              cb(null, newFloor.version);
+              cb(null, newFloor.id, newFloor.version);
             }
           });
         }
@@ -199,23 +203,50 @@ function saveFloorWithObjects(conn, newFloor, cb) {
   });
 }
 
-function publishFloor(conn, newFloor, cb) {
-  saveFloorWithObjects(conn, newFloor, (e, version) => {
+function publishFloor(conn, floorId, updateBy, cb) {
+  getFloor(conn, true, floorId, (e, floor) => {
     if(e) {
-      cb(e);
+      cb && cb(!floor);
+    } else if(e) {
+      cb && cb('floor not found: ' + floorId);
     } else {
+      // TODO detect conflict
+      var baseVersion = floor.version;
+      var oldFloorVersion = floor.version;
+      floor.version = floor.version + 1;
+      floor.public = true;
+      floor.updateBy = updateBy;
+      floor.updateAt = new Date().getTime();
+
       var sqls = [
-        sql.delete('floors', sql.where('id', newFloor.id) + ' and public=0')
+        sql.replace('floors', schema.floorKeyValues(floor)),
+        sql.delete('floors', sql.where('id', floor.id) + ' and public=0')
       ];
       rdb.batch(conn, sqls, (e) => {
         if(e) {
-          cb(e);
+          console.log('publishFloor', e);
+          cb && cb(e);
         } else {
-          cb(null, version);
+          saveObjects(conn, {
+            floorId: floorId,
+            baseFloorVersion: baseVersion,
+            oldFloorVersion: oldFloorVersion,
+            newFloorVersion: floor.version,
+            added: [],
+            modified: [],
+            deleted: []
+          }, function(e) {
+            if(e) {
+              cb(e);
+            } else {
+              cb(null, floor.version);
+            }
+          });
         }
       });
     }
   });
+
 }
 
 function deleteFloorWithObjects(conn, floorId, cb) {

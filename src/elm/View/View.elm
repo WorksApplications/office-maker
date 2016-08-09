@@ -2,7 +2,6 @@ module View.View exposing (view)
 
 import Dict exposing (..)
 import Maybe
-import String
 
 import Html exposing (..)
 import Html.App as App
@@ -68,17 +67,9 @@ floorInfoView model =
         isEditMode =
           model.editMode /= Viewing True && model.editMode /= Viewing False
 
-        onContextmenu floorId =
-          case floorId of
-            Just id ->
-              ShowContextMenuOnFloorInfo id
-
-            Nothing ->
-              NoOp
-
       in
         FloorsInfoView.view
-          onContextmenu
+          ShowContextMenuOnFloorInfo
           MoveOnCanvas
           HideContextMenu
           CreateNewFloor
@@ -92,20 +83,26 @@ floorInfoView model =
 subView : Model -> Html Msg
 subView model =
   let
+    floorIdIsNotSet =
+      (EditingFloor.present model.floor).id == ""
+
     pane =
-      if model.tab == SearchTab then
+      if model.tab == SearchTab || floorIdIsNotSet then
         subViewForSearch model
       else
         subViewForEdit model
 
     tabs =
-      case (model.editMode, User.isGuest model.user) of
-        (Viewing _, _) -> []
-        (_, True) -> []
-        (_, _) ->
-          [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (model.tab == SearchTab)
-          , subViewTab (ChangeTab EditTab) 1 Icons.editTab (model.tab == EditTab)
-          ]
+      if floorIdIsNotSet then
+        []
+      else
+        case (model.editMode, User.isGuest model.user) of
+          (Viewing _, _) -> []
+          (_, True) -> []
+          (_, _) ->
+            [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (model.tab == SearchTab)
+            , subViewTab (ChangeTab EditTab) 1 Icons.editTab (model.tab == EditTab)
+            ]
   in
     div
       [ style (S.subView)
@@ -137,9 +134,9 @@ subViewForSearch model =
       Dict.fromList <|
         List.map (\f ->
           case f of
-            FloorInfo.Public f -> (Maybe.withDefault "draft" f.id, f)
-            FloorInfo.PublicWithEdit _ f -> (Maybe.withDefault "draft" f.id, f)
-            FloorInfo.Private f -> (Maybe.withDefault "draft" f.id, f)
+            FloorInfo.Public f -> (f.id, f)
+            FloorInfo.PublicWithEdit _ f -> (f.id, f)
+            FloorInfo.Private f -> (f.id, f)
           ) model.floorsInfo
 
     format =
@@ -162,14 +159,11 @@ formatSearchResult floorsInfo personInfo selectedResult = \result ->
     floorName =
       case objectIdAndFloorId of
         Just (e, fid) ->
-          if fid == "draft" || String.left 3 fid == "tmp" then
-            "draft"
-          else
-            case Dict.get fid floorsInfo of
-              Just info ->
-                info.name
-              Nothing ->
-                "?"
+          case Dict.get fid floorsInfo of
+            Just info ->
+              info.name
+            Nothing ->
+              "?"
         Nothing ->
           "Missing"
 

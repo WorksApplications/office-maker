@@ -124,11 +124,10 @@ view model =
             Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
 
     inner =
-      case (model.editMode, (EditingFloor.present model.floor).id) of
-        (Viewing _, Nothing) ->
-          [] -- don't show draft on Viewing mode
-        _ ->
-          [ canvasView model, popup']
+      if (EditingFloor.present model.floor).id == "" then
+        []
+      else
+        [ canvasView model, popup']
   in
     div
       [ style (S.canvasContainer (model.editMode == Viewing True) ++

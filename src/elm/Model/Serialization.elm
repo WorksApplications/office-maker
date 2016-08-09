@@ -119,7 +119,7 @@ encodeFloor floor change =
         _ -> null
   in
     object
-      [ ("id", Maybe.withDefault null <| Maybe.map string <| floor.id)
+      [ ("id", string floor.id)
       , ("version", int floor.version)
       , ("name", string floor.name)
       , ("ord", int floor.ord)
@@ -235,7 +235,7 @@ decodeFloor =
       , public = public
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
       })
-    |> optional' "id" Decode.string
+    |> required "id" Decode.string
     |> required "version" Decode.int
     |> required "name" Decode.string
     |> required "ord" Decode.int

@@ -92,21 +92,19 @@ allResults model =
 reorderResults : Maybe String -> List SearchResult -> List SearchResult
 reorderResults thisFloorId results =
   let
-    (inThisFloor, inOtherFloor, inDraftFloor, missing) =
-      List.foldl (\({ personId, objectIdAndFloorId } as result) (this, other, draft, miss) ->
+    (inThisFloor, inOtherFloor, missing) =
+      List.foldl (\({ personId, objectIdAndFloorId } as result) (this, other, miss) ->
         case objectIdAndFloorId of
           Just (eid, fid) ->
-            if Just fid == thisFloorId then -- this might be draft, but "in this floor" anyway
-              (result :: this, other, draft, miss)
-            else if fid == "draft" then -- this is draft, and user is not looking at it.
-              (this, other, result :: draft, miss)
+            if Just fid == thisFloorId then
+              (result :: this, other, miss)
             else
-              (this, result :: other, draft, miss)
+              (this, result :: other, miss)
           Nothing ->
-            (this, other, draft, result :: miss)
-      ) ([], [], [], []) results
+            (this, other, result :: miss)
+      ) ([], [], []) results
   in
-    inThisFloor ++ inOtherFloor ++ inDraftFloor ++ missing
+    inThisFloor ++ inOtherFloor ++ missing
 
 
 view : (Msg -> msg) -> Model -> Html msg
@@ -146,18 +144,8 @@ resultsView transformMsg isEditing format model =
           each result =
             resultView transformMsg format result
 
-          filter { objectIdAndFloorId } =
-            if isEditing then
-              True
-            else
-              case objectIdAndFloorId of
-                Just (_, "draft") ->
-                  False
-                _ ->
-                  True
-
           children =
-            List.map each (List.filter filter results)
+            List.map each results
         in
           ul [] children
 

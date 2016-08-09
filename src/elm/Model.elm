@@ -10,7 +10,6 @@ import Process
 import Keyboard
 import Dict exposing (Dict)
 import Navigation
-import Http
 import Time exposing (Time)
 
 import Util.ShortCut as ShortCut
@@ -131,7 +130,8 @@ init : (Int, Int) -> (Int, Int) -> (Result String URL.Model) -> Float -> (Model,
 init randomSeed initialSize urlResult visitDate =
   let
     initialFloor =
-      Floor.init Nothing
+      Floor.init ""
+
     toModel url searchBox =
       { seed = IdGenerator.init randomSeed
       , visitDate = Date.fromTime visitDate
@@ -190,7 +190,6 @@ type Msg = NoOp
   | AuthLoaded User
   | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded Floor
-  | DraftFloorLoaded (Maybe Floor)
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
   | FloorSaved Bool Int
@@ -270,6 +269,7 @@ urlUpdate result model =
               let
                 withPrivate =
                   not (User.isGuest model.user)
+
                 thisFloorId =
                   Just floorId
               in
@@ -278,19 +278,19 @@ urlUpdate result model =
               (model.searchBox, Cmd.none)
 
         forEdit = not (User.isGuest model.user)
+
         loadFloorCmd' =
-          if String.length floorId == 36 then
-            -- Debug.log "1" <|
-              loadFloorCmd forEdit (Just floorId)
-          else if floorId == "" then
-              loadDraftFloor model.user
+          if String.length floorId > 0 then
+            loadFloorCmd forEdit floorId
           else
-            -- Debug.log "4" <|
-              Cmd.none
+            Cmd.none
+
         nextIsEditing =
           not (User.isGuest model.user) && newURL.editMode
+
         newEditMode =
           if nextIsEditing then Select else Viewing False
+
         requestPrivateFloors =
           case newEditMode of
             Viewing _ -> False
@@ -341,10 +341,10 @@ update action model =
           not (User.isGuest user)
 
         loadFloorCmd' =
-          if String.length floorId == 36 then
-            loadFloorCmd forEdit (Just floorId)
+          if String.length floorId > 0 then
+            loadFloorCmd forEdit floorId
           else
-            loadDraftFloor user
+            Cmd.none
 
         loadSettingsCmd =
           if User.isGuest user then
@@ -380,21 +380,6 @@ update action model =
     FloorLoaded floor ->
       updateOnFloorLoaded floor model
 
-    DraftFloorLoaded maybeFloor ->
-      case maybeFloor of
-        Just floor ->
-          updateOnFloorLoaded floor model
-
-        Nothing ->
-          if not (User.isGuest model.user) then
-            let
-              (newFloor, saveCmd) =
-                EditingFloor.create saveFloorCmd (Floor.init Nothing)
-            in
-              { model | floor = newFloor } ! [ saveCmd ]
-          else
-            model ! []
-
     FloorSaved isPublish newVersion ->
       let
         newFloorId =
@@ -403,19 +388,12 @@ update action model =
         (message, cmd) =
           if isPublish then
             let
-              newFloorId' =
-                case newFloorId of
-                  Just id ->
-                    id
-                  Nothing ->
-                    Debug.crash "new id not found."
-
               message =
                 Success ("Successfully published " ++ (EditingFloor.present model.floor).name)
             in
               message !
                 [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-                , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId newFloorId model.url)
+                , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
                 ]
           else
             model.error ! []
@@ -783,7 +761,7 @@ update action model =
       { model |
         contextMenu =
           -- TODO idealy, change floor and show context menu
-          if (EditingFloor.present model.floor).id == Just id then
+          if (EditingFloor.present model.floor).id == id then
             FloorInfo model.pos id
           else
             NoContextMenu
@@ -1060,26 +1038,10 @@ update action model =
           (EditingFloor.present model.floor)
 
         (cmd, newSeed, newFloor) =
-          if floor.id == Nothing then
-            let
-              (newFloorId, newSeed) =
-                IdGenerator.new model.seed
-
-              (newFloor, saveCmd) =
-                EditingFloor.commit
-                  publishFloorCmd
-                  (Floor.changeId newFloorId)
-                  model.floor
-            in
-              ( saveCmd
-              , newSeed
-              , newFloor
-              )
-          else
-            ( publishFloorCmd floor FloorDiff.noObjectsChange
-            , model.seed
-            , model.floor
-            )
+          ( publishFloorCmd floor FloorDiff.noObjectsChange
+          , model.seed
+          , model.floor
+          )
       in
         { model |
           diff = Nothing
@@ -1137,7 +1099,7 @@ update action model =
                   floor.ord
 
         newFloor =
-          Floor.initWithOrder (Just newFloorId) lastFloorOrder
+          Floor.initWithOrder newFloorId lastFloorOrder
 
         cmd =
           performAPI
@@ -1152,7 +1114,7 @@ update action model =
           IdGenerator.new model.seed
 
         newFloor =
-          Floor.copy (Just newFloorId) (EditingFloor.present model.floor)
+          Floor.copy newFloorId (EditingFloor.present model.floor)
 
         cmd =
           performAPI
@@ -1561,20 +1523,6 @@ regesterPersonIfNotCached personInfo personId =
     regesterPerson personId
 
 
-loadDraftFloor : User.User -> Cmd Msg
-loadDraftFloor user =
-  let
-    newFloor =
-      Floor.init Nothing
-    loadTask =
-      if User.isGuest user then
-        Task.succeed Nothing
-      else
-        API.getEditingDraftFloor
-  in
-    performAPI DraftFloorLoaded loadTask
-
-
 updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
 updateOnFinishNameInput continueEditing id name model =
   let
@@ -1705,7 +1653,7 @@ publishFloorCmd floor change =
           Task.succeed ()
 
     secondTask =
-      API.publishEditingFloor floor change
+      API.publishEditingFloor floor.id
   in
     performAPI
       (FloorSaved True)
@@ -1844,30 +1792,30 @@ shiftSelectionToward direction model =
           }
       _ -> model
 
+
 loadAuthCmd : Cmd Msg
 loadAuthCmd =
     performAPI AuthLoaded API.getAuth
+
 
 loadFloorsInfoCmd : Bool -> Cmd Msg
 loadFloorsInfoCmd withPrivate =
     performAPI FloorsInfoLoaded (API.getFloorsInfo withPrivate)
 
 
-loadFloorCmd : Bool -> Maybe String -> Cmd Msg
+loadFloorCmd : Bool -> String -> Cmd Msg
 loadFloorCmd forEdit floorId =
   let
-    recover404 e =
-      case e of
-        Http.BadResponse 404 _ ->
-          FloorLoaded (Floor.init floorId)
-        _ ->
-          Error (APIError e)
+    _ =
+      if floorId == "" then
+        Debug.crash "floorId is not defined"
+      else
+        ""
+
     task =
-      Task.map
-        FloorLoaded
-        (if forEdit then API.getEditingFloor floorId else API.getFloor floorId)
+      (if forEdit then API.getEditingFloor floorId else API.getFloor floorId)
   in
-    Task.perform recover404 identity task
+    performAPI FloorLoaded task
 
 
 focusCmd : String -> Cmd Msg
