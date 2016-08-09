@@ -3,14 +3,12 @@ node_modules
 index.js
 login.js
 elm.js
-test/server/public
-*.ttf
+
 data
 repl-temp-*
 *.ods*
 npm-debug.log
 bugs.html
-src/elm/Material
+
 count.sh
-script
 dep-check.html
