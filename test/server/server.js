@@ -33,35 +33,28 @@ function inTransaction(f) {
         console.log(e)
         res.status(500).send('');
       } else {
-        var originalSend = res.send;
-        var originalStatus = res.status;
-        var newRes = Object.assign({}, res, {
-          status: function() {
-            var args = arguments;
-            originalStatus.apply(res, args);
-            return newRes;
-          },
-          send: function() {
-            var args = arguments;
-            if(res.statusCode >= 400) {
-              done(true, function(rollbackFailed) {
-                if(rollbackFailed) {
-                  console.log(rollbackFailed);
-                }
-                originalSend.apply(res, args);
-              });
+        f(conn, req, res).then((data) => {
+          done(false, function(commitFailed) {
+            if(commitFailed) {
+              console.log(commitFailed);
+              res.status(500).send('');
             } else {
-              done(false, function(commitFailed) {
-                if(commitFailed) {
-                  console.log(commitFailed);
-                  newRes.status(500);
-                }
-                originalSend.apply(res, args);
-              });
+              res.send(data);
             }
-          }
+          });
+        }).catch((e) => {
+          done(true, function(rollbackFailed) {
+            if(rollbackFailed) {
+              console.log(rollbackFailed);
+            }
+            if(typeof e === 'number' && e >= 400) {
+              res.status(e).send('');
+            } else {
+              console.log(e);
+              res.status(500).send('');
+            }
+          });
         });
-        f(conn, req, newRes);
       }
 
     });
@@ -72,17 +65,14 @@ function inTransaction(f) {
 app.post('/api/v1/login', inTransaction((conn, req, res) => {
   var id = req.body.id;
   var pass = req.body.pass;
-  db.getUser(conn, id).then((user) => {
+  return db.getUser(conn, id).then((user) => {
     if(user && hash(pass) === user.pass) {
       req.session.user = id;
-      res.send({});
+      return Promise.resolve({});
     } else {
-      res.status(401).send('');
+      return Promise.reject(401);
     }
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
-  });
+  })
 }));
 
 app.post('/api/v1/logout', (req, res) => {
@@ -104,110 +94,87 @@ function isValidFloor(floor) {
 app.get('/login', (req, res) => {
   res.sendfile(publicDir + '/login.html');
 });
+
 app.get('/logout', (req, res) => {
   req.session.user = null;
   res.redirect('/login');
 });
+
 app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
   var id = req.params.id;
-  db.getPerson(conn, id).then((person) => {
+  return db.getPerson(conn, id).then((person) => {
     if(!person) {
-      res.status(404).send('');
-      return;
+      return Promise.reject(404);
     }
-    res.send(person);
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
+    return Promise.resolve(person);
   });
 }));
+
 app.get('/api/v1/auth', inTransaction((conn, req, res) => {
   var id = req.session.user;
   if(id) {
-    db.getUserWithPerson(conn, id).then((user) => {
+    return db.getUserWithPerson(conn, id).then((user) => {
       if(!user) {
-        res.status(404).send('');
-        return;
+        return Promise.reject(404);
       }
       user.pass = null;
-      res.send(user);
-    }).catch((e) => {
-      console.log(e);
-      res.status(500).send('');
+      return Promise.resolve(user);
     });
   } else {
-    res.send({});
+    return Promise.resolve({});
   }
 }));
+
 app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
   var id = req.params.id;
-  db.getUserWithPerson(conn, id).then((user) => {
+  return db.getUserWithPerson(conn, id).then((user) => {
     if(!user) {
-      res.status(404).send('');
-      return;
+      return Promise.reject(404);
     }
     user.pass = null;
-    res.send(user);
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
+    return Promise.resolve(user);
   });
 }));
+
 app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user) {
-      res.status(401).send('');
-      return;
+      return Promise.reject(401);
     }
-    db.getPrototypes(conn).then((prototypes) => {
-      res.send(prototypes);
-    }).catch((e) => {
-      console.log(e);
-      res.status(500).send('');
+    return db.getPrototypes(conn).then((prototypes) => {
+      return Promise.resolve(prototypes);
     });
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
   });
 }));
+
 app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user) {
-      res.status(401).send('');
-      return;
+      return Promise.reject(401);
     }
     var prototypes = req.body;
     if(!prototypes || !prototypes.length) {
-      res.status(403).send('');
-      return;
+      return Promise.reject(403);
     }
-    db.savePrototypes(conn, prototypes).then(() => {
-      res.send({});
-    }).catch((e) => {
-      console.log(e);
-      res.status(500).send('');
+    return db.savePrototypes(conn, prototypes).then(() => {
+      return Promise.resolve({});
     });
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
-  });
+  })
 }));
+
 app.get('/api/v1/colors', inTransaction((conn, req, res) => {
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user) {
-      res.status(401).send('');
-      return;
+      return Promise.reject(401);
     }
     return db.getColors(conn).then((colors) => {
-      res.send(colors);
+      return Promise.resolve(colors);
     })
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
-  });
+  })
 }));
+
 app.put('/api/v1/colors', inTransaction((conn, req, res) => {
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user) {
       return Promise.reject(401);
     }
@@ -216,85 +183,59 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
       return Promise.reject(403);
     }
     return db.saveColors(conn, colors).then(() => {
-      res.send({});
+      return Promise.resolve({});
     })
-  }).catch((e) => {
-    if(typeof e === 'number') {
-      res.status(e).send('');
-    } else {
-      console.log(e);
-      res.status(500).send('');
-    }
   });
 }));
+
 app.get('/api/v1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user && options.all) {
       return Promise.reject(401);
     }
     // ignore all option for now
     return db.getFloorsInfoWithObjects(conn).then((floorInfoList) => {
-      res.send(floorInfoList);
+      return Promise.resolve(floorInfoList);
     })
-  }).catch((e) => {
-    if(typeof e === 'number') {
-      res.status(e).send('');
-    } else {
-      console.log(e);
-      res.status(500).send('');
-    }
   });
 }));
 
 app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  db.search(conn, query, options.all).then((results) => {
-    res.send(results);
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
+  return db.search(conn, query, options.all).then((results) => {
+    return Promise.resolve(results);
   });
 }));
 
 app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
   var name = req.params.name;
-  db.getCandidate(conn, name).then((results) => {
-    res.send(results);
-  }).catch((e) => {
-    console.log(e);
-    res.status(500).send('');
+  return db.getCandidate(conn, name).then((results) => {
+    return Promise.resolve(results);
   });
 }));
 
 app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user) {
       return Promise.reject(404);//401?
     }
     var id = req.params.id;
     console.log('get: ' + id);
     return db.getFloorWithObjects(conn, options.all, id).then((floor) => {
-      if(floor) {
-        console.log('gotFloor: ' + id + ' ' + floor.objects.length);
-        res.send(floor);
-      } else {
+      if(!floor) {
         return Promise.reject(404);
       }
+      console.log('gotFloor: ' + id + ' ' + floor.objects.length);
+      return Promise.resolve(floor);
     })
-  }).catch((e) => {
-    if(typeof e === 'number') {
-      res.status(e).send('');
-    } else {
-      console.log(e);
-      res.status(500).send('');
-    }
   });
 }));
+
 app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user) {
       return Promise.reject(401);
     }
@@ -308,67 +249,45 @@ app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
     var updateBy = user.id;
     return db.saveFloorWithObjects(conn, newFloor, updateBy).then((newIdAndVersion) => {
       console.log('saved floor: ' + newIdAndVersion.id);
-      res.send(newIdAndVersion);
+      return Promise.resolve(newIdAndVersion);
     });
-  }).catch((e) => {
-    if(typeof e === 'number') {
-      res.status(e).send('');
-    } else {
-      console.log(e);
-      res.status(500).send('');
-    }
   });
 }));
 
 // publish
 app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
-  db.getUser(conn, req.session.user).then((user) => {
+  return db.getUser(conn, req.session.user).then((user) => {
     if(!user || user.role !== 'admin') {
       return Promise.reject(401);
     }
     var id = req.params.id;
     var updateBy = req.session.user;
-    return db.publishFloor(conn, id, updateBy).then((newIdAndVersion) => {
-      console.log('published floor: ' + newIdAndVersion.id);
-      res.send(newIdAndVersion);
+    return db.publishFloor(conn, id, updateBy).then((newVersion) => {
+      console.log('published floor: ' + id + '/' + newVersion);
+      return Promise.resolve({ version : newVersion });
     });
-  }).catch((e) => {
-    if(typeof e === 'number') {
-      res.status(e).send('');
-    } else {
-      console.log(e);
-      res.status(500).send('');
-    }
   });
-
 }));
 
 app.put('/api/v1/images/:id', inTransaction((conn, req, res) => {
-  db.getUser(conn, req.session.user).then((user) => {
-    if(!user || user.role !== 'admin') {
-      return Promise.reject(401);
-    }
-    var id = req.params.id;
-    var all = [];
-    req.on('data', (data) => {
-      all.push(data);
-    });
-    req.on('end', () => {
-      var image = Buffer.concat(all);
-      db.saveImage(conn, 'images/floors/' + id, image).then(() => {
-        res.end();
-      }).catch((e) => {
-        console.log(e);
-        res.status(500).send('');
+  return new Promise((resolve, reject) => {
+    db.getUser(conn, req.session.user).then((user) => {
+      if(!user || user.role !== 'admin') {
+        return Promise.reject(401);
+      }
+      var id = req.params.id;
+      var all = [];
+      req.on('data', (data) => {
+        all.push(data);
       });
-    })
-  }).catch((e) => {
-    if(typeof e === 'number') {
-      res.status(e).send('');
-    } else {
-      console.log(e);
-      res.status(500).send('');
-    }
+      req.on('end', () => {
+        var image = Buffer.concat(all);
+        db.saveImage(conn, 'images/floors/' + id, image).then(() => {
+          res.end();
+          // TODO commit
+        }).catch(reject);
+      })
+    });
   });
 }));
 

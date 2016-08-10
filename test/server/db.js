@@ -92,7 +92,6 @@ function getFloorsWithObjects(conn, withPrivate) {
   return getFloors(conn, withPrivate).then((floors) => {
     var promises = floors.map((floor) => {
       return getObjects(conn, floor.id, floor.version).then((objects) => {
-        console.log(objects.length);
         floor.objects = objects;
         return Promise.resolve(floor);
       });
@@ -103,8 +102,6 @@ function getFloorsWithObjects(conn, withPrivate) {
 function getFloorsInfoWithObjects(conn) {
   return getFloorsWithObjects(conn, false).then((floorsNotIncludingLastPrivate) => {
     return getFloorsWithObjects(conn, true).then((floorsIncludingLastPrivate) => {
-      console.log(floorsNotIncludingLastPrivate);
-      console.log(floorsIncludingLastPrivate);
       var floorInfos = {};
       floorsNotIncludingLastPrivate.forEach((floor) => {
         floorInfos[floor.id] = floorInfos[floor.id] || [];
