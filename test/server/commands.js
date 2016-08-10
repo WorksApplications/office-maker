@@ -1,5 +1,5 @@
 var db = require('./db.js');
-var rdb = require('./rdb.js');
+var rdb = require('./mysql.js');
 var mock = require('./mock.js');
 var _async = require('async');
 

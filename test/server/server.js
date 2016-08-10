@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var filestorage = require('./filestorage.js');
 var db = require('./db.js');
-var rdb = require('./rdb.js');
+var rdb = require('./mysql.js');
 
 var rdbEnv = rdb.createEnv('localhost', 'root', '', 'map2');
 
@@ -28,35 +28,17 @@ function hash(str) {
 
 function inTransaction(f) {
   return function(req, res) {
-    rdbEnv.forConnectionAndTransaction((e, conn, done) => {
-      if(e) {
-        console.log(e)
-        res.status(500).send('');
+    rdbEnv.forConnectionAndTransaction((conn) => {
+      return f(conn, req, res);
+    }).then((data) => {
+      res.send(data);
+    }).catch((e) => {
+      if(typeof e === 'number' && e >= 400) {
+        res.status(e).send('');
       } else {
-        f(conn, req, res).then((data) => {
-          done(false, function(commitFailed) {
-            if(commitFailed) {
-              console.log(commitFailed);
-              res.status(500).send('');
-            } else {
-              res.send(data);
-            }
-          });
-        }).catch((e) => {
-          done(true, function(rollbackFailed) {
-            if(rollbackFailed) {
-              console.log(rollbackFailed);
-            }
-            if(typeof e === 'number' && e >= 400) {
-              res.status(e).send('');
-            } else {
-              console.log(e);
-              res.status(500).send('');
-            }
-          });
-        });
+        console.log('error', e);
+        res.status(500).send('');
       }
-
     });
   }
 }

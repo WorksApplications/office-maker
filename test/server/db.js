@@ -3,7 +3,7 @@ var fs = require('fs-extra');
 var _async = require('async');
 
 var sql = require('./sql.js');
-var rdb = require('./rdb.js');
+var rdb = require('./mysql.js');
 var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
 
@@ -88,6 +88,7 @@ function getFloors(conn, withPrivate) {
     return Promise.resolve(ret);
   });
 }
+
 function getFloorsWithObjects(conn, withPrivate) {
   return getFloors(conn, withPrivate).then((floors) => {
     var promises = floors.map((floor) => {
@@ -99,6 +100,7 @@ function getFloorsWithObjects(conn, withPrivate) {
     return Promise.all(promises);
   });
 }
+
 function getFloorsInfoWithObjects(conn) {
   return getFloorsWithObjects(conn, false).then((floorsNotIncludingLastPrivate) => {
     return getFloorsWithObjects(conn, true).then((floorsIncludingLastPrivate) => {
