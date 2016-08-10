@@ -2,58 +2,33 @@ var mysql = require('mysql');
 
 
 function exec(conn, sql, cb) {
-  // console.log(sql);
-  conn.query(sql, (e, rows, fields) => {
-    if(e) {
-      cb(e);
-    } else {
-      (rows.length ? rows : []).forEach(function(row) {
-        (fields || []).forEach(function(field) {
-          if(field.type === 1) {
-            row[field.name] = !!row[field.name];
-          }
+  return new Promise((resolve, reject) => {
+    conn.query(sql, (e, rows, fields) => {
+      if(e) {
+        reject(e);
+      } else {
+        (rows.length ? rows : []).forEach(function(row) {
+          (fields || []).forEach(function(field) {
+            if(field.type === 1) {
+              row[field.name] = !!row[field.name];
+            }
+          });
         });
-      });
-      var _res = rows.length || rows.affectedRows || '';
-      console.log(`${sql.split('\n').join()} => ${_res}`);
-      // try {
-        cb && cb(null, rows);
-      // } catch(e) {
-      //   // console.trace();
-      //   console.log('db2.exec', e);
-      // }
-    }
+        var _res = rows.length || rows.affectedRows || '';
+        console.log(`${sql.split('\n').join()} => ${_res}`);
+        resolve(rows);
+      }
+    });
   });
 }
 
-function batch(conn, list, cb) {
-  if(!conn) {
-    console.log('connection does not exist');
-    // console.trace();
-    throw 'connection does not exist';
-  }
-  var list = list.concat();
-  var head = list.shift();
-  var tail = list;
-  if(head) {
-    exec(conn, head, function(e, result) {
-      if(e) {
-        cb && cb(e);
-      } else {
-        batch(conn, tail, function(e, results) {
-          if(e) {
-            cb && cb(e);
-          } else {
-            results = results.concat();
-            results.unshift(result);
-            cb && cb(null, results);
-          }
-        });
-      }
-    });
-  } else {
-    cb && cb(null, []);
-  }
+function batch(conn, list) {
+  var promises = list.map((sql) => {
+    return exec(conn, sql);
+  });
+  return promises.reduce(function(promise, next) {
+    return promise.then((result) => next);
+  }, Promise.resolve());
 }
 
 function createEnv(host, user, pass, dbname) {

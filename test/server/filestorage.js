@@ -2,11 +2,28 @@ var fs = require('fs-extra');
 
 var publicDir = __dirname + '/public';
 
-function save(path, image, cb) {
-  fs.writeFile(publicDir + '/' + path, image, cb);
+function save(path, image) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(publicDir + '/' + path, image, (e) => {
+      if(e) {
+        reject(e);
+      } else {
+        resolve();
+      }
+    });
+  });
 }
-function empty(dir, cb) {
-  fs.emptyDir(publicDir + '/' + dir, cb);
+
+function empty(dir) {
+  return new Promise((resolve, reject) => {
+    fs.emptyDir(publicDir + '/' + dir, (e) => {
+      if(e) {
+        reject(e);
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 module.exports = {

@@ -37,10 +37,28 @@ var colors = [
 var prototypes = [
   { id: "1", color: "#8bd", name: "", width : gridSize*7, height: gridSize*12 }
 ];
+var allColors = backgroundColors.map((c, index) => {
+  var id = index + '';
+  var ord = index;
+  return {
+    id: id,
+    ord: ord,
+    type: 'backgroundColor',
+    color: c
+  };
+}).concat(colors.map((c, index) => {
+  var id = (backgroundColors.length + index) + '';
+  var ord = (backgroundColors.length + index);
+  return {
+    id: id,
+    ord: ord,
+    type: 'color',
+    color: c
+  };
+}));
 module.exports = {
   users: users,
   people: people,
-  backgroundColors: backgroundColors,
-  colors: colors,
+  colors: allColors,
   prototypes: prototypes
 };

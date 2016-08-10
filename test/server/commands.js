@@ -8,128 +8,87 @@ var rdbEnv = rdb.createEnv('localhost', 'root', '', 'map2');
 var commands = {};
 
 commands.createDataForDebug = function(cb) {
-  rdbEnv.forConnectionAndTransaction((e, conn, done) => {
-    if(e) {
-      cb(e);
-    } else {
-      createDataForDebug(conn, (e) => {
-        if(e) {
-          cb(e);
-        } else {
+  return new Promise((resolve, reject) => {
+    rdbEnv.forConnectionAndTransaction((e, conn, done) => {
+      if(e) {
+        cb(e);
+      } else {
+        createDataForDebug(conn).then(() => {
           done(false, function(commitFailed) {
             if(commitFailed) {
               console.log(commitFailed);
-              cb(commitFailed);
+              reject(commitFailed);
             } else {
-              cb();
+              resolve();
             }
           });
-        }
-      });
-    }
+        }).catch(reject);
+      }
+    });
   });
 };
 
 commands.deleteFloor = function(floorId, cb) {
-  rdbEnv.forConnectionAndTransaction((e, conn, done) => {
-    if(e) {
-      cb(e);
-    } else {
-      console.log('deleting floor ' + floorId + '...');
-      db.deleteFloorWithObjects(conn, floorId, (e) => {
-        if(e) {
-          cb(e);
-        } else {
-          done(false, function(commitFailed) {
-            if(commitFailed) {
-              console.log(commitFailed);
-              cb(commitFailed);
-            } else {
-              cb();
-            }
-          });
-        }
-      });
-    }
-  });
-};
-
-commands.deletePrototype = function(id, cb) {
-  rdbEnv.forConnectionAndTransaction((e, conn, done) => {
-    if(e) {
-      cb(e);
-    } else {
-      console.log('deleting prototype ' + id + '...');
-      db.deletePrototype(conn, id, (e) => {
-        if(e) {
-          cb(e);
-        } else {
-          done(false, function(commitFailed) {
-            if(commitFailed) {
-              console.log(commitFailed);
-              cb(commitFailed);
-            } else {
-              cb();
-            }
-          });
-        }
-      });
-    }
-  });
-};
-
-commands.resetImage = function(cb) {
-  db.resetImage(null, 'images/floors', cb);
-};
-
-
-function createDataForDebug(conn, cb) {
-  _async.series(mock.users.map((user) => {
-    return function(cb) {
-      db.saveUser(conn, user, cb);
-    };
-  }).concat(mock.people.map((person) => {
-    return function(cb) {
-      db.savePerson(conn, person, cb);
-    };
-  })).concat([
-    function(cb) {
-      db.getPrototypes(conn, function(e, prototypes) {
-        if(e) {
-          cb(e);
-        } else {
-          if(prototypes.length) {
-            cb();
+  return new Promise((resolve, reject) => {
+    rdbEnv.forConnectionAndTransaction((e, conn, done) => {
+      db.deleteFloorWithObjects(conn, floorId).then(() => {
+        done(false, function(commitFailed) {
+          if(commitFailed) {
+            console.log(commitFailed);
+            reject(commitFailed);
           } else {
-            db.savePrototypes(conn, mock.prototypes, cb);
+            resolve();
           }
-        }
-      });
-    }
+        });
+      }).catch(reject);
+    });
+  });
+
+};
+
+commands.deletePrototype = function(id) {
+  return new Promise((resolve, reject) => {
+    rdbEnv.forConnectionAndTransaction((e, conn, done) => {
+      if(e) {
+        reject(e);
+      } else {
+        console.log('deleting prototype ' + id + '...');
+        db.deletePrototype(conn, id).then(() => {
+          done(false, function(commitFailed) {
+            if(commitFailed) {
+              console.log(commitFailed);
+              reject(commitFailed);
+            } else {
+              resolve();
+            }
+          });
+        }).catch(reject);
+      }
+    });
+  });
+
+};
+
+commands.resetImage = function() {
+  return db.resetImage(null, 'images/floors');
+};
+
+function createDataForDebug(conn) {
+  return Promise.all(mock.users.map((user) => {
+    return db.saveUser(conn, user);
+  }).concat(mock.people.map((person) => {
+    return db.savePerson(conn, person);
+  })).concat([
+    db.getPrototypes(conn).then((prototypes) => {
+      if(prototypes.length) {
+        return Promise.resolve();
+      } else {
+        return db.savePrototypes(conn, mock.prototypes);
+      }
+    })
   ]).concat([
-    function(cb) {
-      var colors = mock.backgroundColors.map(function(c, index) {
-        var id = index + '';
-        var ord = index;
-        return {
-          id: id,
-          ord: ord,
-          type: 'backgroundColor',
-          color: c
-        };
-      }).concat(mock.colors.map(function(c, index) {
-        var id = (mock.backgroundColors.length + index) + '';
-        var ord = (mock.backgroundColors.length + index);
-        return {
-          id: id,
-          ord: ord,
-          type: 'color',
-          color: c
-        };
-      }));
-      db.saveColors(conn, colors, cb);
-    }
-  ]), cb);
+    db.saveColors(conn, mock.colors)
+  ]));
 }
 
 //------------------
@@ -139,10 +98,8 @@ args.shift();// node
 args.shift();// test/server/commands.js
 var funcName = args.shift();
 
-commands[funcName].apply(null, [...args, (e) => {
-  if(e) {
-    console.log(e);
-  } else {
-    console.log('done');
-  }
-}]);
+commands[funcName].apply(null, [...args]).then(() => {
+  console.log('done');
+}).catch((e) => {
+  console.log(e);
+});
