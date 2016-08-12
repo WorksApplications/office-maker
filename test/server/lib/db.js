@@ -6,6 +6,78 @@ var sql = require('./sql.js');
 var rdb = require('./mysql.js');
 var schema = require('./schema.js');
 var filestorage = require('./filestorage.js');
+var profileService = require('./profile-service.js');
+
+
+function getUser(conn, id) {
+  return rdb.exec(conn, sql.select('users', sql.where('id', id))).then((users) => {
+    if(users[0]) {
+      users[0].tenantId = '';
+    }
+    return Promise.resolve(users[0]);
+  });
+}
+
+function getUserWithPerson(conn, id) {
+  return getUserWithPersonHelp((personId) => {
+    return getPerson(conn, personId);
+  }, conn, id);
+}
+
+function getUserWithPersonWithProfileService(profileServiceRoot, conn, tenantId, id) {
+  return getUserWithPersonHelp((personId) => {
+    return getPersonWithProfileService(profileServiceRoot, tenantId, personId);
+  }, conn, id);
+}
+
+function getUserWithPersonHelp(getPerson, conn, id) {
+  return getUser(conn, id).then((user) => {
+    if(!user) {
+      return Promise.resolve(null);
+    }
+    return getPerson(user.personId).then((person) => {
+      return Promise.resolve(Object.assign({}, user, { person: person }));
+    });
+  });
+}
+
+function saveUser(conn, user) {
+  return rdb.batch(conn, [
+    // sql.delete('users', sql.where('id', user.id)),
+    sql.replace('users', schema.userKeyValues(user))
+  ]);
+}
+
+function getPerson(conn, id) {
+  return rdb.exec(conn, sql.select('people', sql.where('id', id))).then((people) => {
+    return Promise.resolve(people[0]);
+  });
+}
+
+function getPersonWithProfileService(profileServiceRoot, tenantId, id) {
+  return profileService.getPerson(profileServiceRoot, tenantId, id);
+}
+
+function savePerson(conn, person) {
+  return rdb.batch(conn, [
+    // sql.delete('people', sql.where('id', person.id)),
+    sql.replace('people', schema.personKeyValues(person))
+  ]);
+}
+
+function getPeopleLikeName(conn, name) {
+  return rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%' OR mail LIKE '%${name.trim()}%'`));//TODO sanitize
+}
+
+function getCandidate(conn, name) {
+  return getPeopleLikeName(conn, name);
+}
+
+function getCandidateWithProfileService(profileServiceRoot, tenantId, name) {
+  return profielService.search(profileServiceRoot, tenantId, name);
+}
+
+//-------------------
 
 function saveObjects(conn, data) {
   return getObjects(conn, data.floorId, data.oldFloorVersion).then((objects) => {
@@ -211,20 +283,6 @@ function deletePrototype(conn, tenantId, id) {
   return rdb.batch(conn, sqls);
 }
 
-function saveUser(conn, user) {
-  return rdb.batch(conn, [
-    // sql.delete('users', sql.where('id', user.id)),
-    sql.replace('users', schema.userKeyValues(user))
-  ]);
-}
-
-function savePerson(conn, person) {
-  return rdb.batch(conn, [
-    // sql.delete('people', sql.where('id', person.id)),
-    sql.replace('people', schema.personKeyValues(person))
-  ]);
-}
-
 function saveImage(conn, path, image) {
   return filestorage.save(path, image);
 }
@@ -233,16 +291,20 @@ function resetImage(conn, dir) {
   return filestorage.empty(dir);
 }
 
-function getPeopleLikeName(conn, name) {
-  return rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%' OR mail LIKE '%${name.trim()}%'`));//TODO sanitize
-}
-
-function getCandidate(conn, name) {
-  return getPeopleLikeName(conn, name);
-}
-
 function search(conn, tenantId, query, all) {
   return getPeopleLikeName(conn, query).then((people) => {
+    return searchHelp(conn, tenantId, query, all, people);
+  });
+}
+
+function searchWithProfileService(profileServiceRoot, tenantId, query, all) {
+  return profielService.search(profileServiceRoot, tenantId, query).then((people) => {
+    return searchHelp(conn, tenantId, query, all, people);
+  });
+}
+
+function searchHelp(conn, tenantId, query, all, people) {
+  return searchPeople.then((people) => {
     return getFloorsWithObjects(conn, tenantId, all).then((floors) => {
       var results = {};
       var arr = [];
@@ -299,33 +361,6 @@ function savePrototypes(conn, tenantId, newPrototypes) {
   return rdb.batch(conn, inserts);
 }
 
-function getUser(conn, id) {
-  return rdb.exec(conn, sql.select('users', sql.where('id', id))).then((users) => {
-    if(users[0]) {
-      users[0].tenantId = '';
-    }
-    return Promise.resolve(users[0]);
-  });
-}
-
-function getUserWithPerson(conn, id) {
-  return getUser(conn, id).then((user) => {
-    if(!user) {
-      return Promise.resolve(null);
-    } else {
-      return getPerson(conn, user.personId).then((person) => {
-        return Promise.resolve(Object.assign({}, user, { person: person }));
-      });
-    }
-  });
-}
-
-function getPerson(conn, id) {
-  return rdb.exec(conn, sql.select('people', sql.where('id', id))).then((people) => {
-    return Promise.resolve(people[0]);
-  });
-}
-
 function getColors(conn, tenantId) {
   return rdb.exec(conn, sql.select('colors', sql.where('tenantId', tenantId)));
 }
@@ -344,10 +379,14 @@ module.exports = {
   getUser: getUser,
   saveUser: saveUser,
   getUserWithPerson: getUserWithPerson,
+  getUserWithPersonWithProfileService: getUserWithPersonWithProfileService,
   getPerson: getPerson,
+  getPersonWithProfileService: getPersonWithProfileService,
   savePerson: savePerson,
   getCandidate: getCandidate,
+  getCandidateWithProfileService: getCandidateWithProfileService,
   search: search,
+  searchWithProfileService: searchWithProfileService,
   getPrototypes: getPrototypes,
   savePrototypes: savePrototypes,
   getColors: getColors,

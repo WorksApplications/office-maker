@@ -5,6 +5,6 @@
     "pass": ""
   },
   "title": "Office Map",
-  "profileService": "",
+  "profileServiceRoot": "",
   "apiRoot": "/api"
 }

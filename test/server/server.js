@@ -10,7 +10,7 @@ var fs = require('fs');
 var ejs = require('ejs');
 
 var config = null;
-if(fs.existsSync('./config.json')) {
+if(fs.existsSync(__dirname + '/config.json')) {
   config = JSON.parse(fs.readFileSync(__dirname + '/config.json', 'utf8'));
 } else {
   config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json', 'utf8'));
@@ -106,7 +106,12 @@ app.get('/logout', (req, res) => {
 
 app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
   var id = req.params.id;
-  return db.getPerson(conn, id).then((person) => {
+  // TODO tenantId
+  var getPerson = config.profileServiceRoot ?
+    db.getPersonWithProfileService(config.profileServiceRoot, '', id) :
+    db.getPerson(conn, id);
+
+  return getPerson.then((person) => {
     if(!person) {
       return Promise.reject(404);
     }
@@ -117,9 +122,18 @@ app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
 app.get('/api/v1/auth', inTransaction((conn, req, res) => {
   var id = req.session.user;
   if(id) {
-    return db.getUserWithPerson(conn, id).then((user) => {
+    // TODO tenantId
+    console.log(config.profileServiceRoot);
+    var getUserWithPerson = config.profileServiceRoot ?
+      db.getUserWithPersonWithProfileService(config.profileServiceRoot, conn, '', id) :
+      db.getUserWithPerson(conn, id);
+    return getUserWithPerson.then((user) => {
       if(!user) {
         return Promise.reject(404);
+      }
+      if(!user.person) {
+        console.log('invalid data: person not found');
+        return Promise.reject(500);
       }
       user.pass = null;
       return Promise.resolve(user);
@@ -131,7 +145,11 @@ app.get('/api/v1/auth', inTransaction((conn, req, res) => {
 
 app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
   var id = req.params.id;
-  return db.getUserWithPerson(conn, id).then((user) => {
+  // TODO tenantId
+  var getUserWithPerson = config.profileServiceRoot ?
+    db.getUserWithPersonWithProfileService(config.profileServiceRoot, conn, '', id) :
+    db.getUserWithPerson(conn, id);
+  return getUserWithPerson.then((user) => {
     if(!user) {
       return Promise.reject(404);
     }
@@ -214,17 +232,19 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
   // TODO tenantId
-  return db.search(conn, '', query, options.all).then((results) => {
-    return Promise.resolve(results);
-  });
+  var search = config.profileServiceRoot ?
+    db.searchWithProfileService(config.profileServiceRoot, '', query, options.all) :
+    db.search(conn, '', query, options.all);
+  return search;
 }));
 
 app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
   var name = req.params.name;
   // TODO tenantId
-  return db.getCandidate(conn, name).then((results) => {
-    return Promise.resolve(results);
-  });
+  var getCandidate = config.profileServiceRoot ?
+    db.getCandidateWithProfileService(config.profileServiceRoot, '', name) :
+    db.getCandidate(conn, name);
+  return getCandidate;
 }));
 
 app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
