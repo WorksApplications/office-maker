@@ -50,7 +50,9 @@ watch.createMonitor('src', function (monitor) {
 
 watch.createMonitor('test/server', {
   filter: function(stat) {
-    return minimatch(slash(stat), 'test/server/*.js');
+    return minimatch(slash(stat), 'test/server/*.js*')
+      || minimatch(slash(stat), 'test/server/lib/*.*')
+      || minimatch(slash(stat), 'test/server/template/*.*');
   }
 }, function (monitor) {
   monitor.on("created", schedule.bind(null, 'server'));
