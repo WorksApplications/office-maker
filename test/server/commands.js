@@ -7,89 +7,51 @@ var rdbEnv = rdb.createEnv('localhost', 'root', '', 'map2');
 
 var commands = {};
 
-commands.createDataForDebug = function(cb) {
-  return new Promise((resolve, reject) => {
-    rdbEnv.forConnectionAndTransaction((e, conn, done) => {
-      if(e) {
-        cb(e);
-      } else {
-        createDataForDebug(conn).then(() => {
-          done(false, function(commitFailed) {
-            if(commitFailed) {
-              console.log(commitFailed);
-              reject(commitFailed);
-            } else {
-              resolve();
-            }
-          });
-        }).catch(reject);
-      }
-    });
+commands.createDataForDebug = function(tenantId) {
+  if(!tenantId) {
+    return Promise.reject('tenantId is not defined.');
+  }
+  if(tenantId === 'onpremiss') {
+    tenantId = '';
+  }
+  return rdbEnv.forConnectionAndTransaction((conn) => {
+    console.log(`creating data for tenant ${tenantId} ...`);
+    return Promise.all(mock.users.map((user) => {
+      return db.saveUser(conn, user);
+    }).concat(mock.people.map((person) => {
+      return db.savePerson(conn, person);
+    })).concat([
+      db.savePrototypes(conn, tenantId, mock.prototypes)
+    ]).concat([
+      db.saveColors(conn, tenantId, mock.colors)
+    ]));
   });
 };
 
-commands.deleteFloor = function(floorId, cb) {
-  return new Promise((resolve, reject) => {
-    rdbEnv.forConnectionAndTransaction((e, conn, done) => {
-      db.deleteFloorWithObjects(conn, floorId).then(() => {
-        done(false, function(commitFailed) {
-          if(commitFailed) {
-            console.log(commitFailed);
-            reject(commitFailed);
-          } else {
-            resolve();
-          }
-        });
-      }).catch(reject);
-    });
+commands.deleteFloor = function(floorId) {
+  if(!floorId) {
+    return Promise.reject('floorId is not defined.');
+  }
+  return rdbEnv.forConnectionAndTransaction((conn) => {
+    console.log('deleting floor ' + floorId + '...');
+    db.deleteFloorWithObjects(conn, tenantId, floorId);
   });
-
 };
 
 commands.deletePrototype = function(id) {
-  return new Promise((resolve, reject) => {
-    rdbEnv.forConnectionAndTransaction((e, conn, done) => {
-      if(e) {
-        reject(e);
-      } else {
-        console.log('deleting prototype ' + id + '...');
-        db.deletePrototype(conn, id).then(() => {
-          done(false, function(commitFailed) {
-            if(commitFailed) {
-              console.log(commitFailed);
-              reject(commitFailed);
-            } else {
-              resolve();
-            }
-          });
-        }).catch(reject);
-      }
-    });
+  if(!id) {
+    return Promise.reject('id is not defined.');
+  }
+  return rdbEnv.forConnectionAndTransaction((conn) => {
+    console.log('deleting prototype ' + id + '...');
+    return db.deletePrototype(conn, tenantId, id);
   });
-
 };
 
 commands.resetImage = function() {
+  console.log('reseting image ...');
   return db.resetImage(null, 'images/floors');
 };
-
-function createDataForDebug(conn) {
-  return Promise.all(mock.users.map((user) => {
-    return db.saveUser(conn, user);
-  }).concat(mock.people.map((person) => {
-    return db.savePerson(conn, person);
-  })).concat([
-    db.getPrototypes(conn).then((prototypes) => {
-      if(prototypes.length) {
-        return Promise.resolve();
-      } else {
-        return db.savePrototypes(conn, mock.prototypes);
-      }
-    })
-  ]).concat([
-    db.saveColors(conn, mock.colors)
-  ]));
-}
 
 //------------------
 

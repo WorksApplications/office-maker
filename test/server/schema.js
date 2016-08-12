@@ -10,6 +10,7 @@ function userKeyValues(user) {
 function personKeyValues(person) {
   return [
     ["id", person.id],
+    ["empNo", person.empNo],
     ["name", person.name],
     ["org", person.org],
     ["tel", person.tel],
@@ -17,12 +18,13 @@ function personKeyValues(person) {
     ["image", person.image]
   ];
 }
-function floorKeyValues(floor) {
+function floorKeyValues(tenantId, floor) {
   return [
     ["id", floor.id],
-    ["version", floor.version || 0],//TODO
+    ["version", floor.version],
+    ["tenantId", tenantId],
     ["name", floor.name],
-    ["ord", floor.ord || 0],
+    ["ord", floor.ord],
     ["image", floor.image],
     ["width", floor.width],
     ["height", floor.height],
@@ -33,15 +35,20 @@ function floorKeyValues(floor) {
     ["updateAt", floor.updateAt]
   ];
 }
-function prototypeKeyValues(proto) {
+function prototypeKeyValues(tenantId, proto) {
   return [
     ["id", proto.id],
+    ["tenantId", tenantId],
     ["name", proto.name],
     ["width", proto.width],
     ["height", proto.height],
-    ["color", proto.color]
+    ["backgroundColor", proto.backgroundColor],
+    ["color", proto.color],
+    ["fontSize", proto.fontSize],
+    ["shape", proto.shape]
   ];
 }
+
 function objectKeyValues(floorId, floorVersion, object) {
   return [
     ["id", object.id],
@@ -61,9 +68,11 @@ function objectKeyValues(floorId, floorVersion, object) {
     ["modifiedVersion", object.modifiedVersion]
   ];
 }
-function colorKeyValues(c) {
+
+function colorKeyValues(tenantId, c) {
   return [
     ["id", c.id],
+    ["tenantId", tenantId],
     ["ord", c.ord],
     ["type", c.type],
     ["color", c.color]

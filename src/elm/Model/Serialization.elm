@@ -264,12 +264,15 @@ decodeFloorInfo = Decode.map (\(lastFloor, lastFloorWithEdit) ->
 decodePrototype : Decoder Prototype
 decodePrototype =
   decode
-    (\id color name width height -> (id, color, name, (width, height)))
+    (\id backgroundColor _ name width height _ _ -> (id, backgroundColor, name, (width, height)))
     |> required "id" Decode.string
+    |> required "backgroundColor" Decode.string
     |> required "color" Decode.string
     |> required "name" Decode.string
     |> required "width" Decode.int
     |> required "height" Decode.int
+    |> required "fontSize" Decode.float
+    |> required "shape" Decode.string
 
 
 encodePrototype : Prototype -> Value

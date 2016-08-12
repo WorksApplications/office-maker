@@ -15,6 +15,7 @@ var users = [
 var people = [
   {
     id:'admin01',
+    empNo: '1234',
     org: 'Sample Co.,Ltd',
     name: 'Admin01',
     mail: 'admin01@xxx.com',
@@ -22,6 +23,7 @@ var people = [
   },
   {
     id:'user01',
+    empNo: '2345',
     org: 'Sample Co.,Ltd',
     name: 'User01',
     tel: '33510'
@@ -35,7 +37,15 @@ var colors = [
   "#875", "#75a", "#c57", "#69a", "#8c5", "#5ab", "#666", "#000"
 ];
 var prototypes = [
-  { id: "1", color: "#8bd", name: "", width : gridSize*7, height: gridSize*12 }
+  { id: "1",
+    name: "",
+    width : gridSize*7,
+    height: gridSize*12,
+    backgroundColor: "#eda",
+    color: "#000",
+    fontSize: 14,
+    shape: 'rectangle'
+  }
 ];
 var allColors = backgroundColors.map((c, index) => {
   var id = index + '';

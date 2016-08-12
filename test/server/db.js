@@ -45,8 +45,8 @@ function getObjects(conn, floorId, floorVersion) {
   return rdb.exec(conn, q);
 }
 
-function getFloorWithObjects(conn, withPrivate, id) {
-  return getFloor(conn, withPrivate, id).then((floor) => {
+function getFloorWithObjects(conn, tenantId, withPrivate, id) {
+  return getFloor(conn, tenantId, withPrivate, id).then((floor) => {
     if(!floor) {
       return Promise.resolve(null);
     }
@@ -57,8 +57,8 @@ function getFloorWithObjects(conn, withPrivate, id) {
   });
 }
 
-function getFloor(conn, withPrivate, id) {
-  var q = sql.select('floors', sql.where('id', id));
+function getFloor(conn, tenantId, withPrivate, id) {
+  var q = sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId]]));
   return rdb.exec(conn, q).then((floors) => {
     var _floor = null;
     floors.forEach((floor) => {
@@ -72,8 +72,9 @@ function getFloor(conn, withPrivate, id) {
   });
 }
 
-function getFloors(conn, withPrivate) {
-  return rdb.exec(conn, sql.select('floors')).then((floors) => {
+function getFloors(conn, tenantId, withPrivate) {
+  var sql_ = sql.select('floors', sql.where('tenantId', tenantId));
+  return rdb.exec(conn, sql_).then((floors) => {
     var results = {};
     floors.forEach((floor) => {
       if(!results[floor.id] || results[floor.id].version < floor.version) {
@@ -89,8 +90,8 @@ function getFloors(conn, withPrivate) {
   });
 }
 
-function getFloorsWithObjects(conn, withPrivate) {
-  return getFloors(conn, withPrivate).then((floors) => {
+function getFloorsWithObjects(conn, tenantId, withPrivate) {
+  return getFloors(conn, tenantId, withPrivate).then((floors) => {
     var promises = floors.map((floor) => {
       return getObjects(conn, floor.id, floor.version).then((objects) => {
         floor.objects = objects;
@@ -101,9 +102,9 @@ function getFloorsWithObjects(conn, withPrivate) {
   });
 }
 
-function getFloorsInfoWithObjects(conn) {
-  return getFloorsWithObjects(conn, false).then((floorsNotIncludingLastPrivate) => {
-    return getFloorsWithObjects(conn, true).then((floorsIncludingLastPrivate) => {
+function getFloorsInfoWithObjects(conn, tenantId) {
+  return getFloorsWithObjects(conn, tenantId, false).then((floorsNotIncludingLastPrivate) => {
+    return getFloorsWithObjects(conn, tenantId, true).then((floorsIncludingLastPrivate) => {
       var floorInfos = {};
       floorsNotIncludingLastPrivate.forEach((floor) => {
         floorInfos[floor.id] = floorInfos[floor.id] || [];
@@ -125,16 +126,16 @@ function getFloorsInfoWithObjects(conn) {
   });
 }
 
-function saveFloorWithObjects(conn, newFloor, updateBy) {
+function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
   newFloor.public = false;
   newFloor.updateBy = updateBy;
   newFloor.updateAt = new Date().getTime();
-  return getFloor(conn, true, newFloor.id).then((floor) => {
+  return getFloor(conn, tenantId, true, newFloor.id).then((floor) => {
     var baseVersion = newFloor.version;//TODO
-    var oldFloorVersion = floor ? floor.version : 0;
+    var oldFloorVersion = floor ? floor.version : -1;
     newFloor.version = oldFloorVersion + 1;
     var sqls = [
-      sql.insert('floors', schema.floorKeyValues(newFloor))
+      sql.insert('floors', schema.floorKeyValues(tenantId, newFloor))
     ];
     return rdb.batch(conn, sqls).then(() => {
       return saveObjects(conn, {
@@ -152,8 +153,8 @@ function saveFloorWithObjects(conn, newFloor, updateBy) {
   });
 }
 
-function publishFloor(conn, floorId, updateBy) {
-  return getFloor(conn, true, floorId).then((floor) => {
+function publishFloor(conn, tenantId, floorId, updateBy) {
+  return getFloor(conn, tenantId, true, floorId).then((floor) => {
     if(!floor) {
       return Promise.reject('floor not found: ' + floorId);
     }
@@ -163,10 +164,9 @@ function publishFloor(conn, floorId, updateBy) {
     floor.public = true;
     floor.updateBy = updateBy;
     floor.updateAt = new Date().getTime();
-
     var sqls = [
-      sql.replace('floors', schema.floorKeyValues(floor)),
-      sql.delete('floors', sql.where('id', floor.id) + ' and public=0')
+      sql.replace('floors', schema.floorKeyValues(tenantId, floor)),
+      sql.delete('floors', sql.whereList([['id', floor.id], ['tenantId', tenantId]]) + ' and public=0')
     ];
     return rdb.batch(conn, sqls).then(() => {
       return saveObjects(conn, {
@@ -178,23 +178,35 @@ function publishFloor(conn, floorId, updateBy) {
         modified: [],
         deleted: []
       }).then(() => {
-        return Promise.resolve(floor.version);
+        return rdb.exec(conn,
+        `DELETE FROM objects
+            WHERE
+                NOT EXISTS( SELECT
+                    1
+                FROM
+                    floors AS f
+                WHERE
+                    objects.floorId = f.id
+                    AND objects.floorVersion = f.version)`
+        ).then(() => {
+          return Promise.resolve(floor.version);
+        });
       });
     });
   });
 }
 
-function deleteFloorWithObjects(conn, floorId) {
+function deleteFloorWithObjects(conn, tenantId, floorId) {
   var sqls = [
-    sql.delete('floors', sql.where('id', floorId)),
-    sql.delete('objects', sql.where('floorId', floorId)),
+    sql.delete('floors', sql.whereList([['id', floorId], ['tenantId', tenantId]])),
+    sql.delete('objects', sql.whereList([['floorId', floorId], ['tenantId', tenantId]])),
   ];
   return rdb.batch(conn, sqls);
 }
 
-function deletePrototype(conn, id) {
+function deletePrototype(conn, tenantId, id) {
   var sqls = [
-    sql.delete('prototypes', sql.where('id', id))
+    sql.delete('prototypes', sql.whereList([['id', id], ['tenantId', tenantId]]))
   ];
   return rdb.batch(conn, sqls);
 }
@@ -216,18 +228,22 @@ function savePerson(conn, person) {
 function saveImage(conn, path, image) {
   return filestorage.save(path, image);
 }
+
 function resetImage(conn, dir) {
   return filestorage.empty(dir);
 }
+
 function getPeopleLikeName(conn, name) {
   return rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%' OR mail LIKE '%${name.trim()}%'`));//TODO sanitize
 }
+
 function getCandidate(conn, name) {
   return getPeopleLikeName(conn, name);
 }
-function search(conn, query, all) {
+
+function search(conn, tenantId, query, all) {
   return getPeopleLikeName(conn, query).then((people) => {
-    return getFloorsWithObjects(conn, all).then((floors) => {
+    return getFloorsWithObjects(conn, tenantId, all).then((floors) => {
       var results = {};
       var arr = [];
       people.forEach((person) => {
@@ -270,21 +286,28 @@ function search(conn, query, all) {
     });
   });
 }
-function getPrototypes(conn) {
-  return rdb.exec(conn, sql.select('prototypes'));
+
+function getPrototypes(conn, tenantId) {
+  return rdb.exec(conn, sql.select('prototypes', sql.where('tenantId', tenantId)));
 }
-function savePrototypes(conn, newPrototypes) {
+
+function savePrototypes(conn, tenantId, newPrototypes) {
   var inserts = newPrototypes.map((proto) => {
-    return sql.insert('prototypes', schema.prototypeKeyValues(proto));
+    return sql.insert('prototypes', schema.prototypeKeyValues(tenantId, proto));
   });
-  inserts.unshift(sql.delete('prototypes'));
+  inserts.unshift(sql.delete('prototypes', sql.where('tenantId', tenantId)));
   return rdb.batch(conn, inserts);
 }
+
 function getUser(conn, id) {
   return rdb.exec(conn, sql.select('users', sql.where('id', id))).then((users) => {
+    if(users[0]) {
+      users[0].tenantId = '';
+    }
     return Promise.resolve(users[0]);
   });
 }
+
 function getUserWithPerson(conn, id) {
   return getUser(conn, id).then((user) => {
     if(!user) {
@@ -296,19 +319,25 @@ function getUserWithPerson(conn, id) {
     }
   });
 }
+
 function getPerson(conn, id) {
   return rdb.exec(conn, sql.select('people', sql.where('id', id))).then((people) => {
     return Promise.resolve(people[0]);
   });
 }
-function getColors(conn) {
-  return rdb.exec(conn, sql.select('colors'));
+
+function getColors(conn, tenantId) {
+  return rdb.exec(conn, sql.select('colors', sql.where('tenantId', tenantId)));
 }
-function saveColors(conn, colors) {
-  var sqls = colors.map(schema.colorKeyValues).map((keyValues) => {
-    return sql.replace('colors', keyValues);
+
+function saveColors(conn, tenantId, colors) {
+  var inserts = colors.map((c) => {
+    return schema.colorKeyValues(tenantId, c);
+  }).map((keyValues) => {
+    return sql.insert('colors', keyValues);
   });
-  return rdb.batch(conn, sqls);
+  inserts.unshift(sql.delete('colors', sql.where('tenantId', tenantId)));
+  return rdb.batch(conn, inserts);
 }
 
 module.exports = {

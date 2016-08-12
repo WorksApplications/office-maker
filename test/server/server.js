@@ -37,6 +37,7 @@ function inTransaction(f) {
         res.status(e).send('');
       } else {
         console.log('error', e);
+        console.log(e.stack);
         res.status(500).send('');
       }
     });
@@ -123,7 +124,8 @@ app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
     if(!user) {
       return Promise.reject(401);
     }
-    return db.getPrototypes(conn).then((prototypes) => {
+    //TODO tenantId
+    return db.getPrototypes(conn, '').then((prototypes) => {
       return Promise.resolve(prototypes);
     });
   });
@@ -138,7 +140,8 @@ app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
     if(!prototypes || !prototypes.length) {
       return Promise.reject(403);
     }
-    return db.savePrototypes(conn, prototypes).then(() => {
+    //TODO tenantId
+    return db.savePrototypes(conn, '', prototypes).then(() => {
       return Promise.resolve({});
     });
   })
@@ -149,7 +152,8 @@ app.get('/api/v1/colors', inTransaction((conn, req, res) => {
     if(!user) {
       return Promise.reject(401);
     }
-    return db.getColors(conn).then((colors) => {
+    //TODO tenantId
+    return db.getColors(conn, '').then((colors) => {
       return Promise.resolve(colors);
     })
   })
@@ -164,7 +168,8 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
     if(!colors || !prototypes_.length) {
       return Promise.reject(403);
     }
-    return db.saveColors(conn, colors).then(() => {
+    //TODO tenantId
+    return db.saveColors(conn, '', colors).then(() => {
       return Promise.resolve({});
     })
   });
@@ -177,7 +182,8 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
       return Promise.reject(401);
     }
     // ignore all option for now
-    return db.getFloorsInfoWithObjects(conn).then((floorInfoList) => {
+    // TODO tenantId
+    return db.getFloorsInfoWithObjects(conn, '').then((floorInfoList) => {
       return Promise.resolve(floorInfoList);
     })
   });
@@ -186,13 +192,15 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
 app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  return db.search(conn, query, options.all).then((results) => {
+  // TODO tenantId
+  return db.search(conn, '', query, options.all).then((results) => {
     return Promise.resolve(results);
   });
 }));
 
 app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
   var name = req.params.name;
+  // TODO tenantId
   return db.getCandidate(conn, name).then((results) => {
     return Promise.resolve(results);
   });
@@ -206,7 +214,8 @@ app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
     }
     var id = req.params.id;
     console.log('get: ' + id);
-    return db.getFloorWithObjects(conn, options.all, id).then((floor) => {
+    // TODO tenantId
+    return db.getFloorWithObjects(conn, '', options.all, id).then((floor) => {
       if(!floor) {
         return Promise.reject(404);
       }
@@ -229,7 +238,8 @@ app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
       return Promise.reject(400);
     }
     var updateBy = user.id;
-    return db.saveFloorWithObjects(conn, newFloor, updateBy).then((newIdAndVersion) => {
+    //TODO tenantId
+    return db.saveFloorWithObjects(conn, '', newFloor, updateBy).then((newIdAndVersion) => {
       console.log('saved floor: ' + newIdAndVersion.id);
       return Promise.resolve(newIdAndVersion);
     });
@@ -244,7 +254,8 @@ app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
     }
     var id = req.params.id;
     var updateBy = req.session.user;
-    return db.publishFloor(conn, id, updateBy).then((newVersion) => {
+    //TODO tenantId
+    return db.publishFloor(conn, '', id, updateBy).then((newVersion) => {
       console.log('published floor: ' + id + '/' + newVersion);
       return Promise.resolve({ version : newVersion });
     });
