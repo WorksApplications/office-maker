@@ -250,22 +250,26 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
         modified: [],
         deleted: []
       }).then(() => {
-        return rdb.exec(conn,
-        `DELETE FROM objects
-            WHERE
-                NOT EXISTS( SELECT
-                    1
-                FROM
-                    floors AS f
-                WHERE
-                    objects.floorId = f.id
-                    AND objects.floorVersion = f.version)`
-        ).then(() => {
+        return deleteUnrelatedObjects(conn).then(() => {
           return Promise.resolve(floor.version);
         });
       });
     });
   });
+}
+
+function deleteUnrelatedObjects(conn) {
+  return rdb.exec(conn,
+  `DELETE FROM objects
+      WHERE
+          NOT EXISTS( SELECT
+              1
+          FROM
+              floors AS f
+          WHERE
+              objects.floorId = f.id
+              AND objects.floorVersion = f.version)`
+  );
 }
 
 function deleteFloorWithObjects(conn, tenantId, floorId) {
