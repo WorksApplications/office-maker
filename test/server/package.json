@@ -9,9 +9,7 @@
   "author": "",
   "license": "index.js",
   "dependencies": {
-    "async": "^2.0.0-rc.5",
     "body-parser": "^1.15.0",
-    "deep-diff": "^0.3.4",
     "express": "^4.13.4",
     "express-session": "^1.13.0",
     "fs-extra": "^0.28.0",

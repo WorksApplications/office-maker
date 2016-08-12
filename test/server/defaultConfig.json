@@ -1,0 +1,10 @@
+{
+  "mysql": {
+    "host": "localhost",
+    "user": "root",
+    "pass": ""
+  },
+  "title": "Office Map",
+  "profileService": "",
+  "apiRoot": "/api"
+}

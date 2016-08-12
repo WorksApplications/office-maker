@@ -10,10 +10,16 @@ import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import View.Styles as Styles
 
-main : Program Never
+
+type alias Flags =
+  { apiRoot : String
+  }
+
+
+main : Program Flags
 main =
-  App.program
-    { init = init
+  App.programWithFlags
+    { init = \flags -> init flags.apiRoot
     , view = view
     , update = update
     , subscriptions = \_ -> Sub.none
@@ -29,15 +35,19 @@ type Msg =
   | Success
   | NoOp
 
+
 type alias Model =
-  { error : Maybe String
+  { apiRoot : String
+  , error : Maybe String
   , inputId : String
   , inputPass : String
   }
 
-init : (Model, Cmd Msg)
-init =
-  { error = Nothing, inputId = "", inputPass = "" } ! []
+
+init : String -> (Model, Cmd Msg)
+init apiRoot =
+  { apiRoot = apiRoot, error = Nothing, inputId = "", inputPass = "" } ! []
+
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
@@ -47,7 +57,7 @@ update message model =
     Submit ->
       let
         task =
-          API.login model.inputId model.inputPass
+          API.login model.apiRoot model.inputId model.inputPass
       in
         model ! [ Task.perform Error (always Success) task ]
     Error e ->
@@ -69,6 +79,7 @@ update message model =
     NoOp ->
         model ! []
 
+
 view : Model -> Html Msg
 view model =
   div
@@ -76,6 +87,7 @@ view model =
     [ Header.view Nothing |> App.map (always NoOp)
     , container model
     ]
+
 
 container : Model -> Html Msg
 container model =
@@ -85,6 +97,7 @@ container model =
     , div [ style Styles.loginError ] [ text (Maybe.withDefault "" model.error) ]
     , loginForm model
     ]
+
 
 loginForm : Model -> Html Msg
 loginForm model =

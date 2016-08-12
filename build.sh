@@ -4,5 +4,5 @@ mkdir -p test/server/public &&
 mkdir -p test/server/public/images &&
 mkdir -p test/server/public/images/floors &&
 mkdir -p test/server/public/images/users &&
-cp -f index.js src/index.html login.js src/login.html src/style.css test/server/public &&
+cp -f index.js login.js src/style.css test/server/public &&
 cp -f test/admin01.png test/user01.png test/default.png test/server/public/images/users

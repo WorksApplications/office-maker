@@ -10,11 +10,12 @@
 	<body>
 		<script>
 			var main = Elm.Main.fullscreen({
-				initialSize : [window.innerWidth, window.innerHeight],
-				randomSeed : [Math.floor(Math.random()*0xFFFF), Math.floor(Math.random()*0xFFFF)],
+				initialSize: [window.innerWidth, window.innerHeight],
+				randomSeed: [Math.floor(Math.random()*0xFFFF), Math.floor(Math.random()*0xFFFF)],
 				  // TODO: Decoding large integer causes an error. Replace with below when it is fixed.
 					// [Math.floor(Math.random()*0xFFFFFFFF), Math.floor(Math.random()*0xFFFFFFFF)]
-				visitDate : new Date().getTime()
+				visitDate: new Date().getTime(),
+				apiRoot: '<%= apiRoot %>'
 			});
 		</script>
 	</body>

@@ -3,11 +3,20 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var session = require('express-session');
-var filestorage = require('./filestorage.js');
-var db = require('./db.js');
-var rdb = require('./mysql.js');
+var filestorage = require('./lib/filestorage.js');
+var db = require('./lib/db.js');
+var rdb = require('./lib/mysql.js');
+var fs = require('fs');
+var ejs = require('ejs');
 
-var rdbEnv = rdb.createEnv('localhost', 'root', '', 'map2');
+var config = null;
+if(fs.existsSync('./config.json')) {
+  config = JSON.parse(fs.readFileSync(__dirname + '/config.json', 'utf8'));
+} else {
+  config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json', 'utf8'));
+}
+
+var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 
 var publicDir = __dirname + '/public';
 
@@ -72,10 +81,16 @@ function isValidFloor(floor) {
   return true;
 }
 
-/* Login required */
+var templateDir = __dirname + '/template'
+var indexHtml = ejs.render(fs.readFileSync(templateDir + '/index.html', 'utf8'), { apiRoot: config.apiRoot });
+var loginHtml = ejs.render(fs.readFileSync(templateDir + '/login.html', 'utf8'), { apiRoot: config.apiRoot });
+
+app.get('/', (req, res) => {
+  res.send(indexHtml);
+});
 
 app.get('/login', (req, res) => {
-  res.sendfile(publicDir + '/login.html');
+  res.send(loginHtml);
 });
 
 app.get('/logout', (req, res) => {

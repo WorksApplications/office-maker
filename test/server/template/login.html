@@ -9,7 +9,9 @@
 	</head>
 	<body>
 		<script>
-			var main = Elm.Main.fullscreen();
+			var main = Elm.Main.fullscreen({
+				apiRoot: '<%= apiRoot %>'
+			});
 		</script>
 	</body>
 </html>

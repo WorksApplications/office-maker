@@ -46,44 +46,36 @@ type alias Floor = Floor.Model
 type alias Error = Http.Error
 
 
-apiRoot : String
-apiRoot = ""
-
-
 -- createNewFloor : Task Error Int
--- createNewFloor =
---   postJson
---     decodeFloorVersion
---     (apiRoot ++ "/api/v1/floors")
---     (Http.string "")
 
-
-saveEditingFloor : Floor -> ObjectsChange -> Task Error Int
-saveEditingFloor floor change =
+saveEditingFloor : String -> Floor -> ObjectsChange -> Task Error Int
+saveEditingFloor apiRoot floor change =
   putJson
     decodeFloorVersion
-    (apiRoot ++ "/api/v1/floors/" ++ floor.id)
+    (apiRoot ++ "/v1/floors/" ++ floor.id)
     (Http.string <| serializeFloor floor change)
 
 
-publishEditingFloor : String -> Task Error Int
-publishEditingFloor id =
+publishEditingFloor : String -> String -> Task Error Int
+publishEditingFloor apiRoot id =
   putJson
     decodeFloorVersion
-    (apiRoot ++ "/api/v1/floors/" ++ id ++ "/public")
+    (apiRoot ++ "/v1/floors/" ++ id ++ "/public")
     (Http.string "")
 
 
-getEditingFloor : String -> Task Error Floor
-getEditingFloor = getFloorHelp True
+getEditingFloor : String -> String -> Task Error Floor
+getEditingFloor apiRoot id =
+  getFloorHelp apiRoot True id
 
 
-getFloor : String -> Task Error Floor
-getFloor = getFloorHelp False
+getFloor : String -> String -> Task Error Floor
+getFloor apiRoot id =
+  getFloorHelp apiRoot False id
 
 
-getFloorHelp : Bool -> String -> Task Error Floor
-getFloorHelp withPrivate id =
+getFloorHelp : String -> Bool -> String -> Task Error Floor
+getFloorHelp apiRoot withPrivate id =
   let
     _ =
       if id == "" then
@@ -93,27 +85,27 @@ getFloorHelp withPrivate id =
 
     url =
       Http.url
-        (apiRoot ++ "/api/v1/floors/" ++ id)
+        (apiRoot ++ "/v1/floors/" ++ id)
         (if withPrivate then [("all", "true")] else [])
   in
     getJsonWithoutCache decodeFloor url
 
 
-getFloorMaybe : String -> Task Error (Maybe Floor)
-getFloorMaybe id =
-  getFloor id
+getFloorMaybe : String -> String -> Task Error (Maybe Floor)
+getFloorMaybe apiRoot id =
+  getFloor apiRoot id
   `Task.andThen` (\floor -> Task.succeed (Just floor))
   `Task.onError` \e -> case e of
     Http.BadResponse 404 _ -> Task.succeed Nothing
     _ -> Task.fail e
 
 
-getFloorsInfo : Bool -> Task Error (List FloorInfo)
-getFloorsInfo withPrivate =
+getFloorsInfo : String -> Bool -> Task Error (List FloorInfo)
+getFloorsInfo apiRoot withPrivate =
   let
     url =
       Http.url
-        (apiRoot ++ "/api/v1/floors")
+        (apiRoot ++ "/v1/floors")
         (if withPrivate then [("all", "true")] else [])
   in
     getJsonWithoutCache
@@ -121,48 +113,48 @@ getFloorsInfo withPrivate =
       url
 
 
-getPrototypes : Task Error (List Prototype)
-getPrototypes =
+getPrototypes : String -> Task Error (List Prototype)
+getPrototypes apiRoot =
     getJsonWithoutCache
       decodePrototypes
-      (Http.url (apiRoot ++ "/api/v1/prototypes") [])
+      (Http.url (apiRoot ++ "/v1/prototypes") [])
 
 
-savePrototypes : List Prototype -> Task Error ()
-savePrototypes prototypes =
+savePrototypes : String -> List Prototype -> Task Error ()
+savePrototypes apiRoot prototypes =
   putJson
     noResponse
-    (apiRoot ++ "/api/v1/prototypes")
+    (apiRoot ++ "/v1/prototypes")
     (Http.string <| serializePrototypes prototypes)
 
 
-getColors : Task Error ColorPalette
-getColors =
+getColors : String -> Task Error ColorPalette
+getColors apiRoot =
     getJsonWithoutCache
       decodeColors
-      (Http.url (apiRoot ++ "/api/v1/colors") [])
+      (Http.url (apiRoot ++ "/v1/colors") [])
 
 
-getDiffSource : String -> Task Error (Floor, Maybe Floor)
-getDiffSource id =
-  getEditingFloor id
-  `Task.andThen` \current -> getFloorMaybe id
+getDiffSource : String -> String -> Task Error (Floor, Maybe Floor)
+getDiffSource apiRoot id =
+  getEditingFloor apiRoot id
+  `Task.andThen` \current -> getFloorMaybe apiRoot id
   `Task.andThen` \prev -> Task.succeed (current, prev)
 
 
-getAuth : Task Error User
-getAuth =
-    Http.get
-      decodeUser
-      (apiRoot ++ "/api/v1/auth")
+getAuth : String -> Task Error User
+getAuth apiRoot =
+  Http.get
+    decodeUser
+    (apiRoot ++ "/v1/auth")
 
 
-search : Bool -> String -> Task Error (List SearchResult)
-search withPrivate query =
+search : String -> Bool -> String -> Task Error (List SearchResult)
+search apiRoot withPrivate query =
   let
     url =
       Http.url
-        (apiRoot ++ "/api/v1/search/" ++ Http.uriEncode query)
+        (apiRoot ++ "/v1/search/" ++ Http.uriEncode query)
         (if withPrivate then [("all", "true")] else [])
   in
     Http.get
@@ -170,38 +162,38 @@ search withPrivate query =
       url
 
 
-personCandidate : String -> Task Error (List Person)
-personCandidate name =
+personCandidate : String -> String -> Task Error (List Person)
+personCandidate apiRoot name =
   if String.isEmpty name then
     Task.succeed []
   else
     getJsonWithoutCache
       decodePersons <|
-      (apiRoot ++ "/api/v1/candidates/" ++ Http.uriEncode name)
+      (apiRoot ++ "/v1/candidates/" ++ Http.uriEncode name)
 
 
-saveEditingImage : Id -> File -> Task a ()
-saveEditingImage id file =
+saveEditingImage : String -> Id -> File -> Task a ()
+saveEditingImage apiRoot id file =
     HttpUtil.sendFile
       "PUT"
-      (apiRoot ++ "/api/v1/images/" ++ id)
+      (apiRoot ++ "/v1/images/" ++ id)
       file
 
 
-getPerson : Id -> Task Error Person
-getPerson id =
+getPerson : String -> Id -> Task Error Person
+getPerson apiRoot id =
     Http.get
       decodePerson
-      (apiRoot ++ "/api/v1/people/" ++ id)
+      (apiRoot ++ "/v1/people/" ++ id)
 
 
-getPersonByUser : Id -> Task Error Person
-getPersonByUser id =
+getPersonByUser : String -> Id -> Task Error Person
+getPersonByUser apiRoot id =
   let
     getUser =
       Http.get
         decodeUser
-        (apiRoot ++ "/api/v1/users/" ++ id)
+        (apiRoot ++ "/v1/users/" ++ id)
   in
     getUser
     `Task.andThen` (\user -> case user of
@@ -211,19 +203,19 @@ getPersonByUser id =
       )
 
 
-login : String -> String -> Task Error ()
-login id pass =
+login : String -> String -> String -> Task Error ()
+login apiRoot id pass =
     postJson
       noResponse
-      (apiRoot ++ "/api/v1/login")
+      (apiRoot ++ "/v1/login")
       (Http.string <| serializeLogin id pass)
 
 
-logout : Task Error ()
-logout =
+logout : String -> Task Error ()
+logout apiRoot =
     postJson
       noResponse
-      (apiRoot ++ "/api/v1/logout")
+      (apiRoot ++ "/v1/logout")
       (Http.string "")
 
 

@@ -1,9 +1,15 @@
-var db = require('./db.js');
-var rdb = require('./mysql.js');
-var mock = require('./mock.js');
-var _async = require('async');
+var db = require('./lib/db.js');
+var rdb = require('./lib/mysql.js');
+var mock = require('./lib/mock.js');
 
-var rdbEnv = rdb.createEnv('localhost', 'root', '', 'map2');
+var config = null;
+if(fs.existsSync('./config.json')) {
+  config = JSON.parse(fs.readFileSync('./config.json'));
+} else {
+  config = JSON.parse(fs.readFileSync('./defaultConfig.json'));
+}
+
+var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 
 var commands = {};
 

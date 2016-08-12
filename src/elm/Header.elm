@@ -32,8 +32,8 @@ type Event =
   | OnTogglePrintView Bool
 
 
-update : Msg -> (Cmd Msg, Event)
-update action =
+update : String -> Msg -> (Cmd Msg, Event)
+update apiRoot action =
   case action of
     NoOp ->
       (Cmd.none, None)
@@ -44,7 +44,7 @@ update action =
     Login ->
       (Task.perform (always NoOp) (always NoOp) API.goToLogin, None)
     Logout ->
-      (Task.perform (always LogoutSuccess) (always LogoutSuccess) API.logout, None)--TODO
+      (Task.perform (always LogoutSuccess) (always LogoutSuccess) (API.logout apiRoot), None)--TODO
     LogoutSuccess ->
       (Cmd.none, LogoutDone)
 
