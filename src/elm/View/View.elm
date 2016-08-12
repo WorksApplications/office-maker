@@ -315,7 +315,7 @@ view model =
         Viewing True ->
           App.map HeaderMsg (Header.viewPrintMode (EditingFloor.present model.floor).name)
         _ ->
-          App.map HeaderMsg (Header.view (Just (model.user, False)))
+          App.map HeaderMsg (Header.view model.title (Just (model.user, False)))
 
     diffView =
       Maybe.withDefault (text "") <|

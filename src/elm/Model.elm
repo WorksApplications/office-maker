@@ -46,6 +46,7 @@ type alias Commit = Floor.Msg
 
 type alias Model =
   { apiRoot : String
+  , title : String
   , seed : Seed
   , visitDate : Date
   , user : User
@@ -128,14 +129,15 @@ gridSize : Int
 gridSize = 8 -- 2^N
 
 
-init : String -> (Int, Int) -> (Int, Int) -> (Result String URL.Model) -> Float -> (Model, Cmd Msg)
-init apiRoot randomSeed initialSize urlResult visitDate =
+init : String -> String -> (Int, Int) -> (Int, Int) -> (Result String URL.Model) -> Float -> (Model, Cmd Msg)
+init apiRoot title randomSeed initialSize urlResult visitDate =
   let
     initialFloor =
       Floor.init ""
 
     toModel url searchBox =
       { apiRoot = apiRoot
+      , title = title
       , seed = IdGenerator.init randomSeed
       , visitDate = Date.fromTime visitDate
       , user = User.guest

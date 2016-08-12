@@ -13,13 +13,14 @@ import View.Styles as Styles
 
 type alias Flags =
   { apiRoot : String
+  , title : String
   }
 
 
 main : Program Flags
 main =
   App.programWithFlags
-    { init = \flags -> init flags.apiRoot
+    { init = \flags -> init flags.apiRoot flags.title
     , view = view
     , update = update
     , subscriptions = \_ -> Sub.none
@@ -38,28 +39,39 @@ type Msg =
 
 type alias Model =
   { apiRoot : String
+  , title : String
   , error : Maybe String
   , inputId : String
   , inputPass : String
   }
 
 
-init : String -> (Model, Cmd Msg)
-init apiRoot =
-  { apiRoot = apiRoot, error = Nothing, inputId = "", inputPass = "" } ! []
+init : String -> String -> (Model, Cmd Msg)
+init apiRoot title =
+  { apiRoot = apiRoot
+  , title = title
+  , error = Nothing
+  , inputId = ""
+  , inputPass = ""
+  } ! []
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
-    InputId s -> { model | inputId = s} ! []
-    InputPass s -> { model | inputPass = s} ! []
+    InputId s ->
+      { model | inputId = s} ! []
+
+    InputPass s ->
+      { model | inputPass = s} ! []
+
     Submit ->
       let
         task =
           API.login model.apiRoot model.inputId model.inputPass
       in
         model ! [ Task.perform Error (always Success) task ]
+
     Error e ->
       let
         _ = Debug.log "Error"
@@ -71,11 +83,13 @@ update message model =
               "unauthorized"
       in
         {model | error = Just message} ! []
+
     Success ->
       let
         _ = Debug.log "Success"
       in
         model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
+
     NoOp ->
         model ! []
 
@@ -84,7 +98,7 @@ view : Model -> Html Msg
 view model =
   div
     []
-    [ Header.view Nothing |> App.map (always NoOp)
+    [ Header.view model.title Nothing |> App.map (always NoOp)
     , container model
     ]
 

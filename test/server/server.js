@@ -82,8 +82,14 @@ function isValidFloor(floor) {
 }
 
 var templateDir = __dirname + '/template'
-var indexHtml = ejs.render(fs.readFileSync(templateDir + '/index.html', 'utf8'), { apiRoot: config.apiRoot });
-var loginHtml = ejs.render(fs.readFileSync(templateDir + '/login.html', 'utf8'), { apiRoot: config.apiRoot });
+var indexHtml = ejs.render(fs.readFileSync(templateDir + '/index.html', 'utf8'), {
+  apiRoot: config.apiRoot,
+  title: config.title
+});
+var loginHtml = ejs.render(fs.readFileSync(templateDir + '/login.html', 'utf8'), {
+  apiRoot: config.apiRoot,
+  title: config.title
+});
 
 app.get('/', (req, res) => {
   res.send(indexHtml);

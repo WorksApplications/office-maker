@@ -37,25 +37,30 @@ update apiRoot action =
   case action of
     NoOp ->
       (Cmd.none, None)
+
     ToggleEditing ->
       (Cmd.none, OnToggleEditing)
+
     TogglePrintView opened ->
       (Cmd.none, OnTogglePrintView opened)
+
     Login ->
       (Task.perform (always NoOp) (always NoOp) API.goToLogin, None)
+
     Logout ->
       (Task.perform (always LogoutSuccess) (always LogoutSuccess) (API.logout apiRoot), None)--TODO
+
     LogoutSuccess ->
       (Cmd.none, LogoutDone)
 
 
-view : Maybe (User, Bool) -> Html Msg
-view maybeContext =
+view : String -> Maybe (User, Bool) -> Html Msg
+view title maybeContext =
   header
     [ style S.header ]
     [ h1
         [ style S.h1 ]
-        [ a [ style S.headerLink, href "/" ] [ text "Office Maker" ] ]
+        [ a [ style S.headerLink, href "/" ] [ text title ] ]
     , normalMenu maybeContext
     ]
 
@@ -64,7 +69,7 @@ viewPrintMode : String -> Html Msg
 viewPrintMode title =
   header
     [ style S.header ]
-    [ h1 [ style S.h1 ] [text title ]
+    [ h1 [ style S.h1 ] [ text title ]
     , menu [ printButtonView True ]
     ]
 
@@ -81,6 +86,7 @@ normalMenu maybeContext =
         []
       Nothing ->
         []
+
 
 menu : List (Html Msg) -> Html Msg
 menu children =
