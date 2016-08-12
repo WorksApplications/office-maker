@@ -15,6 +15,7 @@ if(fs.existsSync(__dirname + '/config.json')) {
 } else {
   config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json', 'utf8'));
 }
+config.apiRoot = '/api';
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 

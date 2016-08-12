@@ -37,6 +37,18 @@ node commands.js [commandName] [args]
 Currently, server operations are handled by client project for ease.
 
 
+## Configuration
+
+Copy [defaultConfig.json] and rename to `config.json`.
+
+|name||
+|:--|:--|
+|mysql.host||
+|mysql.user||
+|mysql.pass||
+|title|This name is used by header.|
+|profileServiceRoot|(Optional) This is used for micro-service architecture (e.g. http://xxx.xxx.xx.xx/profile).|
+
 ## REST API
 
 API is defined by client. See [here](../../README.md).
