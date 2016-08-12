@@ -14,7 +14,7 @@ function exec(conn, sql, cb) {
           });
         });
         var _res = rows.length || rows.affectedRows || '';
-        console.log(`${sql.split('\n').join()} => ${_res}`);
+        // console.log(`${sql.split('\n').join()} => ${_res}`);
         resolve(rows);
       }
     });

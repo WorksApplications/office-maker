@@ -1,12 +1,13 @@
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var mock = require('./lib/mock.js');
+var fs = require('fs');
 
 var config = null;
-if(fs.existsSync('./config.json')) {
-  config = JSON.parse(fs.readFileSync('./config.json'));
+if(fs.existsSync(__dirname + '/config.json')) {
+  config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
 } else {
-  config = JSON.parse(fs.readFileSync('./defaultConfig.json'));
+  config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json'));
 }
 config.apiRoot = '/api';
 
