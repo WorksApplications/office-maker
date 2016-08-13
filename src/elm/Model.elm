@@ -12,9 +12,9 @@ import Dict exposing (Dict)
 import Navigation
 import Time exposing (Time)
 import Http
+import Dom
 
 import Util.ShortCut as ShortCut
-import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil exposing (..)
 
@@ -1835,12 +1835,12 @@ loadFloorCmd apiRoot forEdit floorId =
 
 focusCmd : String -> Cmd Msg
 focusCmd id =
-  Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
+  Task.perform (Error << HtmlError) (always NoOp) (Dom.focus id)
 
 
 blurCmd : String -> Cmd Msg
 blurCmd id =
-  Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
+  Task.perform (Error << HtmlError) (always NoOp) (Dom.blur id)
 
 
 -- TODO bad naming
