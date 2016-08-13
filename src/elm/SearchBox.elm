@@ -33,14 +33,14 @@ type alias Model =
 
 
 -- TODO refactor
-init : (Msg -> a) -> Maybe String -> (Model, Cmd a)
-init transformMsg query =
+init : String -> (Msg -> a) -> Maybe String -> (Model, Cmd a)
+init apiRoot transformMsg query =
   case query of
     Just query ->
       ({ query = query
       , results = Nothing
       }, if query /= "" then
-          Cmd.map transformMsg (searchCmd False Nothing query)--TODO search here? maybe lacking information
+          Cmd.map transformMsg (searchCmd apiRoot False Nothing query)--TODO search here? maybe lacking information
         else
           Cmd.none
       )
@@ -50,11 +50,11 @@ init transformMsg query =
       }, Cmd.none)
 
 
-doSearch : (Msg -> a) -> Bool -> Maybe String -> String -> Model -> (Model, Cmd a)
-doSearch transformMsg withPrivate thisFloorId query model =
+doSearch : String -> (Msg -> a) -> Bool -> Maybe String -> String -> Model -> (Model, Cmd a)
+doSearch apiRoot transformMsg withPrivate thisFloorId query model =
   ({ model | query = query }
   , if query /= "" then
-      Cmd.map transformMsg (searchCmd withPrivate thisFloorId query)
+      Cmd.map transformMsg (searchCmd apiRoot withPrivate thisFloorId query)
     else
       Cmd.none
   )
@@ -65,19 +65,23 @@ update msg model =
   case msg of
     Input query ->
         ({ model | query = query }, Cmd.none, None)
+
     Submit ->
         (model, Cmd.none, OnSubmit)
+
     Results thisFloorId results ->
         ({ model | results = Just (reorderResults thisFloorId results) }, Cmd.none, OnResults)
+
     SelectResult result ->
         (model, Cmd.none, (OnSelectResult result))
+
     Error apiError ->
         (model, Cmd.none, (OnError apiError))
 
 
-searchCmd : Bool -> Maybe String -> String -> Cmd Msg
-searchCmd withPrivate thisFloorId query =
-  Task.perform Error (Results thisFloorId) (API.search withPrivate query)
+searchCmd : String -> Bool -> Maybe String -> String -> Cmd Msg
+searchCmd apiRoot withPrivate thisFloorId query =
+  Task.perform Error (Results thisFloorId) (API.search apiRoot withPrivate query)
 
 
 allResults : Model -> List SearchResult

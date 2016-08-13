@@ -179,13 +179,13 @@ init apiRoot title randomSeed initialSize urlResult visitDate =
       -- TODO refactor
       Ok url ->
         let
-          (searchBox, cmd) = SearchBox.init SearchBoxMsg url.query
+          (searchBox, cmd) = SearchBox.init apiRoot SearchBoxMsg url.query
         in
           (toModel url searchBox) ! [ initCmd, cmd ]
       Err _ ->
         let
           dummyURL = URL.dummy
-          (searchBox, cmd) = SearchBox.init SearchBoxMsg dummyURL.query
+          (searchBox, cmd) = SearchBox.init apiRoot SearchBoxMsg dummyURL.query
         in
           (toModel dummyURL searchBox)
           ! [ initCmd, cmd ] -- TODO modifyURL
@@ -279,7 +279,7 @@ urlUpdate result model =
                 thisFloorId =
                   Just floorId
               in
-                SearchBox.doSearch SearchBoxMsg withPrivate thisFloorId query model.searchBox
+                SearchBox.doSearch model.apiRoot SearchBoxMsg withPrivate thisFloorId query model.searchBox
             _ ->
               (model.searchBox, Cmd.none)
 
