@@ -27,6 +27,7 @@ view e =
     HtmlError e ->
       errorView ("Unexpected HtmlError: " ++ toString e)
 
+
 noneView : Html msg
 noneView =
   div [ style Styles.noneBar ] [ ]
@@ -53,7 +54,7 @@ describeAPIError e =
 
     Http.UnexpectedPayload str ->
       "UnexpectedPayload: " ++ str
-      
+
     Http.BadResponse code str ->
       if code == 409 then
         "Conflict: Someone has already changed. Please refresh and try again."

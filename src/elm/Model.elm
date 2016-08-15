@@ -12,9 +12,9 @@ import Dict exposing (Dict)
 import Navigation
 import Time exposing (Time)
 import Http
+import Dom
 
 import Util.ShortCut as ShortCut
-import Util.HtmlUtil as HtmlUtil exposing (..)
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil exposing (..)
 
@@ -179,13 +179,13 @@ init apiRoot title randomSeed initialSize urlResult visitDate =
       -- TODO refactor
       Ok url ->
         let
-          (searchBox, cmd) = SearchBox.init SearchBoxMsg url.query
+          (searchBox, cmd) = SearchBox.init apiRoot SearchBoxMsg url.query
         in
           (toModel url searchBox) ! [ initCmd, cmd ]
       Err _ ->
         let
           dummyURL = URL.dummy
-          (searchBox, cmd) = SearchBox.init SearchBoxMsg dummyURL.query
+          (searchBox, cmd) = SearchBox.init apiRoot SearchBoxMsg dummyURL.query
         in
           (toModel dummyURL searchBox)
           ! [ initCmd, cmd ] -- TODO modifyURL
@@ -279,7 +279,7 @@ urlUpdate result model =
                 thisFloorId =
                   Just floorId
               in
-                SearchBox.doSearch SearchBoxMsg withPrivate thisFloorId query model.searchBox
+                SearchBox.doSearch model.apiRoot SearchBoxMsg withPrivate thisFloorId query model.searchBox
             _ ->
               (model.searchBox, Cmd.none)
 
@@ -1835,12 +1835,12 @@ loadFloorCmd apiRoot forEdit floorId =
 
 focusCmd : String -> Cmd Msg
 focusCmd id =
-  Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.focus id)
+  Task.perform (Error << HtmlError) (always NoOp) (Dom.focus id)
 
 
 blurCmd : String -> Cmd Msg
 blurCmd id =
-  Task.perform (Error << HtmlError) (always NoOp) (HtmlUtil.blur id)
+  Task.perform (Error << HtmlError) (always NoOp) (Dom.blur id)
 
 
 -- TODO bad naming

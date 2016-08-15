@@ -1,6 +1,6 @@
 module Model.Errors exposing (..)
 
-import Util.HtmlUtil as HtmlUtil
+import Dom
 import Util.File as File
 
 import Model.API as API exposing (..)
@@ -8,6 +8,6 @@ import Model.API as API exposing (..)
 type GlobalError =
     APIError API.Error
   | FileError File.Error
-  | HtmlError HtmlUtil.Error
+  | HtmlError Dom.Error
   | Success String
   | NoError

@@ -1,14 +1,12 @@
 module Util.HtmlUtil exposing (..)
 
-import Native.HtmlUtil
 import Html exposing (Html, Attribute, text)
 import Html.App
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode as Decode exposing (..)
 import Util.File exposing (..)
-import Task exposing (Task)
-import Process
+
 
 type Error =
   IdNotFound String | Unexpected String
@@ -53,22 +51,6 @@ decodeKeyCodeAndSelectionStart =
   Decode.object2 (,)
     ("keyCode" := int)
     ("target" := Decode.object1 identity ("selectionStart" := int))
-
-
-focus : String -> Task Error ()
-focus id =
-  Process.sleep 100 `Task.andThen` \_ ->
-  Task.mapError
-    (always (IdNotFound id))
-    (Native.HtmlUtil.focus id)
-
-
-blur : String -> Task Error ()
-blur id =
-  Process.sleep 100 `Task.andThen` \_ ->
-  Task.mapError
-    (always (IdNotFound id))
-    (Native.HtmlUtil.blur id)
 
 
 onSubmit' : a -> Attribute a
