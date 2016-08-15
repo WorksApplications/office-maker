@@ -11,6 +11,10 @@ var profileService = require('./profile-service.js');
 
 function getUser(conn, id) {
   return rdb.exec(conn, sql.select('users', sql.where('id', id))).then((users) => {
+    if(users[0]) {
+      users[0].pass = '';
+      users[0].tenantId = '';
+    }
     return Promise.resolve(users[0]);
   });
 }
@@ -24,9 +28,6 @@ function saveUser(conn, user) {
 
 function getPerson(conn, id) {
   return rdb.exec(conn, sql.select('people', sql.where('id', id))).then((people) => {
-    if(people[0]) {
-      people[0].tenantId = '';
-    }
     return Promise.resolve(people[0]);
   });
 }

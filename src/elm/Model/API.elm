@@ -207,7 +207,7 @@ login : String -> String -> String -> String -> Task Error ()
 login accountServiceRoot id tenantId pass =
     postJson
       noResponse
-      (accountServiceRoot ++ "/v1/login")
+      (accountServiceRoot ++ "/v1/authentication")
       (Http.string <| serializeLogin id tenantId pass)
 
 
