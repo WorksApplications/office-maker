@@ -104,8 +104,8 @@ function getPerson(conn, sessionId, personId) {
 /* For on-premiss mode only */
 app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
   // ignore tenantId
-  var id = req.body.id;
-  var pass = req.body.pass;
+  var id = req.body.userId;
+  var pass = req.body.password;
   return db.getUser(conn, id).then((user) => {
     if(user && hash(pass) === user.pass) {
       return Promise.resolve(id);

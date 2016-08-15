@@ -68,7 +68,7 @@ update message model =
     Submit ->
       let
         task =
-          API.login model.accountServiceRoot model.inputId "" model.inputPass
+          API.login model.accountServiceRoot model.inputId "example.com" model.inputPass
       in
         model ! [ Task.perform Error (always Success) task ]
 

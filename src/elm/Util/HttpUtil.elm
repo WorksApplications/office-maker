@@ -27,7 +27,8 @@ sendJson verb decoder url body =
   let request =
     { verb = verb
     , headers =
-        [("Content-Type", "application/json; charset=utf-8")]
+        -- [("Content-Type", "application/json; charset=utf-8")]
+        []
     , url = url
     , body = body
     }

@@ -19,7 +19,7 @@ function get(sessionId, url) {
 }
 
 function whoami(root, sessionId) {
-  return get(sessionId, root + '/v1/authenticate').then((user) => {
+  return get(sessionId, root + '/v1/authentication').then((user) => {
     var fixedUser = {
       id: user.userId,
       tenantId: user.tenantId,
