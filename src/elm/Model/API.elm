@@ -146,7 +146,7 @@ getAuth : String -> Task Error User
 getAuth apiRoot =
   Http.get
     decodeUser
-    (apiRoot ++ "/v1/auth")
+    (apiRoot ++ "/v1/self")
 
 
 search : String -> Bool -> String -> Task Error (List SearchResult)
@@ -203,19 +203,19 @@ getPersonByUser apiRoot id =
       )
 
 
-login : String -> String -> String -> Task Error ()
-login apiRoot id pass =
+login : String -> String -> String -> String -> Task Error ()
+login accountServiceRoot id tenantId pass =
     postJson
       noResponse
-      (apiRoot ++ "/v1/login")
-      (Http.string <| serializeLogin id pass)
+      (accountServiceRoot ++ "/v1/login")
+      (Http.string <| serializeLogin id tenantId pass)
 
 
 logout : String -> Task Error ()
-logout apiRoot =
+logout accountServiceRoot =
     postJson
       noResponse
-      (apiRoot ++ "/v1/logout")
+      (accountServiceRoot ++ "/v1/logout")
       (Http.string "")
 
 

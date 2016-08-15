@@ -11,33 +11,7 @@ var profileService = require('./profile-service.js');
 
 function getUser(conn, id) {
   return rdb.exec(conn, sql.select('users', sql.where('id', id))).then((users) => {
-    if(users[0]) {
-      users[0].tenantId = '';
-    }
     return Promise.resolve(users[0]);
-  });
-}
-
-function getUserWithPerson(conn, id) {
-  return getUserWithPersonHelp((personId) => {
-    return getPerson(conn, personId);
-  }, conn, id);
-}
-
-function getUserWithPersonWithProfileService(profileServiceRoot, conn, tenantId, id) {
-  return getUserWithPersonHelp((personId) => {
-    return getPersonWithProfileService(profileServiceRoot, tenantId, personId);
-  }, conn, id);
-}
-
-function getUserWithPersonHelp(getPerson, conn, id) {
-  return getUser(conn, id).then((user) => {
-    if(!user) {
-      return Promise.resolve(null);
-    }
-    return getPerson(user.personId).then((person) => {
-      return Promise.resolve(Object.assign({}, user, { person: person }));
-    });
   });
 }
 
@@ -50,12 +24,11 @@ function saveUser(conn, user) {
 
 function getPerson(conn, id) {
   return rdb.exec(conn, sql.select('people', sql.where('id', id))).then((people) => {
+    if(people[0]) {
+      people[0].tenantId = '';
+    }
     return Promise.resolve(people[0]);
   });
-}
-
-function getPersonWithProfileService(profileServiceRoot, tenantId, id) {
-  return profileService.getPerson(profileServiceRoot, tenantId, id);
 }
 
 function savePerson(conn, person) {
@@ -71,10 +44,6 @@ function getPeopleLikeName(conn, name) {
 
 function getCandidate(conn, name) {
   return getPeopleLikeName(conn, name);
-}
-
-function getCandidateWithProfileService(profileServiceRoot, tenantId, name) {
-  return profielService.search(profileServiceRoot, tenantId, name);
 }
 
 //-------------------
@@ -301,8 +270,8 @@ function search(conn, tenantId, query, all) {
   });
 }
 
-function searchWithProfileService(profileServiceRoot, tenantId, query, all) {
-  return profielService.search(profileServiceRoot, tenantId, query).then((people) => {
+function searchWithProfileService(profileServiceRoot, sessionId, tenantId, query, all) {
+  return profielService.search(profileServiceRoot, sessionId, query).then((people) => {
     return searchHelp(conn, tenantId, query, all, people);
   });
 }
@@ -382,13 +351,9 @@ function saveColors(conn, tenantId, colors) {
 module.exports = {
   getUser: getUser,
   saveUser: saveUser,
-  getUserWithPerson: getUserWithPerson,
-  getUserWithPersonWithProfileService: getUserWithPersonWithProfileService,
   getPerson: getPerson,
-  getPersonWithProfileService: getPersonWithProfileService,
   savePerson: savePerson,
   getCandidate: getCandidate,
-  getCandidateWithProfileService: getCandidateWithProfileService,
   search: search,
   searchWithProfileService: searchWithProfileService,
   getPrototypes: getPrototypes,
@@ -396,7 +361,6 @@ module.exports = {
   getColors: getColors,
   saveColors: saveColors,
   getFloorWithObjects: getFloorWithObjects,
-  // getFloorsWithObjects: getFloorsWithObjects,
   getFloorsInfoWithObjects: getFloorsInfoWithObjects,
   saveFloorWithObjects: saveFloorWithObjects,
   publishFloor: publishFloor,

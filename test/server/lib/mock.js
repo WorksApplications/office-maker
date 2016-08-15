@@ -10,8 +10,15 @@ var users = [
     pass: 'user01',//TODO encrypt
     personId: 'user01',
     role: 'general'
+  },
+  {
+    id: 'maruyama_mayuko@example.com',
+    pass: 'passwd',//TODO encrypt
+    personId: 'c43b206c-ea38-474a-b9db-5557b12f4779',
+    tenantId: 'example.com',
+    role: 'general'
   }
-];
+  ];
 var people = [
   {
     id:'admin01',

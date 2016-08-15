@@ -12,7 +12,7 @@ import View.Styles as Styles
 
 
 type alias Flags =
-  { apiRoot : String
+  { accountServiceRoot : String
   , title : String
   }
 
@@ -20,7 +20,7 @@ type alias Flags =
 main : Program Flags
 main =
   App.programWithFlags
-    { init = \flags -> init flags.apiRoot flags.title
+    { init = \flags -> init flags.accountServiceRoot flags.title
     , view = view
     , update = update
     , subscriptions = \_ -> Sub.none
@@ -38,7 +38,7 @@ type Msg =
 
 
 type alias Model =
-  { apiRoot : String
+  { accountServiceRoot : String
   , title : String
   , error : Maybe String
   , inputId : String
@@ -47,8 +47,8 @@ type alias Model =
 
 
 init : String -> String -> (Model, Cmd Msg)
-init apiRoot title =
-  { apiRoot = apiRoot
+init accountServiceRoot title =
+  { accountServiceRoot = accountServiceRoot
   , title = title
   , error = Nothing
   , inputId = ""
@@ -68,7 +68,7 @@ update message model =
     Submit ->
       let
         task =
-          API.login model.apiRoot model.inputId model.inputPass
+          API.login model.accountServiceRoot model.inputId "" model.inputPass
       in
         model ! [ Task.perform Error (always Success) task ]
 

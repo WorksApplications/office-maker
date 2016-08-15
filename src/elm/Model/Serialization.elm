@@ -135,9 +135,13 @@ encodeFloor floor change =
       ]
 
 
-encodeLogin : String -> String -> Value
-encodeLogin id pass =
-  object [ ("id", Encode.string id), ("pass", Encode.string pass) ]
+encodeLogin : String -> String -> String -> Value
+encodeLogin id tenantId pass =
+  object
+    [ ("id", Encode.string id)
+    , ("tenantId", Encode.string tenantId)
+    , ("pass", Encode.string pass)
+    ]
 
 
 decodeUser : Decoder User
@@ -285,6 +289,7 @@ encodePrototype (id, color, name, (width, height)) =
     , ("height", int height)
     ]
 
+
 serializePrototypes : List Prototype -> String
 serializePrototypes prototypes =
   encode 0 (Encode.list (List.map encodePrototype prototypes))
@@ -295,6 +300,6 @@ serializeFloor floor change =
     encode 0 (encodeFloor floor change)
 
 
-serializeLogin : String -> String -> String
-serializeLogin id pass =
-    encode 0 (encodeLogin id pass)
+serializeLogin : String -> String -> String -> String
+serializeLogin id tenantId pass =
+    encode 0 (encodeLogin id tenantId pass)
