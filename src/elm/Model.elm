@@ -46,6 +46,7 @@ type alias Commit = Floor.Msg
 
 type alias Model =
   { apiRoot : String
+  , accountServiceRoot : String
   , title : String
   , seed : Seed
   , visitDate : Date
@@ -129,14 +130,15 @@ gridSize : Int
 gridSize = 8 -- 2^N
 
 
-init : String -> String -> (Int, Int) -> (Int, Int) -> (Result String URL.Model) -> Float -> (Model, Cmd Msg)
-init apiRoot title randomSeed initialSize urlResult visitDate =
+init : String -> String -> String -> (Int, Int) -> (Int, Int) -> Float -> (Result String URL.Model) -> (Model, Cmd Msg)
+init apiRoot accountServiceRoot title randomSeed initialSize visitDate urlResult =
   let
     initialFloor =
       Floor.init ""
 
     toModel url searchBox =
       { apiRoot = apiRoot
+      , accountServiceRoot = accountServiceRoot
       , title = title
       , seed = IdGenerator.init randomSeed
       , visitDate = Date.fromTime visitDate
@@ -920,7 +922,7 @@ update action model =
     HeaderMsg action ->
       let
         (cmd, event) =
-          Header.update model.apiRoot action
+          Header.update model.accountServiceRoot action
 
         (newModel, cmd2) =
           case event of

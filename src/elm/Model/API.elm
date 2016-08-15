@@ -213,9 +213,9 @@ login accountServiceRoot id tenantId pass =
 
 logout : String -> Task Error ()
 logout accountServiceRoot =
-    postJson
+    deleteJson
       noResponse
-      (accountServiceRoot ++ "/v1/logout")
+      (accountServiceRoot ++ "/v1/authentication")
       (Http.string "")
 
 

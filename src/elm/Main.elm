@@ -9,6 +9,7 @@ import TimeTravel.Navigation as TimeTravel
 
 type alias Flags =
   { apiRoot : String
+  , accountServiceRoot : String
   , title : String
   , initialSize : (Int, Int)
   , randomSeed : (Int, Int)
@@ -20,7 +21,15 @@ main : Program Flags
 main =
   -- TimeTravel.programWithFlags urlParser
   Navigation.programWithFlags urlParser
-    { init = \flags result -> Model.init flags.apiRoot flags.title flags.randomSeed flags.initialSize result flags.visitDate
+    { init = \flags result ->
+        Model.init
+          flags.apiRoot
+          flags.accountServiceRoot
+          flags.title
+          flags.randomSeed
+          flags.initialSize
+          flags.visitDate
+          result
     , view = View.view
     , update =  Model.update
     , urlUpdate =  Model.urlUpdate

@@ -33,7 +33,7 @@ type Event =
 
 
 update : String -> Msg -> (Cmd Msg, Event)
-update apiRoot action =
+update accountServiceRoot action =
   case action of
     NoOp ->
       (Cmd.none, None)
@@ -48,7 +48,7 @@ update apiRoot action =
       (Task.perform (always NoOp) (always NoOp) API.goToLogin, None)
 
     Logout ->
-      (Task.perform (always LogoutSuccess) (always LogoutSuccess) (API.logout apiRoot), None)--TODO
+      (Task.perform (always LogoutSuccess) (always LogoutSuccess) (API.logout accountServiceRoot), None)
 
     LogoutSuccess ->
       (Cmd.none, LogoutDone)

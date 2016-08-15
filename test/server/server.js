@@ -119,23 +119,17 @@ app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
 }));
 
 /* For on-premiss mode only */
-app.post('/api/v1/logout', (req, res) => {
+app.delete('/api/v1/authentication', (req, res) => {
   req.session.user = null;
   res.send({});
 });
 
 app.use(express.static(publicDir));
 
-function isValidFloor(floor) {
-  if(!floor.name.trim()) {
-    return false;
-  }
-  return true;
-}
-
 var templateDir = __dirname + '/template';
 var indexHtml = ejs.render(fs.readFileSync(templateDir + '/index.html', 'utf8'), {
   apiRoot: config.apiRoot,
+  accountServiceRoot: config.accountServiceRoot,
   title: config.title
 });
 var loginHtml = ejs.render(fs.readFileSync(templateDir + '/login.html', 'utf8'), {
@@ -299,7 +293,6 @@ app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
   var sessionId = getSessionId(req);
   var name = req.params.name;
   if(paasMode) {
-    // TODO query from browser
     return profielService.search(config.profileServiceRoot, sessionId, name);
   } else {
     return db.getCandidate(conn, name);
@@ -314,7 +307,6 @@ app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
     }
     var id = req.params.id;
     console.log('get: ' + id);
-    // TODO tenantId
     return db.getFloorWithObjects(conn, user.tenantId, options.all, id).then((floor) => {
       if(!floor) {
         return Promise.reject(404);
@@ -325,6 +317,13 @@ app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   });
 }));
 
+// TODO move to service logic
+function isValidFloor(floor) {
+  if(!floor.name.trim()) {
+    return false;
+  }
+  return true;
+}
 app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   return getSelf(conn, getSessionId(req)).then((user) => {
     if(!user) {

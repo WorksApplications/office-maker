@@ -63,6 +63,10 @@ patchJson : Decoder value -> String -> Http.Body -> Task Http.Error value
 patchJson = sendJson "PATCH"
 
 
+deleteJson : Decoder value -> String -> Http.Body -> Task Http.Error value
+deleteJson = sendJson "DELETE"
+
+
 recover404With : a -> (Http.Error -> Task Http.Error a)
 recover404With alt = \e ->
   case e of
