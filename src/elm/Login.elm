@@ -107,7 +107,7 @@ container : Model -> Html Msg
 container model =
   div
     [ style Styles.loginContainer ]
-    [ h2 [ style Styles.loginCaption ] [ text "Sign in to Office Makaer" ]
+    [ h2 [ style Styles.loginCaption ] [ text ("Sign in to " ++ model.title) ]
     , div [ style Styles.loginError ] [ text (Maybe.withDefault "" model.error) ]
     , loginForm model
     ]

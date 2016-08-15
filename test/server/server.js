@@ -188,11 +188,12 @@ app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
       return Promise.reject(401);
     }
     if(paasMode) {
+      //TODO
       var user = {
         id: userId,
         role: 'admin'
       };
-      return profileService.getByUserId(userId).then((person) => {
+      return profileService.getPersonByUserId(sessionId, userId).then((person) => {
         user.person = person;
         return Promise.resolve(user);
       });
@@ -241,7 +242,6 @@ app.get('/api/v1/colors', inTransaction((conn, req, res) => {
     if(!user) {
       return Promise.reject(401);
     }
-    //TODO tenantId
     return db.getColors(conn, user.tenantId).then((colors) => {
       return Promise.resolve(colors);
     })
@@ -257,8 +257,7 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
     if(!colors || !prototypes_.length) {
       return Promise.reject(403);
     }
-    //TODO tenantId
-    return db.saveColors(conn, '', colors).then(() => {
+    return db.saveColors(conn, user.tenantId, colors).then(() => {
       return Promise.resolve({});
     })
   });
@@ -354,7 +353,6 @@ app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
     }
     var id = req.params.id;
     var updateBy = user.id;
-    //TODO tenantId
     return db.publishFloor(conn, user.tenantId, id, updateBy).then((newVersion) => {
       console.log('published floor: ' + id + '/' + newVersion);
       return Promise.resolve({ version : newVersion });

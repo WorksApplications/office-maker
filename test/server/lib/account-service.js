@@ -20,7 +20,11 @@ function get(sessionId, url) {
 
 function whoami(root, sessionId) {
   return get(sessionId, root + '/v1/authenticate').then((user) => {
-    var fixedUser = user;
+    var fixedUser = {
+      id: user.userId,
+      tenantId: user.tenantId,
+      role: 'admin'
+    };
     return Promise.resolve(fixedUser);
   }).catch((e) => {
     if(e === 404) {

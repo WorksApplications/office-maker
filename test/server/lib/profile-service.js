@@ -18,24 +18,36 @@ function get(sessionId, url) {
   });
 }
 
+function fixPerson(person) {
+  return {
+    id: profile.id,
+    tenantId: profile.tenantId,
+    name: profile.name,
+    empNo: profile.profileId,
+    org: profile.organization,
+    tel: profile.phones[0],
+    mail: profile.emails[0],
+    image: 'images/users/default.png'//TODO
+  };
+}
+
 function getPerson(root, sessionId, personId) {
   return get(sessionId, root + '/v1/profiles/' + personId).then((person) => {
-    var fixedPerson = {
-      id: profile.id,
-      tenantId: profile.tenantId,
-      name: profile.name,
-      empNo: profile.profileId,
-      org: profile.organization,
-      tel: profile.phones[0],
-      mail: profile.emails[0],
-      image: 'images/users/default.png'//TODO
-    };
-    return Promise.resolve(fixedPerson);
+    return Promise.resolve(fixPerson(person));
   }).catch((e) => {
     if(e === 404) {
       return Promise.resolve(null);
     }
     return Promise.reject(e);
+  });
+}
+
+function getPersonByUserId(sessionId, userId) {
+  return get(sessionId, root + '/v1/profiles?userId=' + userId).then((people) => {
+    if(people[0]) {
+      return Promise.resolve(fixPerson(people[0]));
+    }
+    return Promise.resolve(null);
   });
 }
 
@@ -45,5 +57,6 @@ function search(root, sessionId, query) {
 
 module.exports = {
   getPerson: getPerson,
+  getPersonByUserId: getPersonByUserId,
   search: search
 };
