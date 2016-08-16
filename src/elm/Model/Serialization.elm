@@ -21,11 +21,6 @@ import Model.ColorPalette as ColorPalette exposing (ColorPalette, ColorEntity)
 type alias Floor = Floor.Model
 
 
-noResponse : Decoder ()
-noResponse =
-  Decode.succeed ()
-
-
 decodeFloorVersion : Decoder Int
 decodeFloorVersion =
   Decode.object1 identity ("version" := Decode.int)

@@ -122,8 +122,7 @@ getPrototypes apiRoot =
 
 savePrototypes : String -> List Prototype -> Task Error ()
 savePrototypes apiRoot prototypes =
-  putJson
-    noResponse
+  putJsonNoResponse
     (apiRoot ++ "/v1/prototypes")
     (Http.string <| serializePrototypes prototypes)
 
@@ -205,16 +204,14 @@ getPersonByUser apiRoot id =
 
 login : String -> String -> String -> String -> Task Error ()
 login accountServiceRoot id tenantId pass =
-    postJson
-      noResponse
+    postJsonNoResponse
       (accountServiceRoot ++ "/v1/authentication")
       (Http.string <| serializeLogin id tenantId pass)
 
 
 logout : String -> Task Error ()
 logout accountServiceRoot =
-    deleteJson
-      noResponse
+    deleteJsonNoResponse
       (accountServiceRoot ++ "/v1/authentication")
       (Http.string "")
 

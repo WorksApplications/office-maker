@@ -74,7 +74,7 @@ update message model =
 
     Error e ->
       let
-        _ = Debug.log "Error"
+        _ = Debug.log "Error" e
         message =
           case e of
             Http.NetworkError ->
