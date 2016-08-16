@@ -9,6 +9,7 @@ var filestorage = require('./lib/filestorage.js');
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var accountService = require('./lib/account-service');
+var request = require('request');
 
 var config = null;
 if(fs.existsSync(__dirname + '/config.json')) {
@@ -19,7 +20,15 @@ if(fs.existsSync(__dirname + '/config.json')) {
 config.apiRoot = '/api';
 
 var paasMode = config.accountServiceRoot && config.profileServiceRoot;
-if(!paasMode) {
+if(paasMode) {
+  // if(config.helpCorsForDebug) {
+  //   config.accountServiceRoot = '/cors/' + config.accountServiceRoot;
+  //   config.profileServiceRoot = '/cors/' + config.profileServiceRoot;
+  //   app.use('/cors/', (req, res) => {
+  //     req.pipe(request('http:' + req.url)).pipe(res);
+  //   });
+  // }
+} else {
   config.accountServiceRoot = '/api';
   config.profileServiceRoot = '/api';
 }
@@ -265,6 +274,7 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
 
 app.get('/api/v1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
+  console.log(req.headers);
   return getSelf(conn, getSessionId(req)).then((user) => {
     if(!user && options.all) {
       return Promise.reject(401);
@@ -336,7 +346,6 @@ app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
       return Promise.reject(400);
     }
     var updateBy = user.id;
-    //TODO tenantId
     return db.saveFloorWithObjects(conn, user.tenantId, newFloor, updateBy).then((newIdAndVersion) => {
       console.log('saved floor: ' + newIdAndVersion.id);
       return Promise.resolve(newIdAndVersion);

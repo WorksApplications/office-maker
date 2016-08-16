@@ -82,11 +82,11 @@ update message model =
             _ ->
               "unauthorized"
       in
-        {model | error = Just message} ! []
+        { model | error = Just message } ! []
 
     Success ->
       let
-        _ = Debug.log "Success"
+        _ = Debug.log "Success" ""
       in
         model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
 

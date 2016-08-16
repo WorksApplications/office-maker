@@ -27,6 +27,14 @@ contentTypeJsonUtf8 =
   [("Content-Type", "application/json; charset=utf-8")]
 
 
+defaultSettingsWithCredentials : Http.Settings
+defaultSettingsWithCredentials =
+  let
+    settings = Http.defaultSettings
+  in
+    { settings | withCredentials = True }
+
+
 sendJson : String -> Decoder value -> String -> Http.Body -> Task Http.Error value
 sendJson verb decoder url body =
   let request =
@@ -36,7 +44,7 @@ sendJson verb decoder url body =
     , body = body
     }
   in
-    Http.fromJson decoder (Http.send Http.defaultSettings request)
+    Http.fromJson decoder (Http.send defaultSettingsWithCredentials request)
 
 
 sendJsonNoResponse : String -> String -> Http.Body -> Task Http.Error ()
@@ -48,7 +56,7 @@ sendJsonNoResponse verb url body =
     , body = body
     }
   in
-    noResponse (Http.send Http.defaultSettings request)
+    noResponse (Http.send defaultSettingsWithCredentials request)
 
 
 getJsonWithoutCache : Decoder value -> String -> Task Http.Error value
@@ -65,7 +73,7 @@ getJsonWithoutCache decoder url =
     , body = Http.empty
     }
   in
-    Http.fromJson decoder (Http.send Http.defaultSettings request)
+    Http.fromJson decoder (Http.send defaultSettingsWithCredentials request)
 
 
 postJson : Decoder value -> String -> Http.Body -> Task Http.Error value
