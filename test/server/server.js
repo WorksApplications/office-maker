@@ -83,10 +83,10 @@ function getSessionId(req) {
 }
 
 function getSelf(conn, sessionId) {
-  if(!sessionId) {
-    return Promise.reject(401);
-  }
   if(paasMode) {
+    if(!sessionId) {
+      return Promise.reject(401);
+    }
     return accountService.whoami(config.accountService, sessionId).then((user) => {
       if(!user) {
         return Promise.reject(401);
@@ -94,13 +94,12 @@ function getSelf(conn, sessionId) {
       return Promise.resolve(user);
     });
   } else {
-    var id = sessionId;
-    return db.getUser(conn, id).then((user) => {
-      if(!user) {
-        return Promise.reject(404);
-      }
-      return Promise.resolve(user);
-    });
+    if(sessionId) {
+      var id = sessionId;
+      return db.getUser(conn, id);
+    } else {
+      return Promise.resolve(null);
+    }
   }
 }
 
@@ -115,15 +114,12 @@ app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
   // ignore tenantId
   var id = req.body.userId;
   var pass = req.body.password;
-  return db.getUser(conn, id).then((user) => {
-    if(user && hash(pass) === user.pass) {
-      return Promise.resolve(id);
-    } else {
+  return db.getUserWithPass(conn, id, pass).then((user) => {
+    if(!user) {
       return Promise.reject(401);
     }
-  }).then((user) => {
     req.session.user = id;
-    return Promise.resolve({});
+    return Promise.resolve();
   });
 }));
 
@@ -189,13 +185,11 @@ app.get('/api/v1/self', inTransaction((conn, req, res) => {
   });
 }));
 
+// should be person?
 app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
   var sessionId = getSessionId(req);
   var userId = req.params.id;
   return getSelf(conn, sessionId).then((user) => {
-    if(!user) {
-      return Promise.reject(401);
-    }
     if(paasMode) {
       //TODO
       var user = {
@@ -211,11 +205,11 @@ app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
         if(!user) {
           return Promise.reject(404);
         }
-        return db.getPerson(conn, user.personId);
-      }).then((person) => {
-        user.person = person;
-        return Promise.resolve(user);
-      });
+        return db.getPerson(conn, user.personId).then((person) => {
+          user.person = person;
+          return Promise.resolve(user);
+        });
+      })
     }
   });
 }));
@@ -274,14 +268,35 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
 
 app.get('/api/v1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  console.log(req.headers);
+  // console.log(req.headers);
+  console.log(options.all);
   return getSelf(conn, getSessionId(req)).then((user) => {
     if(!user && options.all) {
       return Promise.reject(401);
     }
+    var tenantId = user ? user.tenantId : '';
     // ignore all option for now
-    return db.getFloorsInfoWithObjects(conn, user.tenantId).then((floorInfoList) => {
+    return db.getFloorsInfoWithObjects(conn, tenantId).then((floorInfoList) => {
       return Promise.resolve(floorInfoList);
+    })
+  });
+}));
+
+app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
+  var options = url.parse(req.url, true).query;
+  return getSelf(conn, getSessionId(req)).then((user) => {
+    if(!user && options.all) {
+      return Promise.reject(404);//401?
+    }
+    var tenantId = user ? user.tenantId : '';
+    var id = req.params.id;
+    console.log('get: ' + id);
+    return db.getFloorWithObjects(conn, tenantId, options.all, id).then((floor) => {
+      if(!floor) {
+        return Promise.reject(404);
+      }
+      console.log('gotFloor: ' + id + ' ' + floor.objects.length);
+      return Promise.resolve(floor);
     })
   });
 }));
@@ -306,24 +321,6 @@ app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
   } else {
     return db.getCandidate(conn, name);
   }
-}));
-
-app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
-  var options = url.parse(req.url, true).query;
-  return getSelf(conn, getSessionId(req)).then((user) => {
-    if(!user) {
-      return Promise.reject(404);//401?
-    }
-    var id = req.params.id;
-    console.log('get: ' + id);
-    return db.getFloorWithObjects(conn, user.tenantId, options.all, id).then((floor) => {
-      if(!floor) {
-        return Promise.reject(404);
-      }
-      console.log('gotFloor: ' + id + ' ' + floor.objects.length);
-      return Promise.resolve(floor);
-    })
-  });
 }));
 
 // TODO move to service logic

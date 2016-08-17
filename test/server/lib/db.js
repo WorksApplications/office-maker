@@ -19,6 +19,16 @@ function getUser(conn, id) {
   });
 }
 
+function getUserWithPass(conn, id, pass) {
+  return rdb.exec(conn, sql.select('users', sql.whereList([['id', id], ['pass', pass]]))).then((users) => {
+    if(users[0]) {
+      users[0].pass = '';
+      users[0].tenantId = '';
+    }
+    return Promise.resolve(users[0]);
+  });
+}
+
 function saveUser(conn, user) {
   return rdb.batch(conn, [
     // sql.delete('users', sql.where('id', user.id)),
@@ -351,6 +361,7 @@ function saveColors(conn, tenantId, colors) {
 
 module.exports = {
   getUser: getUser,
+  getUserWithPass: getUserWithPass,
   saveUser: saveUser,
   getPerson: getPerson,
   savePerson: savePerson,
