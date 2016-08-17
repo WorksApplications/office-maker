@@ -2,7 +2,7 @@ var url = require('url');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var session = require('express-session');
+// var session = require('express-session');
 var fs = require('fs');
 var ejs = require('ejs');
 var filestorage = require('./lib/filestorage.js');
@@ -10,6 +10,7 @@ var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var accountService = require('./lib/account-service');
 var request = require('request');
+var jwt = require('json-web-token');
 
 var config = null;
 if(fs.existsSync(__dirname + '/config.json')) {
@@ -20,15 +21,7 @@ if(fs.existsSync(__dirname + '/config.json')) {
 config.apiRoot = '/api';
 
 var paasMode = config.accountServiceRoot && config.profileServiceRoot;
-if(paasMode) {
-  // if(config.helpCorsForDebug) {
-  //   config.accountServiceRoot = '/cors/' + config.accountServiceRoot;
-  //   config.profileServiceRoot = '/cors/' + config.profileServiceRoot;
-  //   app.use('/cors/', (req, res) => {
-  //     req.pipe(request('http:' + req.url)).pipe(res);
-  //   });
-  // }
-} else {
+if(!paasMode) {
   config.accountServiceRoot = '/api';
   config.profileServiceRoot = '/api';
 }
@@ -39,14 +32,6 @@ var publicDir = __dirname + '/public';
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(session({
-  secret: 'keyboard cat',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 30 * 60 * 1000
-  }
-}));
 
 function hash(str) {
   return str;//TODO
@@ -70,42 +55,32 @@ function inTransaction(f) {
   }
 }
 
-function getSessionId(req) {
-  if(paasMode) {
-    if(req.headers['set-cookie']) {
-      return req.headers['set-cookie']['AUTH_SESSION'];
-    } else {
-      return null;
-    }
-  } else {
-    return req.session.user;
-  }
+function getAuthToken(req) {
+  return req.headers['authorization'];
 }
 
-function getSelf(conn, sessionId) {
-  if(paasMode) {
-    if(!sessionId) {
+function getSelf(conn, token) {
+  if(!token) {
+    if(paasMode) {
       return Promise.reject(401);
-    }
-    return accountService.whoami(config.accountService, sessionId).then((user) => {
-      if(!user) {
-        return Promise.reject(401);
-      }
-      return Promise.resolve(user);
-    });
-  } else {
-    if(sessionId) {
-      var id = sessionId;
-      return db.getUser(conn, id);
     } else {
       return Promise.resolve(null);
     }
   }
+  return new Promise((resolve, reject) => {
+    jwt.decode(config.jwtSecret, token, (e, user) => {
+      if (e) {
+        reject(e);
+      } else {
+        resolve(user);
+      }
+    });
+  });
 }
 
-function getPerson(conn, sessionId, personId) {
+function getPerson(conn, token, personId) {
   return paasMode ?
-    profileService.getPerson(config.profileServiceRoot, sessionId, personId) :
+    profileService.getPerson(config.profileServiceRoot, token, personId) :
     db.getPerson(conn, personId);
 }
 
@@ -118,14 +93,20 @@ app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
     if(!user) {
       return Promise.reject(401);
     }
-    req.session.user = id;
-    return Promise.resolve(id);
+    return new Promise((resolve, reject) => {
+      jwt.encode(config.jwtSecret, user, (e, token) => {
+        if (e) {
+          reject(e);//500
+        } else {
+          resolve(token);
+        }
+      });
+    });
   });
 }));
 
 /* For on-premiss mode only */
 app.delete('/api/v1/authentication', (req, res) => {
-  req.session.user = null;
   res.send({});
 });
 
@@ -151,16 +132,15 @@ app.get('/login', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
-  req.session.user = null;
   res.redirect('/login');
 });
 
 app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
-  var sessionId = getSessionId(req);
+  var token = getAuthToken(req);
   var id = req.params.id;
-  return getSelf(conn, sessionId).then((user) => {
+  return getSelf(conn, token).then((user) => {
     var getPerson = paasMode ?
-      profileService.getPerson(config.profileServiceRoot, sessionId, id) :
+      profileService.getPerson(config.profileServiceRoot, token, id) :
       db.getPerson(conn, id);
 
     return getPerson.then((person) => {
@@ -173,12 +153,12 @@ app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
 }));
 
 app.get('/api/v1/self', inTransaction((conn, req, res) => {
-  var sessionId = getSessionId(req);
-  if(!sessionId) {
+  var token = getAuthToken(req);
+  if(!token) {
     return Promise.resolve({});
   }
-  return getSelf(conn, sessionId).then((user) => {
-    return getPerson(conn, sessionId, user.personId).then((person) => {
+  return getSelf(conn, token).then((user) => {
+    return getPerson(conn, token, user.personId).then((person) => {
       user.person = person;
       return Promise.resolve(user);
     });
@@ -187,16 +167,16 @@ app.get('/api/v1/self', inTransaction((conn, req, res) => {
 
 // should be person?
 app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
-  var sessionId = getSessionId(req);
+  var token = getAuthToken(req);
   var userId = req.params.id;
-  return getSelf(conn, sessionId).then((user) => {
+  return getSelf(conn, token).then((user) => {
     if(paasMode) {
       //TODO
       var user = {
         id: userId,
         role: 'admin'
       };
-      return profileService.getPersonByUserId(sessionId, userId).then((person) => {
+      return profileService.getPersonByUserId(token, userId).then((person) => {
         user.person = person;
         return Promise.resolve(user);
       });
@@ -215,7 +195,7 @@ app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
 }));
 
 app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
-  return getSelf(conn, getSessionId(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
     }
@@ -226,7 +206,7 @@ app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
 }));
 
 app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
-  return getSelf(conn, getSessionId(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
     }
@@ -241,7 +221,7 @@ app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
 }));
 
 app.get('/api/v1/colors', inTransaction((conn, req, res) => {
-  return getSelf(conn, getSessionId(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
     }
@@ -252,7 +232,7 @@ app.get('/api/v1/colors', inTransaction((conn, req, res) => {
 }));
 
 app.put('/api/v1/colors', inTransaction((conn, req, res) => {
-  return getSelf(conn, getSessionId(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
     }
@@ -268,9 +248,7 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
 
 app.get('/api/v1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  // console.log(req.headers);
-  console.log(options.all);
-  return getSelf(conn, getSessionId(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user && options.all) {
       return Promise.reject(401);
     }
@@ -284,7 +262,7 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
 
 app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  return getSelf(conn, getSessionId(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user && options.all) {
       return Promise.reject(404);//401?
     }
@@ -305,7 +283,7 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
   if(paasMode) {
-    return getSelf(conn, getSessionId(req)).then((user) => {
+    return getSelf(conn, getAuthToken(req)).then((user) => {
       return db.searchWithProfileService(config.profileServiceRoot, id, user.tenantId, query, options.all);
     });
   } else {
@@ -314,10 +292,10 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
 }));
 
 app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
-  var sessionId = getSessionId(req);
+  var token = getAuthToken(req);
   var name = req.params.name;
   if(paasMode) {
-    return profielService.search(config.profileServiceRoot, sessionId, name);
+    return profielService.search(config.profileServiceRoot, token, name);
   } else {
     return db.getCandidate(conn, name);
   }
@@ -331,7 +309,7 @@ function isValidFloor(floor) {
   return true;
 }
 app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
-  return getSelf(conn, getSessionId(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
     }
@@ -352,8 +330,8 @@ app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
 
 // publish
 app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
-  var sessionId = getSessionId(req)
-  return getSelf(conn, sessionId).then((user) => {
+  var token = getAuthToken(req)
+  return getSelf(conn, token).then((user) => {
     if(!user || user.role !== 'admin') {
       return Promise.reject(401);
     }
@@ -368,7 +346,7 @@ app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
 
 app.put('/api/v1/images/:id', inTransaction((conn, req, res) => {
   return new Promise((resolve, reject) => {
-    getSelf(conn, getSessionId(req)).then((user) => {
+    getSelf(conn, getAuthToken(req)).then((user) => {
       if(!user || user.role !== 'admin') {
         return Promise.reject(401);
       }
