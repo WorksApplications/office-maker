@@ -1,3 +1,5 @@
+port module Login exposing (..)
+
 import Html exposing (Html, text, div, input, form, h2)
 import Html.App as App
 import Html.Attributes exposing (type', value, action, method, style, autofocus)
@@ -10,6 +12,9 @@ import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import View.Styles as Styles
 
+port saveToken : String -> Cmd msg
+
+port tokenSaved : ({} -> msg) -> Sub msg
 
 type alias Flags =
   { accountServiceRoot : String
@@ -23,7 +28,7 @@ main =
     { init = \flags -> init flags.accountServiceRoot flags.title
     , view = view
     , update = update
-    , subscriptions = \_ -> Sub.none
+    , subscriptions = \_ -> tokenSaved (always TokenSaved)
     }
 
 --------
@@ -33,7 +38,8 @@ type Msg =
   | InputPass String
   | Submit
   | Error Http.Error
-  | Success
+  | Success String
+  | TokenSaved
   | NoOp
 
 
@@ -68,9 +74,13 @@ update message model =
     Submit ->
       let
         task =
-          API.login model.accountServiceRoot model.inputId "example.com" model.inputPass
+          API.login
+            model.accountServiceRoot
+            model.inputId
+            "example.com"
+            model.inputPass
       in
-        model ! [ Task.perform Error (always Success) task ]
+        model ! [ Task.perform Error Success task ]
 
     Error e ->
       let
@@ -84,14 +94,14 @@ update message model =
       in
         { model | error = Just message } ! []
 
-    Success ->
-      let
-        _ = Debug.log "Success" ""
-      in
-        model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
+    Success token ->
+      model ! [ saveToken token ]
+
+    TokenSaved ->
+      model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
 
     NoOp ->
-        model ! []
+      model ! []
 
 
 view : Model -> Html Msg

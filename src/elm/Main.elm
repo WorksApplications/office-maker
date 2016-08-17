@@ -10,6 +10,7 @@ import TimeTravel.Navigation as TimeTravel
 type alias Flags =
   { apiRoot : String
   , accountServiceRoot : String
+  , authToken : String
   , title : String
   , initialSize : (Int, Int)
   , randomSeed : (Int, Int)
@@ -25,6 +26,7 @@ main =
         Model.init
           flags.apiRoot
           flags.accountServiceRoot
+          flags.authToken
           flags.title
           flags.randomSeed
           flags.initialSize

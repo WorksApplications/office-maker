@@ -1,11 +1,11 @@
 var request = require('request');
 
-function get(sessionId, url) {
+function get(token, url) {
   return new Promise((resolve, reject) => {
     var options = {
       url: url,
       headers: {
-        'Set-Cookie': sessionId
+        'Authorization': token
       }
     };
     request(options, function(e, response, body) {
@@ -31,8 +31,8 @@ function fixPerson(person) {
   };
 }
 
-function getPerson(root, sessionId, personId) {
-  return get(sessionId, root + '/v1/profiles/' + personId).then((person) => {
+function getPerson(root, token, personId) {
+  return get(token, root + '/v1/profiles/' + personId).then((person) => {
     return Promise.resolve(fixPerson(person));
   }).catch((e) => {
     if(e === 404) {
@@ -42,8 +42,8 @@ function getPerson(root, sessionId, personId) {
   });
 }
 
-function getPersonByUserId(sessionId, userId) {
-  return get(sessionId, root + '/v1/profiles?userId=' + userId).then((people) => {
+function getPersonByUserId(token, userId) {
+  return get(token, root + '/v1/profiles?userId=' + userId).then((people) => {
     if(people[0]) {
       return Promise.resolve(fixPerson(people[0]));
     }
@@ -51,8 +51,8 @@ function getPersonByUserId(sessionId, userId) {
   });
 }
 
-function search(root, sessionId, query) {
-  return get(sessionId, root + '/v1/profiles?q=' + query);
+function search(root, token, query) {
+  return get(token, root + '/v1/profiles?q=' + query);
 }
 
 module.exports = {

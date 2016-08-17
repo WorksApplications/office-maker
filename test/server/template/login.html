@@ -9,9 +9,13 @@
 	</head>
 	<body>
 		<script>
-			var main = Elm.Main.fullscreen({
+			var main = Elm.Login.fullscreen({
 				accountServiceRoot: '<%= accountServiceRoot %>',
 				title: '<%= title %>'
+			});
+			main.ports.saveToken.subscribe(function(token) {
+				localStorage.setItem('authToken', token);
+			  main.ports.tokenSaved.send();
 			});
 		</script>
 	</body>

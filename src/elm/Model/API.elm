@@ -19,6 +19,7 @@ module Model.API exposing (
     , getColors
     , getPrototypes
     , savePrototypes
+    , Config
     , Error
   )
 
@@ -45,37 +46,45 @@ type alias Floor = Floor.Model
 
 type alias Error = Http.Error
 
+type alias Config =
+  { apiRoot : String
+  , accountServiceRoot : String
+  , token : String
+  }
+
 
 -- createNewFloor : Task Error Int
 
-saveEditingFloor : String -> Floor -> ObjectsChange -> Task Error Int
-saveEditingFloor apiRoot floor change =
+saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error Int
+saveEditingFloor config floor change =
   putJson
     decodeFloorVersion
-    (apiRoot ++ "/v1/floors/" ++ floor.id)
+    (config.apiRoot ++ "/v1/floors/" ++ floor.id)
+    (authorization config.token)
     (Http.string <| serializeFloor floor change)
 
 
-publishEditingFloor : String -> String -> Task Error Int
-publishEditingFloor apiRoot id =
+publishEditingFloor : Config -> String -> Task Error Int
+publishEditingFloor config id =
   putJson
     decodeFloorVersion
-    (apiRoot ++ "/v1/floors/" ++ id ++ "/public")
+    (config.apiRoot ++ "/v1/floors/" ++ id ++ "/public")
+    (authorization config.token)
     (Http.string "")
 
 
-getEditingFloor : String -> String -> Task Error Floor
-getEditingFloor apiRoot id =
-  getFloorHelp apiRoot True id
+getEditingFloor : Config -> String -> Task Error Floor
+getEditingFloor config id =
+  getFloorHelp config True id
 
 
-getFloor : String -> String -> Task Error Floor
-getFloor apiRoot id =
-  getFloorHelp apiRoot False id
+getFloor : Config -> String -> Task Error Floor
+getFloor config id =
+  getFloorHelp config False id
 
 
-getFloorHelp : String -> Bool -> String -> Task Error Floor
-getFloorHelp apiRoot withPrivate id =
+getFloorHelp : Config -> Bool -> String -> Task Error Floor
+getFloorHelp config withPrivate id =
   let
     _ =
       if id == "" then
@@ -85,114 +94,124 @@ getFloorHelp apiRoot withPrivate id =
 
     url =
       Http.url
-        (apiRoot ++ "/v1/floors/" ++ id)
+        (config.apiRoot ++ "/v1/floors/" ++ id)
         (if withPrivate then [("all", "true")] else [])
   in
-    getJsonWithoutCache decodeFloor url
+    getJsonWithoutCache decodeFloor url (authorization config.token)
 
 
-getFloorMaybe : String -> String -> Task Error (Maybe Floor)
-getFloorMaybe apiRoot id =
-  getFloor apiRoot id
+getFloorMaybe : Config -> String -> Task Error (Maybe Floor)
+getFloorMaybe config id =
+  getFloor config id
   `Task.andThen` (\floor -> Task.succeed (Just floor))
   `Task.onError` \e -> case e of
     Http.BadResponse 404 _ -> Task.succeed Nothing
     _ -> Task.fail e
 
 
-getFloorsInfo : String -> Bool -> Task Error (List FloorInfo)
-getFloorsInfo apiRoot withPrivate =
+getFloorsInfo : Config -> Bool -> Task Error (List FloorInfo)
+getFloorsInfo config withPrivate =
   let
     url =
       Http.url
-        (apiRoot ++ "/v1/floors")
+        (config.apiRoot ++ "/v1/floors")
         (if withPrivate then [("all", "true")] else [])
   in
     getJsonWithoutCache
       decodeFloorInfoList
       url
+      (authorization config.token)
 
 
-getPrototypes : String -> Task Error (List Prototype)
-getPrototypes apiRoot =
-    getJsonWithoutCache
-      decodePrototypes
-      (Http.url (apiRoot ++ "/v1/prototypes") [])
+getPrototypes : Config -> Task Error (List Prototype)
+getPrototypes config =
+  getJsonWithoutCache
+    decodePrototypes
+    (Http.url (config.apiRoot ++ "/v1/prototypes") [])
+    (authorization config.token)
 
 
-savePrototypes : String -> List Prototype -> Task Error ()
-savePrototypes apiRoot prototypes =
+savePrototypes : Config -> List Prototype -> Task Error ()
+savePrototypes config prototypes =
   putJsonNoResponse
-    (apiRoot ++ "/v1/prototypes")
+    (config.apiRoot ++ "/v1/prototypes")
+    (authorization config.token)
     (Http.string <| serializePrototypes prototypes)
 
 
-getColors : String -> Task Error ColorPalette
-getColors apiRoot =
-    getJsonWithoutCache
-      decodeColors
-      (Http.url (apiRoot ++ "/v1/colors") [])
+getColors : Config -> Task Error ColorPalette
+getColors config =
+  getJsonWithoutCache
+    decodeColors
+    (Http.url (config.apiRoot ++ "/v1/colors") [])
+    (authorization config.token)
 
 
-getDiffSource : String -> String -> Task Error (Floor, Maybe Floor)
-getDiffSource apiRoot id =
-  getEditingFloor apiRoot id
-  `Task.andThen` \current -> getFloorMaybe apiRoot id
+getDiffSource : Config -> String -> Task Error (Floor, Maybe Floor)
+getDiffSource config id =
+  getEditingFloor config id
+  `Task.andThen` \current -> getFloorMaybe config id
   `Task.andThen` \prev -> Task.succeed (current, prev)
 
 
-getAuth : String -> Task Error User
-getAuth apiRoot =
-  Http.get
+getAuth : Config -> Task Error User
+getAuth config =
+  HttpUtil.get
     decodeUser
-    (apiRoot ++ "/v1/self")
+    (config.apiRoot ++ "/v1/self")
+    (authorization config.token)
 
 
-search : String -> Bool -> String -> Task Error (List SearchResult)
-search apiRoot withPrivate query =
+search : Config -> Bool -> String -> Task Error (List SearchResult)
+search config withPrivate query =
   let
     url =
       Http.url
-        (apiRoot ++ "/v1/search/" ++ Http.uriEncode query)
+        (config.apiRoot ++ "/v1/search/" ++ Http.uriEncode query)
         (if withPrivate then [("all", "true")] else [])
   in
-    Http.get
+    HttpUtil.get
       decodeSearchResults
       url
+      (authorization config.token)
 
 
-personCandidate : String -> String -> Task Error (List Person)
-personCandidate apiRoot name =
+personCandidate : Config -> String -> Task Error (List Person)
+personCandidate config name =
   if String.isEmpty name then
     Task.succeed []
   else
     getJsonWithoutCache
-      decodePersons <|
-      (apiRoot ++ "/v1/candidates/" ++ Http.uriEncode name)
+      decodePersons
+      (config.apiRoot ++ "/v1/candidates/" ++ Http.uriEncode name)
+      (authorization config.token)
 
 
-saveEditingImage : String -> Id -> File -> Task a ()
-saveEditingImage apiRoot id file =
-    HttpUtil.sendFile
-      "PUT"
-      (apiRoot ++ "/v1/images/" ++ id)
-      file
+saveEditingImage : Config -> Id -> File -> Task a ()
+saveEditingImage config id file =
+  HttpUtil.sendFile
+    "PUT"
+    (config.apiRoot ++ "/v1/images/" ++ id)
+    -- (authorization config.token)
+    file
 
 
-getPerson : String -> Id -> Task Error Person
-getPerson apiRoot id =
-    Http.get
+getPerson : Config -> Id -> Task Error Person
+getPerson config id =
+    HttpUtil.get
       decodePerson
-      (apiRoot ++ "/v1/people/" ++ id)
+      (config.apiRoot ++ "/v1/people/" ++ id)
+      (authorization config.token)
 
 
-getPersonByUser : String -> Id -> Task Error Person
-getPersonByUser apiRoot id =
+getPersonByUser : Config -> Id -> Task Error Person
+getPersonByUser config id =
   let
     getUser =
-      Http.get
+      HttpUtil.get
         decodeUser
-        (apiRoot ++ "/v1/users/" ++ id)
+        (config.apiRoot ++ "/v1/users/" ++ id)
+        (authorization config.token)
   in
     getUser
     `Task.andThen` (\user -> case user of
@@ -202,18 +221,20 @@ getPersonByUser apiRoot id =
       )
 
 
-login : String -> String -> String -> String -> Task Error ()
+login : String -> String -> String -> String -> Task Error String
 login accountServiceRoot id tenantId pass =
-    postJsonNoResponse
-      (accountServiceRoot ++ "/v1/authentication")
-      (Http.string <| serializeLogin id tenantId pass)
+  postJsonTextResponse
+    (accountServiceRoot ++ "/v1/authentication")
+    []
+    (Http.string <| serializeLogin id tenantId pass)
 
 
-logout : String -> Task Error ()
-logout accountServiceRoot =
-    deleteJsonNoResponse
-      (accountServiceRoot ++ "/v1/authentication")
-      (Http.string "")
+logout : Config -> Task Error ()
+logout config =
+  deleteJsonNoResponse
+    (config.accountServiceRoot ++ "/v1/authentication")
+    (authorization config.token)
+    (Http.string "")
 
 
 goToLogin : Task a ()

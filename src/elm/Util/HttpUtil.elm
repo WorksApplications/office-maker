@@ -17,6 +17,7 @@ goTo =
   Native.HttpUtil.goTo
 
 
+-- TODO auth
 sendFile : String -> String -> File.File -> Task a ()
 sendFile method url (File file) =
   Native.HttpUtil.sendFile method url file
@@ -27,6 +28,11 @@ contentTypeJsonUtf8 =
   [("Content-Type", "application/json; charset=utf-8")]
 
 
+authorization : String -> List (String, String)
+authorization s =
+  [("Authorization", s)]
+
+
 defaultSettingsWithCredentials : Http.Settings
 defaultSettingsWithCredentials =
   let
@@ -35,11 +41,11 @@ defaultSettingsWithCredentials =
     { settings | withCredentials = True }
 
 
-sendJson : String -> Decoder value -> String -> Http.Body -> Task Http.Error value
-sendJson verb decoder url body =
+sendJson : String -> Decoder value -> String -> List (String, String) -> Http.Body -> Task Http.Error value
+sendJson verb decoder url headers body =
   let request =
     { verb = verb
-    , headers = contentTypeJsonUtf8
+    , headers = contentTypeJsonUtf8 ++ headers
     , url = url
     , body = body
     }
@@ -47,11 +53,11 @@ sendJson verb decoder url body =
     Http.fromJson decoder (Http.send defaultSettingsWithCredentials request)
 
 
-sendJsonNoResponse : String -> String -> Http.Body -> Task Http.Error ()
-sendJsonNoResponse verb url body =
+sendJsonNoResponse : String -> String -> List (String, String) -> Http.Body -> Task Http.Error ()
+sendJsonNoResponse verb url headers body =
   let request =
     { verb = verb
-    , headers = contentTypeJsonUtf8
+    , headers = contentTypeJsonUtf8 ++ headers
     , url = url
     , body = body
     }
@@ -59,48 +65,73 @@ sendJsonNoResponse verb url body =
     noResponse (Http.send defaultSettingsWithCredentials request)
 
 
-getJsonWithoutCache : Decoder value -> String -> Task Http.Error value
-getJsonWithoutCache decoder url =
+sendJsonTextResponse : String -> String -> List (String, String) -> Http.Body -> Task Http.Error String
+sendJsonTextResponse verb url headers body =
   let request =
-    { verb = "GET"
-    , headers =
-        contentTypeJsonUtf8 ++
-        [ ("Pragma", "no-cache")
-        , ("Cache-Control", "no-cache")
-        , ("If-Modified-Since", "Thu, 01 Jun 1970 00:00:00 GMT")
-        ]
+    { verb = verb
+    , headers = contentTypeJsonUtf8 ++ headers
     , url = url
-    , body = Http.empty
+    , body = body
     }
+  in
+    textResponse (Http.send defaultSettingsWithCredentials request)
+
+
+get : Decoder value -> String -> List (String, String) -> Task Http.Error value
+get decoder url headers =
+  let
+    request =
+      { verb = "GET"
+      , headers =
+          contentTypeJsonUtf8 ++ headers
+      , url = url
+      , body = Http.empty
+      }
   in
     Http.fromJson decoder (Http.send defaultSettingsWithCredentials request)
 
 
-postJson : Decoder value -> String -> Http.Body -> Task Http.Error value
+getJsonWithoutCache : Decoder value -> String -> List (String, String) -> Task Http.Error value
+getJsonWithoutCache decoder url headers =
+  let
+    headers' =
+      [ ("Pragma", "no-cache")
+      , ("Cache-Control", "no-cache")
+      , ("If-Modified-Since", "Thu, 01 Jun 1970 00:00:00 GMT")
+      ] ++ headers
+  in
+    get decoder url headers'
+
+
+postJson : Decoder value -> String -> List (String, String) -> Http.Body -> Task Http.Error value
 postJson = sendJson "POST"
 
 
-postJsonNoResponse : String -> Http.Body -> Task Http.Error ()
+postJsonNoResponse : String -> List (String, String) -> Http.Body -> Task Http.Error ()
 postJsonNoResponse = sendJsonNoResponse "POST"
 
 
-putJson : Decoder value -> String -> Http.Body -> Task Http.Error value
+postJsonTextResponse : String -> List (String, String) -> Http.Body -> Task Http.Error String
+postJsonTextResponse = sendJsonTextResponse "POST"
+
+
+putJson : Decoder value -> String -> List (String, String) -> Http.Body -> Task Http.Error value
 putJson = sendJson "PUT"
 
 
-putJsonNoResponse : String -> Http.Body -> Task Http.Error ()
+putJsonNoResponse : String -> List (String, String) -> Http.Body -> Task Http.Error ()
 putJsonNoResponse = sendJsonNoResponse "PUT"
 
 
-patchJson : Decoder value -> String -> Http.Body -> Task Http.Error value
+patchJson : Decoder value -> String -> List (String, String) -> Http.Body -> Task Http.Error value
 patchJson = sendJson "PATCH"
 
 
-deleteJson : Decoder value -> String -> Http.Body -> Task Http.Error value
+deleteJson : Decoder value -> String -> List (String, String) -> Http.Body -> Task Http.Error value
 deleteJson = sendJson "DELETE"
 
 
-deleteJsonNoResponse : String -> Http.Body -> Task Http.Error ()
+deleteJsonNoResponse : String -> List (String, String) -> Http.Body -> Task Http.Error ()
 deleteJsonNoResponse = sendJsonNoResponse "DELETE"
 
 
@@ -115,6 +146,11 @@ recover404With alt = \e ->
 noResponse : Task RawError Response -> Task Error ()
 noResponse response =
   fromText (always (Ok ())) response
+
+
+textResponse : Task RawError Response -> Task Error String
+textResponse response =
+  fromText Ok response
 
 
 fromText : (String -> Result String a) -> Task RawError Response -> Task Error a

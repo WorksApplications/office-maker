@@ -19,12 +19,14 @@ type Msg =
   | SelectResult SearchResult
   | Error API.Error
 
+
 type Event =
     OnError API.Error
   | OnResults
   | OnSelectResult SearchResult
   | OnSubmit
   | None
+
 
 type alias Model =
   { query : String
@@ -33,14 +35,14 @@ type alias Model =
 
 
 -- TODO refactor
-init : String -> (Msg -> a) -> Maybe String -> (Model, Cmd a)
-init apiRoot transformMsg query =
+init : API.Config -> (Msg -> a) -> Maybe String -> (Model, Cmd a)
+init apiConfig transformMsg query =
   case query of
     Just query ->
       ({ query = query
       , results = Nothing
       }, if query /= "" then
-          Cmd.map transformMsg (searchCmd apiRoot False Nothing query)--TODO search here? maybe lacking information
+          Cmd.map transformMsg (searchCmd apiConfig False Nothing query)--TODO search here? maybe lacking information
         else
           Cmd.none
       )
@@ -50,11 +52,11 @@ init apiRoot transformMsg query =
       }, Cmd.none)
 
 
-doSearch : String -> (Msg -> a) -> Bool -> Maybe String -> String -> Model -> (Model, Cmd a)
-doSearch apiRoot transformMsg withPrivate thisFloorId query model =
+doSearch : API.Config -> (Msg -> a) -> Bool -> Maybe String -> String -> Model -> (Model, Cmd a)
+doSearch apiConfig transformMsg withPrivate thisFloorId query model =
   ({ model | query = query }
   , if query /= "" then
-      Cmd.map transformMsg (searchCmd apiRoot withPrivate thisFloorId query)
+      Cmd.map transformMsg (searchCmd apiConfig withPrivate thisFloorId query)
     else
       Cmd.none
   )
@@ -79,9 +81,9 @@ update msg model =
         (model, Cmd.none, (OnError apiError))
 
 
-searchCmd : String -> Bool -> Maybe String -> String -> Cmd Msg
-searchCmd apiRoot withPrivate thisFloorId query =
-  Task.perform Error (Results thisFloorId) (API.search apiRoot withPrivate query)
+searchCmd : API.Config -> Bool -> Maybe String -> String -> Cmd Msg
+searchCmd apiConfig withPrivate thisFloorId query =
+  Task.perform Error (Results thisFloorId) (API.search apiConfig withPrivate query)
 
 
 allResults : Model -> List SearchResult

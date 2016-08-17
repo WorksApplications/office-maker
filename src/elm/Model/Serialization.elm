@@ -21,6 +21,11 @@ import Model.ColorPalette as ColorPalette exposing (ColorPalette, ColorEntity)
 type alias Floor = Floor.Model
 
 
+decodeAuthToken : Decoder String
+decodeAuthToken =
+  Decode.string
+  
+
 decodeFloorVersion : Decoder Int
 decodeFloorVersion =
   Decode.object1 identity ("version" := Decode.int)

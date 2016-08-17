@@ -119,7 +119,7 @@ app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
       return Promise.reject(401);
     }
     req.session.user = id;
-    return Promise.resolve();
+    return Promise.resolve(id);
   });
 }));
 

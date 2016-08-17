@@ -45,8 +45,7 @@ type alias Floor = Floor.Model
 type alias Commit = Floor.Msg
 
 type alias Model =
-  { apiRoot : String
-  , accountServiceRoot : String
+  { apiConfig : API.Config
   , title : String
   , seed : Seed
   , visitDate : Date
@@ -130,15 +129,16 @@ gridSize : Int
 gridSize = 8 -- 2^N
 
 
-init : String -> String -> String -> (Int, Int) -> (Int, Int) -> Float -> (Result String URL.Model) -> (Model, Cmd Msg)
-init apiRoot accountServiceRoot title randomSeed initialSize visitDate urlResult =
+init : String -> String -> String -> String -> (Int, Int) -> (Int, Int) -> Float -> (Result String URL.Model) -> (Model, Cmd Msg)
+init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate urlResult =
   let
+    apiConfig = { apiRoot = apiRoot, accountServiceRoot = accountServiceRoot, token = authToken } -- TODO
+
     initialFloor =
       Floor.init ""
 
     toModel url searchBox =
-      { apiRoot = apiRoot
-      , accountServiceRoot = accountServiceRoot
+      { apiConfig = apiConfig
       , title = title
       , seed = IdGenerator.init randomSeed
       , visitDate = Date.fromTime visitDate
@@ -175,19 +175,19 @@ init apiRoot accountServiceRoot title randomSeed initialSize visitDate urlResult
       , personPopupSize = (300, 160)
       }
 
-    initCmd = loadAuthCmd apiRoot
+    initCmd = loadAuthCmd apiConfig
   in
     case urlResult of
       -- TODO refactor
       Ok url ->
         let
-          (searchBox, cmd) = SearchBox.init apiRoot SearchBoxMsg url.query
+          (searchBox, cmd) = SearchBox.init apiConfig SearchBoxMsg url.query
         in
           (toModel url searchBox) ! [ initCmd, cmd ]
       Err _ ->
         let
           dummyURL = URL.dummy
-          (searchBox, cmd) = SearchBox.init apiRoot SearchBoxMsg dummyURL.query
+          (searchBox, cmd) = SearchBox.init apiConfig SearchBoxMsg dummyURL.query
         in
           (toModel dummyURL searchBox)
           ! [ initCmd, cmd ] -- TODO modifyURL
@@ -281,7 +281,7 @@ urlUpdate result model =
                 thisFloorId =
                   Just floorId
               in
-                SearchBox.doSearch model.apiRoot SearchBoxMsg withPrivate thisFloorId query model.searchBox
+                SearchBox.doSearch model.apiConfig SearchBoxMsg withPrivate thisFloorId query model.searchBox
             _ ->
               (model.searchBox, Cmd.none)
 
@@ -289,7 +289,7 @@ urlUpdate result model =
 
         loadFloorCmd' =
           if String.length floorId > 0 then
-            loadFloorCmd model.apiRoot forEdit floorId
+            loadFloorCmd model.apiConfig forEdit floorId
           else
             Cmd.none
 
@@ -321,7 +321,7 @@ urlUpdate result model =
         } !
           [ loadFloorCmd'
           , searchBoxCmd
-          , loadFloorsInfoCmd model.apiRoot requestPrivateFloors
+          , loadFloorsInfoCmd model.apiConfig requestPrivateFloors
           ]
     Err _ ->
       let
@@ -348,7 +348,7 @@ update action model =
 
         loadFloorCmd' =
           if String.length floorId > 0 then
-            (loadFloorCmd model.apiRoot) requestPrivateFloors floorId
+            (loadFloorCmd model.apiConfig) requestPrivateFloors floorId
           else
             Cmd.none
 
@@ -357,8 +357,8 @@ update action model =
             Cmd.none
           else
             Cmd.batch
-              [ performAPI ColorsLoaded (API.getColors model.apiRoot)
-              , performAPI PrototypesLoaded (API.getPrototypes model.apiRoot)
+              [ performAPI ColorsLoaded (API.getColors model.apiConfig)
+              , performAPI PrototypesLoaded (API.getPrototypes model.apiConfig)
               ]
       in
         { model |
@@ -369,7 +369,7 @@ update action model =
             else
               Viewing False
         }
-        ! [ loadFloorsInfoCmd model.apiRoot requestPrivateFloors
+        ! [ loadFloorsInfoCmd model.apiConfig requestPrivateFloors
           , loadFloorCmd'
           , loadSettingsCmd
           ]
@@ -688,7 +688,7 @@ update action model =
     SelectBackgroundColor color ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.changeObjectBackgroundColor model.selectedObjects color) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.changeObjectBackgroundColor model.selectedObjects color) model.floor
       in
         { model |
           floor = newFloor
@@ -697,7 +697,7 @@ update action model =
     SelectColor color ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.changeObjectColor model.selectedObjects color) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.changeObjectColor model.selectedObjects color) model.floor
       in
         { model |
           floor = newFloor
@@ -706,7 +706,7 @@ update action model =
     SelectShape shape ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.changeObjectShape model.selectedObjects shape) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.changeObjectShape model.selectedObjects shape) model.floor
       in
         { model |
           floor = newFloor
@@ -740,7 +740,7 @@ update action model =
           ObjectNameInput.OnUnsetPerson objectId ->
             let
               (newFloor, saveCmd) =
-                EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.unsetPerson objectId) model.floor
+                EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.unsetPerson objectId) model.floor
             in
               { model' |
                 floor = newFloor
@@ -756,7 +756,7 @@ update action model =
 
         NotWaiting ->
           { model | candidateRequest = Waiting Nothing }
-          ! [ performAPI (GotCandidateSelection id) (API.personCandidate model.apiRoot name) ]
+          ! [ performAPI (GotCandidateSelection id) (API.personCandidate model.apiConfig name) ]
 
     ShowContextMenuOnObject id ->
       { model |
@@ -877,7 +877,7 @@ update action model =
               { model' |
                 seed = seed
               , prototypes = newPrototypes
-              } ! [ (savePrototypesCmd model.apiRoot) newPrototypes.data ]
+              } ! [ (savePrototypesCmd model.apiConfig) newPrototypes.data ]
 
           Nothing ->
             model' ! []
@@ -888,7 +888,7 @@ update action model =
           FloorProperty.update message model.floorProperty
 
         ((newFloor, newSeed), cmd2) =
-          updateFloorByFloorPropertyEvent model.apiRoot event model.seed model.floor
+          updateFloorByFloorPropertyEvent model.apiConfig event model.seed model.floor
 
         newModel =
           { model |
@@ -902,7 +902,7 @@ update action model =
     Rotate id ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.rotateObject id) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.rotateObject id) model.floor
       in
         { model |
           floor = newFloor
@@ -912,7 +912,7 @@ update action model =
     FirstNameOnly ids ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.toFirstNameOnly ids) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.toFirstNameOnly ids) model.floor
       in
         { model |
           floor = newFloor
@@ -922,7 +922,7 @@ update action model =
     HeaderMsg action ->
       let
         (cmd, event) =
-          Header.update model.accountServiceRoot action
+          Header.update model.apiConfig action
 
         (newModel, cmd2) =
           case event of
@@ -1022,7 +1022,7 @@ update action model =
           case personIds of
             head :: _ :: _ ->
               EditingFloor.commit
-                (saveFloorCmd model.apiRoot)
+                (saveFloorCmd model.apiConfig)
                 (Floor.setPerson objectId head)
                 model.floor
 
@@ -1045,7 +1045,7 @@ update action model =
           (EditingFloor.present model.floor)
 
         (cmd, newSeed, newFloor) =
-          ( publishFloorCmd model.apiRoot floor FloorDiff.noObjectsChange
+          ( publishFloorCmd model.apiConfig floor FloorDiff.noObjectsChange
           , model.seed
           , model.floor
           )
@@ -1073,7 +1073,7 @@ update action model =
               Nothing
         cmd =
           case personId of
-            Just id -> regesterPerson model.apiRoot id
+            Just id -> regesterPerson model.apiConfig id
             Nothing -> Cmd.none
 
         selectedResult =
@@ -1111,7 +1111,7 @@ update action model =
         cmd =
           performAPI
             (always (NewFloorCreated newFloorId))
-            (API.saveEditingFloor model.apiRoot newFloor (snd <| FloorDiff.diff newFloor Nothing))
+            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
       in
         { model | seed = newSeed } ! [ cmd ]
 
@@ -1126,7 +1126,7 @@ update action model =
         cmd =
           performAPI
             (always (NewFloorCreated newFloorId))
-            (API.saveEditingFloor model.apiRoot newFloor (snd <| FloorDiff.diff newFloor Nothing))
+            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
       in
         { model |
           seed = newSeed
@@ -1191,7 +1191,7 @@ updateOnSearchBoxEvent event model =
           Cmd.batch <|
           List.filterMap (\r ->
             case r.personId of
-              Just id -> Just (regesterPersonIfNotCached model.apiRoot model.personInfo id)
+              Just id -> Just (regesterPersonIfNotCached model.apiConfig model.personInfo id)
               Nothing -> Nothing
           ) results
 
@@ -1220,7 +1220,7 @@ updateOnSearchBoxEvent event model =
 
         cmd2 =
           case personId of
-            Just id -> (regesterPersonIfNotCached model.apiRoot model.personInfo id)
+            Just id -> (regesterPersonIfNotCached model.apiConfig model.personInfo id)
             Nothing -> Cmd.none
       in
         (selectedResult, Cmd.batch [cmd1, cmd2])
@@ -1263,7 +1263,7 @@ updateOnSelectCandidate objectId personId model =
       let
         (newFloor, cmd) =
           EditingFloor.commit
-            (saveFloorCmd model.apiRoot)
+            (saveFloorCmd model.apiConfig)
             (Floor.setPerson objectId personId)
             model.floor
 
@@ -1309,7 +1309,7 @@ updateOnFinishStamp model =
 
     (newFloor, cmd) =
       EditingFloor.commit
-        (saveFloorCmd model.apiRoot)
+        (saveFloorCmd model.apiConfig)
         (Floor.createDesk candidatesWithNewIds')
         model.floor
   in
@@ -1332,7 +1332,7 @@ updateOnFinishPen (x, y) model =
 
             (newFloor, cmd) =
               EditingFloor.commit
-                (saveFloorCmd model.apiRoot)
+                (saveFloorCmd model.apiConfig)
                 (Floor.createDesk [(newId, (left, top, width, height), color, name)])
                 model.floor
           in
@@ -1359,7 +1359,7 @@ updateOnFinishResize id (x, y) model =
           case temporaryResizeRect model (x, y) (rect e) of
             Just (_, _, width, height) ->
               EditingFloor.commit
-                (saveFloorCmd model.apiRoot)
+                (saveFloorCmd model.apiConfig)
                 (Floor.resizeObject id (width, height))
                 model.floor
 
@@ -1395,7 +1395,7 @@ updateOnFinishLabel model =
 
     (newFloor, saveCmd) =
       EditingFloor.commit
-        (saveFloorCmd model.apiRoot)
+        (saveFloorCmd model.apiConfig)
         (Floor.createLabel [(newId, (left, top, width, height), bgColor, name, fontSize, color)])
         model.floor
 
@@ -1439,7 +1439,7 @@ updateOnFloorLoaded floor model =
             Nothing ->
               let
                 task =
-                  API.getPersonByUser model.apiRoot by `andThen` \person ->
+                  API.getPersonByUser model.apiConfig by `andThen` \person ->
                     Task.succeed (RegisterPeople [person])
               in
                 performAPI identity task
@@ -1447,8 +1447,8 @@ updateOnFloorLoaded floor model =
     newModel ! [ cmd ]
 
 
-updateFloorByFloorPropertyEvent :  String -> FloorProperty.Event -> Seed -> EditingFloor -> ((EditingFloor, Seed), Cmd Msg)
-updateFloorByFloorPropertyEvent apiRoot event seed efloor =
+updateFloorByFloorPropertyEvent : API.Config -> FloorProperty.Event -> Seed -> EditingFloor -> ((EditingFloor, Seed), Cmd Msg)
+updateFloorByFloorPropertyEvent apiConfig event seed efloor =
     case event of
       FloorProperty.None ->
         (efloor, seed) ! []
@@ -1457,7 +1457,7 @@ updateFloorByFloorPropertyEvent apiRoot event seed efloor =
         let
           (newFloor, saveCmd) =
             EditingFloor.commit
-              (saveFloorCmd apiRoot)
+              (saveFloorCmd apiConfig)
               (Floor.changeName name)
               efloor
         in
@@ -1467,7 +1467,7 @@ updateFloorByFloorPropertyEvent apiRoot event seed efloor =
         let
           (newFloor, saveCmd) =
             EditingFloor.commit
-              (saveFloorCmd apiRoot)
+              (saveFloorCmd apiConfig)
               (Floor.changeOrd ord)
               efloor
         in
@@ -1477,7 +1477,7 @@ updateFloorByFloorPropertyEvent apiRoot event seed efloor =
         let
           (newFloor, saveCmd) =
             EditingFloor.commit
-              (saveFloorCmd apiRoot)
+              (saveFloorCmd apiConfig)
               (Floor.changeRealSize (w, h))
               efloor
         in
@@ -1490,7 +1490,7 @@ updateFloorByFloorPropertyEvent apiRoot event seed efloor =
 
           (newFloor, saveCmd) =
             EditingFloor.commit
-              (saveFloorCmd apiRoot)
+              (saveFloorCmd apiConfig)
               (Floor.setLocalFile id file dataURL)
               efloor
         in
@@ -1499,7 +1499,7 @@ updateFloorByFloorPropertyEvent apiRoot event seed efloor =
       FloorProperty.OnPreparePublish ->
         let
           cmd =
-            performAPI GotDiffSource (API.getDiffSource apiRoot (EditingFloor.present efloor).id)
+            performAPI GotDiffSource (API.getDiffSource apiConfig (EditingFloor.present efloor).id)
         in
           (efloor, seed) ! [ cmd ]
 
@@ -1511,28 +1511,28 @@ updateFloorByFloorPropertyEvent apiRoot event seed efloor =
           (efloor, seed) ! [ cmd ]
 
 
-regesterPersonOfObject : String -> Object -> Cmd Msg
-regesterPersonOfObject apiRoot e =
+regesterPersonOfObject : API.Config -> Object -> Cmd Msg
+regesterPersonOfObject apiConfig e =
   case Object.relatedPerson e of
     Just personId ->
-      regesterPerson apiRoot personId
+      regesterPerson apiConfig personId
     Nothing ->
       Cmd.none
 
 
-regesterPerson : String -> String -> Cmd Msg
-regesterPerson apiRoot personId =
+regesterPerson : API.Config -> String -> Cmd Msg
+regesterPerson apiConfig personId =
   performAPI identity <|
-    API.getPerson apiRoot personId `andThen` \person ->
+    API.getPerson apiConfig personId `andThen` \person ->
       Task.succeed (RegisterPeople [person])
 
 
-regesterPersonIfNotCached : String -> Dict String Person -> String -> Cmd Msg
-regesterPersonIfNotCached apiRoot personInfo personId =
+regesterPersonIfNotCached : API.Config -> Dict String Person -> String -> Cmd Msg
+regesterPersonIfNotCached apiConfig personInfo personId =
   if Dict.member personId personInfo then
     Cmd.none
   else
-    regesterPerson apiRoot personId
+    regesterPerson apiConfig personId
 
 
 updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
@@ -1563,7 +1563,7 @@ updateOnFinishNameInput continueEditing id name model =
     updatePersonCandidateCmd =
       case findObjectById allObjects id of
         Just object ->
-          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo model.apiRoot object
+          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo model.apiConfig object
 
         Nothing ->
           Cmd.none
@@ -1578,7 +1578,7 @@ updateOnFinishNameInput continueEditing id name model =
 
     (newFloor, saveCmd) =
       EditingFloor.commit
-        (saveFloorCmd model.apiRoot)
+        (saveFloorCmd model.apiConfig)
         (Floor.changeObjectName [id] name)
         model.floor
 
@@ -1593,8 +1593,8 @@ updateOnFinishNameInput continueEditing id name model =
     newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, saveCmd ]
 
 
-updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : String -> Object -> Cmd Msg
-updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo apiRoot object =
+updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg
+updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo apiConfig object =
   case Object.relatedPerson object of
     Just personId ->
       Cmd.none
@@ -1602,7 +1602,7 @@ updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo apiRoot obje
     Nothing ->
       let
         task =
-          API.personCandidate apiRoot (nameOf object) `andThen` \people ->
+          API.personCandidate apiConfig (nameOf object) `andThen` \people ->
           Task.succeed (RegisterPeople people) `andThen` \_ ->
           Task.succeed (UpdatePersonCandidate (idOf object) (List.map .id people))
       in
@@ -1625,47 +1625,48 @@ nextObjectToInput object allObjects =
       _ ->
         Nothing
 
+
 adjustPositionByFocus : Id -> Model -> Model
 adjustPositionByFocus focused model = model
 
 
-savePrototypesCmd : String -> List Prototype -> Cmd Msg
-savePrototypesCmd apiRoot prototypes =
+savePrototypesCmd : API.Config -> List Prototype -> Cmd Msg
+savePrototypesCmd apiConfig prototypes =
   performAPI
     (always (NoOp))
-    (API.savePrototypes apiRoot prototypes)
+    (API.savePrototypes apiConfig prototypes)
 
 
-saveFloorCmd : String -> Floor -> ObjectsChange -> Cmd Msg
-saveFloorCmd apiRoot floor change =
+saveFloorCmd : API.Config -> Floor -> ObjectsChange -> Cmd Msg
+saveFloorCmd apiConfig floor change =
   let
     firstTask =
       case floor.imageSource of
         Floor.LocalFile id file url ->
-          API.saveEditingImage apiRoot id file
+          API.saveEditingImage apiConfig id file
         _ ->
           Task.succeed ()
 
     secondTask =
-      API.saveEditingFloor apiRoot floor change
+      API.saveEditingFloor apiConfig floor change
   in
     performAPI
       (FloorSaved False)
       (firstTask `andThen` (always secondTask))
 
 
-publishFloorCmd : String -> Floor -> ObjectsChange -> Cmd Msg
-publishFloorCmd apiRoot floor change =
+publishFloorCmd : API.Config -> Floor -> ObjectsChange -> Cmd Msg
+publishFloorCmd apiConfig floor change =
   let
     firstTask =
       case floor.imageSource of
         Floor.LocalFile id file url ->
-          API.saveEditingImage apiRoot id file
+          API.saveEditingImage apiConfig id file
         _ ->
           Task.succeed ()
 
     secondTask =
-      API.publishEditingFloor apiRoot floor.id
+      API.publishEditingFloor apiConfig floor.id
   in
     performAPI
       (FloorSaved True)
@@ -1698,7 +1699,7 @@ updateByKeyEvent event model =
           IdGenerator.zipWithNewIds model.seed model.copiedObjects
 
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.paste copiedIdsWithNewIds base) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.paste copiedIdsWithNewIds base) model.floor
       in
         { model |
           floor = newFloor
@@ -1710,7 +1711,7 @@ updateByKeyEvent event model =
     (True, ShortCut.X) ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.delete model.selectedObjects) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.delete model.selectedObjects) model.floor
       in
         { model |
           floor = newFloor
@@ -1739,7 +1740,7 @@ updateByKeyEvent event model =
     (_, ShortCut.Del) ->
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.delete model.selectedObjects) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.delete model.selectedObjects) model.floor
       in
         { model |
           floor = newFloor
@@ -1760,7 +1761,7 @@ updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
     if shift /= (0, 0) then
       let
         (newFloor, saveCmd) =
-          EditingFloor.commit (saveFloorCmd model.apiRoot) (Floor.move model.selectedObjects model.gridSize shift) model.floor
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.move model.selectedObjects model.gridSize shift) model.floor
       in
         { model |
           floor = newFloor
@@ -1806,18 +1807,18 @@ shiftSelectionToward direction model =
       _ -> model
 
 
-loadAuthCmd : String -> Cmd Msg
-loadAuthCmd apiRoot =
-    performAPI AuthLoaded (API.getAuth apiRoot)
+loadAuthCmd : API.Config -> Cmd Msg
+loadAuthCmd apiConfig =
+    performAPI AuthLoaded (API.getAuth apiConfig)
 
 
-loadFloorsInfoCmd : String -> Bool -> Cmd Msg
-loadFloorsInfoCmd apiRoot withPrivate =
-    performAPI FloorsInfoLoaded (API.getFloorsInfo apiRoot withPrivate)
+loadFloorsInfoCmd : API.Config -> Bool -> Cmd Msg
+loadFloorsInfoCmd apiConfig withPrivate =
+    performAPI FloorsInfoLoaded (API.getFloorsInfo apiConfig withPrivate)
 
 
-loadFloorCmd : String -> Bool -> String -> Cmd Msg
-loadFloorCmd apiRoot forEdit floorId =
+loadFloorCmd : API.Config -> Bool -> String -> Cmd Msg
+loadFloorCmd apiConfig forEdit floorId =
   let
     recover404 e =
       case e of
@@ -1828,9 +1829,9 @@ loadFloorCmd apiRoot forEdit floorId =
 
     task =
       if forEdit then
-        API.getEditingFloor apiRoot floorId
+        API.getEditingFloor apiConfig floorId
       else
-        API.getFloor apiRoot floorId
+        API.getFloor apiConfig floorId
   in
     Task.perform recover404 FloorLoaded task
 
