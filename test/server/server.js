@@ -2,7 +2,6 @@ var url = require('url');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-// var session = require('express-session');
 var fs = require('fs');
 var ejs = require('ejs');
 var filestorage = require('./lib/filestorage.js');
@@ -68,7 +67,7 @@ function getSelf(conn, token) {
     }
   }
   return new Promise((resolve, reject) => {
-    jwt.decode(config.jwtSecret, token, (e, user) => {
+    jwt.decode(config.secret, token, (e, user) => {
       if (e) {
         reject(e);
       } else {
@@ -94,11 +93,13 @@ app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
       return Promise.reject(401);
     }
     return new Promise((resolve, reject) => {
-      jwt.encode(config.jwtSecret, user, (e, token) => {
+      jwt.encode(config.secret, user, (e, token) => {
         if (e) {
           reject(e);//500
         } else {
-          resolve(token);
+          resolve({
+            accessToken: token
+          });
         }
       });
     });

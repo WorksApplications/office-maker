@@ -23,8 +23,8 @@ type alias Floor = Floor.Model
 
 decodeAuthToken : Decoder String
 decodeAuthToken =
-  Decode.string
-  
+  Decode.object1 identity ("accessToken" := Decode.string)
+
 
 decodeFloorVersion : Decoder Int
 decodeFloorVersion =

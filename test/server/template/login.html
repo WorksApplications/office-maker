@@ -9,6 +9,7 @@
 	</head>
 	<body>
 		<script>
+			localStorage.removeItem('authToken');
 			var main = Elm.Login.fullscreen({
 				accountServiceRoot: '<%= accountServiceRoot %>',
 				title: '<%= title %>'

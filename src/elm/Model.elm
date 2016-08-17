@@ -116,12 +116,13 @@ type CandidateRequestState
   | NotWaiting
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions : (({} -> Msg) -> Sub Msg) -> Model -> Sub Msg
+subscriptions tokenRemoved model =
   Sub.batch
     [ Window.resizes (\e -> WindowSize (e.width, e.height))
     , Keyboard.downs (KeyCodeMsg True)
     , Keyboard.ups (KeyCodeMsg False)
+    , tokenRemoved (always TokenRemoved)
     ]
 
 
@@ -244,6 +245,7 @@ type Msg = NoOp
   | CopyFloor String
   | NewFloorCreated String
   | EmulateClick Id Bool Time
+  | TokenRemoved
   | Error GlobalError
 
 debug : Bool
@@ -330,8 +332,8 @@ urlUpdate result model =
         model ! [ Navigation.modifyUrl (URL.stringify validURL) ]
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update action model =
+update : ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
+update removeToken action model =
   case debugMsg action of
     NoOp ->
       model ! []
@@ -922,17 +924,13 @@ update action model =
     HeaderMsg action ->
       let
         (cmd, event) =
-          Header.update model.apiConfig action
+          Header.update action
 
         (newModel, cmd2) =
           case event of
-            Header.LogoutDone ->
-              { model |
-                user = User.guest
-              , tab = SearchTab
-              , editMode = Viewing False
-              } ! []
-
+            Header.OnLogout ->
+              model ! [ (removeToken {}) ]
+              
             Header.OnToggleEditing ->
               let
                 nextIsEditing =
@@ -1156,6 +1154,13 @@ update action model =
             else
               []
             )
+
+    TokenRemoved ->
+      { model |
+        user = User.guest
+      , tab = SearchTab
+      , editMode = Viewing False
+      } ! []
 
     Error e ->
       let

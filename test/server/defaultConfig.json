@@ -7,5 +7,5 @@
   "title": "Office Map",
   "profileServiceRoot": "",
   "accountServiceRoot": "/api",
-  "jwtSecret": ""
+  "secret": "secret"
 }

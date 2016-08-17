@@ -20,6 +20,10 @@
 				title: '<%= title %>',
 				authToken: localStorage.getItem('authToken') || ''
 			});
+			main.ports.removeToken.subscribe(function(token) {
+				localStorage.removeItem('authToken', token);
+			  main.ports.tokenRemoved.send();
+			});
 		</script>
 	</body>
 </html>

@@ -16,24 +16,23 @@ import View.Icons as Icons
 import InlineHover exposing (hover)
 
 
-type Msg =
-    Login
+type Msg
+  = Login
   | Logout
-  | LogoutSuccess
   | ToggleEditing
   | TogglePrintView Bool
   | NoOp
 
 
-type Event =
-    LogoutDone
-  | None
+type Event
+  = None
+  | OnLogout
   | OnToggleEditing
   | OnTogglePrintView Bool
 
 
-update : API.Config -> Msg -> (Cmd Msg, Event)
-update apiConfig action =
+update : Msg -> (Cmd Msg, Event)
+update action =
   case action of
     NoOp ->
       (Cmd.none, None)
@@ -48,10 +47,7 @@ update apiConfig action =
       (Task.perform (always NoOp) (always NoOp) API.goToLogin, None)
 
     Logout ->
-      (Task.perform (always LogoutSuccess) (always LogoutSuccess) (API.logout apiConfig), None)
-
-    LogoutSuccess ->
-      (Cmd.none, LogoutDone)
+      (Cmd.none, OnLogout)
 
 
 view : String -> Maybe (User, Bool) -> Html Msg

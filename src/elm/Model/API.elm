@@ -9,7 +9,6 @@ module Model.API exposing (
     , saveEditingImage
     , gotoTop
     , login
-    , logout
     , goToLogin
     , goToLogout
     , personCandidate
@@ -223,18 +222,19 @@ getPersonByUser config id =
 
 login : String -> String -> String -> String -> Task Error String
 login accountServiceRoot id tenantId pass =
-  postJsonTextResponse
+  postJson
+    decodeAuthToken
     (accountServiceRoot ++ "/v1/authentication")
     []
     (Http.string <| serializeLogin id tenantId pass)
 
 
-logout : Config -> Task Error ()
-logout config =
-  deleteJsonNoResponse
-    (config.accountServiceRoot ++ "/v1/authentication")
-    (authorization config.token)
-    (Http.string "")
+-- logout : Config -> Task Error ()
+-- logout config =
+--   deleteJsonNoResponse
+--     (config.accountServiceRoot ++ "/v1/authentication")
+--     (authorization config.token)
+--     (Http.string "")
 
 
 goToLogin : Task a ()

@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Model
 import Model.URL as URL
@@ -18,6 +18,11 @@ type alias Flags =
   }
 
 
+port removeToken : {} -> Cmd msg
+
+port tokenRemoved : ({} -> msg) -> Sub msg
+
+
 main : Program Flags
 main =
   -- TimeTravel.programWithFlags urlParser
@@ -33,9 +38,9 @@ main =
           flags.visitDate
           result
     , view = View.view
-    , update =  Model.update
+    , update = Model.update removeToken
     , urlUpdate =  Model.urlUpdate
-    , subscriptions = Model.subscriptions
+    , subscriptions = Model.subscriptions tokenRemoved
     }
 
 
