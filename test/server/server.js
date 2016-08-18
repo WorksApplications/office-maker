@@ -252,11 +252,34 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
   });
 }));
 
+// admin only
+app.get('/api/v1/floors/:id/:version', inTransaction((conn, req, res) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
+    if(!user || user.role !== 'admin') {
+      return Promise.reject(401);
+    }
+    var tenantId = user ? user.tenantId : '';
+    var id = req.params.id;
+    var version = req.params.version;
+    console.log('get: ' + id + '/' + version);
+    return db.getFloorOfVersionWithObjects(conn, tenantId, id, version).then((floor) => {
+      if(!floor) {
+        return Promise.reject(404);
+      }
+      console.log('gotFloor: ' + id + '/' + version + ' ' + floor.objects.length);
+      return Promise.resolve(floor);
+    })
+  });
+}));
+
 app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   return getSelf(conn, getAuthToken(req)).then((user) => {
-    if(!user && options.all) {
-      return Promise.reject(404);//401?
+    if(!user) {
+      return Promise.reject(404);
+    }
+    if(user.role !== 'admin' && options.all) {
+      return Promise.reject(401);
     }
     var tenantId = user ? user.tenantId : '';
     var id = req.params.id;

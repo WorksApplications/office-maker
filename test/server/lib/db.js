@@ -10,22 +10,22 @@ var profileService = require('./profile-service.js');
 
 
 function getUser(conn, id) {
-  return rdb.exec(conn, sql.select('users', sql.where('id', id))).then((users) => {
-    if(users[0]) {
-      users[0].pass = '';
-      users[0].tenantId = '';
+  return rdb.one(conn, sql.select('users', sql.where('id', id))).then((user) => {
+    if(user) {
+      user.pass = '';
+      user.tenantId = '';
     }
-    return Promise.resolve(users[0]);
+    return Promise.resolve(user);
   });
 }
 
 function getUserWithPass(conn, id, pass) {
-  return rdb.exec(conn, sql.select('users', sql.whereList([['id', id], ['pass', pass]]))).then((users) => {
-    if(users[0]) {
-      users[0].pass = '';
-      users[0].tenantId = '';
+  return rdb.one(conn, sql.select('users', sql.whereList([['id', id], ['pass', pass]]))).then((user) => {
+    if(user) {
+      user.pass = '';
+      user.tenantId = '';
     }
-    return Promise.resolve(users[0]);
+    return Promise.resolve(user);
   });
 }
 
@@ -37,9 +37,7 @@ function saveUser(conn, user) {
 }
 
 function getPerson(conn, id) {
-  return rdb.exec(conn, sql.select('people', sql.where('id', id))).then((people) => {
-    return Promise.resolve(people[0]);
-  });
+  return rdb.one(conn, sql.select('people', sql.where('id', id)));
 }
 
 function savePerson(conn, person) {
@@ -107,6 +105,23 @@ function getFloorWithObjects(conn, tenantId, withPrivate, id) {
       return Promise.resolve(floor);
     });
   });
+}
+
+function getFloorOfVersionWithObjects(conn, tenantId, id, version) {
+  return getFloorOfVersion(conn, tenantId, id, version).then((floor) => {
+    if(!floor) {
+      return Promise.resolve(null);
+    }
+    return getObjects(conn, floor.id, floor.version).then((objects) => {
+      floor.objects = objects;
+      return Promise.resolve(floor);
+    });
+  });
+}
+
+function getFloorOfVersion(conn, tenantId, id, version) {
+  var q = sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId], ['version', version]]));
+  return rdb.one(conn, q);
 }
 
 function getFloor(conn, tenantId, withPrivate, id) {
@@ -373,6 +388,7 @@ module.exports = {
   getColors: getColors,
   saveColors: saveColors,
   getFloorWithObjects: getFloorWithObjects,
+  getFloorOfVersionWithObjects: getFloorOfVersionWithObjects,
   getFloorsInfoWithObjects: getFloorsInfoWithObjects,
   saveFloorWithObjects: saveFloorWithObjects,
   publishFloor: publishFloor,

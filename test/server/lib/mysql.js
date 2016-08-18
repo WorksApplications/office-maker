@@ -1,6 +1,6 @@
 var mysql = require('mysql');
 
-function exec(conn, sql, cb) {
+function exec(conn, sql) {
   return new Promise((resolve, reject) => {
     conn.query(sql, (e, rows, fields) => {
       if(e) {
@@ -18,6 +18,12 @@ function exec(conn, sql, cb) {
         resolve(rows);
       }
     });
+  });
+}
+
+function one(conn, sql) {
+  return exec(conn, sql).then((list) => {
+    return Promise.resolve(list[0]);
   });
 }
 
@@ -131,6 +137,7 @@ function createEnv(host, user, pass, dbname) {
 module.exports = {
   createEnv: createEnv,
   exec: exec,
+  one: one,
   batch: batch,
   forTransaction: forTransaction
 };

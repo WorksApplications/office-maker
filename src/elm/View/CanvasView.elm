@@ -111,7 +111,6 @@ view model =
   case Model.currentFloorForView model of
     Just floor ->
       let
-        _ = Debug.log "floorVersion" floor.version
         popup' =
           Maybe.withDefault (text "") <|
           model.selectedResult `Maybe.andThen` \id ->
@@ -124,7 +123,7 @@ view model =
                 Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
 
         inner =
-          if (EditingFloor.present model.floor).id == "" then
+          if floor.id == "" then
             []
           else
             [ canvasView model floor, popup']
@@ -146,7 +145,9 @@ view model =
           inner
 
     Nothing ->
-      text ""
+      div
+        [ style (S.canvasContainer (model.editMode == Viewing True))
+        ] []
 
 
 canvasView : Model -> Floor -> Html Msg
