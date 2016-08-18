@@ -219,7 +219,7 @@ type Msg = NoOp
   | ObjectNameInputMsg ObjectNameInput.Msg
   | ShowContextMenuOnObject Id
   | ShowContextMenuOnFloorInfo Id
-  | HideContextMenu
+  | GoToFloor String Bool
   | SelectIsland Id
   | WindowSize (Int, Int)
   | MouseWheel Float
@@ -276,8 +276,6 @@ urlUpdate result model =
       let
         floorId = newURL.floorId
 
-        --TODO what is changed?
-
         (newSearchBox, searchBoxCmd) =
           case (model.url.query /= newURL.query, newURL.query) of
             (True, Just query) ->
@@ -292,25 +290,11 @@ urlUpdate result model =
             _ ->
               (model.searchBox, Cmd.none)
 
-        forEdit = not (User.isGuest model.user)
-
-        loadFloorCmd' =
-
-          if String.length floorId > 0 then
-            loadFloorCmd model.apiConfig forEdit floorId
-          else
-            Cmd.none
-
         nextIsEditing =
           not (User.isGuest model.user) && newURL.editMode
 
         newEditMode =
           if nextIsEditing then Select else Viewing False
-
-        requestPrivateFloors =
-          case newEditMode of
-            Viewing _ -> False
-            _ -> not (User.isGuest model.user)
 
         _ = Debug.log ("node test/server/commands deleteFloor " ++ newURL.floorId) ""
       in
@@ -318,7 +302,6 @@ urlUpdate result model =
           url = newURL
         , editMode = newEditMode
         , tab =
-            -- TODO detect what is changed
             if nextIsEditing then
               case model.editMode of
                 Viewing _ -> EditTab
@@ -327,10 +310,8 @@ urlUpdate result model =
               SearchTab
         , searchBox = newSearchBox
         } !
-          [ loadFloorCmd'
-          , searchBoxCmd
-          , loadFloorsInfoCmd model.apiConfig requestPrivateFloors
-          ]
+          [ searchBoxCmd ]
+
     Err _ ->
       let
         validURL = URL.validate model.url
@@ -412,13 +393,19 @@ update removeToken action model =
           else
             model.error ! []
 
+        loadCmd =
+          if (not isPublish) && String.length newFloorId > 0 then
+            loadFloorCmd model.apiConfig True newFloorId
+          else
+            Cmd.none
+
         newFloor =
           EditingFloor.changeFloorAfterSave isPublish newVersion model.floor
       in
         { model |
           floor = newFloor
         , error = message
-        } ! [ cmd ]
+        } ! [ cmd, loadCmd ]
 
     MoveOnCanvas (clientX, clientY) ->
       let
@@ -781,10 +768,22 @@ update removeToken action model =
             NoContextMenu
       } ! []
 
-    HideContextMenu ->
+    GoToFloor floorId requestLastEdit ->
+      let
+        loadCmd =
+          if String.length floorId > 0 then
+            loadFloorCmd model.apiConfig requestLastEdit floorId
+          else
+            Cmd.none
+
+        modifyUrlCmd =
+          Navigation.modifyUrl <|
+            URL.stringify <|
+            URL.updateFloorId (Just floorId) model.url
+    in
       { model |
         contextMenu = NoContextMenu
-      } ! []
+      } ! [ loadCmd, modifyUrlCmd ]
 
     SelectIsland id ->
       let
@@ -1454,7 +1453,8 @@ updateOnFloorLoaded floor model =
 
     newModel =
       { model |
-        floor = EditingFloor.init floor
+        floorsInfo = FloorInfo.addNewFloor floor model.floorsInfo
+      , floor = EditingFloor.init floor
       , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
       }
 

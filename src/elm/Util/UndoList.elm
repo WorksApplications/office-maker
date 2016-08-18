@@ -39,7 +39,7 @@ redo model =
       , present = x
       , future = xs
       }
-      
+
     _ ->
       model
 

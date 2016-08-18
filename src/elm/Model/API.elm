@@ -5,6 +5,7 @@ module Model.API exposing (
     , publishEditingFloor
     , getEditingFloor
     , getFloor
+    , getFloorOfVersion
     , getFloorsInfo
     , saveEditingImage
     , gotoTop
@@ -82,6 +83,23 @@ getFloor config id =
   getFloorHelp config False id
 
 
+getFloorOfVersion : Config -> String -> Int -> Task Error Floor
+getFloorOfVersion config id version =
+  let
+    _ =
+      if id == "" then
+        Debug.crash "id is not defined"
+      else
+        ""
+
+    url =
+      Http.url
+        (config.apiRoot ++ "/v1/floors/" ++ id ++ "/" ++ toString version)
+        []
+  in
+    get decodeFloor url (authorization config.token)
+
+
 getFloorHelp : Config -> Bool -> String -> Task Error Floor
 getFloorHelp config withPrivate id =
   let
@@ -96,7 +114,7 @@ getFloorHelp config withPrivate id =
         (config.apiRoot ++ "/v1/floors/" ++ id)
         (if withPrivate then [("all", "true")] else [])
   in
-    getJsonWithoutCache decodeFloor url (authorization config.token)
+    getWithoutCache decodeFloor url (authorization config.token)
 
 
 getFloorMaybe : Config -> String -> Task Error (Maybe Floor)
@@ -116,7 +134,7 @@ getFloorsInfo config withPrivate =
         (config.apiRoot ++ "/v1/floors")
         (if withPrivate then [("all", "true")] else [])
   in
-    getJsonWithoutCache
+    getWithoutCache
       decodeFloorInfoList
       url
       (authorization config.token)
@@ -124,7 +142,7 @@ getFloorsInfo config withPrivate =
 
 getPrototypes : Config -> Task Error (List Prototype)
 getPrototypes config =
-  getJsonWithoutCache
+  getWithoutCache
     decodePrototypes
     (Http.url (config.apiRoot ++ "/v1/prototypes") [])
     (authorization config.token)
@@ -140,7 +158,7 @@ savePrototypes config prototypes =
 
 getColors : Config -> Task Error ColorPalette
 getColors config =
-  getJsonWithoutCache
+  getWithoutCache
     decodeColors
     (Http.url (config.apiRoot ++ "/v1/colors") [])
     (authorization config.token)
@@ -180,7 +198,7 @@ personCandidate config name =
   if String.isEmpty name then
     Task.succeed []
   else
-    getJsonWithoutCache
+    getWithoutCache
       decodePersons
       (config.apiRoot ++ "/v1/candidates/" ++ Http.uriEncode name)
       (authorization config.token)

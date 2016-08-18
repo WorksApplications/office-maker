@@ -73,7 +73,7 @@ floorInfoView model =
         FloorsInfoView.view
           ShowContextMenuOnFloorInfo
           MoveOnCanvas
-          HideContextMenu
+          GoToFloor
           CreateNewFloor
           (model.keys.ctrl)
           (User.isAdmin model.user)

@@ -3,6 +3,8 @@ module Model.FloorInfo exposing (..)
 import Model.Floor exposing (Floor)
 
 
+-- TODO List FloorInfo => Dict String FloorInfo
+
 type FloorInfo
   = Public Floor
   | PublicWithEdit Floor Floor
@@ -65,3 +67,52 @@ findFloor floorId version list =
             Nothing
     _ ->
       Nothing
+
+
+addNewFloor : Floor -> List FloorInfo -> List FloorInfo
+addNewFloor newFloor list =
+  let
+    ret =
+      addNewFloorHelp newFloor list
+  in
+    if List.length ret == List.length list then
+      ret
+    else
+      ( if newFloor.public then
+          Public newFloor
+        else
+          Private newFloor
+      ) :: ret
+
+
+addNewFloorHelp : Floor -> List FloorInfo -> List FloorInfo
+addNewFloorHelp newFloor list =
+  case list of
+    [] -> []
+
+    head :: tail ->
+      let
+        newInfo =
+          if idOf head == newFloor.id then
+            case head of
+              Public floor ->
+                if newFloor.public then
+                  Public newFloor
+                else
+                  PublicWithEdit floor newFloor
+
+              PublicWithEdit lastPublicFloor currentPrivateFloor ->
+                if newFloor.public then
+                  Public newFloor
+                else
+                  PublicWithEdit lastPublicFloor newFloor
+
+              Private floor ->
+                if newFloor.public then
+                  Public newFloor
+                else
+                  Private newFloor
+          else
+            head
+      in
+        newInfo :: addNewFloor newFloor tail

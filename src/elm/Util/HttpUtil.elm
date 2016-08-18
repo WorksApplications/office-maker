@@ -91,8 +91,8 @@ get decoder url headers =
     Http.fromJson decoder (Http.send defaultSettingsWithCredentials request)
 
 
-getJsonWithoutCache : Decoder value -> String -> List (String, String) -> Task Http.Error value
-getJsonWithoutCache decoder url headers =
+getWithoutCache : Decoder value -> String -> List (String, String) -> Task Http.Error value
+getWithoutCache decoder url headers =
   let
     headers' =
       [ ("Pragma", "no-cache")
