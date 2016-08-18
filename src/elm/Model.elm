@@ -930,7 +930,7 @@ update removeToken action model =
           case event of
             Header.OnLogout ->
               model ! [ (removeToken {}) ]
-              
+
             Header.OnToggleEditing ->
               let
                 nextIsEditing =
@@ -1965,5 +1965,13 @@ validateRect (left, top, right, bottom) =
       Nothing
 
 
+currentFloorForView : Model -> Maybe Floor
+currentFloorForView model =
+  case model.editMode of
+    Viewing _ ->
+      FloorInfo.findViewingFloor model.url.floorId model.floorsInfo
+
+    _ ->
+      Just (EditingFloor.present model.floor)
 
 --

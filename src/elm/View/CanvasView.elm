@@ -108,57 +108,57 @@ transitionDisabled model =
 
 view : Model -> Html Msg
 view model =
-  let
-    floor =
-      (EditingFloor.present model.floor)
+  case Model.currentFloorForView model of
+    Just floor ->
+      let
+        _ = Debug.log "floorVersion" floor.version
+        popup' =
+          Maybe.withDefault (text "") <|
+          model.selectedResult `Maybe.andThen` \id ->
+          findObjectById floor.objects id `Maybe.andThen` \e ->
+            case Object.relatedPerson e of
+              Just personId ->
+                Dict.get personId model.personInfo `Maybe.andThen` \person ->
+                Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
+              Nothing ->
+                Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
 
-    popup' =
-      Maybe.withDefault (text "") <|
-      model.selectedResult `Maybe.andThen` \id ->
-      findObjectById floor.objects id `Maybe.andThen` \e ->
-        case Object.relatedPerson e of
-          Just personId ->
-            Dict.get personId model.personInfo `Maybe.andThen` \person ->
-            Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
-          Nothing ->
-            Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
-
-    inner =
-      if (EditingFloor.present model.floor).id == "" then
-        []
-      else
-        [ canvasView model, popup']
-  in
-    div
-      [ style (S.canvasContainer (model.editMode == Viewing True) ++
-        ( if model.editMode == Stamp then
-            [] -- [("cursor", "none")]
-          else
+        inner =
+          if (EditingFloor.present model.floor).id == "" then
             []
-        ))
-      , onMouseMove' MoveOnCanvas
-      , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
-      , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
-      , onMouseEnter' EnterCanvas
-      , onMouseLeave' LeaveCanvas
-      , onMouseWheel MouseWheel
-      ]
-      inner
+          else
+            [ canvasView model floor, popup']
+      in
+        div
+          [ style (S.canvasContainer (model.editMode == Viewing True) ++
+            ( if model.editMode == Stamp then
+                [] -- [("cursor", "none")]
+              else
+                []
+            ))
+          , onMouseMove' MoveOnCanvas
+          , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
+          , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
+          , onMouseEnter' EnterCanvas
+          , onMouseLeave' LeaveCanvas
+          , onMouseWheel MouseWheel
+          ]
+          inner
+
+    Nothing ->
+      text ""
 
 
-canvasView : Model -> Html Msg
-canvasView model =
+canvasView : Model -> Floor -> Html Msg
+canvasView model floor =
   let
-    floor =
-      (EditingFloor.present model.floor)
-
     (isViewing, isPrintMode) =
       case model.editMode of
         Viewing print -> (True, print)
         _ -> (False, False)
 
     objects =
-      objectsView model
+      objectsView model floor
 
     selectorRect =
       case (model.editMode, model.selectorRect) of
@@ -196,7 +196,7 @@ canvasView model =
             , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
             )
         )
-        (findObjectById (EditingFloor.present model.floor).objects id)
+        (findObjectById floor.objects id)
 
     nameInput =
       App.map ObjectNameInputMsg <|
@@ -229,8 +229,8 @@ canvasView model =
       ( children1 ++ children2 )
 
 
-objectsView : Model -> List (String, Html Msg)
-objectsView model =
+objectsView : Model -> Floor -> List (String, Html Msg)
+objectsView model floor =
   case model.draggingContext of
     MoveObject _ from ->
       let
@@ -251,7 +251,7 @@ objectsView model =
                   (transitionDisabled model)
               )
             )
-            (List.filter isSelected ((EditingFloor.present model.floor).objects))
+            (List.filter isSelected floor.objects)
 
         adjustRect object (left, top, width, height) =
           if isSelected object then
@@ -282,7 +282,7 @@ objectsView model =
                   (transitionDisabled model)
               )
             )
-            ((EditingFloor.present model.floor).objects)
+            floor.objects
       in
         (ghostsView ++ normalView)
 
@@ -308,7 +308,7 @@ objectsView model =
                   (transitionDisabled model)
               )
             )
-            (List.filter isResizing ((EditingFloor.present model.floor).objects))
+            (List.filter isResizing floor.objects)
 
 
         adjustRect object (left, top, width, height) =
@@ -333,7 +333,7 @@ objectsView model =
                   (transitionDisabled model)
               )
             )
-            ((EditingFloor.present model.floor).objects)
+            floor.objects
       in
         (normalView ++ ghostsView)
 
@@ -351,7 +351,7 @@ objectsView model =
               (transitionDisabled model)
           )
         )
-        ((EditingFloor.present model.floor).objects)
+        floor.objects
 
 
 canvasImage : Floor -> Html msg
