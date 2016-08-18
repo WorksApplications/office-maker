@@ -13,12 +13,10 @@ import Util.DateUtil exposing (..)
 import View.Styles as Styles
 
 import Model.Object as Object exposing (..)
-import Model.Floor as Floor
+import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.Person exposing (Person)
 
-
-type alias Floor = Floor.Model
 
 type alias Options msg =
   { onClose : msg

@@ -17,7 +17,7 @@ import View.ProfilePopup as ProfilePopup
 import Util.HtmlUtil exposing (..)
 
 import Model exposing (..)
-import Model.Floor as Floor
+import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale
 import Model.ObjectsOperation as ObjectsOperation exposing (..)

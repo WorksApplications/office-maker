@@ -26,7 +26,7 @@ import Model.Scale as Scale
 import Model.API as API
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
-import Model.Floor as Floor exposing (Model, setObjects, setLocalFile, objects, addObjects)
+import Model.Floor as Floor exposing (Floor, setObjects, setLocalFile, objects, addObjects)
 import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
@@ -41,9 +41,9 @@ import SearchBox
 import Header exposing (..)
 import ObjectNameInput
 
-type alias Floor = Floor.Model
 
 type alias Commit = Floor.Msg
+
 
 type alias Model =
   { apiConfig : API.Config
@@ -249,8 +249,10 @@ type Msg = NoOp
   | TokenRemoved
   | Error GlobalError
 
+
 debug : Bool
 debug = False --|| True
+
 
 debugMsg : Msg -> Msg
 debugMsg action =
@@ -261,9 +263,11 @@ debugMsg action =
   else
     action
 
+
 performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
 performAPI tagger task =
   Task.perform (Error << APIError) tagger task
+
 
 urlUpdate : Result String URL.Model -> Model -> (Model, Cmd Msg)
 urlUpdate result model =
@@ -291,6 +295,7 @@ urlUpdate result model =
         forEdit = not (User.isGuest model.user)
 
         loadFloorCmd' =
+
           if String.length floorId > 0 then
             loadFloorCmd model.apiConfig forEdit floorId
           else

@@ -29,7 +29,7 @@ import Task exposing (Task)
 import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
-import Model.Floor as Floor
+import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
@@ -41,9 +41,9 @@ import Model.Serialization exposing (..)
 import Model.SearchResult exposing (SearchResult)
 import Model.ColorPalette exposing (ColorPalette)
 
-type alias Floor = Floor.Model
 
 type alias Error = Http.Error
+
 
 type alias Config =
   { apiRoot : String

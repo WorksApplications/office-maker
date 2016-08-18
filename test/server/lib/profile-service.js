@@ -23,11 +23,11 @@ function fixPerson(person) {
     id: profile.id,
     tenantId: profile.tenantId,
     name: profile.name,
-    empNo: profile.profileId,
+    empNo: profile.profileId,//TODO this name may be change
     org: profile.organization,
     tel: profile.phones[0],
     mail: profile.emails[0],
-    image: 'images/users/default.png'//TODO
+    image: profile.picture
   };
 }
 

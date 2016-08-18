@@ -7,10 +7,9 @@ import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 import Util.File exposing (..)
 
-
 type alias Id = String
 
-type alias Model =
+type alias Floor =
   { id : Id
   , version : Int
   , name : String
@@ -31,7 +30,7 @@ type ImageSource
   | None
 
 
-init : Id -> Model
+init : Id -> Floor
 init id =
   { id = id
   , version = 0
@@ -47,7 +46,7 @@ init id =
   }
 
 
-initWithOrder : Id -> Int -> Model
+initWithOrder : Id -> Int -> Floor
 initWithOrder id ord =
   let
     floor = init id
@@ -57,7 +56,7 @@ initWithOrder id ord =
     }
 
 
-copy : Id -> Model -> Model
+copy : Id -> Floor -> Floor
 copy id floor =
   { floor |
     id = id
@@ -171,8 +170,8 @@ unsetPerson : String -> Msg
 unsetPerson = UnsetPerson
 
 
-update : Msg -> Model -> Model
-update msg model =
+update : Msg -> Floor -> Floor
+update msg floor =
   case msg of
     CreateDesk candidateWithNewIds ->
       let
@@ -181,7 +180,7 @@ update msg model =
       in
         addObjects
           (List.map create candidateWithNewIds)
-          model
+          floor
 
     CreateLabel candidateWithNewIds ->
       let
@@ -190,56 +189,56 @@ update msg model =
       in
         addObjects
           (List.map create candidateWithNewIds)
-          model
+          floor
 
     Move ids gridSize (dx, dy) ->
       setObjects
-        (moveObjects gridSize (dx, dy) ids (objects model))
-        model
+        (moveObjects gridSize (dx, dy) ids (objects floor))
+        floor
 
     Paste copiedWithNewIds (baseX, baseY) ->
       setObjects
-        (model.objects ++ (pasteObjects (baseX, baseY) copiedWithNewIds (objects model)))
-        model
+        (floor.objects ++ (pasteObjects (baseX, baseY) copiedWithNewIds (objects floor)))
+        floor
 
     Delete ids ->
       setObjects
-        (List.filter (\object -> not (List.member (idOf object) ids)) (objects model))
-        model
+        (List.filter (\object -> not (List.member (idOf object) ids)) (objects floor))
+        floor
 
     RotateObject id ->
-      setObjects (partiallyChange Object.rotate [id] (objects model)) model
+      setObjects (partiallyChange Object.rotate [id] (objects floor)) floor
 
     ChangeId id ->
-      { model | id = id }
+      { floor | id = id }
 
     ChangeObjectBackgroundColor ids bgColor ->
       let
         newObjects =
-          partiallyChange (changeBackgroundColor bgColor) ids (objects model)
+          partiallyChange (changeBackgroundColor bgColor) ids (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     ChangeObjectColor ids color ->
       let
         newObjects =
-          partiallyChange (changeColor color) ids (objects model)
+          partiallyChange (changeColor color) ids (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     ChangeObjectShape ids shape ->
       let
         newObjects =
-          partiallyChange (changeShape shape) ids (objects model)
+          partiallyChange (changeShape shape) ids (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     ChangeObjectName ids name ->
       let
         newObjects =
-          partiallyChange (Object.changeName name) ids (objects model)
+          partiallyChange (Object.changeName name) ids (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     ToFirstNameOnly ids ->
       let
@@ -249,35 +248,35 @@ update msg model =
             x :: _ -> x
 
         newObjects =
-          partiallyChange (\e -> (flip Object.changeName) e <| change <| nameOf e) ids (objects model)
+          partiallyChange (\e -> (flip Object.changeName) e <| change <| nameOf e) ids (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     ResizeObject id size ->
       let
         newObjects =
-          partiallyChange (changeSize size) [id] (objects model)
+          partiallyChange (changeSize size) [id] (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     ChangeFontSize ids fontSize ->
       let
         newObjects =
-          partiallyChange (Object.changeFontSize fontSize) ids (objects model)
+          partiallyChange (Object.changeFontSize fontSize) ids (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     ChangeName name ->
-      { model | name = name }
+      { floor | name = name }
 
     ChangeOrd ord ->
-      { model | ord = ord }
+      { floor | ord = ord }
 
     SetLocalFile id file dataURL ->
-      setLocalFile' id file dataURL model
+      setLocalFile' id file dataURL floor
 
     ChangeRealSize (width, height) ->
-        { model |
+        { floor |
           realSize = Just (width, height)
         -- , useReal = True
         }
@@ -285,16 +284,16 @@ update msg model =
     SetPerson objectId personId ->
       let
         newObjects =
-          partiallyChange (Object.setPerson (Just personId)) [objectId] (objects model)
+          partiallyChange (Object.setPerson (Just personId)) [objectId] (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
     UnsetPerson objectId ->
       let
         newObjects =
-          partiallyChange (Object.setPerson Nothing) [objectId] (objects model)
+          partiallyChange (Object.setPerson Nothing) [objectId] (objects floor)
       in
-        setObjects newObjects model
+        setObjects newObjects floor
 
 {- 10cm -> 8px -}
 realToPixel : Int -> Int
@@ -307,66 +306,66 @@ pixelToReal pixel =
   Basics.floor (toFloat pixel / 80)
 
 
-size : Model -> (Int, Int)
-size model =
-  case model.realSize of
+size : Floor -> (Int, Int)
+size floor =
+  case floor.realSize of
     Just (w, h) -> (realToPixel w, realToPixel h)
-    Nothing -> (model.width, model.height)
+    Nothing -> (floor.width, floor.height)
 
 
-name : Model -> String
-name model = model.name
+name : Floor -> String
+name floor = floor.name
 
 
-width : Model -> Int
-width model = size model |> fst
+width : Floor -> Int
+width floor = size floor |> fst
 
 
-height : Model -> Int
-height model = size model |> snd
+height : Floor -> Int
+height floor = size floor |> snd
 
 
 -- TODO confusing...
-realSize : Model -> (Int, Int)
-realSize model =
-  case model.realSize of
+realSize : Floor -> (Int, Int)
+realSize floor =
+  case floor.realSize of
     Just (w, h) -> (w, h)
-    Nothing -> (pixelToReal model.width, pixelToReal model.height)
+    Nothing -> (pixelToReal floor.width, pixelToReal floor.height)
 
 
-objects : Model -> List Object
-objects model =
-  model.objects
+objects : Floor -> List Object
+objects floor =
+  floor.objects
 
 
-setObjects : List Object -> Model -> Model
-setObjects objects model =
-  { model |
+setObjects : List Object -> Floor -> Floor
+setObjects objects floor =
+  { floor |
     objects = objects
   }
 
 
-addObjects : List Object -> Model -> Model
-addObjects objects model =
-  setObjects (model.objects ++ objects) model
+addObjects : List Object -> Floor -> Floor
+addObjects objects floor =
+  setObjects (floor.objects ++ objects) floor
 
 
-setLocalFile' : String -> File -> String -> Model -> Model
-setLocalFile' id file dataURL model =
+setLocalFile' : String -> File -> String -> Floor -> Floor
+setLocalFile' id file dataURL floor =
   let
     (width, height) =
       getSizeOfImage dataURL
   in
-    { model |
+    { floor |
       width = width
     , height = height
     , imageSource = LocalFile id file dataURL
     }
 
 
-src : Model -> Maybe String
-src model =
-  case model.imageSource of
+src : Floor -> Maybe String
+src floor =
+  case floor.imageSource of
     LocalFile id list dataURL -> Just dataURL
     URL src -> Just ("/images/floors/" ++ src)
     None -> Nothing

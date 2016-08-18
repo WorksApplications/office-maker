@@ -25,6 +25,7 @@ import Util.HtmlUtil exposing (..)
 import Util.ListUtil exposing (..)
 
 import Model exposing (..)
+import Model.Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale

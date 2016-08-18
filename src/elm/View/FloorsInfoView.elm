@@ -7,15 +7,12 @@ import Html.Events exposing (..)
 import View.Styles as Styles
 
 import Model.URL as URL
-import Model.Floor
+import Model.Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 
 import Util.HtmlUtil exposing (..)
 
 import Json.Decode as Decode
-
-
-type alias Floor = Model.Floor.Model
 
 
 linkBox : Maybe msg -> List (String, String) -> List (String, String) -> String -> List (Html msg) -> Html msg

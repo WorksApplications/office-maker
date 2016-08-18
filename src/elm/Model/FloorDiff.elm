@@ -4,10 +4,8 @@ import Maybe
 import Dict exposing (Dict)
 
 import Model.Object as Object exposing (..)
-import Model.Floor as Floor
+import Model.Floor as Floor exposing (Floor)
 
-
-type alias Floor = Floor.Model
 
 type alias Options msg =
   { onClose : msg
@@ -15,14 +13,17 @@ type alias Options msg =
   , noOp : msg
   }
 
+
 type alias ObjectModification =
   { new : Object, old : Object, changes : List String }
+
 
 type alias ObjectsChange =
   { added : List Object
   , modified : List ObjectModification
   , deleted : List Object
   }
+
 
 type alias PropChanges =
   List (String, String, String)

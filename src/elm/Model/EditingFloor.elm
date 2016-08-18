@@ -1,11 +1,9 @@
 module Model.EditingFloor exposing (..)
 
-import Model.Floor as Floor exposing (ImageSource(..))
+import Model.Floor as Floor exposing (Floor, ImageSource(..))
 import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 
 import Util.UndoList as UndoList exposing (UndoList)
-
-type alias Floor = Floor.Model
 
 
 type alias EditingFloor =

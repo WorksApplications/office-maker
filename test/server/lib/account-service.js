@@ -32,19 +32,6 @@ function addUser(root, token, user) {
   return post(token, root + '/v1/users', user);
 }
 
-function whoami(root, token) {
-  return get(token, root + '/v1/authentication').then((user) => {
-    var fixedUser = user;
-    return Promise.resolve(fixedUser);
-  }).catch((e) => {
-    if(e === 404) {
-      return Promise.resolve(null);
-    }
-    return Promise.reject(e);
-  });
-}
-
 module.exports = {
-  addUser: addUser,
-  whoami: whoami
+  addUser: addUser
 };

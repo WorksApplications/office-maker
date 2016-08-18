@@ -14,9 +14,8 @@ import Util.DateUtil exposing (..)
 import View.Styles as Styles
 
 import Model.User as User exposing (User)
-import Model.Floor
+import Model.Floor exposing (Floor)
 
-type alias Floor = Model.Floor.Model
 
 type Msg
   = NoOp
@@ -28,6 +27,7 @@ type Msg
   | GotDataURL File String
   | PreparePublish
   | FileError File.Error
+
 
 type Event
   = OnNameChange String
@@ -57,7 +57,8 @@ init name realWidth realHeight ord =
 
 
 validName : String -> Bool
-validName s = True -- TODO
+validName s =
+  String.length s > 0
 
 
 update : Msg -> Model -> (Model, Cmd Msg, Event)
@@ -68,7 +69,9 @@ update message model =
 
     InputFloorName name ->
       let
-        newModel = { model | nameInput = name }
+        newModel =
+          { model | nameInput = name }
+
         event =
           if validName name then OnNameChange name else None
       in
