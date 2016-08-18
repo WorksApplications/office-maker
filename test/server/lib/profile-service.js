@@ -51,6 +51,10 @@ function getPersonByUserId(token, userId) {
   });
 }
 
+function addPerson(root, token, person) {
+  return post(token, root + '/v1/profiles', person);
+}
+
 function search(root, token, query) {
   return get(token, root + '/v1/profiles?q=' + query);
 }
@@ -58,5 +62,6 @@ function search(root, token, query) {
 module.exports = {
   getPerson: getPerson,
   getPersonByUserId: getPersonByUserId,
+  addPerson: addPerson,
   search: search
 };

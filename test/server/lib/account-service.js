@@ -29,15 +29,7 @@ function post(token, url, data) {
 }
 
 function addUser(root, token, user) {
-  return post(token, root + '/v1/users', user).then((user) => {
-    var fixedUser = user;
-    return Promise.resolve(fixedUser);
-  }).catch((e) => {
-    if(e === 404) {
-      return Promise.resolve(null);
-    }
-    return Promise.reject(e);
-  });
+  return post(token, root + '/v1/users', user);
 }
 
 function whoami(root, token) {

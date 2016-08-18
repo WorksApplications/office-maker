@@ -32,10 +32,6 @@ var publicDir = __dirname + '/public';
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-function hash(str) {
-  return str;//TODO
-}
-
 function inTransaction(f) {
   return function(req, res) {
     rdbEnv.forConnectionAndTransaction((conn) => {
@@ -105,11 +101,6 @@ app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
     });
   });
 }));
-
-/* For on-premiss mode only */
-app.delete('/api/v1/authentication', (req, res) => {
-  res.send({});
-});
 
 app.use(express.static(publicDir));
 

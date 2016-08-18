@@ -229,14 +229,6 @@ login accountServiceRoot id tenantId pass =
     (Http.string <| serializeLogin id tenantId pass)
 
 
--- logout : Config -> Task Error ()
--- logout config =
---   deleteJsonNoResponse
---     (config.accountServiceRoot ++ "/v1/authentication")
---     (authorization config.token)
---     (Http.string "")
-
-
 goToLogin : Task a ()
 goToLogin =
   HttpUtil.goTo "/login"
