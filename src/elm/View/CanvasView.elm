@@ -363,21 +363,24 @@ canvasImage floor =
 
 
 temporaryStampView : Scale.Model -> Bool -> StampCandidate -> (String, Html msg)
-temporaryStampView scale selected ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top)) =
-  ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight
-  , ObjectView.viewDesk
-      ObjectView.noEvents
-      False
-      (left, top, deskWidth, deskHeight)
-      color
-      name --name
-      Object.defaultFontSize
-      selected
-      False -- alpha
-      scale
-      True -- disableTransition
-      False -- personMatched
-  )
+temporaryStampView scale selected (prototype, (left, top)) =
+  let
+    (deskWidth, deskHeight) = prototype.size
+  in
+    ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight
+    , ObjectView.viewDesk
+        ObjectView.noEvents
+        False
+        (left, top, deskWidth, deskHeight)
+        prototype.backgroundColor
+        prototype.name --name
+        Object.defaultFontSize
+        selected
+        False -- alpha
+        scale
+        True -- disableTransition
+        False -- personMatched
+    )
 
 
 temporaryPenView : Model -> (Int, Int) -> Html msg

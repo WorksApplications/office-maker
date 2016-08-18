@@ -864,6 +864,7 @@ update removeToken action model =
       let
         object =
           findObjectById (EditingFloor.present model.floor).objects id
+
         model' =
           { model |
             contextMenu = NoContextMenu
@@ -873,9 +874,17 @@ update removeToken action model =
           Just e ->
             let
               (_, _, w, h) = rect e
+
               (newId, seed) = IdGenerator.new model.seed
+
               newPrototypes =
-                Prototypes.register (newId, backgroundColorOf e, nameOf e, (w, h)) model.prototypes
+                Prototypes.register
+                  { id = newId
+                  , backgroundColor = backgroundColorOf e
+                  , name = nameOf e
+                  , size = (w, h)
+                  }
+                  model.prototypes
             in
               { model' |
                 seed = seed
@@ -1310,7 +1319,12 @@ updateOnFinishStamp model =
 
     candidatesWithNewIds' =
       List.map
-        (\(((_, color, name, (w, h)), (x, y)), newId) -> (newId, (x, y, w, h), color, name))
+        (\((prototype, (x, y)), newId) ->
+          let
+            (width, height) = prototype.size
+          in
+            (newId, (x, y, width, height), prototype.backgroundColor, prototype.name)
+        )
         candidatesWithNewIds
 
     (newFloor, cmd) =
@@ -1889,11 +1903,12 @@ stampCandidates model =
       let
         prototype =
           selectedPrototype model.prototypes
-        (prototypeId, color, name, deskSize) =
-          prototype
+
         (offsetX, offsetY) = model.offset
+
         (x2, y2) =
           model.pos
+
         (x2', y2') =
           screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
       in
@@ -1906,11 +1921,12 @@ stampCandidates model =
               stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
           _ ->
             let
-              (deskWidth, deskHeight) = deskSize
+              (deskWidth, deskHeight) = prototype.size
+
               (left, top) =
                 fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
             in
-              [ ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
+              [ (prototype, (left, top))
               ]
     _ -> []
 

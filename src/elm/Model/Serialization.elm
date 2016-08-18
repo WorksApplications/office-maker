@@ -268,7 +268,9 @@ decodeFloorInfo = Decode.map (\(lastFloor, lastFloorWithEdit) ->
 decodePrototype : Decoder Prototype
 decodePrototype =
   decode
-    (\id backgroundColor _ name width height _ _ -> (id, backgroundColor, name, (width, height)))
+    (\id backgroundColor _ name width height _ _ ->
+      { id = id, name = name, backgroundColor = backgroundColor, size = (width, height) }
+    )
     |> required "id" Decode.string
     |> required "backgroundColor" Decode.string
     |> required "color" Decode.string
@@ -280,14 +282,17 @@ decodePrototype =
 
 
 encodePrototype : Prototype -> Value
-encodePrototype (id, color, name, (width, height)) =
-  object
-    [ ("id", string id)
-    , ("color", string color)
-    , ("name", string name)
-    , ("width", int width)
-    , ("height", int height)
-    ]
+encodePrototype { id, backgroundColor, name, size } =
+  let
+    (width, height) = size
+  in
+    object
+      [ ("id", string id)
+      , ("color", string backgroundColor)
+      , ("name", string name)
+      , ("width", int width)
+      , ("height", int height)
+      ]
 
 
 serializePrototypes : List Prototype -> String

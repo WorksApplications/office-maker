@@ -240,14 +240,6 @@ prototypePreviewView prototypes stampMode =
     width = 320 - (20 * 2) -- TODO
     height = 238 -- TODO
 
-    each index (prototype, selected) =
-      let
-        (_, _, _, (w, h)) = prototype
-        left = width // 2 - w // 2
-        top = height // 2 - h // 2
-      in
-        snd <| CanvasView.temporaryStampView Scale.init False (prototype, (left + index * width, top))
-
     selectedIndex =
       Maybe.withDefault 0 <|
       List.head <|
@@ -260,11 +252,21 @@ prototypePreviewView prototypes stampMode =
     inner =
       div
         [ style (S.prototypePreviewViewInner width selectedIndex) ]
-        (List.indexedMap each prototypes)
+        (List.indexedMap (prototypePreviewViewEach (width, height)) prototypes)
   in
     div
       [ style (S.prototypePreviewView stampMode) ]
       ( inner :: buttons )
+
+
+prototypePreviewViewEach : (Int, Int) -> Int -> (Prototype, Bool) -> Html Msg
+prototypePreviewViewEach (width, height) index (prototype, selected) =
+  let
+    (w, h) = prototype.size
+    left = width // 2 - w // 2
+    top = height // 2 - h // 2
+  in
+    snd <| CanvasView.temporaryStampView Scale.init False (prototype, (left + index * width, top))
 
 
 prototypePreviewViewButtons : Int -> List (Prototype, Bool) -> List (Html Msg)
@@ -280,7 +282,7 @@ prototypePreviewViewButtons selectedIndex prototypes =
         [ text label ]
     )
   ( (if selectedIndex > 0 then [True] else []) ++
-    (if selectedIndex < List.length prototypes - 1 then [False] else [])
+    (if selectedIndex < List.length prototypes - 1 then [ False ] else [])
   )
 
 

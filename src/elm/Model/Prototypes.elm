@@ -122,7 +122,7 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
 stampCandidatesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List StampCandidate
 stampCandidatesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
   let
-    (prototypeId, color, name, deskSize) = prototype
+    deskSize = prototype.size
     flip (w, h) = (h, w)
     horizontal = abs (x2 - x1) > abs (y2 - y1)
     (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
@@ -135,7 +135,8 @@ stampCandidatesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
         (deskWidth, deskHeight)
         (centerLeft, centerTop)
         (indicesX, indicesY)
+
+    prototype' =
+      { prototype | size = (deskWidth, deskHeight) }
   in
-    List.map (\(left, top) ->
-       ((prototypeId, color, name, (deskWidth, deskHeight)), (left, top))
-    ) all
+    List.map ((,) prototype') all

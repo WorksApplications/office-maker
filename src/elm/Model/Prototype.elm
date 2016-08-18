@@ -5,4 +5,8 @@ type alias Id =
 
 
 type alias Prototype =
-  (Id, String, String, (Int, Int)) -- id, color, name, size
+  { id : Id
+  , name : String
+  , backgroundColor : String
+  , size : (Int, Int)
+  }
