@@ -376,6 +376,7 @@ update removeToken action model =
       updateOnFloorLoaded floor model
 
     FloorSaved isPublish newVersion ->
+      -- TODO new floor to be obtained
       let
         newFloorId =
           (EditingFloor.present model.floor).id
@@ -393,6 +394,7 @@ update removeToken action model =
           else
             model.error ! []
 
+        -- TODO this is needless
         loadCmd =
           if (not isPublish) && String.length newFloorId > 0 then
             loadFloorCmd model.apiConfig True newFloorId
@@ -1835,16 +1837,19 @@ shiftSelectionToward direction model =
       _ -> model
 
 
+-- TODO consider chaining
 loadAuthCmd : API.Config -> Cmd Msg
 loadAuthCmd apiConfig =
     performAPI AuthLoaded (API.getAuth apiConfig)
 
 
+-- TODO consider chaining
 loadFloorsInfoCmd : API.Config -> Bool -> Cmd Msg
 loadFloorsInfoCmd apiConfig withPrivate =
     performAPI FloorsInfoLoaded (API.getFloorsInfo apiConfig withPrivate)
 
 
+-- TODO consider chaining
 loadFloorCmd : API.Config -> Bool -> String -> Cmd Msg
 loadFloorCmd apiConfig forEdit floorId =
   let
