@@ -28,7 +28,8 @@ import Model exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale
-import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
+import Model.Prototype exposing (Prototype)
+import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.User as User
 import Model.Person exposing (Person)
 import Model.SearchResult exposing (SearchResult)

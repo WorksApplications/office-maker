@@ -14,7 +14,7 @@ import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
 import Model.Object as Object exposing (..)
-import Model.Prototypes exposing (Prototype)
+import Model.Prototype exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
 import Model.ColorPalette as ColorPalette exposing (ColorPalette, ColorEntity)
 

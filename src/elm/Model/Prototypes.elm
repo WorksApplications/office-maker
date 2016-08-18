@@ -1,45 +1,48 @@
 module Model.Prototypes exposing (..)
 
-import Util.ListUtil exposing (..)
--- import Objects exposing (..)
+import Model.Prototype exposing (Prototype)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
-type alias PrototypeId =
-  String
+import Util.ListUtil exposing (..)
 
-type alias Prototype =
-  (PrototypeId, String, String, (Int, Int)) -- id, color, name, size
 
 type alias StampCandidate =
   (Prototype, (Int, Int))
 
-type alias Model =
+
+type alias Prototypes =
   { data : List Prototype
   , selected : Int
   }
 
+
 gridSize : Int
 gridSize = 8 --TODO
 
-init : List Prototype -> Model
+
+init : List Prototype -> Prototypes
 init data =
   { data = data
   , selected = 0 -- index
   }
 
+
 type Msg =
     SelectPrev
   | SelectNext
 
+
 prev : Msg
 prev = SelectPrev
+
 
 next : Msg
 next = SelectNext
 
-update : Msg -> Model -> Model
-update action model =
-  case action of
+
+update : Msg -> Prototypes -> Prototypes
+update msg model =
+  case msg of
     SelectPrev ->
       { model |
         selected = max 0 (model.selected - 1) -- fail safe
@@ -49,7 +52,8 @@ update action model =
         selected = min (List.length model.data - 1) (model.selected + 1) -- fail safe
       }
 
-register : Prototype -> Model -> Model
+
+register : Prototype -> Prototypes -> Prototypes
 register prototype model =
   let
     newPrototypes = model.data ++ [prototype]
@@ -59,9 +63,11 @@ register prototype model =
     , selected = List.length newPrototypes - 1
     }
 
-selectedPrototype : Model -> Prototype
+
+selectedPrototype : Prototypes -> Prototype
 selectedPrototype model =
   findPrototypeByIndex model.selected model.data
+
 
 findPrototypeByIndex : Int -> List Prototype -> Prototype
 findPrototypeByIndex index list =
@@ -74,7 +80,7 @@ findPrototypeByIndex index list =
         Nothing -> Debug.crash "no prototypes found"
 
 
-prototypes : Model -> List (Prototype, Bool)
+prototypes : Prototypes -> List (Prototype, Bool)
 prototypes model =
   List.indexedMap (\index prototype ->
       (prototype, model.selected == index)
@@ -111,6 +117,7 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
       List.map (\index -> centerTop + deskHeight * index) indicesY
   in
     List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
+
 
 stampCandidatesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List StampCandidate
 stampCandidatesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos

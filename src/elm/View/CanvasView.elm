@@ -21,7 +21,7 @@ import Model.Floor as Floor
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
-import Model.Prototypes as Prototypes exposing (Prototype, StampCandidate)
+import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.EditingFloor as EditingFloor
 
 import Json.Decode as Decode

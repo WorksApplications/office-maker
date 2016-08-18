@@ -24,6 +24,7 @@ import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Scale as Scale
 import Model.API as API
+import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Model, setObjects, setLocalFile, objects, addObjects)
 import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
@@ -67,7 +68,7 @@ type alias Model =
   , scale : Scale.Model
   , offset : (Int, Int)
   , scaling : Bool
-  , prototypes : Prototypes.Model
+  , prototypes : Prototypes
   , error : GlobalError
   , url : URL.Model
   , floorProperty : FloorProperty.Model
