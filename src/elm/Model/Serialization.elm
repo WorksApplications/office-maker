@@ -91,14 +91,16 @@ encodeObject e =
         , ("name", string name)
         , ("fontSize", float fontSize)
         , ("color", string color)
-        , ("shape", string (
-          case shape of
-            Object.Rectangle ->
-              "rectangle"
-            Object.Ellipse ->
-              "ellipse"
-          ))
+        , ("shape", string (encodeShape shape))
         ]
+
+encodeShape : Shape -> String
+encodeShape shape =
+  case shape of
+    Object.Rectangle ->
+      "rectangle"
+    Object.Ellipse ->
+      "ellipse"
 
 
 encodeObjectModification : ObjectModification -> Value
@@ -268,8 +270,15 @@ decodeFloorInfo = Decode.map (\(lastFloor, lastFloorWithEdit) ->
 decodePrototype : Decoder Prototype
 decodePrototype =
   decode
-    (\id backgroundColor _ name width height _ _ ->
-      { id = id, name = name, backgroundColor = backgroundColor, size = (width, height) }
+    (\id backgroundColor color name width height fontSize shape ->
+      { id = id
+      , name = name
+      , backgroundColor = backgroundColor
+      , color = color
+      , size = (width, height)
+      , fontSize = fontSize
+      , shape = if shape == "Ellipse" then Ellipse else Rectangle
+      }
     )
     |> required "id" Decode.string
     |> required "backgroundColor" Decode.string
@@ -282,16 +291,19 @@ decodePrototype =
 
 
 encodePrototype : Prototype -> Value
-encodePrototype { id, backgroundColor, name, size } =
+encodePrototype { id, color, backgroundColor, name, size, fontSize, shape } =
   let
     (width, height) = size
   in
     object
       [ ("id", string id)
-      , ("color", string backgroundColor)
+      , ("color", string color)
+      , ("backgroundColor", string backgroundColor)
       , ("name", string name)
       , ("width", int width)
       , ("height", int height)
+      , ("fontSize", float fontSize)
+      , ("shape", string (encodeShape shape))
       ]
 
 

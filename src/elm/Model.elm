@@ -880,9 +880,12 @@ update removeToken action model =
               newPrototypes =
                 Prototypes.register
                   { id = newId
+                  , color = colorOf e
                   , backgroundColor = backgroundColorOf e
                   , name = nameOf e
                   , size = (w, h)
+                  , fontSize = fontSizeOf e
+                  , shape = shapeOf e
                   }
                   model.prototypes
             in

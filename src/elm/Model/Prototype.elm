@@ -1,5 +1,7 @@
 module Model.Prototype exposing (..)
 
+import Model.Object exposing (Shape)
+
 type alias Id =
   String
 
@@ -7,6 +9,9 @@ type alias Id =
 type alias Prototype =
   { id : Id
   , name : String
+  , color : String
   , backgroundColor : String
   , size : (Int, Int)
+  , fontSize : Float
+  , shape : Shape
   }
