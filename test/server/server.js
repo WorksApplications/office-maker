@@ -131,7 +131,7 @@ app.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
+app.get('/api/1/people/:id', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var id = req.params.id;
   return getSelf(conn, token).then((user) => {
@@ -148,7 +148,7 @@ app.get('/api/v1/people/:id', inTransaction((conn, req, res) => {
   });
 }));
 
-app.get('/api/v1/self', inTransaction((conn, req, res) => {
+app.get('/api/1/self', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   if(!token) {
     return Promise.resolve({});
@@ -162,7 +162,7 @@ app.get('/api/v1/self', inTransaction((conn, req, res) => {
 }));
 
 // should be person?
-app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
+app.get('/api/1/users/:id', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var userId = req.params.id;
   return getSelf(conn, token).then((user) => {
@@ -189,7 +189,7 @@ app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
   });
 }));
 
-app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
+app.get('/api/1/prototypes', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
@@ -200,7 +200,7 @@ app.get('/api/v1/prototypes', inTransaction((conn, req, res) => {
   });
 }));
 
-app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
+app.put('/api/1/prototypes', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
@@ -215,7 +215,7 @@ app.put('/api/v1/prototypes', inTransaction((conn, req, res) => {
   })
 }));
 
-app.get('/api/v1/colors', inTransaction((conn, req, res) => {
+app.get('/api/1/colors', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
@@ -226,7 +226,7 @@ app.get('/api/v1/colors', inTransaction((conn, req, res) => {
   })
 }));
 
-app.put('/api/v1/colors', inTransaction((conn, req, res) => {
+app.put('/api/1/colors', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
@@ -241,7 +241,7 @@ app.put('/api/v1/colors', inTransaction((conn, req, res) => {
   });
 }));
 
-app.get('/api/v1/floors', inTransaction((conn, req, res) => {
+app.get('/api/1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user && options.all) {
@@ -256,7 +256,7 @@ app.get('/api/v1/floors', inTransaction((conn, req, res) => {
 }));
 
 // admin only
-app.get('/api/v1/floors/:id/:version', inTransaction((conn, req, res) => {
+app.get('/api/1/floors/:id/:version', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user || user.role !== 'admin') {
       return Promise.reject(401);
@@ -275,7 +275,7 @@ app.get('/api/v1/floors/:id/:version', inTransaction((conn, req, res) => {
   });
 }));
 
-app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
+app.get('/api/1/floors/:id', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
@@ -297,7 +297,7 @@ app.get('/api/v1/floors/:id', inTransaction((conn, req, res) => {
   });
 }));
 
-app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
+app.get('/api/1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
   if(paasMode) {
@@ -309,7 +309,7 @@ app.get('/api/v1/search/:query', inTransaction((conn, req, res) => {
   }
 }));
 
-app.get('/api/v1/candidates/:name', inTransaction((conn, req, res) => {
+app.get('/api/1/candidates/:name', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var name = req.params.name;
   if(paasMode) {
@@ -326,7 +326,7 @@ function isValidFloor(floor) {
   }
   return true;
 }
-app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
+app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
       return Promise.reject(401);
@@ -347,7 +347,7 @@ app.put('/api/v1/floors/:id', inTransaction((conn, req, res) => {
 }));
 
 // publish
-app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
+app.put('/api/1/floors/:id/public', inTransaction((conn, req, res) => {
   var token = getAuthToken(req)
   return getSelf(conn, token).then((user) => {
     if(!user || user.role !== 'admin') {
@@ -362,7 +362,7 @@ app.put('/api/v1/floors/:id/public', inTransaction((conn, req, res) => {
   });
 }));
 
-app.put('/api/v1/images/:id', inTransaction((conn, req, res) => {
+app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
   return new Promise((resolve, reject) => {
     getSelf(conn, getAuthToken(req)).then((user) => {
       if(!user || user.role !== 'admin') {

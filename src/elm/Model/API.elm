@@ -59,7 +59,7 @@ saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error Int
 saveEditingFloor config floor change =
   putJson
     decodeFloorVersion
-    (config.apiRoot ++ "/v1/floors/" ++ floor.id)
+    (config.apiRoot ++ "/1/floors/" ++ floor.id)
     (authorization config.token)
     (Http.string <| serializeFloor floor change)
 
@@ -68,7 +68,7 @@ publishEditingFloor : Config -> String -> Task Error Int
 publishEditingFloor config id =
   putJson
     decodeFloorVersion
-    (config.apiRoot ++ "/v1/floors/" ++ id ++ "/public")
+    (config.apiRoot ++ "/1/floors/" ++ id ++ "/public")
     (authorization config.token)
     (Http.string "")
 
@@ -94,7 +94,7 @@ getFloorOfVersion config id version =
 
     url =
       Http.url
-        (config.apiRoot ++ "/v1/floors/" ++ id ++ "/" ++ toString version)
+        (config.apiRoot ++ "/1/floors/" ++ id ++ "/" ++ toString version)
         []
   in
     get decodeFloor url (authorization config.token)
@@ -111,7 +111,7 @@ getFloorHelp config withPrivate id =
 
     url =
       Http.url
-        (config.apiRoot ++ "/v1/floors/" ++ id)
+        (config.apiRoot ++ "/1/floors/" ++ id)
         (if withPrivate then [("all", "true")] else [])
   in
     getWithoutCache decodeFloor url (authorization config.token)
@@ -131,7 +131,7 @@ getFloorsInfo config withPrivate =
   let
     url =
       Http.url
-        (config.apiRoot ++ "/v1/floors")
+        (config.apiRoot ++ "/1/floors")
         (if withPrivate then [("all", "true")] else [])
   in
     getWithoutCache
@@ -144,14 +144,14 @@ getPrototypes : Config -> Task Error (List Prototype)
 getPrototypes config =
   getWithoutCache
     decodePrototypes
-    (Http.url (config.apiRoot ++ "/v1/prototypes") [])
+    (Http.url (config.apiRoot ++ "/1/prototypes") [])
     (authorization config.token)
 
 
 savePrototypes : Config -> List Prototype -> Task Error ()
 savePrototypes config prototypes =
   putJsonNoResponse
-    (config.apiRoot ++ "/v1/prototypes")
+    (config.apiRoot ++ "/1/prototypes")
     (authorization config.token)
     (Http.string <| serializePrototypes prototypes)
 
@@ -160,7 +160,7 @@ getColors : Config -> Task Error ColorPalette
 getColors config =
   getWithoutCache
     decodeColors
-    (Http.url (config.apiRoot ++ "/v1/colors") [])
+    (Http.url (config.apiRoot ++ "/1/colors") [])
     (authorization config.token)
 
 
@@ -175,7 +175,7 @@ getAuth : Config -> Task Error User
 getAuth config =
   HttpUtil.get
     decodeUser
-    (config.apiRoot ++ "/v1/self")
+    (config.apiRoot ++ "/1/self")
     (authorization config.token)
 
 
@@ -184,7 +184,7 @@ search config withPrivate query =
   let
     url =
       Http.url
-        (config.apiRoot ++ "/v1/search/" ++ Http.uriEncode query)
+        (config.apiRoot ++ "/1/search/" ++ Http.uriEncode query)
         (if withPrivate then [("all", "true")] else [])
   in
     HttpUtil.get
@@ -200,7 +200,7 @@ personCandidate config name =
   else
     getWithoutCache
       decodePersons
-      (config.apiRoot ++ "/v1/candidates/" ++ Http.uriEncode name)
+      (config.apiRoot ++ "/1/candidates/" ++ Http.uriEncode name)
       (authorization config.token)
 
 
@@ -208,7 +208,7 @@ saveEditingImage : Config -> Id -> File -> Task a ()
 saveEditingImage config id file =
   HttpUtil.sendFile
     "PUT"
-    (config.apiRoot ++ "/v1/images/" ++ id)
+    (config.apiRoot ++ "/1/images/" ++ id)
     -- (authorization config.token)
     file
 
@@ -217,7 +217,7 @@ getPerson : Config -> Id -> Task Error Person
 getPerson config id =
     HttpUtil.get
       decodePerson
-      (config.apiRoot ++ "/v1/people/" ++ id)
+      (config.apiRoot ++ "/1/people/" ++ id)
       (authorization config.token)
 
 
@@ -227,7 +227,7 @@ getPersonByUser config id =
     getUser =
       HttpUtil.get
         decodeUser
-        (config.apiRoot ++ "/v1/users/" ++ id)
+        (config.apiRoot ++ "/1/users/" ++ id)
         (authorization config.token)
   in
     getUser
