@@ -715,13 +715,18 @@ floorsInfoViewItem selected private =
     , ("position", "relative")
     , ("font-size", "12px")
     , ("float", "left")
+    , ("cursor", "pointer")
     ]
+
+
+floorsInfoViewItemHover : Bool -> S
+floorsInfoViewItemHover private =
+  [ ("background-color", if private then "#ddd" else "#eee") ]
 
 
 floorsInfoViewItemLink : S
 floorsInfoViewItemLink =
-    [ ("text-decoration", "none")
-    , ("display", "block")
+    [ ("display", "block")
     , ("left", "0")
     , ("right", "0")
     , ("position", "absolute")

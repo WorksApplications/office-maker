@@ -12,10 +12,12 @@ import Util.HtmlUtil exposing (..)
 
 import Json.Decode as Decode
 
+import InlineHover exposing (hover)
 
-linkBox : Maybe msg -> msg -> List (String, String) -> List (String, String) -> List (Html msg) -> Html msg
-linkBox contextmenuMsg clickMsg liStyle aStyle inner =
-  li
+
+linkBox : Maybe msg -> msg -> List (String, String) -> List (String, String) -> List (String, String) -> List (Html msg) -> Html msg
+linkBox contextmenuMsg clickMsg liStyle hoverStyle innerStyle inner =
+  hover hoverStyle li
     ( style liStyle ::
       onClick clickMsg ::
       ( case contextmenuMsg of
@@ -26,7 +28,7 @@ linkBox contextmenuMsg clickMsg liStyle aStyle inner =
             []
       )
     )
-    [ span [ style aStyle ] inner ]
+    [ span [ style innerStyle ] inner ]
 
 
 eachView : (String -> msg) -> (String -> msg) -> Bool -> Bool -> Bool -> String -> FloorInfo -> Maybe (Html msg)
@@ -50,6 +52,7 @@ eachView' contextmenuMsg onClickMsg selected markAsPrivate markAsModified floor 
     contextmenuMsg
     onClickMsg
     (Styles.floorsInfoViewItem selected markAsPrivate)
+    (Styles.floorsInfoViewItemHover markAsPrivate)
     Styles.floorsInfoViewItemLink
     [ text (floor.name ++ (if markAsModified then "*" else ""))
     ]
@@ -61,6 +64,7 @@ createButton msg =
     Nothing
     msg
     (Styles.floorsInfoViewItem False False)
+    (Styles.floorsInfoViewItemHover False)
     Styles.floorsInfoViewItemLink
     [ text "+" ]
 
