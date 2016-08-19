@@ -12,7 +12,7 @@ function send(token, method, url, data) {
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
-        console.log('account-service: failed ' + method + ' ' + url);
+        console.log(response.statusCode, 'account service: failed ' + method + ' ' + url);
         reject(e || response.statusCode);
       } else {
         resolve(JSON.parse(body));

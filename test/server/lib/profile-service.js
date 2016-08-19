@@ -10,7 +10,7 @@ function get(token, url) {
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
-        console.log('profile-service: failed GET ' + url);
+        console.log(response.statusCode, 'profile service: failed GET ' + url);
         reject(e || response.statusCode);
       } else {
         resolve(JSON.parse(body));
@@ -43,8 +43,8 @@ function getPerson(root, token, personId) {
   });
 }
 
-function getPersonByUserId(token, userId) {
-  return get(token, root + '/1/profiles?userId=' + userId).then((people) => {
+function getPersonByUserId(root, token, userId) {
+  return get(token, root + '/1/profiles?userId=' + encodeURIComponent(userId)).then((people) => {
     if(people[0]) {
       return Promise.resolve(fixPerson(people[0]));
     }

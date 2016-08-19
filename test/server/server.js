@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var fs = require('fs');
 var ejs = require('ejs');
 var request = require('request');
-var jwt = require('json-web-token');
+var jwt = require('jsonwebtoken');
 var filestorage = require('./lib/filestorage.js');
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
@@ -25,6 +25,10 @@ var paasMode = config.accountServiceRoot && config.profileServiceRoot;
 if(!paasMode) {
   config.accountServiceRoot = '/api';
   config.profileServiceRoot = '/api';
+}
+if(paasMode) {
+  // In paasMode, we use public key for account service
+  config.secret = fs.readFileSync(config.secret, 'utf8');
 }
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
@@ -65,20 +69,25 @@ function getSelf(conn, token) {
     }
   }
   return new Promise((resolve, reject) => {
-    jwt.decode(config.secret, token, (e, user) => {
+    jwt.verify(token, config.secret, {
+      algorithms: ['RS256', 'RS384', 'RS512', 'HS256', 'HS256', 'HS512', 'ES256', 'ES384', 'ES512']
+    }, (e, user) => {
       if (e) {
         reject(e);
       } else {
-        resolve(user);
+        resolve({
+          id: user.id || user.userId,
+          role: user.role.toLowerCase()
+        });
       }
     });
   });
 }
 
-function getPerson(conn, token, personId) {
+function getPerson(conn, token, user) {
   return paasMode ?
-    profileService.getPerson(config.profileServiceRoot, token, personId) :
-    db.getPerson(conn, personId);
+    profileService.getPersonByUserId(config.profileServiceRoot, token, user.id) :
+    db.getPerson(conn, user.personId);
 }
 
 /* For on-premiss mode only */
@@ -90,16 +99,9 @@ app.post('/api/1/authentication', inTransaction((conn, req, res) => {
     if(!user) {
       return Promise.reject(401);
     }
-    return new Promise((resolve, reject) => {
-      jwt.encode(config.secret, user, (e, token) => {
-        if (e) {
-          reject(e);//500
-        } else {
-          resolve({
-            accessToken: token
-          });
-        }
-      });
+    var token = jwt.sign(user, config.secret);
+    return Promise.resolve({
+      accessToken: token
     });
   });
 }));
@@ -152,7 +154,7 @@ app.get('/api/v1/self', inTransaction((conn, req, res) => {
     return Promise.resolve({});
   }
   return getSelf(conn, token).then((user) => {
-    return getPerson(conn, token, user.personId).then((person) => {
+    return getPerson(conn, token, user).then((person) => {
       user.person = person;
       return Promise.resolve(user);
     });
@@ -165,14 +167,13 @@ app.get('/api/v1/users/:id', inTransaction((conn, req, res) => {
   var userId = req.params.id;
   return getSelf(conn, token).then((user) => {
     if(paasMode) {
-      //TODO
-      var user = {
-        id: userId,
-        role: 'admin'
-      };
-      return profileService.getPersonByUserId(token, userId).then((person) => {
-        user.person = person;
-        return Promise.resolve(user);
+      return profileService.getPersonByUserId(config.profileServiceRoot, token, userId).then((person) => {
+        // TODO
+        return Promise.resolve({
+          id: userId,
+          role: 'admin',
+          person: person
+        });
       });
     } else {
       return db.getUser(conn, userId).then((user) => {
