@@ -6,6 +6,6 @@
   },
   "title": "Office Map",
   "profileServiceRoot": "",
-  "accountServiceRoot": "/api",
+  "accountServiceRoot": "",
   "secret": "secret"
 }

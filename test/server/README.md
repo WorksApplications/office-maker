@@ -47,7 +47,9 @@ Copy [defaultConfig.json] and rename to `config.json`.
 |mysql.user||
 |mysql.pass||
 |title|This name is used by header.|
-|profileServiceRoot|(Optional) This is used for micro-service architecture (e.g. http://xxx.xxx.xx.xx/profile).|
+|accountServiceRoot|(Optional) This is used for micro-service architecture (e.g. http://xxx.xxx.xx.xx/accounts).|
+|profileServiceRoot|(Optional) This is used for micro-service architecture (e.g. http://xxx.xxx.xx.xx/profiles).|
+|secret|This key is used for authentication. If account service is working, this field is the path of its public key file.|
 
 ## REST API
 
