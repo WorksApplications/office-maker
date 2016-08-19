@@ -12,6 +12,7 @@ function send(token, method, url, data) {
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
+        console.log('account-service: failed ' + method + ' ' + url);
         reject(e || response.statusCode);
       } else {
         resolve(JSON.parse(body));
@@ -25,13 +26,23 @@ function get(token, url) {
 }
 
 function post(token, url, data) {
-  return send(sessionId, 'POST', url, data);
+  return send(token, 'POST', url, data);
+}
+
+function login(root, userId, password) {
+  return post('', root + '/1/authentication', {
+    userId: userId,
+    password: password
+  }).then(obj => {
+    return obj.authToken;
+  });
 }
 
 function addUser(root, token, user) {
-  return post(token, root + '/v1/users', user);
+  return post(token, root + '/1/users', user);
 }
 
 module.exports = {
-  addUser: addUser
+  addUser: addUser,
+  login: login
 };

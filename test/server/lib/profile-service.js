@@ -10,6 +10,7 @@ function get(token, url) {
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
+        console.log('profile-service: failed GET ' + url);
         reject(e || response.statusCode);
       } else {
         resolve(JSON.parse(body));
@@ -23,16 +24,16 @@ function fixPerson(person) {
     id: profile.id,
     tenantId: profile.tenantId,
     name: profile.name,
-    empNo: profile.profileId,//TODO this name may be change
+    empNo: profile.employeeId,
     org: profile.organization,
-    tel: profile.phones[0],
-    mail: profile.emails[0],
+    tel: profile.cellPhone || profile.extensionPhone,
+    mail: profile.mail,
     image: profile.picture
   };
 }
 
 function getPerson(root, token, personId) {
-  return get(token, root + '/v1/profiles/' + personId).then((person) => {
+  return get(token, root + '/1/profiles/' + personId).then((person) => {
     return Promise.resolve(fixPerson(person));
   }).catch((e) => {
     if(e === 404) {
@@ -43,7 +44,7 @@ function getPerson(root, token, personId) {
 }
 
 function getPersonByUserId(token, userId) {
-  return get(token, root + '/v1/profiles?userId=' + userId).then((people) => {
+  return get(token, root + '/1/profiles?userId=' + userId).then((people) => {
     if(people[0]) {
       return Promise.resolve(fixPerson(people[0]));
     }
@@ -52,11 +53,15 @@ function getPersonByUserId(token, userId) {
 }
 
 function addPerson(root, token, person) {
-  return post(token, root + '/v1/profiles', person);
+  person.employeeId = person.empNo;
+  person.cellPhone = person.tel;
+  person.extensionPhone = person.tel;
+  person.picture = person.image;
+  return post(token, root + '/1/profiles', person);
 }
 
 function search(root, token, query) {
-  return get(token, root + '/v1/profiles?q=' + query);
+  return get(token, root + '/1/profiles?q=' + query);
 }
 
 module.exports = {

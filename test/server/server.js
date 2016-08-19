@@ -4,12 +4,14 @@ var app = express();
 var bodyParser = require('body-parser');
 var fs = require('fs');
 var ejs = require('ejs');
+var request = require('request');
+var jwt = require('json-web-token');
 var filestorage = require('./lib/filestorage.js');
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var accountService = require('./lib/account-service');
-var request = require('request');
-var jwt = require('json-web-token');
+var profileService = require('./lib/profile-service');
+
 
 var config = null;
 if(fs.existsSync(__dirname + '/config.json')) {
@@ -80,7 +82,7 @@ function getPerson(conn, token, personId) {
 }
 
 /* For on-premiss mode only */
-app.post('/api/v1/authentication', inTransaction((conn, req, res) => {
+app.post('/api/1/authentication', inTransaction((conn, req, res) => {
   // ignore tenantId
   var id = req.body.userId;
   var pass = req.body.password;

@@ -77,7 +77,6 @@ update message model =
           API.login
             model.accountServiceRoot
             model.inputId
-            "example.com"
             model.inputPass
       in
         model ! [ Task.perform Error Success task ]

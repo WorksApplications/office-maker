@@ -238,13 +238,13 @@ getPersonByUser config id =
       )
 
 
-login : String -> String -> String -> String -> Task Error String
-login accountServiceRoot id tenantId pass =
+login : String -> String -> String -> Task Error String
+login accountServiceRoot id pass =
   postJson
     decodeAuthToken
-    (accountServiceRoot ++ "/v1/authentication")
+    (accountServiceRoot ++ "/1/authentication")
     []
-    (Http.string <| serializeLogin id tenantId pass)
+    (Http.string <| serializeLogin id pass)
 
 
 goToLogin : Task a ()

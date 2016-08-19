@@ -135,11 +135,10 @@ encodeFloor floor change =
       ]
 
 
-encodeLogin : String -> String -> String -> Value
-encodeLogin userId tenantId pass =
+encodeLogin : String -> String -> Value
+encodeLogin userId pass =
   object
     [ ("userId", Encode.string userId)
-    , ("tenantId", Encode.string tenantId)
     , ("password", Encode.string pass)
     ]
 
@@ -315,6 +314,6 @@ serializeFloor floor change =
     encode 0 (encodeFloor floor change)
 
 
-serializeLogin : String -> String -> String -> String
-serializeLogin userId tenantId pass =
-    encode 0 (encodeLogin userId tenantId pass)
+serializeLogin : String -> String -> String
+serializeLogin userId pass =
+    encode 0 (encodeLogin userId pass)
