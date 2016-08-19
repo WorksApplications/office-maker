@@ -202,7 +202,8 @@ type Msg = NoOp
   | FloorLoaded Floor
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
-  | FloorSaved Bool Int
+  | FloorSaved Int
+  | FloorPublished Int
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
@@ -372,41 +373,44 @@ update removeToken action model =
       { model | floorsInfo = floors } ! []
 
     FloorLoaded floor ->
-      updateOnFloorLoaded (Debug.log "floor" floor) model
+      updateOnFloorLoaded floor model
 
-    FloorSaved isPublish newVersion ->
+    FloorSaved newVersion ->
       -- TODO new floor to be obtained
       let
         newFloorId =
           (EditingFloor.present model.floor).id
 
-        (message, cmd) =
-          if isPublish then
-            let
-              message =
-                Success ("Successfully published " ++ (EditingFloor.present model.floor).name)
-            in
-              message !
-                [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-                , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
-                ]
-          else
-            model.error ! []
-
         -- TODO this is needless
         loadCmd =
-          if (not isPublish) && String.length newFloorId > 0 then
-            loadFloorCmd model.apiConfig True newFloorId
-          else
-            Cmd.none
+          loadFloorCmd model.apiConfig True newFloorId
 
         newFloor =
-          EditingFloor.changeFloorAfterSave isPublish newVersion model.floor
+          EditingFloor.changeFloorAfterSave False newVersion model.floor
+      in
+        { model |
+          floor = newFloor
+        } ! [ loadCmd ]
+
+    FloorPublished newVersion ->
+      -- TODO new floor to be obtained
+      let
+        newFloorId =
+          (EditingFloor.present model.floor).id
+
+        message =
+          Success ("Successfully published " ++ (EditingFloor.present model.floor).name)
+
+        newFloor =
+          EditingFloor.changeFloorAfterSave True newVersion model.floor
       in
         { model |
           floor = newFloor
         , error = message
-        } ! [ cmd, loadCmd ]
+        } !
+          [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+          , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+          ]
 
     MoveOnCanvas (clientX, clientY) ->
       let
@@ -1018,10 +1022,13 @@ update removeToken action model =
           case model.candidateRequest of
             Waiting (Just (id, name)) ->
               Task.perform identity identity <| Task.succeed (RequestCandidate id name)
+              
             Waiting Nothing ->
               Cmd.none
+
             NotWaiting ->
               Cmd.none
+
         newModel =
           { model |
             candidateRequest = NotWaiting
@@ -1058,18 +1065,15 @@ update removeToken action model =
     ConfirmDiff ->
       let
         floor =
-          (EditingFloor.present model.floor)
+          EditingFloor.present model.floor
 
-        (cmd, newSeed, newFloor) =
-          ( publishFloorCmd model.apiConfig floor FloorDiff.noObjectsChange
-          , model.seed
-          , model.floor
-          )
+        cmd =
+          performAPI
+            FloorPublished
+            (API.publishEditingFloor model.apiConfig floor.id)
       in
         { model |
           diff = Nothing
-        , seed = newSeed
-        , floor = newFloor
         } ! [ cmd ]
 
     ChangeTab tab ->
@@ -1089,6 +1093,7 @@ update removeToken action model =
               relatedPerson e
             Nothing ->
               Nothing
+
         cmd =
           case personId of
             Just id -> regesterPerson model.apiConfig id
@@ -1468,7 +1473,9 @@ updateOnFloorLoaded floor model =
 
     cmd =
       case floor.update of
-        Nothing -> Cmd.none
+        Nothing ->
+          Cmd.none
+
         Just { by } ->
           case Dict.get by model.personInfo of
             Just _ -> Cmd.none
@@ -1677,36 +1684,24 @@ saveFloorCmd : API.Config -> Floor -> ObjectsChange -> Cmd Msg
 saveFloorCmd apiConfig floor change =
   let
     firstTask =
-      case floor.imageSource of
-        Floor.LocalFile id file url ->
-          API.saveEditingImage apiConfig id file
-        _ ->
-          Task.succeed ()
+      saveImageIfFloorHasBinary apiConfig floor
 
     secondTask =
       API.saveEditingFloor apiConfig floor change
   in
     performAPI
-      (FloorSaved False)
+      FloorSaved
       (firstTask `andThen` (always secondTask))
 
 
-publishFloorCmd : API.Config -> Floor -> ObjectsChange -> Cmd Msg
-publishFloorCmd apiConfig floor change =
-  let
-    firstTask =
-      case floor.imageSource of
-        Floor.LocalFile id file url ->
-          API.saveEditingImage apiConfig id file
-        _ ->
-          Task.succeed ()
+saveImageIfFloorHasBinary : API.Config -> Floor -> Task API.Error ()
+saveImageIfFloorHasBinary apiConfig floor =
+  case floor.imageSource of
+    Floor.LocalFile id file url ->
+      API.saveEditingImage apiConfig id file
 
-    secondTask =
-      API.publishEditingFloor apiConfig floor.id
-  in
-    performAPI
-      (FloorSaved True)
-      (firstTask `andThen` (always secondTask))
+    _ ->
+      Task.succeed ()
 
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
@@ -1863,6 +1858,7 @@ loadFloorCmd apiConfig forEdit floorId =
       case e of
         Http.BadResponse 404 _ ->
           FloorLoaded (Floor.init floorId)
+
         _ ->
           Error (APIError e)
 
