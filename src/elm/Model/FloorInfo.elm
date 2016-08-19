@@ -71,29 +71,18 @@ findFloor floorId version list =
 
 addNewFloor : Floor -> List FloorInfo -> List FloorInfo
 addNewFloor newFloor list =
-  let
-    ret =
-      addNewFloorHelp newFloor list
-  in
-    if List.length ret == List.length list then
-      ret
-    else
-      ( if newFloor.public then
+  case list of
+    [] ->
+      [ if newFloor.public then
           Public newFloor
         else
           Private newFloor
-      ) :: ret
-
-
-addNewFloorHelp : Floor -> List FloorInfo -> List FloorInfo
-addNewFloorHelp newFloor list =
-  case list of
-    [] -> []
+      ]
 
     head :: tail ->
-      let
-        newInfo =
-          if idOf head == newFloor.id then
+      if idOf head == newFloor.id then
+        let
+          newInfo =
             case head of
               Public floor ->
                 if newFloor.public then
@@ -112,7 +101,8 @@ addNewFloorHelp newFloor list =
                   Public newFloor
                 else
                   Private newFloor
-          else
-            head
-      in
-        newInfo :: addNewFloor newFloor tail
+        in
+          newInfo :: tail
+
+      else
+        head :: addNewFloor newFloor tail

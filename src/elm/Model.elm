@@ -244,7 +244,6 @@ type Msg = NoOp
   | ShowDetailForObject Id
   | CreateNewFloor
   | CopyFloor String
-  | NewFloorCreated String
   | EmulateClick Id Bool Time
   | TokenRemoved
   | Error GlobalError
@@ -373,7 +372,7 @@ update removeToken action model =
       { model | floorsInfo = floors } ! []
 
     FloorLoaded floor ->
-      updateOnFloorLoaded floor model
+      updateOnFloorLoaded (Debug.log "floor" floor) model
 
     FloorSaved isPublish newVersion ->
       -- TODO new floor to be obtained
@@ -1081,7 +1080,9 @@ update removeToken action model =
 
     ShowDetailForObject id ->
       let
-        allObjects = (EditingFloor.present model.floor).objects
+        allObjects =
+          (EditingFloor.present model.floor).objects
+
         personId =
           case findObjectById allObjects id of
             Just e ->
@@ -1127,10 +1128,15 @@ update removeToken action model =
 
         cmd =
           performAPI
-            (always (NewFloorCreated newFloorId))
-            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
+            FloorLoaded
+            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing) `andThen` \version ->
+              API.getFloorOfVersion model.apiConfig newFloorId version
+            )
+
+        modifyUrlCmd =
+          Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
       in
-        { model | seed = newSeed } ! [ cmd ]
+        { model | seed = newSeed } ! [ cmd, modifyUrlCmd ]
 
     CopyFloor id ->
       let
@@ -1142,18 +1148,18 @@ update removeToken action model =
 
         cmd =
           performAPI
-            (always (NewFloorCreated newFloorId))
-            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
+            FloorLoaded
+            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing) `andThen` \version ->
+              API.getFloorOfVersion model.apiConfig newFloorId version
+            )
+
+        modifyUrlCmd =
+          Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
       in
         { model |
           seed = newSeed
         , contextMenu = NoContextMenu
-        } ! [ cmd ]
-
-    NewFloorCreated newFloorId ->
-      model !
-        [ Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
-        ]
+        } ! [ cmd, modifyUrlCmd ]
 
     EmulateClick id down time ->
       let
