@@ -40,7 +40,7 @@ successView msg =
 
 errorView : String -> Html msg
 errorView message =
-  div [ style Styles.errorBar ] [ text message ]
+  div [ class "message-bar-error", style Styles.errorBar ] [ text message ]
 
 
 describeAPIError : API.Error -> String

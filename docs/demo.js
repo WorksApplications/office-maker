@@ -28300,6 +28300,7 @@ var _user$project$View_MessageBar$errorView = function (message) {
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
 			[
+				_elm_lang$html$Html_Attributes$class('message-bar-error'),
 				_elm_lang$html$Html_Attributes$style(_user$project$View_Styles$errorBar)
 			]),
 		_elm_lang$core$Native_List.fromArray(
