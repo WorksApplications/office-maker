@@ -173,7 +173,7 @@ getDiffSource config id =
 
 getAuth : Config -> Task Error User
 getAuth config =
-  HttpUtil.get
+  getWithoutCache
     decodeUser
     (config.apiRoot ++ "/1/self")
     (authorization config.token)

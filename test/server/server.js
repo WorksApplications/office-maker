@@ -75,10 +75,9 @@ function getSelf(conn, token) {
       if (e) {
         reject(e);
       } else {
-        resolve({
-          id: user.id || user.userId,
-          role: user.role.toLowerCase()
-        });
+        user.id = user.id || user.userId;
+        user.role = user.role.toLowerCase();
+        resolve(user);
       }
     });
   });
