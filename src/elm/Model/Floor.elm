@@ -5,8 +5,6 @@ import Date exposing (Date)
 import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
-import Util.File exposing (..)
-
 type alias Id = String
 
 type alias Floor =
@@ -18,16 +16,10 @@ type alias Floor =
   , width : Int
   , height : Int
   , realSize : Maybe (Int, Int)
-  , imageSource : ImageSource
+  , image : Maybe String
   , public : Bool
   , update : Maybe { by : Id, at : Date }
   }
-
-
-type ImageSource
-  = LocalFile String File String
-  | URL String
-  | None
 
 
 init : Id -> Floor
@@ -40,7 +32,7 @@ init id =
   , width = 800
   , height = 600
   , realSize = Nothing
-  , imageSource = None
+  , image = Nothing
   , public = False
   , update = Nothing
   }
@@ -84,7 +76,7 @@ type Msg =
   | ResizeObject Id (Int, Int)
   | ChangeName String
   | ChangeOrd Int
-  | SetLocalFile String File String
+  | SetImage String Int Int
   | ChangeRealSize (Int, Int)
   | SetPerson String String
   | UnsetPerson String
@@ -154,8 +146,8 @@ changeOrd : Int -> Msg
 changeOrd = ChangeOrd
 
 
-setLocalFile : String -> File -> String -> Msg
-setLocalFile = SetLocalFile
+setImage : String -> Int -> Int -> Msg
+setImage = SetImage
 
 
 changeRealSize : (Int, Int) -> Msg
@@ -272,8 +264,8 @@ update msg floor =
     ChangeOrd ord ->
       { floor | ord = ord }
 
-    SetLocalFile id file dataURL ->
-      setLocalFile' id file dataURL floor
+    SetImage url width height ->
+      setImage' url width height floor
 
     ChangeRealSize (width, height) ->
         { floor |
@@ -350,22 +342,17 @@ addObjects objects floor =
   setObjects (floor.objects ++ objects) floor
 
 
-setLocalFile' : String -> File -> String -> Floor -> Floor
-setLocalFile' id file dataURL floor =
-  let
-    (width, height) =
-      getSizeOfImage dataURL
-  in
-    { floor |
-      width = width
-    , height = height
-    , imageSource = LocalFile id file dataURL
-    }
+setImage' : String -> Int -> Int -> Floor -> Floor
+setImage' url width height floor =
+  { floor |
+    width = width
+  , height = height
+  , image = Just url
+  }
 
 
 src : Floor -> Maybe String
 src floor =
-  case floor.imageSource of
-    LocalFile id list dataURL -> Just dataURL
-    URL src -> Just ("/images/floors/" ++ src)
-    None -> Nothing
+  case floor.image of
+    Just src -> Just ("/images/floors/" ++ src)
+    Nothing -> Nothing

@@ -17,6 +17,7 @@ import Dom
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil exposing (..)
+import Util.File exposing (..)
 
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
@@ -26,7 +27,7 @@ import Model.Scale as Scale
 import Model.API as API
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
-import Model.Floor as Floor exposing (Floor, setObjects, setLocalFile, objects, addObjects)
+import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
@@ -202,6 +203,7 @@ type Msg = NoOp
   | FloorLoaded Floor
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
+  | ImageSaved String Int Int
   | FloorSaved Int
   | FloorPublished Int
   | MoveOnCanvas (Int, Int)
@@ -374,6 +376,16 @@ update removeToken action model =
 
     FloorLoaded floor ->
       updateOnFloorLoaded floor model
+
+    ImageSaved url width height ->
+      let
+        (newFloor, saveCmd) =
+          EditingFloor.commit
+            (saveFloorCmd model.apiConfig)
+            (Floor.setImage url width height)
+            model.floor
+      in
+        { model | floor = newFloor } ! [ saveCmd ]
 
     FloorSaved newVersion ->
       -- TODO new floor to be obtained
@@ -1022,7 +1034,7 @@ update removeToken action model =
           case model.candidateRequest of
             Waiting (Just (id, name)) ->
               Task.perform identity identity <| Task.succeed (RequestCandidate id name)
-              
+
             Waiting Nothing ->
               Cmd.none
 
@@ -1531,13 +1543,17 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
           (id, newSeed) =
             IdGenerator.new seed
 
-          (newFloor, saveCmd) =
-            EditingFloor.commit
-              (saveFloorCmd apiConfig)
-              (Floor.setLocalFile id file dataURL)
-              efloor
+          url = id
+
+          (width, height) =
+            getSizeOfImage dataURL
+
+          saveImageCmd =
+            performAPI
+              (always <| ImageSaved url width height)
+              (API.saveEditingImage apiConfig url file)
         in
-          (newFloor, newSeed) ! [ saveCmd ]
+          (efloor, newSeed) ! [ saveImageCmd ]
 
       FloorProperty.OnPreparePublish ->
         let
@@ -1682,26 +1698,9 @@ savePrototypesCmd apiConfig prototypes =
 
 saveFloorCmd : API.Config -> Floor -> ObjectsChange -> Cmd Msg
 saveFloorCmd apiConfig floor change =
-  let
-    firstTask =
-      saveImageIfFloorHasBinary apiConfig floor
-
-    secondTask =
-      API.saveEditingFloor apiConfig floor change
-  in
-    performAPI
-      FloorSaved
-      (firstTask `andThen` (always secondTask))
-
-
-saveImageIfFloorHasBinary : API.Config -> Floor -> Task API.Error ()
-saveImageIfFloorHasBinary apiConfig floor =
-  case floor.imageSource of
-    Floor.LocalFile id file url ->
-      API.saveEditingImage apiConfig id file
-
-    _ ->
-      Task.succeed ()
+  performAPI
+    FloorSaved
+    (API.saveEditingFloor apiConfig floor change)
 
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
@@ -1893,7 +1892,7 @@ primarySelectedObject : Model -> Maybe Object
 primarySelectedObject model =
   case model.selectedObjects of
     head :: _ ->
-      findObjectById (objects <| (EditingFloor.present model.floor)) head
+      findObjectById (Floor.objects <| (EditingFloor.present model.floor)) head
     _ -> Nothing
 
 

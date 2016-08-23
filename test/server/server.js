@@ -365,7 +365,7 @@ app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
   return new Promise((resolve, reject) => {
     getSelf(conn, getAuthToken(req)).then((user) => {
       if(!user || user.role !== 'admin') {
-        return Promise.reject(401);
+        return reject(401);
       }
       var id = req.params.id;
       var all = [];
@@ -375,8 +375,8 @@ app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
       req.on('end', () => {
         var image = Buffer.concat(all);
         db.saveImage(conn, 'images/floors/' + id, image).then(() => {
-          res.end();
-          // TODO commit
+          // res.end();
+          resolve({});
         }).catch(reject);
       })
     });

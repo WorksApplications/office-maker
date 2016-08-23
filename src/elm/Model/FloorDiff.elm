@@ -97,12 +97,12 @@ propertyChangesHelp current prev =
           [] -- should not happen
 
     imageChange =
-      if current.imageSource /= prev.imageSource then
-        [("Image", "", "")] -- TODO how to describe?
+      if current.image /= prev.image then
+        [("Image", Maybe.withDefault "" current.image, Maybe.withDefault "" prev.image)]
       else
         []
   in
-    nameChange ++ ordChange ++ sizeChange
+    nameChange ++ ordChange ++ sizeChange ++ imageChange
 
 
 diffObjects : List Object -> List Object -> ObjectsChange

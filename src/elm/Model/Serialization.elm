@@ -8,7 +8,7 @@ import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, cus
 
 import Util.DecodeUtil exposing (..)
 
-import Model.Floor as Floor exposing (Floor, ImageSource(..))
+import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
@@ -111,28 +111,21 @@ encodeObjectModification mod =
 
 encodeFloor : Floor -> ObjectsChange -> Value
 encodeFloor floor change =
-  let
-    src =
-      case floor.imageSource of
-        LocalFile id _ _ -> string id
-        URL url -> string url
-        _ -> null
-  in
-    object
-      [ ("id", string floor.id)
-      , ("version", int floor.version)
-      , ("name", string floor.name)
-      , ("ord", int floor.ord)
-      , ("added", list (List.map encodeObject change.added))
-      , ("modified", list (List.map encodeObjectModification change.modified))
-      , ("deleted", list (List.map encodeObject change.deleted))
-      , ("width", int floor.width)
-      , ("height", int floor.height)
-      , ("realWidth", Maybe.withDefault null <| Maybe.map (int << fst) floor.realSize)
-      , ("realHeight", Maybe.withDefault null <| Maybe.map (int << snd) floor.realSize)
-      , ("image", src)
-      , ("public", bool floor.public)
-      ]
+  object
+    [ ("id", string floor.id)
+    , ("version", int floor.version)
+    , ("name", string floor.name)
+    , ("ord", int floor.ord)
+    , ("added", list (List.map encodeObject change.added))
+    , ("modified", list (List.map encodeObjectModification change.modified))
+    , ("deleted", list (List.map encodeObject change.deleted))
+    , ("width", int floor.width)
+    , ("height", int floor.height)
+    , ("realWidth", Maybe.withDefault null <| Maybe.map (int << fst) floor.realSize)
+    , ("realHeight", Maybe.withDefault null <| Maybe.map (int << snd) floor.realSize)
+    , ("image", Maybe.withDefault null <| Maybe.map string floor.image)
+    , ("public", bool floor.public)
+    ]
 
 
 encodeLogin : String -> String -> Value
@@ -225,7 +218,7 @@ decodeSearchResults =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id version name ord objects width height realWidth realHeight src public updateBy updateAt ->
+    (\id version name ord objects width height realWidth realHeight image public updateBy updateAt ->
       { id = id
       , version = version
       , name = name
@@ -233,7 +226,7 @@ decodeFloor =
       , objects = objects
       , width = width
       , height = height
-      , imageSource = Maybe.withDefault None (Maybe.map URL src)
+      , image = image
       , realSize = Maybe.map2 (,) realWidth realHeight
       , public = public
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt

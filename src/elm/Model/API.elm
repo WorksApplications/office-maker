@@ -36,7 +36,7 @@ import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
 import Model.Object as Object exposing (..)
-import Model.Floor as Floor exposing (ImageSource(..))
+import Model.Floor as Floor exposing (Floor)
 import Model.Prototype exposing (Prototype)
 import Model.Serialization exposing (..)
 import Model.SearchResult exposing (SearchResult)
@@ -209,7 +209,7 @@ saveEditingImage config id file =
   HttpUtil.sendFile
     "PUT"
     (config.apiRoot ++ "/1/images/" ++ id)
-    -- (authorization config.token)
+    (authorization config.token)
     file
 
 

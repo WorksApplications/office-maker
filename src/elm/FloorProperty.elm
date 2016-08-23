@@ -103,6 +103,7 @@ update message model =
               Task.perform FileError (GotDataURL file) (readAsDataURL file)
           in
             (model, cmd, None)
+
         Nothing ->
           (model, Cmd.none, None)
 

@@ -1,6 +1,6 @@
 module Model.EditingFloor exposing (..)
 
-import Model.Floor as Floor exposing (Floor, ImageSource(..))
+import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 
 import Util.UndoList as UndoList exposing (UndoList)
@@ -91,14 +91,7 @@ changeFloorAfterSave isPublish version efloor =
 
     newFloor =
       { floor |
-        imageSource =
-          case floor.imageSource of
-            LocalFile id list dataURL ->
-              URL id
-
-            _ ->
-              floor.imageSource
-      , public = isPublish
+        public = isPublish
       , version = version
       }
 

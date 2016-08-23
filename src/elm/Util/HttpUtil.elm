@@ -5,7 +5,7 @@ import Native.HttpUtil
 import Util.File as File exposing (File(File))
 import Http exposing (..)
 import Json.Decode as Decode exposing (Decoder)
--- import Result exposing (Result(..))
+import Json.Encode as Encode
 
 reload : Task a ()
 reload =
@@ -17,10 +17,14 @@ goTo =
   Native.HttpUtil.goTo
 
 
--- TODO auth
-sendFile : String -> String -> File.File -> Task a ()
-sendFile method url (File file) =
-  Native.HttpUtil.sendFile method url file
+encodeHeaders : List (String, String) -> Encode.Value
+encodeHeaders headers =
+  Encode.list (List.map (\(k, v) -> Encode.list [Encode.string k, Encode.string v]) headers)
+
+
+sendFile : String -> String -> List (String, String) -> File.File -> Task a ()
+sendFile method url headers (File file) =
+  Native.HttpUtil.sendFile method url (encodeHeaders headers) file
 
 
 contentTypeJsonUtf8 : List (String, String)
