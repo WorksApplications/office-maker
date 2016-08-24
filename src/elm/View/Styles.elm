@@ -323,11 +323,12 @@ canvasImage =
   ]
 
 
-canvasContainer : Bool -> S
-canvasContainer printMode =
+canvasContainer : Bool -> Bool -> S
+canvasContainer printMode rangeSelectMode =
   [ ("position", "relative")
   , ("background", if printMode then "#fff" else "#000")
   , ("flex", "1")
+  , ("cursor", if rangeSelectMode then "crosshair" else "default")
   ]
 
 

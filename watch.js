@@ -42,19 +42,13 @@ function run() {
 function schedule(type, stat) {
   queued[type] = true;
 }
-watch.createMonitor('src', function (monitor) {
+watch.createMonitor('src', (monitor) => {
   monitor.on("created", schedule.bind(null, 'build'));
   monitor.on("changed", schedule.bind(null, 'build'));
   monitor.on("removed", schedule.bind(null, 'build'));
 });
 
-watch.createMonitor('test/server', {
-  filter: function(stat) {
-    return minimatch(slash(stat), 'test/server/*.js*')
-      || minimatch(slash(stat), 'test/server/lib/*.js')
-      || minimatch(slash(stat), 'test/server/template/*.*');
-  }
-}, function (monitor) {
+watch.createMonitor('test', (monitor) => {
   monitor.on("created", schedule.bind(null, 'server'));
   monitor.on("changed", schedule.bind(null, 'server'));
   monitor.on("removed", schedule.bind(null, 'server'));

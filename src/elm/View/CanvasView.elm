@@ -127,14 +127,12 @@ view model =
             []
           else
             [ canvasView model floor, popup']
+
+        isRangeSelectMode =
+          model.editMode == Select && model.keys.ctrl
       in
         div
-          [ style (S.canvasContainer (model.editMode == Viewing True) ++
-            ( if model.editMode == Stamp then
-                [] -- [("cursor", "none")]
-              else
-                []
-            ))
+          [ style (S.canvasContainer (model.editMode == Viewing True) isRangeSelectMode)
           , onMouseMove' MoveOnCanvas
           , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
@@ -146,7 +144,7 @@ view model =
 
     Nothing ->
       div
-        [ style (S.canvasContainer (model.editMode == Viewing True))
+        [ style (S.canvasContainer (model.editMode == Viewing True) False)
         ] []
 
 

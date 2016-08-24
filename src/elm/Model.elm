@@ -103,7 +103,8 @@ type DraggingContext =
     None
   | MoveObject Id (Int, Int)
   | Selector
-  | ShiftOffsetPrevScreenPos
+  | RangeSelect
+  | ShiftOffset
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
@@ -417,31 +418,17 @@ update removeToken action model =
         (x, y) =
           (clientX, clientY - 37)
 
-        model' =
-          { model |
-            pos = (x, y)
-          }
-
-        (prevX, prevY) =
-          model.pos
-
         newModel =
           case model.draggingContext of
-            ShiftOffsetPrevScreenPos ->
-              { model' |
-                offset =
-                  let
-                    (offsetX, offsetY) = model.offset
-                    (dx, dy) =
-                      ((x - prevX), (y - prevY))
-                  in
-                    ( offsetX + Scale.screenToImage model.scale dx
-                    , offsetY + Scale.screenToImage model.scale dy
-                    )
-              }
-            _ -> model'
+            ShiftOffset ->
+              updateOffsetByScreenPos (x, y) model
+
+            _ ->
+              model
       in
-        newModel ! []
+        { newModel |
+          pos = (x, y)
+        } ! []
 
     EnterCanvas ->
       model ! []
@@ -450,7 +437,7 @@ update removeToken action model =
       { model |
         draggingContext =
           case model.draggingContext of
-            ShiftOffsetPrevScreenPos -> None
+            ShiftOffset -> None
             _ -> model.draggingContext
       } ! []
 
@@ -601,25 +588,34 @@ update removeToken action model =
                   screenToImageWithOffset model.scale (clientX, clientY) model.offset
               in
                 Just (x, y, model.gridSize, model.gridSize)
+
             _ -> model.selectorRect
 
         draggingContext =
           case model.editMode of
             LabelMode ->
               None
+
             Stamp ->
               StampFromScreenPos (clientX, clientY)
+
             Pen ->
               PenFromScreenPos (clientX, clientY)
+
             Select ->
-              ShiftOffsetPrevScreenPos
+              if model.keys.ctrl then
+                RangeSelect
+              else
+                ShiftOffset
+
             Viewing _ ->
-              ShiftOffsetPrevScreenPos
+              ShiftOffset
 
         (model', cmd) =
           case ObjectNameInput.forceFinish model.objectNameInput of
             (objectNameInput, Just (id, name)) ->
               updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
+
             (objectNameInput, _) ->
               { model | objectNameInput = objectNameInput } ! []
 
@@ -1200,6 +1196,26 @@ update removeToken action model =
           { model | error = e }
       in
         newModel ! []
+
+
+updateOffsetByScreenPos : (Int, Int) -> Model -> Model
+updateOffsetByScreenPos (x, y) model =
+  { model |
+    offset =
+      let
+        (prevX, prevY) =
+          model.pos
+
+        (offsetX, offsetY) =
+          model.offset
+
+        (dx, dy) =
+          ((x - prevX), (y - prevY))
+      in
+        ( offsetX + Scale.screenToImage model.scale dx
+        , offsetY + Scale.screenToImage model.scale dy
+        )
+  }
 
 
 startEditAndFocus : Object -> Model -> (Model, Cmd Msg)
