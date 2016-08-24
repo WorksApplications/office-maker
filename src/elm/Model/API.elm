@@ -86,12 +86,6 @@ getFloor config id =
 getFloorOfVersion : Config -> String -> Int -> Task Error Floor
 getFloorOfVersion config id version =
   let
-    _ =
-      if id == "" then
-        Debug.crash "id is not defined"
-      else
-        ""
-
     url =
       Http.url
         (config.apiRoot ++ "/1/floors/" ++ id ++ "/" ++ toString version)
@@ -103,12 +97,6 @@ getFloorOfVersion config id version =
 getFloorHelp : Config -> Bool -> String -> Task Error Floor
 getFloorHelp config withPrivate id =
   let
-    _ =
-      if id == "" then
-        Debug.crash "id is not defined"
-      else
-        ""
-
     url =
       Http.url
         (config.apiRoot ++ "/1/floors/" ++ id)

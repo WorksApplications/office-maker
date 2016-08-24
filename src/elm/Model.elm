@@ -392,22 +392,22 @@ update removeToken action model =
         { model | floor = newFloor } ! [ saveCmd ]
 
     FloorSaved newVersion ->
-      -- TODO new floor to be obtained
       let
         newFloorId =
           (EditingFloor.present model.floor).id
 
-        -- TODO this is needless
+        task =
+          API.getFloorOfVersion model.apiConfig newFloorId newVersion
+
         loadCmd =
-          loadFloorCmd model.apiConfig True newFloorId
+          performAPI FloorLoaded task
 
         newFloor =
           EditingFloor.changeFloorAfterSave False newVersion model.floor
       in
         { model |
           floor = newFloor
-        } ! [ --loadCmd
-        ]
+        } ! [ loadCmd ]
 
     FloorPublished newVersion ->
       -- TODO new floor to be obtained
