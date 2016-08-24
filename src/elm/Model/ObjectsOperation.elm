@@ -137,9 +137,15 @@ withinRange range list =
     right = max startX endX
     top = min startY endY
     bottom = max startY endY
+  in
+    withinRect (left, top) (right, bottom) list
+
+
+withinRect : (Float, Float) -> (Float, Float) -> List Object -> List Object
+withinRect (left, top) (right, bottom) list =
+  let
     isContained e =
       let
-        -- (x, y, w, h) = rectFloat e
         (centerX, centerY) = center e
       in
         centerX >= left &&

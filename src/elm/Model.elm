@@ -103,7 +103,6 @@ type DraggingContext =
     None
   | MoveObject Id (Int, Int)
   | Selector
-  | RangeSelect
   | ShiftOffset
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
@@ -420,6 +419,9 @@ update removeToken action model =
 
         newModel =
           case model.draggingContext of
+            Selector ->
+              syncSelectedByRect <| updateSelectorRect (x, y) model
+
             ShiftOffset ->
               updateOffsetByScreenPos (x, y) model
 
@@ -503,19 +505,8 @@ update removeToken action model =
               updateByMoveObjectEnd id (x, y) (clientX, clientY) model
 
             Selector ->
-              { model |
-                selectorRect =
-                  case model.selectorRect of
-                    Just (x, y, _, _) ->
-                      let
-                        (w, h) =
-                          ( Scale.screenToImage model.scale clientX - x
-                          , Scale.screenToImage model.scale clientY - y
-                          )
-                      in
-                        Just (x, y, w, h)
-                    _ -> model.selectorRect
-              } ! []
+              -- (updateSelectorRect (clientX, clientY) model) ! []
+              { model | selectorRect = Nothing } ! []
 
             StampFromScreenPos _ ->
               updateOnFinishStamp model
@@ -538,25 +529,17 @@ update removeToken action model =
         (clientX, clientY) =
           model.pos
 
+        (offsetX, offsetY) =
+          model.offset
+
         (model', cmd) =
           case model.draggingContext of
             MoveObject id (x, y) ->
               updateByMoveObjectEnd id (x, y) (clientX, clientY) model
 
             Selector ->
-              { model |
-                selectorRect =
-                  case model.selectorRect of
-                    Just (x, y, _, _) ->
-                      let
-                        (w, h) =
-                          ( Scale.screenToImage model.scale clientX - x
-                          , Scale.screenToImage model.scale clientY - y
-                          )
-                      in
-                        Just (x, y, w, h)
-                    _ -> model.selectorRect
-              } ! []
+              -- (updateSelectorRect (clientX, clientY) model) ! []
+              { model | selectorRect = Nothing } ! []
 
             StampFromScreenPos _ ->
               updateOnFinishStamp model
@@ -604,7 +587,7 @@ update removeToken action model =
 
             Select ->
               if model.keys.ctrl then
-                RangeSelect
+                Selector
               else
                 ShiftOffset
 
@@ -817,30 +800,37 @@ update removeToken action model =
 
     MouseWheel value ->
       let
-        (clientX, clientY) = model.pos
+        (clientX, clientY) =
+          model.pos
+
         newScale =
             if value < 0 then
               Scale.update Scale.ScaleUp model.scale
             else
               Scale.update Scale.ScaleDown model.scale
+
         ratio =
           Scale.ratio model.scale newScale
+
         (offsetX, offsetY) =
           model.offset
+
         newOffset =
           let
             x = Scale.screenToImage model.scale clientX
             y = Scale.screenToImage model.scale (clientY - 37) --TODO header hight
           in
-          ( floor (toFloat (x - floor (ratio * (toFloat (x - offsetX)))) / ratio)
-          , floor (toFloat (y - floor (ratio * (toFloat (y - offsetY)))) / ratio)
-          )
+            ( floor (toFloat (x - floor (ratio * (toFloat (x - offsetX)))) / ratio)
+            , floor (toFloat (y - floor (ratio * (toFloat (y - offsetY)))) / ratio)
+            )
+
         newModel =
           { model |
             scale = newScale
           , offset = newOffset
           , scaling = True
           }
+
         cmd =
           Task.perform (always NoOp) (always ScaleEnd) (Process.sleep 200.0)
       in
@@ -1196,6 +1186,50 @@ update removeToken action model =
           { model | error = e }
       in
         newModel ! []
+
+
+
+updateSelectorRect : (Int, Int) -> Model -> Model
+updateSelectorRect (canvasX, canvasY) model =
+  { model |
+    selectorRect =
+      case model.selectorRect of
+        Just (x, y, _, _) ->
+          let
+            (left, top) =
+              screenToImageWithOffset model.scale (canvasX, canvasY) model.offset
+
+            (w, h) =
+              (left - x, top - y)
+          in
+            Just (x, y, w, h)
+
+        _ ->
+          model.selectorRect
+  }
+
+
+syncSelectedByRect : Model -> Model
+syncSelectedByRect model =
+  { model |
+    selectedObjects =
+      case model.selectorRect of
+        Just (left, top, width, height) ->
+          let
+            floor =
+              EditingFloor.present model.floor
+
+            objects =
+              withinRect
+                (toFloat left, toFloat top)
+                (toFloat (left + width), toFloat (top + height))
+                floor.objects
+          in
+            List.map idOf objects
+
+        _ ->
+          model.selectedObjects
+  }
 
 
 updateOffsetByScreenPos : (Int, Int) -> Model -> Model
