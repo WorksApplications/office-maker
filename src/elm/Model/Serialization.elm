@@ -92,6 +92,7 @@ encodeShape shape =
   case shape of
     Object.Rectangle ->
       "rectangle"
+      
     Object.Ellipse ->
       "ellipse"
 

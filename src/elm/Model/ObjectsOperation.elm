@@ -5,6 +5,7 @@ module Model.ObjectsOperation exposing (..)
 import Model.Object as Object exposing (..)
 import Util.ListUtil exposing (..)
 
+
 rectFloat : Object -> (Float, Float, Float, Float)
 rectFloat e =
   let
@@ -61,6 +62,7 @@ compareBy : Direction -> Object -> Object -> Order
 compareBy direction from new =
   let
     (centerX, centerY) = center from
+
     (newCenterX, newCenterY) = center new
   in
     if (centerX, centerY) == (newCenterX, newCenterY) then
@@ -71,10 +73,13 @@ compareBy direction from new =
           case direction of
             Up ->
               (newCenterX < centerX) || (newCenterX == centerX && newCenterY < centerY)
+
             Down ->
               (newCenterX > centerX) || (newCenterX == centerX && newCenterY > centerY)
+
             Left ->
               (newCenterY < centerY) || (newCenterY == centerY && newCenterX < centerX)
+
             Right ->
               (newCenterY > centerY) || (newCenterY == centerY && newCenterX > centerX)
       in
@@ -101,6 +106,7 @@ minimumBy direction list =
             Just e1
           else
             Just e
+
         Nothing ->
           Just e1
   in
@@ -131,11 +137,17 @@ withinRange : (Object, Object) -> List Object -> List Object
 withinRange range list =
   let
     (start, end) = range
+
     (startX, startY) = center start
+
     (endX, endY) = center end
+
     left = min startX endX
+
     right = max startX endX
+
     top = min startY endY
+
     bottom = max startY endY
   in
     withinRect (left, top) (right, bottom) list
@@ -162,12 +174,15 @@ bounds list =
     f e1 memo =
       let
         (x1, y1, w1, h1) = rect e1
+
         right1 = x1 + w1
+
         bottom1 = y1 + h1
       in
         case memo of
           Just (x, y, right, bottom) ->
             Just (min x x1, min y y1, max right right1, max bottom bottom1)
+
           Nothing ->
             Just (x1, y1, right1, bottom1)
   in
@@ -178,7 +193,9 @@ bound : Direction -> Object -> Int
 bound direction object =
   let
     (left, top, w, h) = rect object
+
     right = left + w
+
     bottom = top + h
   in
     case direction of
@@ -192,10 +209,15 @@ compareBoundBy : Direction -> Object -> Object -> Order
 compareBoundBy direction e1 e2 =
   let
     (left1, top1, w1, h1) = rect e1
+
     right1 = left1 + w1
+
     bottom1 = top1 + h1
+
     (left2, top2, w2, h2) = rect e2
+
     right2 = left2 + w2
+
     bottom2 = top2 + h2
   in
     case direction of
@@ -215,6 +237,7 @@ minimumPartsOf direction list =
             LT -> [e]
             EQ -> e :: memo
             GT -> memo
+
         _ -> [e]
   in
     List.foldl f [] list
@@ -230,6 +253,7 @@ maximumPartsOf direction list =
             LT -> memo
             EQ -> e :: memo
             GT -> [e]
+            
         _ -> [e]
   in
     List.foldl f [] list
@@ -255,12 +279,16 @@ expandOrShrink : Direction -> Object -> List Object -> List Object -> List Objec
 expandOrShrink direction primary current all =
   let
     (left0, top0, w0, h0) = rect primary
+
     right0 = left0 + w0
+
     bottom0 = top0 + h0
+
     (left, top, right, bottom) =
       Maybe.withDefault
         (left0, top0, right0, bottom0)
         (bounds current)
+
     isExpand =
       case direction of
         Up -> bottom == bottom0 && top <= top0
@@ -281,6 +309,7 @@ expandOrShrink direction primary current all =
               Down -> left1 >= left && right1 <= right && bottom1 > bottom
               Left -> top1 >= top && bottom1 <= bottom && left1 < left
               Right -> top1 >= top && bottom1 <= bottom && right1 > right
+
         filtered = List.filter filter all
       in
         current ++ (minimumPartsOf direction filtered)

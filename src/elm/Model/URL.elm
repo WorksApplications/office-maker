@@ -17,6 +17,7 @@ parse : Navigation.Location -> Result String Model
 parse location =
   let
     floorId = String.dropLeft 1 location.hash
+    
     dict = UrlParser.parseSearch location.search
   in
     if String.length floorId == 36 || String.length floorId == 0 then

@@ -27,8 +27,8 @@ init data =
   }
 
 
-type Msg =
-    SelectPrev
+type Msg
+  = SelectPrev
   | SelectNext
 
 
@@ -47,6 +47,7 @@ update msg model =
       { model |
         selected = max 0 (model.selected - 1) -- fail safe
       }
+
     SelectNext ->
       { model |
         selected = min (List.length model.data - 1) (model.selected + 1) -- fail safe
@@ -74,6 +75,7 @@ findPrototypeByIndex index list =
   case getAt index list of
     Just prototype ->
       prototype
+
     Nothing ->
       case List.head list of
         Just prototype -> prototype
@@ -94,18 +96,21 @@ stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
       if horizontal then
         let
           amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
+
           amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
         in
          (amountX, amountY)
       else
         let
           amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
+
           amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
         in
           (amountX, amountY)
   in
     ( List.map (\i -> if x2' > x1' then i else -i) [0..amountX]
-    , List.map (\i -> if y2' > y1' then i else -i) [0..amountY] )
+    , List.map (\i -> if y2' > y1' then i else -i) [0..amountY]
+    )
 
 
 generateAllCandidatePosition : (Int, Int) -> (Int, Int) -> (List Int, List Int) -> List (Int, Int)
@@ -113,6 +118,7 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
   let
     lefts =
       List.map (\index -> centerLeft + deskWidth * index) indicesX
+
     tops =
       List.map (\index -> centerTop + deskHeight * index) indicesY
   in
@@ -123,13 +129,21 @@ stampCandidatesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List
 stampCandidatesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
   let
     deskSize = prototype.size
+
     flip (w, h) = (h, w)
-    horizontal = abs (x2 - x1) > abs (y2 - y1)
-    (deskWidth, deskHeight) = if horizontal then flip deskSize else deskSize
+
+    horizontal =
+      abs (x2 - x1) > abs (y2 - y1)
+
+    (deskWidth, deskHeight) =
+      if horizontal then flip deskSize else deskSize
+
     (indicesX, indicesY) =
       stampIndices horizontal (deskWidth, deskHeight) (x1, y1) (x2, y2)
+
     (centerLeft, centerTop) =
       fitPositionToGrid gridSize (x1 - fst deskSize // 2, y1 - snd deskSize // 2)
+
     all =
       generateAllCandidatePosition
         (deskWidth, deskHeight)

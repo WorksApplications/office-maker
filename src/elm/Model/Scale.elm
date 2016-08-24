@@ -20,6 +20,7 @@ update action model =
   case action of
     ScaleUp ->
       { model | scaleDown = max 0 (model.scaleDown - 1) }
+      
     ScaleDown ->
       { model | scaleDown = min 4 (model.scaleDown + 1) }
 
