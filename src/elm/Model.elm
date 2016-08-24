@@ -495,69 +495,13 @@ update removeToken action model =
 
     MouseUpOnObject lastTouchedId ->
       let
-        (clientX, clientY) =
-          model.pos
-
-        (model', cmd) =
-          -- TODO refactor to dedupe
-          case model.draggingContext of
-            MoveObject id (x, y) ->
-              updateByMoveObjectEnd id (x, y) (clientX, clientY) model
-
-            Selector ->
-              -- (updateSelectorRect (clientX, clientY) model) ! []
-              { model | selectorRect = Nothing } ! []
-
-            StampFromScreenPos _ ->
-              updateOnFinishStamp model
-
-            PenFromScreenPos pos ->
-              updateOnFinishPen pos model
-
-            ResizeFromScreenPos id pos ->
-              updateOnFinishResize id pos model
-
-            _ ->
-              model ! []
+        (newModel, cmd) =
+          updateOnMouseUp model
       in
-        { model' |
-          draggingContext = None
-        } ! [ cmd, emulateClick lastTouchedId False ]
+        newModel ! [ cmd, emulateClick lastTouchedId False ]
 
     MouseUpOnCanvas ->
-      let
-        (clientX, clientY) =
-          model.pos
-
-        (offsetX, offsetY) =
-          model.offset
-
-        (model', cmd) =
-          case model.draggingContext of
-            MoveObject id (x, y) ->
-              updateByMoveObjectEnd id (x, y) (clientX, clientY) model
-
-            Selector ->
-              -- (updateSelectorRect (clientX, clientY) model) ! []
-              { model | selectorRect = Nothing } ! []
-
-            StampFromScreenPos _ ->
-              updateOnFinishStamp model
-
-            PenFromScreenPos pos ->
-              updateOnFinishPen pos model
-
-            ResizeFromScreenPos id pos ->
-              updateOnFinishResize id pos model
-
-            _ -> model ! []
-
-        newModel =
-          { model' |
-            draggingContext = None
-          }
-      in
-        newModel ! [ cmd ]
+      updateOnMouseUp model
 
     MouseDownOnCanvas (clientX, clientY') ->
       let
@@ -1187,6 +1131,40 @@ update removeToken action model =
       in
         newModel ! []
 
+
+updateOnMouseUp : Model -> (Model, Cmd Msg)
+updateOnMouseUp model =
+  let
+    (clientX, clientY) =
+      model.pos
+
+    (model', cmd) =
+      case model.draggingContext of
+        MoveObject id (x, y) ->
+          updateByMoveObjectEnd id (x, y) (clientX, clientY) model
+
+        Selector ->
+          -- (updateSelectorRect (clientX, clientY) model) ! []
+          { model | selectorRect = Nothing } ! []
+
+        StampFromScreenPos _ ->
+          updateOnFinishStamp model
+
+        PenFromScreenPos pos ->
+          updateOnFinishPen pos model
+
+        ResizeFromScreenPos id pos ->
+          updateOnFinishResize id pos model
+
+        _ ->
+          model ! []
+
+    newModel =
+      { model' |
+        draggingContext = None
+      }
+  in
+    newModel ! [ cmd ]
 
 
 updateSelectorRect : (Int, Int) -> Model -> Model
