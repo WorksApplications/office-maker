@@ -22,6 +22,10 @@ port removeToken : {} -> Cmd msg
 
 port tokenRemoved : ({} -> msg) -> Sub msg
 
+port undo : ({} -> msg) -> Sub msg
+
+port redo : ({} -> msg) -> Sub msg
+
 
 main : Program Flags
 main =
@@ -40,7 +44,7 @@ main =
     , view = View.view
     , update = Model.update removeToken
     , urlUpdate =  Model.urlUpdate
-    , subscriptions = Model.subscriptions tokenRemoved
+    , subscriptions = Model.subscriptions tokenRemoved undo redo
     }
 
 

@@ -24,6 +24,21 @@
 				localStorage.removeItem('authToken', token);
 			  main.ports.tokenRemoved.send();
 			});
+			window.addEventListener('keydown', function(e) {
+			  if(e.ctrlKey && e.keyCode === 90) {
+					// Ctrl+Z
+					if(!document.querySelector(':focus')) {
+						e.preventDefault();
+						main.ports.undo.send();
+					}
+			  } else if(e.ctrlKey && e.keyCode === 89) {
+					// Ctrl+Y
+					if(!document.querySelector(':focus')) {
+						e.preventDefault();
+						main.ports.redo.send();
+					}
+			  }
+			}, true);
 		</script>
 	</body>
 </html>

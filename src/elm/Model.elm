@@ -118,13 +118,15 @@ type CandidateRequestState
   | NotWaiting
 
 
-subscriptions : (({} -> Msg) -> Sub Msg) -> Model -> Sub Msg
-subscriptions tokenRemoved model =
+subscriptions : (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> Model -> Sub Msg
+subscriptions tokenRemoved undo redo model =
   Sub.batch
     [ Window.resizes (\e -> WindowSize (e.width, e.height))
     , Keyboard.downs (KeyCodeMsg True)
     , Keyboard.ups (KeyCodeMsg False)
     , tokenRemoved (always TokenRemoved)
+    , undo (always Undo)
+    , redo (always Redo)
     ]
 
 
@@ -249,6 +251,8 @@ type Msg = NoOp
   | CopyFloor String
   | EmulateClick Id Bool Time
   | TokenRemoved
+  | Undo
+  | Redo
   | Error GlobalError
 
 
@@ -402,7 +406,8 @@ update removeToken action model =
       in
         { model |
           floor = newFloor
-        } ! [ loadCmd ]
+        } ! [ --loadCmd
+        ]
 
     FloorPublished newVersion ->
       -- TODO new floor to be obtained
@@ -1204,6 +1209,12 @@ update removeToken action model =
       , editMode = Viewing False
       } ! []
 
+    Redo ->
+      { model | floor = EditingFloor.redo model.floor } ! []
+
+    Undo ->
+      { model | floor = EditingFloor.undo model.floor } ! []
+
     Error e ->
       let
         newModel =
@@ -1748,12 +1759,6 @@ updateByKeyEvent event model =
         , copiedObjects = selectedObjects model
         , selectedObjects = []
         } ! [ saveCmd ]
-
-    (True, ShortCut.Y) ->
-      { model | floor = EditingFloor.redo model.floor } ! []
-
-    (True, ShortCut.Z) ->
-      { model | floor = EditingFloor.undo model.floor } ! []
 
     (_, ShortCut.UpArrow) ->
       shiftSelectionToward ObjectsOperation.Up model ! []
