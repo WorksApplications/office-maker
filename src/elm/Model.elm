@@ -302,7 +302,7 @@ urlUpdate result model =
         newEditMode =
           if nextIsEditing then Select else Viewing False
 
-        _ = Debug.log ("node test/server/commands deleteFloor " ++ newURL.floorId) ""
+        _ = Debug.log ("node server/commands deleteFloor " ++ newURL.floorId) ""
       in
         { model |
           url = newURL

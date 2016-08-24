@@ -61,7 +61,7 @@ CAUTION: This product is under construction.
 
 ### Server Implementations
 
-There is only one server implementation which is made for debugging.See [here](./test/server/README.md).
+There is only one server implementation which is made for debugging.See [here](./server/README.md).
 
 
 ## Development
@@ -75,7 +75,7 @@ You need to have [Elm](http://elm-lang.org/) (>= 0.17) and [Node.js](https://nod
 ```
 elm-package install
 npm install
-cd test/server
+cd server
 npm install
 ```
 

@@ -65,7 +65,7 @@ commands.resetImage = function() {
 
 var args = process.argv;
 args.shift();// node
-args.shift();// test/server/commands.js
+args.shift();// server/commands.js
 var funcName = args.shift();
 
 commands[funcName].apply(null, [...args]).then(() => {

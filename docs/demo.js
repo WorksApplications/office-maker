@@ -25793,7 +25793,7 @@ var _user$project$Model$urlUpdate = F2(
 			var _p51 = _p46._0;
 			var _p47 = A2(
 				_elm_lang$core$Debug$log,
-				A2(_elm_lang$core$Basics_ops['++'], 'node test/server/commands deleteFloor ', _p51.floorId),
+				A2(_elm_lang$core$Basics_ops['++'], 'node server/commands deleteFloor ', _p51.floorId),
 				'');
 			var nextIsEditing = _elm_lang$core$Basics$not(
 				_user$project$Model_User$isGuest(model.user)) && _p51.editMode;

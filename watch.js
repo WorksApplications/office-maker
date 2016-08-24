@@ -25,7 +25,7 @@ function taskServer(cb) {
   if(queued.server) {
     queued.server = false;
     server && server.kill();
-    server = cp.spawn('node', ['test/server/server'], {stdio: 'inherit'});
+    server = cp.spawn('node', ['server/server'], {stdio: 'inherit'});
     cb();
   } else {
     cb();
@@ -48,7 +48,7 @@ watch.createMonitor('src', (monitor) => {
   monitor.on("removed", schedule.bind(null, 'build'));
 });
 
-watch.createMonitor('test', (monitor) => {
+watch.createMonitor('server', (monitor) => {
   monitor.on("created", schedule.bind(null, 'server'));
   monitor.on("changed", schedule.bind(null, 'server'));
   monitor.on("removed", schedule.bind(null, 'server'));
