@@ -80,13 +80,17 @@ function saveObjects(conn, data) {
     if(conflict) {
       return Promise.reject(409);
     }
-    var sqls = objects.concat(data.added).filter((e) => {
+    var toBeInserted = objects.concat(data.added).filter((e) => {
       return !deleted[e.id];
     }).map((object) => {
-      object = modified[object.id] || object;
+      return modified[object.id] || object;
+    });
+    var sqls = toBeInserted.map((object) => {
       return sql.insert('objects', schema.objectKeyValues(data.floorId, data.newFloorVersion, object));
     });
-    return rdb.batch(conn, sqls);
+    return rdb.batch(conn, sqls).then(() => {
+      return Promise.resolve(toBeInserted);
+    });
   });
 }
 
@@ -213,8 +217,12 @@ function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
         added: newFloor.added,
         modified: newFloor.modified,
         deleted: newFloor.deleted
-      }).then(() => {
-        return Promise.resolve({ id: newFloor.id, version: newFloor.version });
+      }).then((objects) => {
+        delete newFloor.added;
+        delete newFloor.modified;
+        delete newFloor.deleted;
+        newFloor.objects = objects;
+        return Promise.resolve(newFloor);
       });
     });
   });
@@ -225,7 +233,7 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
     if(!floor) {
       return Promise.reject('floor not found: ' + floorId);
     }
-    var baseVersion = floor.version;
+    var baseVersion = floor.version;//TODO it lacks?
     var oldFloorVersion = floor.version;
     floor.version = floor.version + 1;
     floor.public = true;
@@ -244,9 +252,10 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
         added: [],
         modified: [],
         deleted: []
-      }).then(() => {
+      }).then((objects) => {
         return deleteUnrelatedObjects(conn).then(() => {
-          return Promise.resolve(floor.version);
+          floor.objects = objects;
+          return Promise.resolve(floor);
         });
       });
     });

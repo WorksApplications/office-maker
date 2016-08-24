@@ -338,9 +338,9 @@ app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
       return Promise.reject(400);
     }
     var updateBy = user.id;
-    return db.saveFloorWithObjects(conn, user.tenantId, newFloor, updateBy).then((newIdAndVersion) => {
-      console.log('saved floor: ' + newIdAndVersion.id);
-      return Promise.resolve(newIdAndVersion);
+    return db.saveFloorWithObjects(conn, user.tenantId, newFloor, updateBy).then((floor) => {
+      console.log('saved floor: ' + floor.id);
+      return Promise.resolve(floor);
     });
   });
 }));
@@ -354,9 +354,9 @@ app.put('/api/1/floors/:id/public', inTransaction((conn, req, res) => {
     }
     var id = req.params.id;
     var updateBy = user.id;
-    return db.publishFloor(conn, user.tenantId, id, updateBy).then((newVersion) => {
-      console.log('published floor: ' + id + '/' + newVersion);
-      return Promise.resolve({ version : newVersion });
+    return db.publishFloor(conn, user.tenantId, id, updateBy).then((floor) => {
+      console.log('published floor: ' + floor.id + '/' + floor.version);
+      return Promise.resolve(floor);
     });
   });
 }));

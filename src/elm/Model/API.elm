@@ -55,19 +55,19 @@ type alias Config =
 
 -- createNewFloor : Task Error Int
 
-saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error Int
+saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error Floor
 saveEditingFloor config floor change =
   putJson
-    decodeFloorVersion
+    decodeFloor
     (config.apiRoot ++ "/1/floors/" ++ floor.id)
     (authorization config.token)
     (Http.string <| serializeFloor floor change)
 
 
-publishEditingFloor : Config -> String -> Task Error Int
+publishEditingFloor : Config -> String -> Task Error Floor
 publishEditingFloor config id =
   putJson
-    decodeFloorVersion
+    decodeFloor
     (config.apiRoot ++ "/1/floors/" ++ id ++ "/public")
     (authorization config.token)
     (Http.string "")

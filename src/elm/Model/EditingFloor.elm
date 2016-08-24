@@ -83,20 +83,9 @@ present efloor =
   efloor.undoList.present
 
 
-changeFloorAfterSave : Bool -> Int -> EditingFloor -> EditingFloor
-changeFloorAfterSave isPublish version efloor =
-  let
-    floor =
-      efloor.undoList.present
-
-    newFloor =
-      { floor |
-        public = isPublish
-      , version = version
-      }
-
-  in
-    { efloor |
-      undoList = UndoList.new newFloor efloor.undoList
-    , version = version
-    }
+changeFloorAfterSave : Floor -> EditingFloor -> EditingFloor
+changeFloorAfterSave newFloor efloor =
+  { efloor |
+    undoList = UndoList.new newFloor efloor.undoList
+  , version = newFloor.version
+  }

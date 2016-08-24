@@ -29,8 +29,8 @@ CAUTION: This product is under construction.
 |GET| /api/1/floors?all=true||[FloorInfo]||✓|✓|✓|
 |GET| /api/1/floors/:id||Floor|fetch latest version|✓|✓|✓|
 |GET| /api/1/floors/:id?all=true||Floor|fetch latest unpublished version||✓|✓|
-|PUT| /api/1/floors/:id|FloorChange||update latest unpublished version||✓|✓|
-|PUT| /api/1/floors/:id/public|||publish latest unpublished version|||✓|
+|PUT| /api/1/floors/:id|FloorChange|Floor|update latest unpublished version||✓|✓|
+|PUT| /api/1/floors/:id/public||Floor|publish latest unpublished version|||✓|
 |PUT| /api/1/images/:id|Image|||||✓|
 
 <!--

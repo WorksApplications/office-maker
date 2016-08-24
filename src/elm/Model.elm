@@ -206,8 +206,8 @@ type Msg = NoOp
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
   | ImageSaved String Int Int
-  | FloorSaved Int
-  | FloorPublished Int
+  | FloorSaved Floor
+  | FloorPublished Floor
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
@@ -391,42 +391,25 @@ update removeToken action model =
       in
         { model | floor = newFloor } ! [ saveCmd ]
 
-    FloorSaved newVersion ->
+    FloorSaved floor ->
+      { model |
+        floor = EditingFloor.changeFloorAfterSave floor model.floor
+      } ! []
+
+    FloorPublished floor ->
       let
-        newFloorId =
-          (EditingFloor.present model.floor).id
-
-        task =
-          API.getFloorOfVersion model.apiConfig newFloorId newVersion
-
-        loadCmd =
-          performAPI FloorLoaded task
-
-        newFloor =
-          EditingFloor.changeFloorAfterSave False newVersion model.floor
-      in
-        { model |
-          floor = newFloor
-        } ! [ loadCmd ]
-
-    FloorPublished newVersion ->
-      -- TODO new floor to be obtained
-      let
-        newFloorId =
-          (EditingFloor.present model.floor).id
-
         message =
-          Success ("Successfully published " ++ (EditingFloor.present model.floor).name)
+          Success ("Successfully published " ++ floor.name)
 
         newFloor =
-          EditingFloor.changeFloorAfterSave True newVersion model.floor
+          EditingFloor.changeFloorAfterSave floor model.floor
       in
         { model |
           floor = newFloor
         , error = message
         } !
           [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-          , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+          , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just floor.id) model.url)
           ]
 
     MoveOnCanvas (clientX, clientY) ->
@@ -1151,9 +1134,7 @@ update removeToken action model =
         cmd =
           performAPI
             FloorLoaded
-            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing) `andThen` \version ->
-              API.getFloorOfVersion model.apiConfig newFloorId version
-            )
+            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
         modifyUrlCmd =
           Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
@@ -1171,9 +1152,7 @@ update removeToken action model =
         cmd =
           performAPI
             FloorLoaded
-            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing) `andThen` \version ->
-              API.getFloorOfVersion model.apiConfig newFloorId version
-            )
+            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
         modifyUrlCmd =
           Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)

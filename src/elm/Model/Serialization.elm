@@ -24,11 +24,6 @@ decodeAuthToken =
   Decode.object1 identity ("accessToken" := Decode.string)
 
 
-decodeFloorVersion : Decoder Int
-decodeFloorVersion =
-  Decode.object1 identity ("version" := Decode.int)
-
-
 decodeColors : Decoder ColorPalette
 decodeColors =
   Decode.map ColorPalette.init (Decode.list decodeColorEntity)

@@ -51,7 +51,7 @@ watch.createMonitor('src', function (monitor) {
 watch.createMonitor('test/server', {
   filter: function(stat) {
     return minimatch(slash(stat), 'test/server/*.js*')
-      || minimatch(slash(stat), 'test/server/lib/*.*')
+      || minimatch(slash(stat), 'test/server/lib/*.js')
       || minimatch(slash(stat), 'test/server/template/*.*');
   }
 }, function (monitor) {
