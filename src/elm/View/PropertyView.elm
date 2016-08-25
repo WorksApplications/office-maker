@@ -17,16 +17,22 @@ import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 view : Model -> List (Html Msg)
 view model =
-  [ if List.all Object.backgroundColorEditable (selectedObjects model) then
-      row [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
-    else text ""
-  , if List.all Object.colorEditable (selectedObjects model) then
-      row [ label Icons.colorPropLabel, colorView model ]
-    else text ""
-  , if List.all Object.shapeEditable (selectedObjects model) then
-      row [ label Icons.shapePropLabel, shapeView model ]
-    else text ""
-  ] -- TODO fontSize, name, icon?
+  let
+    selectedObjects = Model.selectedObjects model
+  in
+    if selectedObjects == [] then
+      []
+    else
+      [ if List.all Object.backgroundColorEditable selectedObjects then
+          row [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
+        else text ""
+      , if List.all Object.colorEditable selectedObjects then
+          row [ label Icons.colorPropLabel, colorView model ]
+        else text ""
+      , if List.all Object.shapeEditable selectedObjects then
+          row [ label Icons.shapePropLabel, shapeView model ]
+        else text ""
+      ] -- TODO fontSize, name, icon?
 
 
 label : Html Msg -> Html Msg

@@ -7,6 +7,7 @@ import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy exposing (..)
 
 import SearchBox
 import Header
@@ -19,17 +20,15 @@ import View.CanvasView as CanvasView
 import View.PropertyView as PropertyView
 import View.ContextMenu as ContextMenu
 import View.Common exposing (..)
+import View.PrototypePreviewView as PrototypePreviewView
 import FloorProperty
 
 import Util.HtmlUtil exposing (..)
-import Util.ListUtil exposing (..)
 
 import Model exposing (..)
 import Model.Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Object as Object exposing (..)
-import Model.Scale as Scale
-import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.User as User
 import Model.Person exposing (Person)
@@ -229,62 +228,16 @@ penView model =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
+
+    stampMode =
+      (model.editMode == Stamp)
   in
     [ modeSelectionView model
-    , prototypePreviewView prototypes (model.editMode == Stamp)
+    , if stampMode then
+        lazy2 PrototypePreviewView.view prototypes stampMode
+      else
+        text ""
     ]
-
-
-prototypePreviewView : List (Prototype, Bool) -> Bool -> Html Msg
-prototypePreviewView prototypes stampMode =
-  let
-    width = 320 - (20 * 2) -- TODO
-    height = 238 -- TODO
-
-    selectedIndex =
-      Maybe.withDefault 0 <|
-      List.head <|
-      List.filterMap (\((prototype, selected), index) -> if selected then Just index else Nothing) <|
-      zipWithIndex prototypes
-
-    buttons =
-      prototypePreviewViewButtons selectedIndex prototypes
-
-    inner =
-      div
-        [ style (S.prototypePreviewViewInner width selectedIndex) ]
-        (List.indexedMap (prototypePreviewViewEach (width, height)) prototypes)
-  in
-    div
-      [ style (S.prototypePreviewView stampMode) ]
-      ( inner :: buttons )
-
-
-prototypePreviewViewEach : (Int, Int) -> Int -> (Prototype, Bool) -> Html Msg
-prototypePreviewViewEach (width, height) index (prototype, selected) =
-  let
-    (w, h) = prototype.size
-    left = width // 2 - w // 2
-    top = height // 2 - h // 2
-  in
-    snd <| CanvasView.temporaryStampView Scale.init False (prototype, (left + index * width, top))
-
-
-prototypePreviewViewButtons : Int -> List (Prototype, Bool) -> List (Html Msg)
-prototypePreviewViewButtons selectedIndex prototypes =
-  List.map (\isLeft ->
-    let
-      label = if isLeft then "<" else ">"
-    in
-      div
-        [ style (S.prototypePreviewScroll isLeft)
-        , onClick' (if isLeft then PrototypesMsg Prototypes.prev else PrototypesMsg Prototypes.next)
-        ]
-        [ text label ]
-    )
-  ( (if selectedIndex > 0 then [True] else []) ++
-    (if selectedIndex < List.length prototypes - 1 then [ False ] else [])
-  )
 
 
 modeSelectionView : Model -> Html Msg
