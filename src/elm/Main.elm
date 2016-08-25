@@ -20,6 +20,8 @@ type alias Flags =
 
 port removeToken : {} -> Cmd msg
 
+port setSelectionStart : {} -> Cmd msg
+
 port tokenRemoved : ({} -> msg) -> Sub msg
 
 port undo : ({} -> msg) -> Sub msg
@@ -42,7 +44,7 @@ main =
           flags.visitDate
           result
     , view = View.view
-    , update = Model.update removeToken
+    , update = Model.update removeToken setSelectionStart
     , urlUpdate =  Model.urlUpdate
     , subscriptions = Model.subscriptions tokenRemoved undo redo
     }

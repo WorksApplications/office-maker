@@ -1,9 +1,11 @@
 var mysql = require('mysql');
 
 function exec(conn, sql) {
+
   return new Promise((resolve, reject) => {
     conn.query(sql, (e, rows, fields) => {
       if(e) {
+        console.log(sql.split('\n').join());
         reject(e);
       } else {
         (rows.length ? rows : []).forEach((row) => {

@@ -24,6 +24,17 @@
 				localStorage.removeItem('authToken', token);
 			  main.ports.tokenRemoved.send();
 			});
+			main.ports.setSelectionStart.subscribe(function() {
+				var input = document.getElementById('name-input');
+				if(input) {
+					input.blur();
+					input.setSelectionRange(9999,9999);
+					// input.value = input.value;
+					input.focus();
+					// var a = input.dispatchEvent(new KeyboardEvent('keydown', { calcelable: false, 'bubbles': false, key: "a" }));
+					// console.log(a);
+				}
+			});
 			window.addEventListener('keydown', function(e) {
 			  if(e.ctrlKey && e.keyCode === 90) {
 					// Ctrl+Z

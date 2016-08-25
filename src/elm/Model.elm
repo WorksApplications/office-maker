@@ -13,6 +13,7 @@ import Navigation
 import Time exposing (Time)
 import Http
 import Dom
+import Basics.Extra exposing (never)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -253,6 +254,7 @@ type Msg = NoOp
   | TokenRemoved
   | Undo
   | Redo
+  | Focused
   | Error GlobalError
 
 
@@ -325,8 +327,8 @@ urlUpdate result model =
         model ! [ Navigation.modifyUrl (URL.stringify validURL) ]
 
 
-update : ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
-update removeToken action model =
+update : ({} -> Cmd Msg) -> ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
+update removeToken setSelectionStart action model =
   case debugMsg action of
     NoOp ->
       model ! []
@@ -394,7 +396,7 @@ update removeToken action model =
     FloorSaved floor ->
       { model |
         floor = EditingFloor.changeFloorAfterSave floor model.floor
-      } ! []
+      } ! [ ]
 
     FloorPublished floor ->
       let
@@ -572,6 +574,7 @@ update removeToken action model =
           case ObjectNameInput.forceFinish model.objectNameInput of
             (objectNameInput, Just (id, name)) ->
               updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
+
             (objectNameInput, _) ->
               { model | objectNameInput = objectNameInput } ! []
 
@@ -596,13 +599,13 @@ update removeToken action model =
               , contextMenu = NoContextMenu
               }
 
-            (newModel, cmd) =
-              startEditAndFocus e model
+            newModel =
+              startEdit e model
           in
             newModel !
               [ requestCandidate id name
               -- , Task.perform identity identity (Task.succeed MouseUpOnCanvas) -- TODO get rid of this hack
-              , cmd
+              , focusCmd
               ]
 
         Nothing ->
@@ -1118,11 +1121,14 @@ update removeToken action model =
       , editMode = Viewing False
       } ! []
 
+    Undo ->
+      { model | floor = EditingFloor.undo model.floor } ! []
+
     Redo ->
       { model | floor = EditingFloor.redo model.floor } ! []
 
-    Undo ->
-      { model | floor = EditingFloor.undo model.floor } ! []
+    Focused ->
+      model ! [ setSelectionStart {} ]
 
     Error e ->
       let
@@ -1230,13 +1236,12 @@ updateOffsetByScreenPos (x, y) model =
   }
 
 
-startEditAndFocus : Object -> Model -> (Model, Cmd Msg)
-startEditAndFocus e model =
+startEdit : Object -> Model -> Model
+startEdit e model =
   { model |
-    objectNameInput = ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
-  } !
-    [ focusCmd "name-input"
-    ]
+    objectNameInput =
+      ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
+  }
 
 
 updateOnSearchBoxEvent : SearchBox.Event -> Model -> (Maybe Id, Cmd Msg)
@@ -1326,19 +1331,19 @@ updateOnSelectCandidate objectId personId model =
   case Dict.get personId model.personInfo of
     Just person ->
       let
-        (newFloor, cmd) =
+        (newFloor, _) =
           EditingFloor.commit
-            (saveFloorCmd model.apiConfig)
+            (\_ _ -> Cmd.none) -- save is done below
             (Floor.setPerson objectId personId)
             model.floor
 
-        (newModel, cmd2) =
+        (newModel, cmd) =
           updateOnFinishNameInput True objectId person.name
             { model |
               floor = newFloor
             }
       in
-        newModel ! [ cmd, cmd2 ]
+        newModel ! [ cmd ]
 
     Nothing ->
       model ! [] -- maybe never happen
@@ -1479,10 +1484,10 @@ updateOnFinishLabel model =
     case findObjectById (EditingFloor.present model'.floor).objects newId of
       Just e ->
         let
-          (newModel, cmd) =
-            startEditAndFocus e model'
+          newModel =
+            startEdit e model'
         in
-          newModel ! [ saveCmd, cmd ]
+          newModel ! [ saveCmd, focusCmd ]
 
       Nothing ->
         model' ! [ saveCmd ]
@@ -1518,6 +1523,11 @@ updateOnFloorLoaded floor model =
                 performAPI identity task
   in
     newModel ! [ cmd ]
+
+
+focusCmd : Cmd Msg
+focusCmd =
+  Task.perform (always NoOp) (always Focused) (Dom.focus "name-input")
 
 
 updateFloorByFloorPropertyEvent : API.Config -> FloorProperty.Event -> Seed -> EditingFloor -> ((EditingFloor, Seed), Cmd Msg)
@@ -1667,7 +1677,7 @@ updateOnFinishNameInput continueEditing id name model =
       , selectedObjects = selectedObjects
       }
   in
-    newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, saveCmd ]
+    newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, saveCmd, focusCmd ]
 
 
 updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg
@@ -1881,15 +1891,6 @@ loadFloorCmd apiConfig forEdit floorId =
   in
     Task.perform recover404 FloorLoaded task
 
-
-focusCmd : String -> Cmd Msg
-focusCmd id =
-  Task.perform (Error << HtmlError) (always NoOp) (Dom.focus id)
-
-
-blurCmd : String -> Cmd Msg
-blurCmd id =
-  Task.perform (Error << HtmlError) (always NoOp) (Dom.blur id)
 
 
 -- TODO bad naming
