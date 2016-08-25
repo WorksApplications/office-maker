@@ -148,6 +148,8 @@ deskObject rect backgroundColor selected isGhost disableTransition =
   , ("border-left-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
   , ("border-bottom-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
   , ("border-right-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
+  , ("user-select", "none")
+  , ("-webkit-user-select", "none")
   ] ++ transition ["width", "height", "top", "left"] disableTransition
 
 
@@ -169,6 +171,8 @@ labelObject isEllipse rect backgroundColor fontColor selected isGhost rectVisibl
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
   , ("border-radius", if isEllipse  then "50%" else "")
+  , ("user-select", "none")
+  , ("-webkit-user-select", "none")
   ] ++ transition ["width", "height", "top", "left"] disableTransition
 
 

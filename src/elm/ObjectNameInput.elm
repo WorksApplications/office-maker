@@ -6,7 +6,6 @@ import Html.Events exposing (..)
 import Html.Keyed as Keyed
 
 import Json.Decode as Decode
-import Json.Encode as Encode
 import Util.HtmlUtil exposing (..)
 import Model.Person exposing (Person)
 
