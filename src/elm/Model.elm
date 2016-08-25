@@ -175,7 +175,7 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       , candidates = []
       , url = url
       , searchBox = searchBox
-      , tab = SearchTab
+      , tab = if url.editMode then EditTab else SearchTab
       , clickEmulator = []
       , candidateRequest = NotWaiting
       , personPopupSize = (300, 160)
