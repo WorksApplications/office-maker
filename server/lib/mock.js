@@ -46,8 +46,8 @@ var colors = [
 var prototypes = [
   { id: "1",
     name: "",
-    width : gridSize*7,
-    height: gridSize*12,
+    width : gridSize*7,//70cm
+    height: gridSize*12,//120cm
     backgroundColor: "#eda",
     color: "#000",
     fontSize: 14,
