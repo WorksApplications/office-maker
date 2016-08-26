@@ -26,14 +26,16 @@ commands.createDataForDebug = function(tenantId) {
     console.log(`creating data for tenant ${tenantId} ...`);
     return Promise.all(mock.users.map((user) => {
       return db.saveUser(conn, user);
-    }).concat(mock.people.map((person) => {
-      return db.savePerson(conn, person);
-    })).concat([
-      db.savePrototypes(conn, tenantId, mock.prototypes)
-    ]).concat([
-      db.saveColors(conn, tenantId, mock.colors)
-    ]));
-  });
+    })).then(() => {
+      return Promise.all(mock.people.map((person) => {
+        return db.savePerson(conn, person);
+      }));
+    }).then(() => {
+      return db.savePrototypes(conn, tenantId, mock.prototypes);
+    }).then(() => {
+      return db.saveColors(conn, tenantId, mock.colors);
+    });
+  }).then(rdbEnv.end);
 };
 
 commands.deleteFloor = function(floorId) {
@@ -43,7 +45,7 @@ commands.deleteFloor = function(floorId) {
   return rdbEnv.forConnectionAndTransaction((conn) => {
     console.log('deleting floor ' + floorId + '...');
     db.deleteFloorWithObjects(conn, tenantId, floorId);
-  });
+  }).then(rdbEnv.end);
 };
 
 commands.deletePrototype = function(id) {
@@ -53,7 +55,7 @@ commands.deletePrototype = function(id) {
   return rdbEnv.forConnectionAndTransaction((conn) => {
     console.log('deleting prototype ' + id + '...');
     return db.deletePrototype(conn, tenantId, id);
-  });
+  }).then(rdbEnv.end);
 };
 
 commands.resetImage = function() {
@@ -68,7 +70,7 @@ args.shift();// node
 args.shift();// server/commands.js
 var funcName = args.shift();
 
-commands[funcName].apply(null, [...args]).then(() => {
+commands[funcName].apply(null, args).then(() => {
   console.log('done');
 }).catch((e) => {
   console.log(e);

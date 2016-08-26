@@ -130,9 +130,22 @@ function createEnv(host, user, pass, dbname) {
     });
   }
 
+  function end() {
+    return new Promise((resolve, reject) => {
+      pool.end(e => {
+        if(e) {
+          reject(e);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
   return {
     forConnection: forConnection,
-    forConnectionAndTransaction: forConnectionAndTransaction
+    forConnectionAndTransaction: forConnectionAndTransaction,
+    end: end
   };
 }
 

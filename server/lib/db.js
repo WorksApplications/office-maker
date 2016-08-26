@@ -1,6 +1,5 @@
 var url = require('url');
 var fs = require('fs-extra');
-var _async = require('async');
 
 var sql = require('./sql.js');
 var rdb = require('./mysql.js');
