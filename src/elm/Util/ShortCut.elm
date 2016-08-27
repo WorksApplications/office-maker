@@ -45,9 +45,8 @@ init =
 update : Bool -> Int -> Model -> (Model, Event)
 update isDown keyCode model =
   let
-    event =
-      if not isDown then None
-      else if keyCode == 13 then Enter
+    code =
+      if keyCode == 13 then Enter
       else if keyCode == 16 then Shift
       else if keyCode == 17
         || keyCode == 91 -- Command key for Safari/Chrome
@@ -71,11 +70,14 @@ update isDown keyCode model =
       else Other keyCode
 
     newModel =
-      if event == Shift then
+      if code == Shift then
         { model | shift = isDown }
-      else if event == Ctrl then
+      else if code == Ctrl then
         { model | ctrl = isDown }
       else
         model
+
+    event =
+      if isDown then code else None
   in
     (newModel, event)
