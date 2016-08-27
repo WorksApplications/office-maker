@@ -86,6 +86,5 @@ present efloor =
 changeFloorAfterSave : Floor -> EditingFloor -> EditingFloor
 changeFloorAfterSave newFloor efloor =
   { efloor |
-    undoList = UndoList.new newFloor efloor.undoList
-  , version = newFloor.version
+    version = newFloor.version
   }
