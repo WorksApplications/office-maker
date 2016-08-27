@@ -28,16 +28,19 @@ type Event =
   | Other Int
   | None
 
+
 type alias Model =
   { ctrl : Bool
   , shift : Bool
   }
+
 
 init : Model
 init =
   { ctrl = False
   , shift = False
   }
+
 
 update : Bool -> Int -> Model -> (Model, Event)
 update isDown keyCode model =
@@ -46,7 +49,11 @@ update isDown keyCode model =
       if not isDown then None
       else if keyCode == 13 then Enter
       else if keyCode == 16 then Shift
-      else if keyCode == 17 then Ctrl
+      else if keyCode == 17
+        || keyCode == 91 -- Command key for Safari/Chrome
+        || keyCode == 224 -- Command key for Firefox
+        || keyCode == 13 -- Comamnd key for Opera
+        then Ctrl
       else if keyCode == 46 then Del
       else if keyCode == (Char.toCode 'A') then A
       else if keyCode == (Char.toCode 'C') then C
@@ -62,10 +69,11 @@ update isDown keyCode model =
       else if keyCode == 39 then RightArrow
       else if keyCode == 40 then DownArrow
       else Other keyCode
+
     newModel =
-      if keyCode == 16 then
+      if event == Shift then
         { model | shift = isDown }
-      else if keyCode == 17 then
+      else if event == Ctrl then
         { model | ctrl = isDown }
       else
         model
