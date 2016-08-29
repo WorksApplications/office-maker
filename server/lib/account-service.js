@@ -1,21 +1,23 @@
 var request = require('request');
 
 function send(token, method, url, data) {
+  console.log(method, url, data);
   return new Promise((resolve, reject) => {
     var options = {
       method: method,
       url: url,
       headers: {
-        'Authorization': token
+        'Authorization': 'JWT ' + token
       },
-      form: data
+      body: data,
+      json: true
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
         console.log(response.statusCode, 'account service: failed ' + method + ' ' + url);
         reject(e || response.statusCode);
       } else {
-        resolve(JSON.parse(body));
+        resolve(body);
       }
     });
   });
@@ -34,11 +36,13 @@ function login(root, userId, password) {
     userId: userId,
     password: password
   }).then(obj => {
-    return obj.authToken;
+    return obj.accessToken;
   });
 }
 
 function addUser(root, token, user) {
+  user.userId = user.id;
+  user.role = user.role.toUpperCase();
   return post(token, root + '/1/users', user);
 }
 

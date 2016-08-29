@@ -1,25 +1,38 @@
 var request = require('request');
+var uuid = require('uuid');
 
-function get(token, url) {
+function send(token, method, url, data) {
+  console.log(method, url, data);
   return new Promise((resolve, reject) => {
     var options = {
+      method: method,
       url: url,
       headers: {
-        'Authorization': token
-      }
+        'Authorization': 'JWT ' + token
+      },
+      body: data,
+      json: true
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
-        console.log(response.statusCode, 'profile service: failed GET ' + url);
+        console.log(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
         reject(e || response.statusCode);
       } else {
-        resolve(JSON.parse(body));
+        resolve(body);
       }
     });
   });
 }
 
-function fixPerson(person) {
+function get(token, url) {
+  return send(token, 'GET', url);
+}
+
+function post(token, url, data) {
+  return send(token, 'POST', url, data);
+}
+
+function fixPerson(profile) {
   return {
     id: profile.id,
     tenantId: profile.tenantId,
@@ -53,10 +66,17 @@ function getPersonByUserId(root, token, userId) {
 }
 
 function addPerson(root, token, person) {
+  person.id = uuid.v4();
+  person.userId = person.mail;
   person.employeeId = person.empNo;
+  person.ruby = '';
   person.cellPhone = person.tel;
   person.extensionPhone = person.tel;
   person.picture = person.image;
+  person.organization = person.org;
+  person.post = '';
+  person.rank = '';
+  person.workspace = '';
   return post(token, root + '/1/profiles', person);
 }
 
