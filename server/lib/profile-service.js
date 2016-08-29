@@ -69,14 +69,14 @@ function addPerson(root, token, person) {
   person.id = uuid.v4();
   person.userId = person.mail;
   person.employeeId = person.empNo;
-  person.ruby = '';
-  person.cellPhone = person.tel;
-  person.extensionPhone = person.tel;
-  person.picture = person.image;
-  person.organization = person.org;
-  person.post = '';
-  person.rank = '';
-  person.workspace = '';
+  person.ruby = '' || null;
+  person.cellPhone = person.tel || null;
+  person.extensionPhone = person.tel || null;
+  person.picture = person.image || null;
+  person.organization = person.org || null;
+  person.post = '' || null;
+  person.rank = '' || null;
+  person.workspace = '' || null;
   return post(token, root + '/1/profiles', person);
 }
 
