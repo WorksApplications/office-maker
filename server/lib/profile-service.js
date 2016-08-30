@@ -2,7 +2,7 @@ var request = require('request');
 var uuid = require('uuid');
 
 function send(token, method, url, data) {
-  console.log(method, url, data);
+  // console.log(method, url);
   return new Promise((resolve, reject) => {
     var options = {
       method: method,

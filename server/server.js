@@ -28,7 +28,7 @@ if(!paasMode) {
 }
 if(paasMode) {
   // In paasMode, we use public key for account service
-  config.secret = fs.readFileSync(config.secret, 'utf8');
+  config.secret = fs.readFileSync(__dirname + '/' + config.secret, 'utf8');
 }
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
@@ -80,6 +80,12 @@ function getSelf(conn, token) {
         resolve(user);
       }
     });
+  }).catch((e) => {
+    if(e.name === 'JsonWebTokenError') {
+      return Promise.reject(401);
+    } else {
+      return Promise.reject(e);
+    }
   });
 }
 

@@ -1,7 +1,7 @@
 var request = require('request');
 
 function send(token, method, url, data) {
-  console.log(method, url, data);
+  // console.log(method, url);
   return new Promise((resolve, reject) => {
     var options = {
       method: method,
@@ -42,6 +42,7 @@ function login(root, userId, password) {
 
 function addUser(root, token, user) {
   user.userId = user.id;
+  user.password = user.pass;
   user.role = user.role.toUpperCase();
   return post(token, root + '/1/users', user);
 }
