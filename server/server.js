@@ -11,7 +11,7 @@ var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var accountService = require('./lib/account-service');
 var profileService = require('./lib/profile-service');
-
+var log = require('./lib/log.js');
 
 var config = null;
 if(fs.existsSync(__dirname + '/config.json')) {
@@ -35,6 +35,7 @@ var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pa
 
 var publicDir = __dirname + '/public';
 
+app.use(log.express);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -48,8 +49,8 @@ function inTransaction(f) {
       if(typeof e === 'number' && e >= 400) {
         res.status(e).send('');
       } else {
-        console.log('error', e);
-        console.log(e.stack);
+        log.system.error('error', e);
+        log.system.error(e.stack);
         res.status(500).send('');
       }
     });
@@ -269,12 +270,12 @@ app.get('/api/1/floors/:id/:version', inTransaction((conn, req, res) => {
     var tenantId = user ? user.tenantId : '';
     var id = req.params.id;
     var version = req.params.version;
-    console.log('get: ' + id + '/' + version);
+    log.system.debug('get: ' + id + '/' + version);
     return db.getFloorOfVersionWithObjects(conn, tenantId, id, version).then((floor) => {
       if(!floor) {
         return Promise.reject(404);
       }
-      console.log('gotFloor: ' + id + '/' + version + ' ' + floor.objects.length);
+      log.system.debug('gotFloor: ' + id + '/' + version + ' ' + floor.objects.length);
       return Promise.resolve(floor);
     })
   });
@@ -291,12 +292,12 @@ app.get('/api/1/floors/:id', inTransaction((conn, req, res) => {
     }
     var tenantId = user ? user.tenantId : '';
     var id = req.params.id;
-    console.log('get: ' + id);
+    log.system.debug('get: ' + id);
     return db.getFloorWithObjects(conn, tenantId, options.all, id).then((floor) => {
       if(!floor) {
         return Promise.reject(404);
       }
-      console.log('gotFloor: ' + id + ' ' + floor.objects.length);
+      log.system.debug('gotFloor: ' + id + ' ' + floor.objects.length);
       return Promise.resolve(floor);
     })
   });
@@ -345,7 +346,7 @@ app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
     }
     var updateBy = user.id;
     return db.saveFloorWithObjects(conn, user.tenantId, newFloor, updateBy).then((floor) => {
-      console.log('saved floor: ' + floor.id);
+      log.system.debug('saved floor: ' + floor.id);
       return Promise.resolve(floor);
     });
   });
@@ -361,7 +362,7 @@ app.put('/api/1/floors/:id/public', inTransaction((conn, req, res) => {
     var id = req.params.id;
     var updateBy = user.id;
     return db.publishFloor(conn, user.tenantId, id, updateBy).then((floor) => {
-      console.log('published floor: ' + floor.id + '/' + floor.version);
+      log.system.info('published floor: ' + floor.id + '/' + floor.version);
       return Promise.resolve(floor);
     });
   });
@@ -390,15 +391,15 @@ app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
 }));
 
 process.on('uncaughtException', (e) => {
-  console.log('uncaughtException');
-  console.log(e.stack);
+  log.error.debug('uncaughtException');
+  log.error.debug(e.stack);
 });
 
 app.listen(3000, () => {
-  console.log('server listening on port 3000.');
+  log.system.info('server listening on port 3000.');
   if(paasMode) {
-    console.log('paas mode');
+    log.system.info('running on paas mode');
   } else {
-    console.log('on-premiss mode');
+    log.system.info('running on on-premiss mode');
   }
 });

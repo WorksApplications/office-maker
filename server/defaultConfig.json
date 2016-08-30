@@ -7,5 +7,10 @@
   "title": "Office Map",
   "profileServiceRoot": "",
   "accountServiceRoot": "",
-  "secret": "secret"
+  "secret": "secret",
+  "log": {
+    "access": "ALL",
+    "system": "ALL",
+    "error": "ALL"
+  }
 }

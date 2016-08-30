@@ -1,11 +1,11 @@
 var mysql = require('mysql');
+var log = require('./log.js');
 
 function exec(conn, sql) {
-
   return new Promise((resolve, reject) => {
     conn.query(sql, (e, rows, fields) => {
       if(e) {
-        console.log(sql.split('\n').join());
+        log.error.info('SQL failed: ' + sql.split('\n').join());
         reject(e);
       } else {
         (rows.length ? rows : []).forEach((row) => {
@@ -16,7 +16,7 @@ function exec(conn, sql) {
           });
         });
         var _res = rows.length || rows.affectedRows || '';
-        // console.log(`${sql.split('\n').join()} => ${_res}`);
+        log.system.debug(`${sql.split('\n').join()} => ${_res}`);
         resolve(rows);
       }
     });

@@ -1,8 +1,9 @@
 var request = require('request');
 var uuid = require('uuid');
+var log = require('./log.js');
 
 function send(token, method, url, data) {
-  // console.log(method, url);
+  log.system.debug(method, url);
   return new Promise((resolve, reject) => {
     var options = {
       method: method,
@@ -15,7 +16,7 @@ function send(token, method, url, data) {
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
-        console.log(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
+        log.system.error(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
         reject(e || response.statusCode);
       } else {
         resolve(body);

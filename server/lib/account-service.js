@@ -1,7 +1,8 @@
 var request = require('request');
+var log = require('./log.js');
 
 function send(token, method, url, data) {
-  // console.log(method, url);
+  log.system.debug(method, url);
   return new Promise((resolve, reject) => {
     var options = {
       method: method,
@@ -14,7 +15,7 @@ function send(token, method, url, data) {
     };
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
-        console.log(response.statusCode, 'account service: failed ' + method + ' ' + url);
+        log.system.error(response.statusCode, 'account service: failed ' + method + ' ' + url);
         reject(e || response.statusCode);
       } else {
         resolve(body);
