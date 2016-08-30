@@ -17,7 +17,8 @@ function send(token, method, url, data) {
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
         log.system.error(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
-        reject(e || response.statusCode);
+        log.system.error(body.message);
+        reject(body.message ? body : e || response.statusCode);
       } else {
         resolve(body);
       }

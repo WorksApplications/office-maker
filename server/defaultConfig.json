@@ -9,8 +9,8 @@
   "accountServiceRoot": "",
   "secret": "secret",
   "log": {
-    "access": "ALL",
-    "system": "ALL",
-    "error": "ALL"
+    "access": "INFO",
+    "system": "INFO",
+    "error": "INFO"
   }
 }
