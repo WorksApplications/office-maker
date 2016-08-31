@@ -16,15 +16,19 @@ toObjectCandidates prototype (left, top) s =
     rows' =
       List.indexedMap (\rowIndex row ->
         List.indexedMap (\colIndex name ->
-          ( { prototype |
-              name = name
-            }
-          , calcPosition prototype (left, top) rowIndex colIndex
-          )
+          if String.trim name == "" then
+            Nothing
+          else
+            Just
+              ( { prototype |
+                  name = name
+                }
+              , calcPosition prototype (left, top) rowIndex colIndex
+              )
         ) row
       ) rows
   in
-    List.concatMap identity rows'
+    List.concatMap (List.filterMap identity) rows'
 
 
 parse : String -> List (List String)
