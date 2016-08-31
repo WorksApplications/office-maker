@@ -82,11 +82,13 @@ function getSelf(conn, token) {
       }
     });
   }).catch((e) => {
-    if(e.name === 'JsonWebTokenError') {
-      return Promise.reject(401);
-    } else {
-      return Promise.reject(e);
-    }
+    log.system.debug(e);
+    Promise.reject(401);
+    // if(e.name === 'JsonWebTokenError') {
+    //   return Promise.reject(401);
+    // } else {
+    //   return Promise.reject(e);
+    // }
   });
 }
 
@@ -160,6 +162,11 @@ app.get('/api/1/self', inTransaction((conn, req, res) => {
     return Promise.resolve({});
   }
   return getSelf(conn, token).then((user) => {
+    if(!user) {
+      return Promise.resolve({
+        role: 'guest',
+      });
+    }
     return getPerson(conn, token, user).then((person) => {
       user.person = person;
       return Promise.resolve(user);

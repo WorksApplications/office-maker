@@ -27,6 +27,9 @@ view e =
     HtmlError e ->
       errorView ("Unexpected HtmlError: " ++ toString e)
 
+    PasteError s ->
+      errorView s
+
 
 noneView : Html msg
 noneView =

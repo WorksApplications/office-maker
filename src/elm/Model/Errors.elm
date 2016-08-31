@@ -9,5 +9,6 @@ type GlobalError
   = APIError API.Error
   | FileError File.Error
   | HtmlError Dom.Error
+  | PasteError String
   | Success String
   | NoError

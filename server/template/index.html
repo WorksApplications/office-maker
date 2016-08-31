@@ -8,6 +8,7 @@
 		<link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
 	</head>
 	<body>
+		<input id="paste">
 		<script>
 			var main = Elm.Main.fullscreen({
 				initialSize: [window.innerWidth, window.innerHeight],
@@ -50,10 +51,10 @@
 					}
 			  }
 			}, true);
-			// window.addEventListener('dblclick', function(e) {
-			//   e.preventDefault();
-			// 	e.stopPropagation();
-			// }, true);
+			document.getElementById('paste').addEventListener('paste', function(e) {
+				e.preventDefault();
+				main.ports.clipboard.send(e.clipboardData.getData('text'));
+			});
 		</script>
 	</body>
 </html>

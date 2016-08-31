@@ -28,6 +28,8 @@ port undo : ({} -> msg) -> Sub msg
 
 port redo : ({} -> msg) -> Sub msg
 
+port clipboard : (String -> msg) -> Sub msg
+
 
 main : Program Flags
 main =
@@ -46,7 +48,7 @@ main =
     , view = View.view
     , update = Model.update removeToken setSelectionStart
     , urlUpdate =  Model.urlUpdate
-    , subscriptions = Model.subscriptions tokenRemoved undo redo
+    , subscriptions = Model.subscriptions tokenRemoved undo redo clipboard
     }
 
 

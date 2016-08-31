@@ -37,6 +37,7 @@ import Model.URL as URL
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
+import Model.ClickboardData as ClickboardData
 
 import FloorProperty
 import SearchBox
@@ -119,8 +120,8 @@ type CandidateRequestState
   | NotWaiting
 
 
-subscriptions : (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> Model -> Sub Msg
-subscriptions tokenRemoved undo redo model =
+subscriptions : (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> ((String -> Msg) -> Sub Msg) -> Model -> Sub Msg
+subscriptions tokenRemoved undo redo clipboard model =
   Sub.batch
     [ Window.resizes (\e -> WindowSize (e.width, e.height))
     , Keyboard.downs (KeyCodeMsg True)
@@ -128,6 +129,7 @@ subscriptions tokenRemoved undo redo model =
     , tokenRemoved (always TokenRemoved)
     , undo (always Undo)
     , redo (always Redo)
+    , clipboard PasteFromClipboard
     ]
 
 
@@ -255,6 +257,7 @@ type Msg = NoOp
   | Undo
   | Redo
   | Focused
+  | PasteFromClipboard String
   | Error GlobalError
 
 
@@ -1130,6 +1133,24 @@ update removeToken setSelectionStart action model =
     Focused ->
       model ! [ setSelectionStart {} ]
 
+    PasteFromClipboard s ->
+      case model.selectorRect of
+        Just (x, y, _, _) ->
+          let
+            (left, top) =
+              screenToImageWithOffset model.scale (x, y) model.offset
+
+            prototype =
+              selectedPrototype model.prototypes
+
+            candidates =
+              ClickboardData.toObjectCandidates prototype (left, top) s
+          in
+            updateOnFinishStamp' candidates model
+
+        Nothing ->
+          model ! []
+
     Error e ->
       let
         newModel =
@@ -1368,9 +1389,14 @@ noOpCmd task =
 
 updateOnFinishStamp : Model -> (Model, Cmd Msg)
 updateOnFinishStamp model =
+  updateOnFinishStamp' (stampCandidates model) model
+
+
+updateOnFinishStamp' : List StampCandidate -> Model -> (Model, Cmd Msg)
+updateOnFinishStamp' stampCandidates model =
   let
     (candidatesWithNewIds, newSeed) =
-      IdGenerator.zipWithNewIds model.seed (stampCandidates model)
+      IdGenerator.zipWithNewIds model.seed stampCandidates
 
     candidatesWithNewIds' =
       List.map
@@ -1946,6 +1972,7 @@ stampCandidates model =
                 screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
             in
               stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
+
           _ ->
             let
               (deskWidth, deskHeight) = prototype.size
