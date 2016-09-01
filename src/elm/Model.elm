@@ -82,7 +82,7 @@ type alias Model =
   , candidates : List Id
   , tab : Tab
   , clickEmulator : List (Id, Bool, Time)
-  , candidateRequest : CandidateRequestState
+  , candidateRequest : Dict Id (Maybe String)
   , personPopupSize : (Int, Int)
   }
 
@@ -113,11 +113,6 @@ type DraggingContext =
 
 type Tab =
   SearchTab | EditTab
-
-
-type CandidateRequestState
-  = Waiting (Maybe (Id, String))
-  | NotWaiting
 
 
 subscriptions : (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> ((String -> Msg) -> Sub Msg) -> Model -> Sub Msg
@@ -179,7 +174,7 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       , searchBox = searchBox
       , tab = if url.editMode then EditTab else SearchTab
       , clickEmulator = []
-      , candidateRequest = NotWaiting
+      , candidateRequest = Dict.empty
       , personPopupSize = (300, 160)
       }
 
@@ -243,7 +238,7 @@ type Msg = NoOp
   | SearchBoxMsg SearchBox.Msg
   | RegisterPeople (List Person)
   | RequestCandidate Id String
-  | GotCandidateSelection Id (List Person)
+  | GotCandidateSelection Bool Id (List Person)
   | UpdatePersonCandidate Id (List Id)
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
@@ -679,14 +674,53 @@ update removeToken setSelectionStart action model =
           ObjectNameInput.None ->
             model' ! []
 
-    RequestCandidate id name ->
-      case model.candidateRequest of
-        Waiting _ ->
-          { model | candidateRequest = Waiting (Just (id, name)) } ! []
+    RequestCandidate objectId name ->
+      case Dict.get objectId model.candidateRequest of
+        Just (Just _) ->
+          { model |
+            candidateRequest =
+              Dict.insert objectId (Just name) model.candidateRequest
+          } ! []
 
-        NotWaiting ->
-          { model | candidateRequest = Waiting Nothing }
-          ! [ performAPI (GotCandidateSelection id) (API.personCandidate model.apiConfig name) ]
+        _ ->
+          { model |
+            candidateRequest =
+              Dict.insert objectId Nothing model.candidateRequest
+          }
+          ! [ performAPI (GotCandidateSelection False objectId) (API.personCandidate model.apiConfig name) ]
+
+    GotCandidateSelection autoAccept objectId people ->
+      let
+        (candidateRequest, newRequestCmd) =
+          case Dict.get objectId model.candidateRequest of
+            Just (Just name) ->
+              ( Dict.insert objectId Nothing model.candidateRequest
+              , performAPI (GotCandidateSelection autoAccept objectId) (API.personCandidate model.apiConfig name)
+              )
+
+            _ ->
+              ( Dict.remove objectId model.candidateRequest
+              , Cmd.none
+              )
+
+        newModel =
+          { model |
+            candidateRequest = candidateRequest
+          , personInfo =
+              addAll (.id) people model.personInfo
+          , candidates = List.map .id people
+          }
+      in
+        case (autoAccept, people) of
+          (True, [person]) ->
+            let
+              (newModel', cmd) =
+                updateOnSelectCandidate objectId person.id newModel
+            in
+              newModel' ! [ newRequestCmd, cmd ]
+
+          _ ->
+            newModel ! [ newRequestCmd ]
 
     ShowContextMenuOnObject id ->
       let
@@ -973,29 +1007,6 @@ update removeToken setSelectionStart action model =
           addAll (.id) people model.personInfo
       } ! []
 
-    GotCandidateSelection objectId people ->
-      let
-        newRequestCmd =
-          case model.candidateRequest of
-            Waiting (Just (id, name)) ->
-              Task.perform identity identity <| Task.succeed (RequestCandidate id name)
-
-            Waiting Nothing ->
-              Cmd.none
-
-            NotWaiting ->
-              Cmd.none
-
-        newModel =
-          { model |
-            candidateRequest = NotWaiting
-          , personInfo =
-              addAll (.id) people model.personInfo
-          , candidates = List.map .id people
-          }
-      in
-        newModel ! [ newRequestCmd ]
-
     UpdatePersonCandidate objectId personIds ->
       let
         (newFloor, saveCmd) =
@@ -1164,10 +1175,21 @@ update removeToken setSelectionStart action model =
             candidates =
               ClickboardData.toObjectCandidates prototype (left, top) s
 
-            ((newModel, cmd), newIds) =
+            ((newModel, cmd), newIdNamePairs) =
               updateOnFinishStamp' candidates model
+
+            -- schedule test
+            autoMatchingCmd =
+              Cmd.batch <|
+                List.map
+                  (\(objectId, name) ->
+                    performAPI (GotCandidateSelection True objectId) (API.personCandidate model.apiConfig name)
+                  ) newIdNamePairs
+
           in
-            { newModel | selectedObjects = newIds } ! [ cmd ]
+            { newModel |
+              selectedObjects = List.map fst newIdNamePairs
+            } ! [ cmd, autoMatchingCmd ]
 
         Nothing ->
           model ! []
@@ -1413,14 +1435,18 @@ updateOnFinishStamp model =
   fst <| updateOnFinishStamp' (stampCandidates model) model
 
 
-updateOnFinishStamp' : List StampCandidate -> Model -> ((Model, Cmd Msg), List Id)
+updateOnFinishStamp' : List StampCandidate -> Model -> ((Model, Cmd Msg), List (Id, String))
 updateOnFinishStamp' stampCandidates model =
   let
     (candidatesWithNewIds, newSeed) =
       IdGenerator.zipWithNewIds model.seed stampCandidates
 
-    newIds =
-      List.map snd candidatesWithNewIds
+    newIdNamePairs =
+      List.map
+        (\((prototype, _), newId) ->
+          (newId, prototype.name)
+        )
+        candidatesWithNewIds
 
     candidatesWithNewIds' =
       List.map
@@ -1442,7 +1468,7 @@ updateOnFinishStamp' stampCandidates model =
       seed = newSeed
     , floor = newFloor
     , editMode = Select -- maybe selecting stamped desks would be better?
-    }, cmd), newIds)
+    }, cmd), newIdNamePairs)
 
 
 updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
