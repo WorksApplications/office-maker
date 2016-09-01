@@ -51,9 +51,11 @@
 					}
 			  }
 			}, true);
-			document.getElementById('paste').addEventListener('paste', function(e) {
-				e.preventDefault();
-				main.ports.clipboard.send(e.clipboardData.getData('text'));
+			window.addEventListener('paste', function(e) {
+				if(e.target.id === 'paste-from-spreadsheet') {
+					e.preventDefault();
+					main.ports.clipboard.send(e.clipboardData.getData('text'));
+				}
 			});
 		</script>
 	</body>

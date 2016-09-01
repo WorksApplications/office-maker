@@ -40,14 +40,14 @@ labelMode =
   mode font
 
 
-personMatched : Svg msg
-personMatched =
-  check white 18
+personMatched : Float -> Svg msg
+personMatched ratio =
+  check white (Basics.floor (18 * ratio))
 
 
-personNotMatched : Svg msg
-personNotMatched =
-  question white 18
+personNotMatched : Float -> Svg msg
+personNotMatched ratio =
+  question white (Basics.floor (18 * ratio))
 
 
 popupClose : Svg msg

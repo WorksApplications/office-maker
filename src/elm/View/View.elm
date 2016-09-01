@@ -44,7 +44,8 @@ mainView model =
     sub =
       if model.editMode == Viewing True then
         text ""
-      else subView model
+      else
+        subView model
 
     floorInfo =
       floorInfoView model
@@ -233,10 +234,19 @@ penView model =
       (model.editMode == Stamp)
   in
     [ modeSelectionView model
-    , if stampMode then
-        lazy2 PrototypePreviewView.view prototypes stampMode
-      else
-        text ""
+    , case model.editMode of
+        Select ->
+          input
+            [ id "paste-from-spreadsheet"
+            , style S.pasteFromSpreadsheetInput
+            , placeholder "Paste from Spreadsheet"
+            ] []
+
+        Stamp ->
+          lazy2 PrototypePreviewView.view prototypes True
+
+        _ ->
+          text ""
     ]
 
 
@@ -271,6 +281,7 @@ view model =
       case model.editMode of
         Viewing True ->
           App.map HeaderMsg (Header.viewPrintMode (EditingFloor.present model.floor).name)
+          
         _ ->
           App.map HeaderMsg (Header.view model.title (Just (model.user, False)))
 

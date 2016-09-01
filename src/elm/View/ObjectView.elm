@@ -37,7 +37,7 @@ viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha sc
   let
     personMatchIcon =
       if showPersonMatch then
-        personMatchingView name personMatched
+        personMatchingView scale name personMatched
       else
         text ""
 
@@ -116,14 +116,18 @@ resizeGripView selected onStartResize =
       text ""
 
 
-personMatchingView : String -> Bool -> Html msg
-personMatchingView name personMatched =
-  if name /= "" && personMatched then
-    div [ style S.personMatched ] [ Icons.personMatched ]
-  else if name /= "" && not personMatched then
-    div [ style S.personNotMatched ] [ Icons.personNotMatched ]
-  else
-    text ""
+personMatchingView : Scale.Model -> String -> Bool -> Html msg
+personMatchingView scale name personMatched =
+  let
+    ratio =
+      Scale.imageToScreenRatio scale
+  in
+    if name /= "" && personMatched then
+      div [ style (S.personMatched ratio) ] [ Icons.personMatched ratio ]
+    else if name /= "" && not personMatched then
+      div [ style (S.personNotMatched ratio) ] [ Icons.personNotMatched ratio ]
+    else
+      text ""
 
 
 objectLabelView : String -> Float -> Scale.Model -> Bool -> (Int, Int, Int, Int) -> String -> Html msg

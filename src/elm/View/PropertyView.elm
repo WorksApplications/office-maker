@@ -25,13 +25,16 @@ view model =
     else
       [ if List.all Object.backgroundColorEditable selectedObjects then
           row [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
-        else text ""
+        else
+          text ""
       , if List.all Object.colorEditable selectedObjects then
           row [ label Icons.colorPropLabel, colorView model ]
-        else text ""
+        else
+          text ""
       , if List.all Object.shapeEditable selectedObjects then
           row [ label Icons.shapePropLabel, shapeView model ]
-        else text ""
+        else
+          text ""
       ] -- TODO fontSize, name, icon?
 
 

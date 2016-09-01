@@ -390,6 +390,14 @@ modeSelectionViewEach selected =
   ]
 
 
+pasteFromSpreadsheetInput : S
+pasteFromSpreadsheetInput =
+  input ++
+    [ ("display", "block")
+    , ("line-height", "30px")
+    ]
+
+
 prototypePreviewView : Bool -> S
 prototypePreviewView stampMode =
   [ ("height", "238px")
@@ -479,6 +487,7 @@ floorPropertyLabel =
   , ("margin-right", "10px")
   ]
 
+
 floorPropertyText : S
 floorPropertyText =
   [ ("width", "100%")
@@ -489,19 +498,23 @@ floorPropertyText =
   , ("border-bottom", "1px dotted #aaa")
   ]
 
+
 imageLoadButton : S
 imageLoadButton =
   formControl ++ defaultButton ++
     [ ("width", "120px")
     ]
 
+
 publishButton : S
 publishButton =
   formControl ++ primaryButton
 
+
 floorNameInputContainer : S
 floorNameInputContainer =
   formControl ++ flex
+
 
 floorNameInput : S
 floorNameInput =
@@ -510,33 +523,41 @@ floorNameInput =
     , ("line-height", "30px")
     ]
 
+
 floorNameText : S
 floorNameText =
   floorPropertyText
+
 
 floorNameLabel : S
 floorNameLabel =
   [ ("width", "124px") ] ++ floorPropertyLabel
 
+
 floorOrdInputContainer : S
 floorOrdInputContainer =
   floorNameInputContainer
+
 
 floorOrdInput : S
 floorOrdInput =
   floorNameInput
 
+
 floorOrdLabel : S
 floorOrdLabel =
   floorNameLabel
+
 
 floorOrdText : S
 floorOrdText =
   floorPropertyText
 
+
 floorSizeInputContainer : S
 floorSizeInputContainer =
   formControl ++ flex
+
 
 realSizeInput : S
 realSizeInput =
@@ -544,17 +565,21 @@ realSizeInput =
     [ ("width", "50px")
     ]
 
+
 widthHeightLabel : S
 widthHeightLabel =
   [ ("width", "80px") ] ++ floorPropertyLabel
+
 
 floorWidthText : S
 floorWidthText =
   floorPropertyText
 
+
 floorHeightText : S
 floorHeightText =
   floorPropertyText
+
 
 floorPropertyLastUpdate : S
 floorPropertyLastUpdate =
@@ -567,6 +592,7 @@ headerMenu =
   , ("justify-content", "flex-end")
   ]
 
+
 headerMenuItem : S
 headerMenuItem =
   noMargin ++
@@ -574,6 +600,7 @@ headerMenuItem =
     , ("justify-content", "flex-end")
     , ("line-height", "37px")
     ]
+
 
 editingToggleContainer : Bool -> S
 editingToggleContainer editing =
@@ -583,10 +610,12 @@ editingToggleContainer editing =
     , ("opacity", if editing then "1" else "")
     ]
 
+
 editingToggleIcon : S
 editingToggleIcon =
   [ ("padding-top", "7px")
   ]
+
 
 editingToggleText : S
 editingToggleText =
@@ -597,11 +626,13 @@ editingToggleText =
   , ("user-select", "none")
   ]
 
+
 greetingContainer : S
 greetingContainer =
   flex ++
     [ ("width", "150px")
     ]
+
 
 greetingImage : S
 greetingImage =
@@ -611,6 +642,7 @@ greetingImage =
   , ("border", "solid 1px #888")
   ]
 
+
 greetingName : S
 greetingName =
   [ ("margin-left", "10px")
@@ -618,11 +650,13 @@ greetingName =
   , ("line-height", "30px")
   ]
 
+
 closePrint : S
 closePrint =
   [ ("width", "80px")
   , ("cursor", "pointer")
   ] ++ headerMenuItem
+
 
 login : S
 login =
@@ -630,11 +664,13 @@ login =
   , ("cursor", "pointer")
   ] ++ headerMenuItem
 
+
 logout : S
 logout =
   [ ("width", "80px")
   , ("cursor", "pointer")
   ] ++ headerMenuItem
+
 
 loginContainer : S
 loginContainer =
@@ -647,6 +683,7 @@ loginContainer =
   , ("border", "solid 1px #aaa")
   ]
 
+
 formInput : S
 formInput =
   input ++ [ ("padding", "7px 8px")
@@ -656,6 +693,7 @@ formInput =
   , ("margin-bottom", "15px")
   ]
 
+
 primaryButton : S
 primaryButton =
   button ++
@@ -664,15 +702,18 @@ primaryButton =
     , ("border", "solid 1px rgb(100, 180, 85)")
     ]
 
+
 loginCaption : S
 loginCaption =
   []
+
 
 loginError : S
 loginError =
   [ ("color", errorTextColor)
   , ("margin-bottom", "15px")
   ]
+
 
 searchBox : S
 searchBox =
@@ -683,10 +724,12 @@ searchBox =
     , ("outline", "none")
     ]
 
+
 searchResultItem : S
 searchResultItem =
     [ ("padding", "5px")
     ]
+
 
 searchResultItemInner : Bool -> Bool -> S
 searchResultItemInner selectable selected =
@@ -751,8 +794,7 @@ subViewTab index active =
     , ("left", "-30px")
     , ("width", "30px")
     , ("height", "120px")
-    , ("padding-left", "6px")
-    , ("line-height", "135px")
+    , ("padding-top", "50px")
     , ("background-color", if active then "#eee" else "#eee")
     , ("z-index", zIndex.subView)
     , ("cursor", "pointer")
@@ -762,23 +804,23 @@ subViewTab index active =
     ]
 
 
-personMatchingInfo : S
-personMatchingInfo =
-    [ ("border-radius", "10px")
-    , ("width", "20px")
-    , ("height", "20px")
+personMatchingInfo : Float -> S
+personMatchingInfo ratio =
+    [ ("border-radius", px (10 * ratio))
+    , ("width", px (20 * ratio))
+    , ("height", px (20 * ratio))
     , ("position", "absolute")
     ]
 
 
-personMatched : S
-personMatched =
-    personMatchingInfo ++ [ ("background-color", "#6a6") ]
+personMatched : Float -> S
+personMatched ratio =
+    personMatchingInfo ratio ++ [ ("background-color", "#6a6") ]
 
 
-personNotMatched : S
-personNotMatched =
-    personMatchingInfo ++ [ ("background-color", "#ccc") ]
+personNotMatched : Float -> S
+personNotMatched ratio =
+    personMatchingInfo ratio ++ [ ("background-color", "#ccc") ]
 
 
 popup : Int -> S

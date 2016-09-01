@@ -1135,11 +1135,8 @@ update removeToken setSelectionStart action model =
 
     PasteFromClipboard s ->
       case model.selectorRect of
-        Just (x, y, _, _) ->
+        Just (left, top, _, _) ->
           let
-            (left, top) =
-              screenToImageWithOffset model.scale (x, y) model.offset
-
             prototype =
               selectedPrototype model.prototypes
 
