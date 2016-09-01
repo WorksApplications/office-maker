@@ -751,7 +751,9 @@ update removeToken setSelectionStart action model =
 
     KeyCodeMsg isDown keyCode ->
       let
-        (keys, event) = ShortCut.update isDown keyCode model.keys
+        (keys, event) =
+          ShortCut.update isDown keyCode model.keys
+
         model' =
           { model | keys = keys }
       in
@@ -1161,8 +1163,11 @@ update removeToken setSelectionStart action model =
 
             candidates =
               ClickboardData.toObjectCandidates prototype (left, top) s
+
+            ((newModel, cmd), newIds) =
+              updateOnFinishStamp' candidates model
           in
-            updateOnFinishStamp' candidates model
+            { newModel | selectedObjects = newIds } ! [ cmd ]
 
         Nothing ->
           model ! []
@@ -1405,14 +1410,17 @@ noOpCmd task =
 
 updateOnFinishStamp : Model -> (Model, Cmd Msg)
 updateOnFinishStamp model =
-  updateOnFinishStamp' (stampCandidates model) model
+  fst <| updateOnFinishStamp' (stampCandidates model) model
 
 
-updateOnFinishStamp' : List StampCandidate -> Model -> (Model, Cmd Msg)
+updateOnFinishStamp' : List StampCandidate -> Model -> ((Model, Cmd Msg), List Id)
 updateOnFinishStamp' stampCandidates model =
   let
     (candidatesWithNewIds, newSeed) =
       IdGenerator.zipWithNewIds model.seed stampCandidates
+
+    newIds =
+      List.map snd candidatesWithNewIds
 
     candidatesWithNewIds' =
       List.map
@@ -1430,11 +1438,11 @@ updateOnFinishStamp' stampCandidates model =
         (Floor.createDesk candidatesWithNewIds')
         model.floor
   in
-    { model |
+    (({ model |
       seed = newSeed
     , floor = newFloor
     , editMode = Select -- maybe selecting stamped desks would be better?
-    } ! [ cmd ]
+    }, cmd), newIds)
 
 
 updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
@@ -1804,7 +1812,10 @@ updateByKeyEvent event model =
         { model |
           floor = newFloor
         , seed = newSeed
-        , selectedObjects = List.map snd copiedIdsWithNewIds
+        , selectedObjects =
+          case List.map snd copiedIdsWithNewIds of
+            [] -> model.selectedObjects -- for pasting from spreadsheet
+            x -> x
         , selectorRect = Nothing
         } ! [ saveCmd ]
 
