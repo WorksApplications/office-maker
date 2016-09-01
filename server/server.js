@@ -398,8 +398,8 @@ app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
 }));
 
 process.on('uncaughtException', (e) => {
-  log.error.debug('uncaughtException');
-  log.error.debug(e.stack);
+  log.system.error('uncaughtException');
+  log.system.error(e.stack);
 });
 
 app.listen(3000, () => {

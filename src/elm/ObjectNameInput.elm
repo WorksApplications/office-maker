@@ -221,7 +221,7 @@ reletedpersonView objectId person =
 
 unsetButton : Id -> Html Msg
 unsetButton objectId =
-  -- hover Styles.unsetRelatedPersonButtonHover
+  hover Styles.unsetRelatedPersonButtonHover
   div
     [ onClick (UnsetPerson objectId)
     , style Styles.unsetRelatedPersonButton
@@ -243,7 +243,7 @@ candidatesViewEach : Int -> Id -> Int -> Person -> (String, Html Msg)
 candidatesViewEach candidateIndex objectId index person =
   ( person.id
   ,
-  -- hover Styles.candidateItemHover
+  hover Styles.candidateItemHover
     li
       [ style (Styles.candidateItem (candidateIndex == index))
       , onMouseDown' (SelectCandidate objectId person.id)

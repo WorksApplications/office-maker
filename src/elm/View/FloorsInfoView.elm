@@ -17,7 +17,7 @@ import InlineHover exposing (hover)
 
 linkBox : Maybe msg -> msg -> List (String, String) -> List (String, String) -> List (String, String) -> List (Html msg) -> Html msg
 linkBox contextmenuMsg clickMsg liStyle hoverStyle innerStyle inner =
-  -- hover hoverStyle
+  hover hoverStyle
   li
     ( style liStyle ::
       onClick clickMsg ::

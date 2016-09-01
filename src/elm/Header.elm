@@ -118,7 +118,7 @@ logout =
 printButtonView : Bool -> Html Msg
 printButtonView showingPrint =
   -- iconView ToggleEditing (Icons.editingToggle False) "Print"
-  -- hover S.hoverHeaderIconHover
+  hover S.hoverHeaderIconHover
   div
     [ onClick (TogglePrintView (not showingPrint))
     , style (S.editingToggleContainer False)
@@ -131,8 +131,8 @@ printButtonView showingPrint =
 editingToggleView : Bool -> Html Msg
 editingToggleView editing =
   -- iconView ToggleEditing (Icons.editingToggle editing) "Edit"
-  -- hover
-  --   S.hoverHeaderIconHover
+  hover
+    S.hoverHeaderIconHover
     div
     [ onClick ToggleEditing
     , style (S.editingToggleContainer editing)

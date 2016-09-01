@@ -38,8 +38,8 @@ view model =
 
 contextMenuItemView : Msg -> String -> Html Msg
 contextMenuItemView action text' =
-  -- hover
-  --   S.contextMenuItemHover
+  hover
+    S.contextMenuItemHover
     div
     [ style S.contextMenuItem
     , onMouseDown' action
