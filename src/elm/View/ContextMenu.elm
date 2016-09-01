@@ -19,14 +19,25 @@ view model =
       text ""
 
     Object (x, y) id ->
-      div
-        [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
-        ]
-        [ contextMenuItemView (SelectIsland id) "Select Island"
-        , contextMenuItemView (RegisterPrototype id) "Register as stamp"
-        , contextMenuItemView (Rotate id) "Rotate"
-        , contextMenuItemView (FirstNameOnly [id]) "First name only" -- TODO keep multi select
-        ]
+      let
+        forOneDesk =
+          if [id] == model.selectedObjects then
+            [ contextMenuItemView (SelectIsland id) "Select Island"
+            , contextMenuItemView (RegisterPrototype id) "Register as stamp"
+            , contextMenuItemView (Rotate id) "Rotate"
+            ]
+          else
+            []
+
+        common =
+          [ contextMenuItemView (FirstNameOnly model.selectedObjects) "First name only"
+          , contextMenuItemView (RemoveSpaces model.selectedObjects) "Remove Spaces"
+          ]
+      in
+        div
+          [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
+          ]
+          (forOneDesk ++ common)
 
     FloorInfo (x, y) id ->
       div

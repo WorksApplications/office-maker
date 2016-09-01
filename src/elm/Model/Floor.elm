@@ -1,6 +1,7 @@
 module Model.Floor exposing (..)
 
 import String
+import Regex
 import Date exposing (Date)
 import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
@@ -73,6 +74,7 @@ type Msg =
   | ChangeObjectName (List Id) String
   | ChangeFontSize (List Id) Float
   | ToFirstNameOnly (List Id)
+  | RemoveSpaces (List Id)
   | ResizeObject Id (Int, Int)
   | ChangeName String
   | ChangeOrd Int
@@ -128,6 +130,10 @@ changeObjectName = ChangeObjectName
 
 toFirstNameOnly : List Id -> Msg
 toFirstNameOnly = ToFirstNameOnly
+
+
+removeSpaces : List Id -> Msg
+removeSpaces = RemoveSpaces
 
 
 resizeObject : Id -> (Int, Int) -> Msg
@@ -238,6 +244,16 @@ update msg floor =
           case String.words name of
             [] -> ""
             x :: _ -> x
+
+        newObjects =
+          partiallyChange (\e -> (flip Object.changeName) e <| change <| nameOf e) ids (objects floor)
+      in
+        setObjects newObjects floor
+
+    RemoveSpaces ids ->
+      let
+        change name =
+          (Regex.replace Regex.All (Regex.regex "[ \r\n　]") (\_ -> "")) name
 
         newObjects =
           partiallyChange (\e -> (flip Object.changeName) e <| change <| nameOf e) ids (objects floor)

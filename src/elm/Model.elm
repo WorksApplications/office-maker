@@ -238,6 +238,7 @@ type Msg = NoOp
   | FloorPropertyMsg FloorProperty.Msg
   | Rotate Id
   | FirstNameOnly (List Id)
+  | RemoveSpaces (List Id)
   | HeaderMsg Header.Msg
   | SearchBoxMsg SearchBox.Msg
   | RegisterPeople (List Person)
@@ -688,9 +689,17 @@ update removeToken setSelectionStart action model =
           ! [ performAPI (GotCandidateSelection id) (API.personCandidate model.apiConfig name) ]
 
     ShowContextMenuOnObject id ->
-      { model |
-        contextMenu = Object model.pos id
-      } ! []
+      let
+        selectedObjects =
+          if List.member id model.selectedObjects then
+            model.selectedObjects
+          else
+            [id]
+      in
+        { model |
+          contextMenu = Object model.pos id
+        , selectedObjects = selectedObjects
+        } ! []
 
     ShowContextMenuOnFloorInfo id ->
       { model |
@@ -873,6 +882,16 @@ update removeToken setSelectionStart action model =
       let
         (newFloor, saveCmd) =
           EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.toFirstNameOnly ids) model.floor
+      in
+        { model |
+          floor = newFloor
+        , contextMenu = NoContextMenu
+        } ! [ saveCmd ]
+
+    RemoveSpaces ids ->
+      let
+        (newFloor, saveCmd) =
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.removeSpaces ids) model.floor
       in
         { model |
           floor = newFloor
@@ -1821,7 +1840,8 @@ updateByKeyEvent event model =
           floor = newFloor
         } ! [ saveCmd ]
 
-    -- (_, ShortCut.Other 9) -> -- maybe "shift within island is the proper behavior"
+    (_, ShortCut.Other 9) ->
+      shiftSelectionToward ObjectsOperation.Right model ! []
 
     _ ->
       model ! []
@@ -1841,10 +1861,11 @@ updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
         { model |
           floor = newFloor
         } ! [ saveCmd ]
-    else if not model.keys.ctrl && not model.keys.shift then
-      { model |
-        selectedObjects = [id]
-      } ! []
+    -- comment out for contextmenu
+    -- else if not model.keys.ctrl && not model.keys.shift then
+    --   { model |
+    --     selectedObjects = [id]
+    --   } ! []
     else
       model ! []
 
