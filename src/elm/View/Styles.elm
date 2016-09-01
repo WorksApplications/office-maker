@@ -123,10 +123,14 @@ absoluteRect rect' =
 
 
 deskInput : (Int, Int, Int, Int) -> S
-deskInput rect =
-  (absoluteRect rect) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
-  , ("box-sizing", "border-box")
-  ]
+deskInput (x, y, w, h) =
+  let
+    w' = max w 100
+    h' = max h 15
+  in
+    (absoluteRect (x, y, w', h')) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
+    , ("box-sizing", "border-box")
+    ]
 
 
 nameInputTextArea : Bool -> (Int, Int, Int, Int) -> S
@@ -395,6 +399,7 @@ pasteFromSpreadsheetInput =
   input ++
     [ ("display", "block")
     , ("line-height", "30px")
+    , ("margin-top", "15px")
     ]
 
 
@@ -1049,12 +1054,18 @@ candidateItemHeight = 55
 candidatesViewContainer : (Int, Int, Int, Int) -> Bool -> Int -> S
 candidatesViewContainer screenRectOfDesk relatedPersonExists candidateLength =
   let
-    (x, y, w, h) = screenRectOfDesk
+    (x, y, w, h) =
+      screenRectOfDesk
+
     totalHeight =
       (if relatedPersonExists then 160 else 0) +
       (candidateItemHeight * candidateLength)
-    left = x + w + 15
-    top = Basics.max 10 (y - totalHeight // 2)
+
+    left =
+      x + (max w 100) + 15
+
+    top =
+      Basics.max 10 (y - totalHeight // 2)
   in
     [ ("position", "absolute")
     , ("top", px top)
