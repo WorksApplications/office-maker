@@ -60,8 +60,8 @@ copy id floor =
   }
 
 
-type Msg =
-    CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
+type Msg
+  = CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
   | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Float, String))
   | Move (List Id) Int (Int, Int)
   | Paste (List (Object, Id)) (Int, Int)
@@ -81,6 +81,7 @@ type Msg =
   | SetImage String Int Int
   | ChangeRealSize (Int, Int)
   | SetPerson String String
+  | SetPeople (List (String, String))
   | UnsetPerson String
 
 
@@ -162,6 +163,10 @@ changeRealSize = ChangeRealSize
 
 setPerson : String -> String -> Msg
 setPerson = SetPerson
+
+
+setPeople : List (String, String) -> Msg
+setPeople = SetPeople
 
 
 unsetPerson : String -> Msg
@@ -293,6 +298,16 @@ update msg floor =
       let
         newObjects =
           partiallyChange (Object.setPerson (Just personId)) [objectId] (objects floor)
+      in
+        setObjects newObjects floor
+
+    SetPeople pairs ->
+      let
+        f (objectId, personId) objects =
+          partiallyChange (Object.setPerson (Just personId)) [objectId] objects
+
+        newObjects =
+          List.foldl f (objects floor) pairs
       in
         setObjects newObjects floor
 

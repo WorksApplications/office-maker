@@ -238,7 +238,8 @@ type Msg = NoOp
   | SearchBoxMsg SearchBox.Msg
   | RegisterPeople (List Person)
   | RequestCandidate Id String
-  | GotCandidateSelection Bool Id (List Person)
+  | GotCandidateSelection Id (List Person)
+  | GotMatchingList (List (Id, List Person))
   | UpdatePersonCandidate Id (List Id)
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
@@ -687,15 +688,15 @@ update removeToken setSelectionStart action model =
             candidateRequest =
               Dict.insert objectId Nothing model.candidateRequest
           }
-          ! [ performAPI (GotCandidateSelection False objectId) (API.personCandidate model.apiConfig name) ]
+          ! [ performAPI (GotCandidateSelection objectId) (API.personCandidate model.apiConfig name) ]
 
-    GotCandidateSelection autoAccept objectId people ->
+    GotCandidateSelection objectId people ->
       let
         (candidateRequest, newRequestCmd) =
           case Dict.get objectId model.candidateRequest of
             Just (Just name) ->
               ( Dict.insert objectId Nothing model.candidateRequest
-              , performAPI (GotCandidateSelection autoAccept objectId) (API.personCandidate model.apiConfig name)
+              , performAPI (GotCandidateSelection objectId) (API.personCandidate model.apiConfig name)
               )
 
             _ ->
@@ -711,16 +712,37 @@ update removeToken setSelectionStart action model =
           , candidates = List.map .id people
           }
       in
-        case (autoAccept, people) of
-          (True, [person]) ->
-            let
-              (newModel', cmd) =
-                updateOnSelectCandidate objectId person.id newModel
-            in
-              newModel' ! [ newRequestCmd, cmd ]
+        newModel ! [ newRequestCmd ]
 
-          _ ->
-            newModel ! [ newRequestCmd ]
+    GotMatchingList pairs ->
+      let
+        matchedPairs =
+          List.filterMap (\(objectId, people) ->
+            case people of
+              -- determined
+              [person] ->
+                Just (objectId, person.id)
+
+              _ ->
+                Nothing
+            ) pairs
+
+        (newFloor, cmd) =
+          EditingFloor.commit
+            (saveFloorCmd model.apiConfig)
+            (Floor.setPeople matchedPairs)
+            model.floor
+
+        allPeople =
+          List.concatMap snd pairs
+
+        personInfo =
+          addAll (.id) allPeople model.personInfo
+      in
+        { model |
+          floor = newFloor
+        , personInfo = personInfo
+        } ! [ cmd ]
 
     ShowContextMenuOnObject id ->
       let
@@ -1178,14 +1200,17 @@ update removeToken setSelectionStart action model =
             ((newModel, cmd), newIdNamePairs) =
               updateOnFinishStamp' candidates model
 
-            -- schedule test
-            autoMatchingCmd =
-              Cmd.batch <|
-                List.map
-                  (\(objectId, name) ->
-                    performAPI (GotCandidateSelection True objectId) (API.personCandidate model.apiConfig name)
-                  ) newIdNamePairs
+            task =
+              List.foldl
+                (\(objectId, name) prevTask ->
+                  prevTask `andThen` \list ->
+                    Task.map (\people ->
+                      (objectId, people) :: list
+                    ) (API.personCandidate model.apiConfig name)
+                ) (Task.succeed []) newIdNamePairs
 
+            autoMatchingCmd =
+              performAPI GotMatchingList task
           in
             { newModel |
               selectedObjects = List.map fst newIdNamePairs
