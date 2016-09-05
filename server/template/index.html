@@ -54,7 +54,7 @@
 			window.addEventListener('paste', function(e) {
 				if(e.target.id === 'paste-from-spreadsheet') {
 					e.preventDefault();
-					main.ports.clipboard.send(e.clipboardData.getData('text'));
+					main.ports.clipboard.send(e.clipboardData.getData('text/html') || e.clipboardData.getData('text'));
 				}
 			}, true);
 		</script>

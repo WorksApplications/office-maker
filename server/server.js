@@ -78,6 +78,7 @@ function getSelf(conn, token) {
       } else {
         user.id = user.id || user.userId;
         user.role = user.role.toLowerCase();
+        user.tenantId = '';
         resolve(user);
       }
     });
@@ -168,6 +169,9 @@ app.get('/api/1/self', inTransaction((conn, req, res) => {
       });
     }
     return getPerson(conn, token, user).then((person) => {
+      if(person == null) {
+        throw "Relevant person for " + user.id + " not ound."
+      }
       user.person = person;
       return Promise.resolve(user);
     });
@@ -311,11 +315,12 @@ app.get('/api/1/floors/:id', inTransaction((conn, req, res) => {
 }));
 
 app.get('/api/1/search/:query', inTransaction((conn, req, res) => {
+  var token = getAuthToken(req);
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
   if(paasMode) {
-    return getSelf(conn, getAuthToken(req)).then((user) => {
-      return db.searchWithProfileService(config.profileServiceRoot, id, user.tenantId, query, options.all);
+    return getSelf(conn, token).then((user) => {
+      return db.searchWithProfileService(config.profileServiceRoot, conn, token, user.tenantId, query, options.all);
     });
   } else {
     return db.search(conn, '', query, options.all);
@@ -326,7 +331,7 @@ app.get('/api/1/candidates/:name', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var name = req.params.name;
   if(paasMode) {
-    return profielService.search(config.profileServiceRoot, token, name);
+    return profileService.search(config.profileServiceRoot, token, name);
   } else {
     return db.getCandidate(conn, name);
   }

@@ -17,8 +17,8 @@ function send(token, method, url, data) {
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
         log.system.error(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
-        log.system.error(body.message);
-        reject(body.message ? body : e || response.statusCode);
+        body && log.system.error(body.message);
+        reject(body ? body.message : e || response.statusCode);
       } else {
         resolve(body);
       }
@@ -59,9 +59,9 @@ function getPerson(root, token, personId) {
 }
 
 function getPersonByUserId(root, token, userId) {
-  return get(token, root + '/1/profiles?userId=' + encodeURIComponent(userId)).then((people) => {
-    if(people[0]) {
-      return Promise.resolve(fixPerson(people[0]));
+  return get(token, root + '/1/profiles?userId=' + encodeURIComponent(userId)).then((data) => {
+    if(data.profiles[0]) {
+      return Promise.resolve(fixPerson(data.profiles[0]));
     }
     return Promise.resolve(null);
   });
@@ -83,7 +83,9 @@ function addPerson(root, token, person) {
 }
 
 function search(root, token, query) {
-  return get(token, root + '/1/profiles?q=' + query);
+  return get(token, root + '/1/profiles?q=' + encodeURIComponent(query)).then((data) => {
+    return Promise.resolve(data.profiles.map(fixPerson));
+  });
 }
 
 module.exports = {

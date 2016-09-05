@@ -304,55 +304,53 @@ function search(conn, tenantId, query, all) {
   });
 }
 
-function searchWithProfileService(profileServiceRoot, sessionId, tenantId, query, all) {
-  return profielService.search(profileServiceRoot, sessionId, query).then((people) => {
+function searchWithProfileService(profileServiceRoot, conn, token, tenantId, query, all) {
+  return profileService.search(profileServiceRoot, token, query).then((people) => {
     return searchHelp(conn, tenantId, query, all, people);
   });
 }
 
 function searchHelp(conn, tenantId, query, all, people) {
-  return searchPeople.then((people) => {
-    return getFloorsWithObjects(conn, tenantId, all).then((floors) => {
-      var results = {};
-      var arr = [];
-      people.forEach((person) => {
-        results[person.id] = [];
-      });
-      floors.forEach((floor) => {
-        floor.objects.forEach((e) => {
-          if(e.personId) {
-            if(results[e.personId]) {
-              results[e.personId].push(e);
-            }
-          } else if(e.name.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
-            // { Nothing, Just } -- objects that has no person
-            arr.push({
-              personId : null,
-              objectIdAndFloorId : [e, e.floorId]
-            });
+  return getFloorsWithObjects(conn, tenantId, all).then((floors) => {
+    var results = {};
+    var arr = [];
+    people.forEach((person) => {
+      results[person.id] = [];
+    });
+    floors.forEach((floor) => {
+      floor.objects.forEach((e) => {
+        if(e.personId) {
+          if(results[e.personId]) {
+            results[e.personId].push(e);
           }
-        });
-      });
-
-      Object.keys(results).forEach((personId) => {
-        var objects = results[personId];
-        objects.forEach(e => {
-          // { Just, Just } -- people who exist in map
+        } else if(e.name.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
+          // { Nothing, Just } -- objects that has no person
           arr.push({
-            personId : personId,
+            personId : null,
             objectIdAndFloorId : [e, e.floorId]
-          });
-        })
-        // { Just, Nothing } -- missing people
-        if(!objects.length) {
-          arr.push({
-            personId : personId,
-            objectIdAndFloorId : null
           });
         }
       });
-      return Promise.resolve(arr);
     });
+
+    Object.keys(results).forEach((personId) => {
+      var objects = results[personId];
+      objects.forEach(e => {
+        // { Just, Just } -- people who exist in map
+        arr.push({
+          personId : personId,
+          objectIdAndFloorId : [e, e.floorId]
+        });
+      })
+      // { Just, Nothing } -- missing people
+      if(!objects.length) {
+        arr.push({
+          personId : personId,
+          objectIdAndFloorId : null
+        });
+      }
+    });
+    return Promise.resolve(arr);
   });
 }
 

@@ -222,7 +222,15 @@ getPersonByUser config id =
     `Task.andThen` (\user -> case user of
         User.Admin person -> Task.succeed person
         User.General person -> Task.succeed person
-        User.Guest -> Debug.crash ("user " ++ id ++ " has no person")
+        User.Guest -> Task.succeed
+          -- TODO how to deal with invalid person?
+          { id = ""
+          , name = ""
+          , org = ""
+          , mail = Nothing
+          , tel = Nothing
+          , image = Nothing
+          }
       )
 
 
