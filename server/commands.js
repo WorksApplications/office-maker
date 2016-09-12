@@ -42,9 +42,10 @@ commands.deleteFloor = function(floorId) {
   if(!floorId) {
     return Promise.reject('floorId is not defined.');
   }
+  var tenantId = '';
   return rdbEnv.forConnectionAndTransaction((conn) => {
     console.log('deleting floor ' + floorId + '...');
-    db.deleteFloorWithObjects(conn, tenantId, floorId);
+    return db.deleteFloorWithObjects(conn, tenantId, floorId);
   }).then(rdbEnv.end);
 };
 
@@ -52,6 +53,7 @@ commands.deletePrototype = function(id) {
   if(!id) {
     return Promise.reject('id is not defined.');
   }
+  var tenantId = '';
   return rdbEnv.forConnectionAndTransaction((conn) => {
     console.log('deleting prototype ' + id + '...');
     return db.deletePrototype(conn, tenantId, id);
@@ -70,8 +72,14 @@ args.shift();// node
 args.shift();// server/commands.js
 var funcName = args.shift();
 
-commands[funcName].apply(null, args).then(() => {
-  console.log('done');
-}).catch((e) => {
+try {
+  commands[funcName].apply(null, args).then(() => {
+    console.log('done');
+  }).catch((e) => {
+    console.log(e);
+    console.log(e.stack);
+  });
+} catch (e) {
   console.log(e);
-});
+  console.log(e.stack);
+}

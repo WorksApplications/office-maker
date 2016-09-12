@@ -278,7 +278,7 @@ function deleteUnrelatedObjects(conn) {
 function deleteFloorWithObjects(conn, tenantId, floorId) {
   var sqls = [
     sql.delete('floors', sql.whereList([['id', floorId], ['tenantId', tenantId]])),
-    sql.delete('objects', sql.whereList([['floorId', floorId], ['tenantId', tenantId]])),
+    sql.delete('objects', sql.whereList([['floorId', floorId]])),
   ];
   return rdb.batch(conn, sqls);
 }
