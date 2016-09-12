@@ -8,6 +8,7 @@ import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed as Keyed
+import Html.Lazy exposing (..)
 
 import ObjectNameInput
 import View.Styles as S
@@ -36,17 +37,30 @@ adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, 
     fitPositionToGrid gridSize (left + dx, top + dy)
 
 
-objectView : Model -> ((Int, Int, Int, Int) -> (Int, Int, Int, Int)) -> Bool -> Bool -> Object -> Bool -> Bool -> Html Msg
-objectView model adjustRect selected isGhost object contextMenuDisabled disableTransition =
+type alias ObjectViewOption =
+  { editMode: EditMode
+  , scale: Scale.Model
+  , floor: Floor
+  , selected: Bool
+  , isGhost: Bool
+  , object: Object
+  , rect: (Int, Int, Int, Int)
+  , contextMenuDisabled: Bool
+  , disableTransition: Bool
+  }
+
+
+objectView : ObjectViewOption -> Html Msg
+objectView {editMode, scale, floor, selected, isGhost, object, rect, contextMenuDisabled, disableTransition} =
   let
     id =
       idOf object
 
     (x, y, width, height) =
-      adjustRect (rect object)
+      rect
 
     eventOptions =
-      case model.editMode of
+      case editMode of
         Viewing _ ->
           let
             noEvents = ObjectView.noEvents
@@ -54,6 +68,7 @@ objectView model adjustRect selected isGhost object contextMenuDisabled disableT
             { noEvents |
               onMouseDown = Just (always (ShowDetailForObject id))
             }
+
         _ ->
           { onContextMenu =
               if contextMenuDisabled then
@@ -65,9 +80,6 @@ objectView model adjustRect selected isGhost object contextMenuDisabled disableT
           , onStartEditingName = Nothing -- Just (StartEditObject id)
           , onStartResize = Just (MouseDownOnResizeGrip id)
           }
-
-    floor =
-      (EditingFloor.present model.floor)
 
     personMatched =
       Object.relatedPerson object /= Nothing
@@ -83,20 +95,20 @@ objectView model adjustRect selected isGhost object contextMenuDisabled disableT
         (shapeOf object == Object.Ellipse)
         selected
         isGhost
-        (model.editMode /= Viewing True && model.editMode /= Viewing False) -- rectVisible
-        model.scale
+        (editMode /= Viewing True && editMode /= Viewing False) -- rectVisible
+        scale
         disableTransition
     else
       ObjectView.viewDesk
         eventOptions
-        (model.editMode /= Viewing True && model.editMode /= Viewing False)
+        (editMode /= Viewing True && editMode /= Viewing False)
         (x, y, width, height)
         (backgroundColorOf object)
         (nameOf object)
         (fontSizeOf object)
         selected
         isGhost
-        model.scale
+        scale
         disableTransition
         personMatched
 
@@ -240,14 +252,17 @@ objectsView model floor =
           List.map
             (\object ->
               ( idOf object ++ "ghost"
-              , objectView
-                  model
-                  identity
-                  True
-                  True -- alpha
-                  object
-                  False --model.keys.ctrl
-                  (transitionDisabled model)
+              , lazy objectView
+                  { editMode = model.editMode
+                  , scale = model.scale
+                  , floor = EditingFloor.present model.floor
+                  , rect = rect object
+                  , selected = True
+                  , isGhost = True -- alpha
+                  , object = object
+                  , contextMenuDisabled = False --model.keys.ctrl
+                  , disableTransition = transitionDisabled model
+                  }
               )
             )
             (List.filter isSelected floor.objects)
@@ -271,14 +286,18 @@ objectsView model floor =
           List.map
             (\object ->
               ( idOf object
-              , objectView
-                  model
-                  (adjustRect object)
-                  (isSelected object)
-                  False -- alpha
-                  object
-                  model.keys.ctrl
-                  (transitionDisabled model)
+              , lazy
+                objectView
+                  { editMode = model.editMode
+                  , scale = model.scale
+                  , floor = EditingFloor.present model.floor
+                  , rect = adjustRect object (rect object)
+                  , selected = isSelected object
+                  , isGhost = False
+                  , object = object
+                  , contextMenuDisabled = model.keys.ctrl
+                  , disableTransition = transitionDisabled model
+                  }
               )
             )
             floor.objects
@@ -297,18 +316,20 @@ objectsView model floor =
           List.map
             (\object ->
               ( idOf object ++ "ghost"
-              , objectView
-                  model
-                  identity
-                  True -- isSelected
-                  True -- alpha
-                  object
-                  model.keys.ctrl
-                  (transitionDisabled model)
+              , lazy objectView
+                { editMode = model.editMode
+                , scale = model.scale
+                , floor = EditingFloor.present model.floor
+                , rect = rect object
+                , selected = True
+                , isGhost = True
+                , object = object
+                , contextMenuDisabled = model.keys.ctrl
+                , disableTransition = transitionDisabled model
+                }
               )
             )
             (List.filter isResizing floor.objects)
-
 
         adjustRect object (left, top, width, height) =
           if isResizing object then
@@ -322,14 +343,17 @@ objectsView model floor =
           List.map
             (\object ->
               ( idOf object
-              , objectView
-                  model
-                  (adjustRect object)
-                  (isResizing object) -- isSelected TODO seems not selected?
-                  False -- alpha
-                  object
-                  model.keys.ctrl
-                  (transitionDisabled model)
+              , lazy objectView
+                { editMode = model.editMode
+                , scale = model.scale
+                , floor = EditingFloor.present model.floor
+                , rect = adjustRect object (rect object)
+                , selected = isResizing object --TODO seems not selected?
+                , isGhost = False
+                , object = object
+                , contextMenuDisabled = model.keys.ctrl
+                , disableTransition = transitionDisabled model
+                }
               )
             )
             floor.objects
@@ -340,14 +364,17 @@ objectsView model floor =
       List.map
         (\object ->
           ( idOf object
-          , objectView
-              model
-              identity
-              (isSelected model object)
-              False -- alpha
-              object
-              model.keys.ctrl
-              (transitionDisabled model)
+          , lazy objectView
+            { editMode = model.editMode
+            , scale = model.scale
+            , floor = EditingFloor.present model.floor
+            , rect = (rect object)
+            , selected = isSelected model object --TODO seems not selected?
+            , isGhost = False
+            , object = object
+            , contextMenuDisabled = model.keys.ctrl
+            , disableTransition = transitionDisabled model
+            }
           )
         )
         floor.objects
