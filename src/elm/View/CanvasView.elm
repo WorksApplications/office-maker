@@ -23,7 +23,6 @@ import Model.Object as Object exposing (..)
 import Model.Scale as Scale
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
-import Model.EditingFloor as EditingFloor
 
 import Json.Decode as Decode
 
@@ -40,7 +39,6 @@ adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, 
 type alias ObjectViewOption =
   { editMode: EditMode
   , scale: Scale.Model
-  , floor: Floor
   , selected: Bool
   , isGhost: Bool
   , object: Object
@@ -51,7 +49,7 @@ type alias ObjectViewOption =
 
 
 objectView : ObjectViewOption -> Html Msg
-objectView {editMode, scale, floor, selected, isGhost, object, rect, contextMenuDisabled, disableTransition} =
+objectView {editMode, scale, selected, isGhost, object, rect, contextMenuDisabled, disableTransition} =
   let
     id =
       idOf object
@@ -255,7 +253,6 @@ objectsView model floor =
               , lazy objectView
                   { editMode = model.editMode
                   , scale = model.scale
-                  , floor = EditingFloor.present model.floor
                   , rect = rect object
                   , selected = True
                   , isGhost = True -- alpha
@@ -290,7 +287,6 @@ objectsView model floor =
                 objectView
                   { editMode = model.editMode
                   , scale = model.scale
-                  , floor = EditingFloor.present model.floor
                   , rect = adjustRect object (rect object)
                   , selected = isSelected object
                   , isGhost = False
@@ -319,7 +315,6 @@ objectsView model floor =
               , lazy objectView
                 { editMode = model.editMode
                 , scale = model.scale
-                , floor = EditingFloor.present model.floor
                 , rect = rect object
                 , selected = True
                 , isGhost = True
@@ -346,7 +341,6 @@ objectsView model floor =
               , lazy objectView
                 { editMode = model.editMode
                 , scale = model.scale
-                , floor = EditingFloor.present model.floor
                 , rect = adjustRect object (rect object)
                 , selected = isResizing object --TODO seems not selected?
                 , isGhost = False
@@ -367,7 +361,6 @@ objectsView model floor =
           , lazy objectView
             { editMode = model.editMode
             , scale = model.scale
-            , floor = EditingFloor.present model.floor
             , rect = (rect object)
             , selected = isSelected model object --TODO seems not selected?
             , isGhost = False

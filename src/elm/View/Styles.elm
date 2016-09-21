@@ -293,13 +293,11 @@ contextMenuItemHover =
 canvasView : Bool -> Bool -> (Int, Int, Int, Int) -> S
 canvasView isViewing disableTransition rect =
   (absoluteRect rect) ++
-    [ ("background-color", "#fff")
-    , ("font-family", "default")
+    [ ("font-family", "default")
     -- TODO on select person
     -- , ("transition-property", "top, left")
     -- , ("transition-duration", "0.2s")
-    ] ++
-    (if isViewing then [("overflow", "hidden")] else []) ++
+    ] ++ (if isViewing then [("overflow", "hidden")] else []) ++
     transition ["width", "height", "top", "left"] disableTransition
 
 

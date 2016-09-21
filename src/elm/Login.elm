@@ -87,7 +87,9 @@ update message model =
         message =
           case e of
             Http.NetworkError ->
-              "network error"
+              -- "network error"
+              "unauthorized"
+              
             _ ->
               "unauthorized"
       in
