@@ -294,6 +294,7 @@ canvasView : Bool -> Bool -> (Int, Int, Int, Int) -> S
 canvasView isViewing disableTransition rect =
   (absoluteRect rect) ++
     [ ("font-family", "default")
+    , ("background-color", "#fff")
     -- TODO on select person
     -- , ("transition-property", "top, left")
     -- , ("transition-duration", "0.2s")
