@@ -7,6 +7,7 @@ elm.js
 data
 repl-temp-*
 *.ods*
+manual
 npm-debug.log
 bugs.html
 
