@@ -10,7 +10,7 @@ You need to have MySQL and [Node.js](https://nodejs.org/) (>= 4.0) installed.
 
 ### Install
 
-Currently, installation is done by client project for ease.
+Currently, installation is done by [client](../README.md) for ease.
 
 <!--
 ```
@@ -20,10 +20,10 @@ npm install
 
 ### Initialize
 
-To initialize DB, execute SQL in `sql` folder.
+If this is the first time to set up, execute following, which creates config.json and initialize DB.
 
 ```
-node commands.js createDataForDebug
+sh initialize.sh
 ```
 
 There are also other commands in commands.js.
@@ -32,14 +32,9 @@ There are also other commands in commands.js.
 node commands.js [commandName] [args]
 ```
 
-## Start Server
-
-Currently, server operations are handled by client project for ease.
-
-
 ## Configuration
 
-Copy [defaultConfig.json] and rename to `config.json`.
+Edit `config.json`. Bold properties are essential to work with various environment.
 
 |name||
 |:--|:--|
@@ -47,13 +42,18 @@ Copy [defaultConfig.json] and rename to `config.json`.
 |mysql.user||
 |mysql.pass||
 |title|This name is used by header.|
-|accountServiceRoot|URL of account service. http://xxx.xxx.xx.xx/accounts |
-|profileServiceRoot|URL of account service. http://xxx.xxx.xx.xx/profiles |
-|secret|The path of account service's public key file. path/to/pubkey.pem |
+|**accountServiceRoot**|URL of account service. http://xxx.xxx.xx.xx/accounts/api |
+|**profileServiceRoot**|URL of account service. http://xxx.xxx.xx.xx/profiles/api |
+|**secret**|The path of account service's public key file. path/to/pubkey.pem |
+
+## Start Server
+
+Currently, server operations are handled by [client](../README.md) for ease.
+
 
 ## REST API
 
-API is defined by client. See [here](../../README.md).
+API is defined by client. See [here](../README.md).
 
 
 ### Table Definition

@@ -91,7 +91,13 @@ chcp 65001
 ```
 which will change encoding to UTF-8.
 
-### Running tasks with mock server
+
+### Run server
+
+See [server's document](./server/README.md).
+
+
+### Run server for development
 
 ```
 node watch

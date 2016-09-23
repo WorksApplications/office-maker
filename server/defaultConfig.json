@@ -5,9 +5,9 @@
     "pass": ""
   },
   "title": "Office Map",
-  "profileServiceRoot": "",
-  "accountServiceRoot": "",
-  "secret": "secret",
+  "profileServiceRoot": "http://localhost/accounts/api",
+  "accountServiceRoot": "http://localhost/profiles/api",
+  "secret": "path/to/pubkey.pem",
   "multiTenency": false,
   "log": {
     "access": "INFO",
