@@ -8,6 +8,7 @@
   "profileServiceRoot": "",
   "accountServiceRoot": "",
   "secret": "secret",
+  "multiTenency": false,
   "log": {
     "access": "INFO",
     "system": "INFO",

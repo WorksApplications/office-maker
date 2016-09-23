@@ -1,41 +1,3 @@
-var users = [
-  {
-    id: 'admin01',
-    pass: 'admin01',//TODO encrypt
-    personId: 'admin01',
-    role: 'admin'
-  },
-  {
-    id: 'user01',
-    pass: 'user01',//TODO encrypt
-    personId: 'user01',
-    role: 'general'
-  },
-  {
-    id: 'maruyama_mayuko@example.com',
-    pass: 'passwd',//TODO encrypt
-    personId: 'c43b206c-ea38-474a-b9db-5557b12f4779',
-    tenantId: 'example.com',
-    role: 'general'
-  }
-  ];
-var people = [
-  {
-    id:'admin01',
-    empNo: '1234',
-    org: 'Sample Co.,Ltd',
-    name: 'Admin01',
-    mail: 'admin01@xxx.com',
-    image: 'images/users/admin01.png'
-  },
-  {
-    id:'user01',
-    empNo: '2345',
-    org: 'Sample Co.,Ltd',
-    name: 'User01',
-    tel: '33510'
-  }
-];
 var gridSize = 8;
 var backgroundColors = [
   "#eda", "#baf", "#fba", "#9bd", "#af8", "#8df", "#bbb", "#fff", "rgba(255,255,255,0.5)"
@@ -74,8 +36,6 @@ var allColors = backgroundColors.map((c, index) => {
   };
 }));
 module.exports = {
-  users: users,
-  people: people,
   colors: allColors,
   prototypes: prototypes
 };

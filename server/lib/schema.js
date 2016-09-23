@@ -1,23 +1,3 @@
-
-function userKeyValues(user) {
-  return [
-    ["id", user.id],
-    ["pass", user.pass],
-    ["role", user.role],
-    ["personId", user.personId],
-  ];
-}
-function personKeyValues(person) {
-  return [
-    ["id", person.id],
-    ["empNo", person.empNo],
-    ["name", person.name],
-    ["org", person.org],
-    ["tel", person.tel],
-    ["mail", person.mail],
-    ["image", person.image]
-  ];
-}
 function floorKeyValues(tenantId, floor) {
   return [
     ["id", floor.id],
@@ -35,6 +15,7 @@ function floorKeyValues(tenantId, floor) {
     ["updateAt", floor.updateAt]
   ];
 }
+
 function prototypeKeyValues(tenantId, proto) {
   return [
     ["id", proto.id],
@@ -80,8 +61,6 @@ function colorKeyValues(tenantId, c) {
 }
 
 module.exports = {
-  userKeyValues: userKeyValues,
-  personKeyValues: personKeyValues,
   floorKeyValues: floorKeyValues,
   prototypeKeyValues: prototypeKeyValues,
   objectKeyValues: objectKeyValues,

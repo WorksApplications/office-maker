@@ -16,23 +16,13 @@ var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pa
 var commands = {};
 
 commands.createDataForDebug = function(tenantId) {
-  if(!tenantId) {
+  tenantId = tenantId || '';
+  if(config.multiTenency && !tenantId) {
     return Promise.reject('tenantId is not defined.');
-  }
-  if(tenantId === 'onpremiss') {
-    tenantId = '';
   }
   return rdbEnv.forConnectionAndTransaction((conn) => {
     console.log(`creating data for tenant ${tenantId} ...`);
-    return Promise.all(mock.users.map((user) => {
-      return db.saveUser(conn, user);
-    })).then(() => {
-      return Promise.all(mock.people.map((person) => {
-        return db.savePerson(conn, person);
-      }));
-    }).then(() => {
-      return db.savePrototypes(conn, tenantId, mock.prototypes);
-    }).then(() => {
+    return db.savePrototypes(conn, tenantId, mock.prototypes).then(() => {
       return db.saveColors(conn, tenantId, mock.colors);
     });
   }).then(rdbEnv.end);

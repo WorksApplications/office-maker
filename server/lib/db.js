@@ -8,54 +8,6 @@ var filestorage = require('./filestorage.js');
 var profileService = require('./profile-service.js');
 
 
-function getUser(conn, id) {
-  return rdb.one(conn, sql.select('users', sql.where('id', id))).then((user) => {
-    if(user) {
-      user.pass = '';
-      user.tenantId = '';
-    }
-    return Promise.resolve(user);
-  });
-}
-
-function getUserWithPass(conn, id, pass) {
-  return rdb.one(conn, sql.select('users', sql.whereList([['id', id], ['pass', pass]]))).then((user) => {
-    if(user) {
-      user.pass = '';
-      user.tenantId = '';
-    }
-    return Promise.resolve(user);
-  });
-}
-
-function saveUser(conn, user) {
-  return rdb.batch(conn, [
-    // sql.delete('users', sql.where('id', user.id)),
-    sql.replace('users', schema.userKeyValues(user))
-  ]);
-}
-
-function getPerson(conn, id) {
-  return rdb.one(conn, sql.select('people', sql.where('id', id)));
-}
-
-function savePerson(conn, person) {
-  return rdb.batch(conn, [
-    // sql.delete('people', sql.where('id', person.id)),
-    sql.replace('people', schema.personKeyValues(person))
-  ]);
-}
-
-function getPeopleLikeName(conn, name) {
-  return rdb.exec(conn, sql.select('people', `WHERE name LIKE '%${name.trim()}%' OR mail LIKE '%${name.trim()}%'`));//TODO sanitize
-}
-
-function getCandidate(conn, name) {
-  return getPeopleLikeName(conn, name);
-}
-
-//-------------------
-
 function saveObjects(conn, data) {
   return getObjects(conn, data.floorId, data.oldFloorVersion).then((objects) => {
     var deleted = {};
@@ -298,19 +250,7 @@ function resetImage(conn, dir) {
   return filestorage.empty(dir);
 }
 
-function search(conn, tenantId, query, all) {
-  return getPeopleLikeName(conn, query).then((people) => {
-    return searchHelp(conn, tenantId, query, all, people);
-  });
-}
-
-function searchWithProfileService(profileServiceRoot, conn, token, tenantId, query, all) {
-  return profileService.search(profileServiceRoot, token, query).then((people) => {
-    return searchHelp(conn, tenantId, query, all, people);
-  });
-}
-
-function searchHelp(conn, tenantId, query, all, people) {
+function search(conn, tenantId, query, all, people) {
   return getFloorsWithObjects(conn, tenantId, all).then((floors) => {
     var results = {};
     var arr = [];
@@ -381,14 +321,7 @@ function saveColors(conn, tenantId, colors) {
 }
 
 module.exports = {
-  getUser: getUser,
-  getUserWithPass: getUserWithPass,
-  saveUser: saveUser,
-  getPerson: getPerson,
-  savePerson: savePerson,
-  getCandidate: getCandidate,
   search: search,
-  searchWithProfileService: searchWithProfileService,
   getPrototypes: getPrototypes,
   savePrototypes: savePrototypes,
   getColors: getColors,

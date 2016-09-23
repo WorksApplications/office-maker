@@ -20,16 +20,7 @@ if(fs.existsSync(__dirname + '/config.json')) {
   config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json', 'utf8'));
 }
 config.apiRoot = '/api';
-
-var paasMode = config.accountServiceRoot && config.profileServiceRoot;
-if(!paasMode) {
-  config.accountServiceRoot = '/api';
-  config.profileServiceRoot = '/api';
-}
-if(paasMode) {
-  // In paasMode, we use public key for account service
-  config.secret = fs.readFileSync(__dirname + '/' + config.secret, 'utf8');
-}
+config.secret = fs.readFileSync(__dirname + '/' + config.secret, 'utf8');
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 
@@ -63,7 +54,7 @@ function getAuthToken(req) {
 
 function getSelf(conn, token) {
   if(!token) {
-    if(paasMode) {
+    if(!config.singleTenency) {
       return Promise.reject(401);
     } else {
       return Promise.resolve(null);
@@ -92,28 +83,6 @@ function getSelf(conn, token) {
     // }
   });
 }
-
-function getPerson(conn, token, user) {
-  return paasMode ?
-    profileService.getPersonByUserId(config.profileServiceRoot, token, user.id) :
-    db.getPerson(conn, user.personId);
-}
-
-/* For on-premiss mode only */
-app.post('/api/1/authentication', inTransaction((conn, req, res) => {
-  // ignore tenantId
-  var id = req.body.userId;
-  var pass = req.body.password;
-  return db.getUserWithPass(conn, id, pass).then((user) => {
-    if(!user) {
-      return Promise.reject(401);
-    }
-    var token = jwt.sign(user, config.secret);
-    return Promise.resolve({
-      accessToken: token
-    });
-  });
-}));
 
 app.use(express.static(publicDir));
 
@@ -144,11 +113,7 @@ app.get('/api/1/people/:id', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var id = req.params.id;
   return getSelf(conn, token).then((user) => {
-    var getPerson = paasMode ?
-      profileService.getPerson(config.profileServiceRoot, token, id) :
-      db.getPerson(conn, id);
-
-    return getPerson.then((person) => {
+    return profileService.getPerson(config.profileServiceRoot, token, id).then((person) => {
       if(!person) {
         return Promise.reject(404);
       }
@@ -168,7 +133,7 @@ app.get('/api/1/self', inTransaction((conn, req, res) => {
         role: 'guest',
       });
     }
-    return getPerson(conn, token, user).then((person) => {
+    return profileService.getPersonByUserId(config.profileServiceRoot, token, user.id).then((person) => {
       if(person == null) {
         throw "Relevant person for " + user.id + " not ound."
       }
@@ -183,26 +148,14 @@ app.get('/api/1/users/:id', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var userId = req.params.id;
   return getSelf(conn, token).then((user) => {
-    if(paasMode) {
-      return profileService.getPersonByUserId(config.profileServiceRoot, token, userId).then((person) => {
-        // TODO
-        return Promise.resolve({
-          id: userId,
-          role: 'admin',
-          person: person
-        });
+    return profileService.getPersonByUserId(config.profileServiceRoot, token, userId).then((person) => {
+      // TODO
+      return Promise.resolve({
+        id: userId,
+        role: 'admin',
+        person: person
       });
-    } else {
-      return db.getUser(conn, userId).then((user) => {
-        if(!user) {
-          return Promise.reject(404);
-        }
-        return db.getPerson(conn, user.personId).then((person) => {
-          user.person = person;
-          return Promise.resolve(user);
-        });
-      })
-    }
+    });
   });
 }));
 
@@ -318,23 +271,17 @@ app.get('/api/1/search/:query', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
-  if(paasMode) {
-    return getSelf(conn, token).then((user) => {
-      return db.searchWithProfileService(config.profileServiceRoot, conn, token, user.tenantId, query, options.all);
+  return getSelf(conn, token).then((user) => {
+    return profileService.search(config.profileServiceRoot, token, query).then((people) => {
+      return db.search(conn, user.tenantId, query, options.all, people);
     });
-  } else {
-    return db.search(conn, '', query, options.all);
-  }
+  });
 }));
 
 app.get('/api/1/candidates/:name', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var name = req.params.name;
-  if(paasMode) {
-    return profileService.search(config.profileServiceRoot, token, name);
-  } else {
-    return db.getCandidate(conn, name);
-  }
+  return profileService.search(config.profileServiceRoot, token, name);
 }));
 
 // TODO move to service logic
@@ -407,11 +354,7 @@ process.on('uncaughtException', (e) => {
   log.system.error(e.stack);
 });
 
-app.listen(3000, () => {
-  log.system.info('server listening on port 3000.');
-  if(paasMode) {
-    log.system.info('running on paas mode');
-  } else {
-    log.system.info('running on on-premiss mode');
-  }
+var port = 3000;
+app.listen(port, () => {
+  log.system.info('server listening on port ' + port + '.');
 });
