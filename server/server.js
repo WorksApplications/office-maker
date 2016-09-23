@@ -55,7 +55,7 @@ function getAuthToken(req) {
 function getSelf(conn, token) {
   if(!token) {
     if(config.multiTenency) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     } else {
       return Promise.resolve(null);
     }
@@ -162,7 +162,7 @@ app.get('/api/1/users/:id', inTransaction((conn, req, res) => {
 app.get('/api/1/prototypes', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     return db.getPrototypes(conn, user.tenantId).then((prototypes) => {
       return Promise.resolve(prototypes);
@@ -173,7 +173,7 @@ app.get('/api/1/prototypes', inTransaction((conn, req, res) => {
 app.put('/api/1/prototypes', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     var prototypes = req.body;
     if(!prototypes || !prototypes.length) {
@@ -188,7 +188,7 @@ app.put('/api/1/prototypes', inTransaction((conn, req, res) => {
 app.get('/api/1/colors', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     return db.getColors(conn, user.tenantId).then((colors) => {
       return Promise.resolve(colors);
@@ -199,7 +199,7 @@ app.get('/api/1/colors', inTransaction((conn, req, res) => {
 app.put('/api/1/colors', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     var colors = req.body;
     if(!colors || !prototypes_.length) {
@@ -215,7 +215,7 @@ app.get('/api/1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user && options.all) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     var tenantId = user ? user.tenantId : '';
     // ignore all option for now
@@ -229,7 +229,7 @@ app.get('/api/1/floors', inTransaction((conn, req, res) => {
 app.get('/api/1/floors/:id/:version', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user || user.role !== 'admin') {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     var tenantId = user ? user.tenantId : '';
     var id = req.params.id;
@@ -252,7 +252,7 @@ app.get('/api/1/floors/:id', inTransaction((conn, req, res) => {
       return Promise.reject(404);
     }
     if(user.role !== 'admin' && options.all) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     var tenantId = user ? user.tenantId : '';
     var id = req.params.id;
@@ -294,7 +294,7 @@ function isValidFloor(floor) {
 app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     var newFloor = req.body;
     if(newFloor.id && req.params.id !== newFloor.id) {
@@ -316,7 +316,7 @@ app.put('/api/1/floors/:id/public', inTransaction((conn, req, res) => {
   var token = getAuthToken(req)
   return getSelf(conn, token).then((user) => {
     if(!user || user.role !== 'admin') {
-      return Promise.reject(401);
+      return Promise.reject(403);
     }
     var id = req.params.id;
     var updateBy = user.id;
@@ -331,7 +331,7 @@ app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
   return new Promise((resolve, reject) => {
     getSelf(conn, getAuthToken(req)).then((user) => {
       if(!user || user.role !== 'admin') {
-        return reject(401);
+        return reject(403);
       }
       var id = req.params.id;
       var all = [];
