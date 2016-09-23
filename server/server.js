@@ -54,7 +54,7 @@ function getAuthToken(req) {
 
 function getSelf(conn, token) {
   if(!token) {
-    if(!config.singleTenency) {
+    if(config.multiTenency) {
       return Promise.reject(401);
     } else {
       return Promise.resolve(null);

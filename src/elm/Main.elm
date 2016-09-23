@@ -33,8 +33,8 @@ port clipboard : (String -> msg) -> Sub msg
 
 main : Program Flags
 main =
-  TimeTravel.programWithFlags urlParser
-  -- Navigation.programWithFlags urlParser
+  -- TimeTravel.programWithFlags urlParser
+  Navigation.programWithFlags urlParser
     { init = \flags result ->
         Model.init
           flags.apiRoot
