@@ -252,7 +252,7 @@ app.get('/api/1/floors/:id', inTransaction((conn, req, res) => {
     if(!user) {
       return Promise.reject(404);
     }
-    if(user.role !== 'admin' && options.all) {
+    if(!user && options.all) {
       return Promise.reject(403);
     }
     var tenantId = user ? user.tenantId : '';

@@ -361,7 +361,7 @@ update removeToken setSelectionStart action model =
         { model |
           user = user
         , editMode =
-            if User.isAdmin user then
+            if not (User.isGuest user) then
               if model.url.editMode then Select else Viewing False
             else
               Viewing False

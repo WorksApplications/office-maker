@@ -5,6 +5,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import View.Styles as Styles
 
+import Model.User as User exposing (User)
 import Model.Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 
@@ -32,12 +33,12 @@ linkBox contextmenuMsg clickMsg liStyle hoverStyle innerStyle inner =
     [ span [ style innerStyle ] inner ]
 
 
-eachView : (String -> msg) -> (String -> msg) -> Bool -> Bool -> Bool -> String -> FloorInfo -> Maybe (Html msg)
-eachView contextmenuMsg onClickMsg disableContextmenu isAdmin isEditMode currentFloorId floorInfo =
+eachView : (String -> msg) -> (String -> msg) -> Bool -> User -> Bool -> String -> FloorInfo -> Maybe (Html msg)
+eachView contextmenuMsg onClickMsg disableContextmenu user isEditMode currentFloorId floorInfo =
   Maybe.map
     (\floor ->
       eachView'
-        (if not disableContextmenu && isAdmin && isEditMode then Just (contextmenuMsg floor.id) else Nothing)
+        (if not disableContextmenu && (not (User.isGuest user)) && isEditMode then Just (contextmenuMsg floor.id) else Nothing)
         (onClickMsg floor.id)
         (currentFloorId == floor.id)
         (markAsPrivate floorInfo)
@@ -70,22 +71,22 @@ createButton msg =
     [ text "+" ]
 
 
-view : (String -> msg) -> ((Int, Int) -> msg) -> (String -> Bool -> msg) -> msg -> Bool -> Bool -> Bool -> String -> List FloorInfo -> Html msg
-view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu isAdmin isEditMode currentFloorId floorInfoList =
+view : (String -> msg) -> ((Int, Int) -> msg) -> (String -> Bool -> msg) -> msg -> Bool -> User -> Bool -> String -> List FloorInfo -> Html msg
+view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorInfoList =
   let
     requestPrivate =
-      isAdmin && isEditMode
+      (not (User.isGuest user)) && isEditMode
 
     onClickMsg' id =
       onClickMsg id requestPrivate
 
     floorList =
       List.filterMap
-        (eachView onContextMenu onClickMsg' disableContextmenu isAdmin isEditMode currentFloorId)
+        (eachView onContextMenu onClickMsg' disableContextmenu user isEditMode currentFloorId)
         (List.sortBy (getOrd isEditMode) floorInfoList)
 
     create =
-      if isEditMode && isAdmin then
+      if isEditMode && User.isAdmin user then
         [ createButton onCreateNewFloor ]
       else
         []

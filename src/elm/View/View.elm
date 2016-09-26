@@ -76,7 +76,7 @@ floorInfoView model =
           GoToFloor
           CreateNewFloor
           (model.keys.ctrl)
-          (User.isAdmin model.user)
+          model.user
           isEditMode
           (EditingFloor.present model.floor).id
           model.floorsInfo
@@ -281,7 +281,7 @@ view model =
       case model.editMode of
         Viewing True ->
           App.map HeaderMsg (Header.viewPrintMode (EditingFloor.present model.floor).name)
-          
+
         _ ->
           App.map HeaderMsg (Header.view model.title (Just (model.user, False)))
 
