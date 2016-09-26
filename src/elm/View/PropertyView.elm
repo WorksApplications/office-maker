@@ -9,8 +9,8 @@ import View.Styles as S
 import View.Icons as Icons
 
 import Util.HtmlUtil exposing (..)
-
-import Model exposing (..)
+import Update exposing (..)
+import Model.Model as Model exposing (..)
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 

@@ -1,4 +1,4 @@
-module Model exposing (..)
+module Update exposing (..)
 
 import Date exposing (Date)
 import Maybe
@@ -20,6 +20,7 @@ import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil exposing (..)
 import Util.File exposing (..)
 
+import Model.Model as Model exposing (..)
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
@@ -48,73 +49,6 @@ import ObjectNameInput
 type alias Commit = Floor.Msg
 
 
-type alias Model =
-  { apiConfig : API.Config
-  , title : String
-  , seed : Seed
-  , visitDate : Date
-  , user : User
-  , pos : (Int, Int)
-  , draggingContext : DraggingContext
-  , selectedObjects : List Id
-  , copiedObjects : List Object
-  , objectNameInput : ObjectNameInput.Model
-  , gridSize : Int
-  , selectorRect : Maybe (Int, Int, Int, Int)
-  , keys : ShortCut.Model
-  , editMode : EditMode
-  , colorPalette : ColorPalette
-  , contextMenu : ContextMenu
-  , floor : EditingFloor
-  , floorsInfo : List FloorInfo
-  , windowSize : (Int, Int)
-  , scale : Scale.Model
-  , offset : (Int, Int)
-  , scaling : Bool
-  , prototypes : Prototypes
-  , error : GlobalError
-  , url : URL.Model
-  , floorProperty : FloorProperty.Model
-  , searchBox : SearchBox.Model
-  , selectedResult : Maybe Id
-  , personInfo : Dict String Person
-  , diff : Maybe (Floor, Maybe Floor)
-  , candidates : List Id
-  , tab : Tab
-  , clickEmulator : List (Id, Bool, Time)
-  , candidateRequest : Dict Id (Maybe String)
-  , personPopupSize : (Int, Int)
-  }
-
-
-type ContextMenu =
-    NoContextMenu
-  | Object (Int, Int) Id
-  | FloorInfo (Int, Int) Id
-
-
-type EditMode =
-    Viewing Bool
-  | Select
-  | Pen
-  | Stamp
-  | LabelMode
-
-
-type DraggingContext =
-    None
-  | MoveObject Id (Int, Int)
-  | Selector
-  | ShiftOffset
-  | PenFromScreenPos (Int, Int)
-  | StampFromScreenPos (Int, Int)
-  | ResizeFromScreenPos Id (Int, Int)
-
-
-type Tab =
-  SearchTab | EditTab
-
-
 subscriptions : (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> ((String -> Msg) -> Sub Msg) -> Model -> Sub Msg
 subscriptions tokenRemoved undo redo clipboard model =
   Sub.batch
@@ -126,10 +60,6 @@ subscriptions tokenRemoved undo redo clipboard model =
     , redo (always Redo)
     , clipboard PasteFromClipboard
     ]
-
-
-gridSize : Int
-gridSize = 8 -- 2^N
 
 
 init : String -> String -> String -> String -> (Int, Int) -> (Int, Int) -> Float -> (Result String URL.Model) -> (Model, Cmd Msg)
@@ -147,11 +77,11 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       , visitDate = Date.fromTime visitDate
       , user = User.guest
       , pos = (0, 0)
-      , draggingContext = None
+      , draggingContext = NoDragging
       , selectedObjects = []
       , copiedObjects = []
       , objectNameInput = ObjectNameInput.init
-      , gridSize = gridSize
+      , gridSize = Model.gridSize
       , selectorRect = Nothing
       , keys = ShortCut.init
       , editMode = if url.editMode then Select else Viewing False
@@ -195,7 +125,6 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
           (toModel dummyURL searchBox)
           ! [ initCmd, cmd ] -- TODO modifyURL
 
---
 
 type Msg = NoOp
   | AuthLoaded User
@@ -442,7 +371,7 @@ update removeToken setSelectionStart action model =
       { model |
         draggingContext =
           case model.draggingContext of
-            ShiftOffset -> None
+            ShiftOffset -> NoDragging
             _ -> model.draggingContext
       } ! []
 
@@ -524,7 +453,7 @@ update removeToken setSelectionStart action model =
         draggingContext =
           case model.editMode of
             LabelMode ->
-              None
+              NoDragging
 
             Stamp ->
               StampFromScreenPos (clientX, clientY)
@@ -1278,81 +1207,10 @@ updateOnMouseUp model =
 
     newModel =
       { model' |
-        draggingContext = None
+        draggingContext = NoDragging
       }
   in
     newModel ! [ cmd ]
-
-
-updateSelectorRect : (Int, Int) -> Model -> Model
-updateSelectorRect (canvasX, canvasY) model =
-  { model |
-    selectorRect =
-      case model.selectorRect of
-        Just (x, y, _, _) ->
-          let
-            (left, top) =
-              screenToImageWithOffset model.scale (canvasX, canvasY) model.offset
-
-            (w, h) =
-              (left - x, top - y)
-          in
-            Just (x, y, w, h)
-
-        _ ->
-          model.selectorRect
-  }
-
-
-syncSelectedByRect : Model -> Model
-syncSelectedByRect model =
-  { model |
-    selectedObjects =
-      case model.selectorRect of
-        Just (left, top, width, height) ->
-          let
-            floor =
-              EditingFloor.present model.floor
-
-            objects =
-              withinRect
-                (toFloat left, toFloat top)
-                (toFloat (left + width), toFloat (top + height))
-                floor.objects
-          in
-            List.map idOf objects
-
-        _ ->
-          model.selectedObjects
-  }
-
-
-updateOffsetByScreenPos : (Int, Int) -> Model -> Model
-updateOffsetByScreenPos (x, y) model =
-  { model |
-    offset =
-      let
-        (prevX, prevY) =
-          model.pos
-
-        (offsetX, offsetY) =
-          model.offset
-
-        (dx, dy) =
-          ((x - prevX), (y - prevY))
-      in
-        ( offsetX + Scale.screenToImage model.scale dx
-        , offsetY + Scale.screenToImage model.scale dy
-        )
-  }
-
-
-startEdit : Object -> Model -> Model
-startEdit e model =
-  { model |
-    objectNameInput =
-      ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
-  }
 
 
 updateOnSearchBoxEvent : SearchBox.Event -> Model -> (Maybe Id, Cmd Msg)
@@ -1411,30 +1269,6 @@ updateOnSearchBoxEvent event model =
 
     SearchBox.None ->
       (model.selectedResult, Cmd.none)
-
-
-adjustOffset : Maybe Id -> Model -> (Int, Int)
-adjustOffset selectedResult model =
-  let
-    maybeShiftedOffset =
-      selectedResult `Maybe.andThen` \id ->
-      findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \e ->
-      relatedPerson e `Maybe.andThen` \personId ->
-      Just <|
-        let
-          (windowWidth, windowHeight) =
-            model.windowSize
-          containerWidth = windowWidth - 320 --TODO
-          containerHeight = windowHeight - 37 --TODO
-        in
-          ProfilePopupLogic.adjustOffset
-            (containerWidth, containerHeight)
-            model.personPopupSize
-            model.scale
-            model.offset
-            e
-    in
-      Maybe.withDefault model.offset maybeShiftedOffset
 
 
 updateOnSelectCandidate : Id -> String -> Model -> (Model, Cmd Msg)
@@ -1836,10 +1670,6 @@ nextObjectToInput object allObjects =
         Nothing
 
 
-adjustPositionByFocus : Id -> Model -> Model
-adjustPositionByFocus focused model = model
-
-
 savePrototypesCmd : API.Config -> List Prototype -> Cmd Msg
 savePrototypesCmd apiConfig prototypes =
   performAPI
@@ -1954,39 +1784,6 @@ updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
       model ! []
 
 
-candidatesOf : Model -> List Person
-candidatesOf model =
-  List.filterMap (\personId -> Dict.get personId model.personInfo) model.candidates
-
-
-shiftSelectionToward : ObjectsOperation.Direction -> Model -> Model
-shiftSelectionToward direction model =
-  let
-    floor = (EditingFloor.present model.floor)
-    selected = selectedObjects model
-  in
-    case selected of
-      primary :: tail ->
-        let
-          toBeSelected =
-            if model.keys.shift then
-              List.map idOf <|
-                expandOrShrink direction primary selected floor.objects
-            else
-              case nearest direction primary floor.objects of
-                Just e ->
-                  let
-                    newObjects = [e]
-                  in
-                    List.map idOf newObjects
-                _ -> model.selectedObjects
-        in
-          { model |
-            selectedObjects = toBeSelected
-          }
-      _ -> model
-
-
 -- TODO consider chaining
 loadAuthCmd : API.Config -> Cmd Msg
 loadAuthCmd apiConfig =
@@ -2018,133 +1815,3 @@ loadFloorCmd apiConfig forEdit floorId =
         API.getFloor apiConfig floorId
   in
     Task.perform recover404 FloorLoaded task
-
-
-
--- TODO bad naming
-isSelected : Model -> Object -> Bool
-isSelected model object =
-  case model.editMode of
-    Viewing _ -> False
-    _ -> List.member (idOf object) model.selectedObjects
-
-
-primarySelectedObject : Model -> Maybe Object
-primarySelectedObject model =
-  case model.selectedObjects of
-    head :: _ ->
-      findObjectById (Floor.objects <| (EditingFloor.present model.floor)) head
-    _ -> Nothing
-
-
-selectedObjects : Model -> List Object
-selectedObjects model =
-  List.filterMap (\id ->
-    findObjectById (EditingFloor.present model.floor).objects id
-  ) model.selectedObjects
-
-
-screenToImageWithOffset : Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int)
-screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
-    ( Scale.screenToImage scale screenX - offsetX
-    , Scale.screenToImage scale screenY - offsetY
-    )
-
-
-stampCandidates : Model -> List StampCandidate
-stampCandidates model =
-  case model.editMode of
-    Stamp ->
-      let
-        prototype =
-          selectedPrototype model.prototypes
-
-        (offsetX, offsetY) = model.offset
-
-        (x2, y2) =
-          model.pos
-
-        (x2', y2') =
-          screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
-      in
-        case model.draggingContext of
-          StampFromScreenPos (x1, y1) ->
-            let
-              (x1', y1') =
-                screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
-            in
-              stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
-
-          _ ->
-            let
-              (deskWidth, deskHeight) = prototype.size
-
-              (left, top) =
-                fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
-            in
-              [ (prototype, (left, top))
-              ]
-    _ -> []
-
-
-temporaryPen : Model -> (Int, Int) -> Maybe (String, String, (Int, Int, Int, Int))
-temporaryPen model from =
-  Maybe.map
-    (\rect -> ("#fff", "", rect)) -- TODO color
-    (temporaryPenRect model from)
-
-
-temporaryPenRect : Model -> (Int, Int) -> Maybe (Int, Int, Int, Int)
-temporaryPenRect model from =
-  let
-    (left, top) =
-      fitPositionToGrid model.gridSize <|
-        screenToImageWithOffset model.scale from model.offset
-
-    (right, bottom) =
-      fitPositionToGrid model.gridSize <|
-        screenToImageWithOffset model.scale model.pos model.offset
-  in
-    validateRect (left, top, right, bottom)
-
-
-temporaryResizeRect : Model -> (Int, Int) -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
-temporaryResizeRect model (fromScreenX, fromScreenY) (objLeft, objTop, objWidth, objHeight) =
-  let
-    (toScreenX, toScreenY) =
-      model.pos
-
-    (dx, dy) =
-      (toScreenX - fromScreenX, toScreenY - fromScreenY)
-
-    (right, bottom) =
-      fitPositionToGrid model.gridSize <|
-        ( objLeft + objWidth + Scale.screenToImage model.scale dx
-        , objTop + objHeight + Scale.screenToImage model.scale dy
-        )
-  in
-    validateRect (objLeft, objTop, right, bottom)
-
-
-validateRect : (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
-validateRect (left, top, right, bottom) =
-  let
-    width = right - left
-    height = bottom - top
-  in
-    if width > 0 && height > 0 then
-      Just (left, top, width, height)
-    else
-      Nothing
-
-
-currentFloorForView : Model -> Maybe Floor
-currentFloorForView model =
-  case model.editMode of
-    Viewing _ ->
-      FloorInfo.findViewingFloor model.url.floorId model.floorsInfo
-
-    _ ->
-      Just (EditingFloor.present model.floor)
-
---

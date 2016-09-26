@@ -25,7 +25,8 @@ import FloorProperty
 
 import Util.HtmlUtil exposing (..)
 
-import Model exposing (..)
+import Update exposing (..)
+import Model.Model exposing (..)
 import Model.Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Object as Object exposing (..)

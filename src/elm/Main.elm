@@ -1,6 +1,6 @@
 port module Main exposing (..)
 
-import Model
+import Update
 import Model.URL as URL
 import View.View as View
 import Navigation
@@ -36,7 +36,7 @@ main =
   -- TimeTravel.programWithFlags urlParser
   Navigation.programWithFlags urlParser
     { init = \flags result ->
-        Model.init
+        Update.init
           flags.apiRoot
           flags.accountServiceRoot
           flags.authToken
@@ -46,9 +46,9 @@ main =
           flags.visitDate
           result
     , view = View.view
-    , update = Model.update removeToken setSelectionStart
-    , urlUpdate =  Model.urlUpdate
-    , subscriptions = Model.subscriptions tokenRemoved undo redo clipboard
+    , update = Update.update removeToken setSelectionStart
+    , urlUpdate =  Update.urlUpdate
+    , subscriptions = Update.subscriptions tokenRemoved undo redo clipboard
     }
 
 

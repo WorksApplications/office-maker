@@ -11,7 +11,8 @@ import View.CanvasView as CanvasView
 import Util.HtmlUtil exposing (..)
 import Util.ListUtil exposing (..)
 
-import Model exposing (..)
+import Update exposing (..)
+import Model.Model exposing (..)
 import Model.Scale as Scale
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
