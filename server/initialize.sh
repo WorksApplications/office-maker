@@ -1,6 +1,10 @@
-# for developmemt
 user=root
 pass=root
+
+if ls config.json ; then
+  echo "Already initialized. To reinitialize, delete config.json."
+  exit 1;
+fi
 
 cat defaultConfig.json \
   | sed -e "s/\"user\": \"root\"/\"user\": \"$user\"/"\

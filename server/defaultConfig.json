@@ -5,8 +5,8 @@
     "pass": ""
   },
   "title": "Office Map",
-  "profileServiceRoot": "http://localhost/accounts/api",
-  "accountServiceRoot": "http://localhost/profiles/api",
+  "accountServiceRoot": "http://localhost/accounts/api",
+  "profileServiceRoot": "http://localhost/profiles/api",
   "secret": "path/to/pubkey.pem",
   "multiTenency": false,
   "log": {

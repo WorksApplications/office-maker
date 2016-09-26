@@ -3,6 +3,7 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 var fs = require('fs');
+var path = require('path');
 var ejs = require('ejs');
 var request = require('request');
 var jwt = require('jsonwebtoken');
@@ -20,7 +21,7 @@ if(fs.existsSync(__dirname + '/config.json')) {
   config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json', 'utf8'));
 }
 config.apiRoot = '/api';
-config.secret = fs.readFileSync(__dirname + '/' + config.secret, 'utf8');
+config.secret = fs.readFileSync(path.resolve(__dirname, config.secret), 'utf8');
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 
