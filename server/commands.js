@@ -15,7 +15,7 @@ var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pa
 
 var commands = {};
 
-commands.createDataForDebug = function(tenantId) {
+commands.createInitialData = function(tenantId) {
   tenantId = tenantId || '';
   if(config.multiTenency && !tenantId) {
     return Promise.reject('tenantId is not defined.');

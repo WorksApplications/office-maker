@@ -1,6 +1,6 @@
 var gridSize = 8;
 var backgroundColors = [
-  "#eda", "#baf", "#fba", "#9bd", "#af8", "#8df", "#bbb", "#fff", "rgba(255,255,255,0.5)"
+  "#eee", "#edb", "#bbf", "#fbb", "#abe", "#af9", "#9df", "#bbb", "#fff", "rgba(255,255,255,0.5)"
 ];
 var colors = [
   "#875", "#75a", "#c57", "#69a", "#8c5", "#5ab", "#666", "#000"
@@ -8,9 +8,17 @@ var colors = [
 var prototypes = [
   { id: "1",
     name: "",
-    width : gridSize*7,//70cm
-    height: gridSize*12,//120cm
-    backgroundColor: "#eda",
+    width : gridSize * 7,//70cm
+    height: gridSize * 12,//120cm
+    backgroundColor: "#eee",
+    color: "#000",
+    fontSize: 14,
+    shape: 'rectangle'
+  }, { id: "2",
+    name: "",
+    width : gridSize * 12,//120cm
+    height: gridSize * 7,//70cm
+    backgroundColor: "#eee",
     color: "#000",
     fontSize: 14,
     shape: 'rectangle'
