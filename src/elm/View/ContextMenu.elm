@@ -1,14 +1,16 @@
 module View.ContextMenu exposing (view)
 
+import Maybe
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
 import View.Styles as S
-
 import Util.HtmlUtil exposing (..)
-
 import Model exposing (..)
-
+import Model.Object as Object
+import Model.ObjectsOperation as ObjectsOperation
+import Model.EditingFloor as EditingFloor
 import InlineHover exposing (hover)
 
 
@@ -20,8 +22,14 @@ view model =
 
     Object (x, y) id ->
       let
+        selectSameOrgOption =
+          ObjectsOperation.findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \obj ->
+          Object.relatedOrg obj `Maybe.andThen` \org ->
+          Just [ contextMenuItemView (SelectSameOrg org) "Select Same Org." ]
+
         forOneDesk =
           if [id] == model.selectedObjects then
+            (Maybe.withDefault [] selectSameOrgOption) ++
             [ contextMenuItemView (SelectIsland id) "Select Island"
             , contextMenuItemView (RegisterPrototype id) "Register as stamp"
             , contextMenuItemView (Rotate id) "Rotate"

@@ -223,6 +223,7 @@ type Msg = NoOp
   | ShowContextMenuOnObject Id
   | ShowContextMenuOnFloorInfo Id
   | GoToFloor String Bool
+  | SelectSameOrg String
   | SelectIsland Id
   | WindowSize (Int, Int)
   | MouseWheel Float
@@ -783,6 +784,27 @@ update removeToken setSelectionStart action model =
       { model |
         contextMenu = NoContextMenu
       } ! [ loadCmd, modifyUrlCmd ]
+
+    SelectSameOrg org ->
+      let
+        objects =
+          (EditingFloor.present model.floor).objects
+
+        newSelectedObjects =
+          List.filterMap (\obj ->
+            if Object.relatedOrg obj == Just org then
+              Just (idOf obj)
+            else
+              Nothing
+          ) (selectedObjects model)
+
+        newModel =
+          { model |
+            selectedObjects = newSelectedObjects
+          , contextMenu = NoContextMenu
+          }
+      in
+        newModel ! []
 
     SelectIsland id ->
       let
