@@ -5,12 +5,12 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import View.Styles as Styles
 import View.Icons as Icons
-import Model.Scale as Scale
+import Model.Scale as Scale exposing (Scale)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.ProfilePopupLogic exposing (..)
 
-view : msg -> (Int, Int) -> Scale.Model -> (Int, Int) -> Object -> Maybe Person -> Html msg
+view : msg -> (Int, Int) -> Scale -> (Int, Int) -> Object -> Maybe Person -> Html msg
 view closeMsg (popupWidth, popupHeight) scale offsetScreenXY object person =
   let
     centerTopScreenXY =

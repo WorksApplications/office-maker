@@ -13,7 +13,7 @@ import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
-import Model.Scale as Scale
+import Model.Scale as Scale exposing (Scale)
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
@@ -51,7 +51,7 @@ type alias Model =
   , floor : EditingFloor
   , floorsInfo : List FloorInfo
   , windowSize : (Int, Int)
-  , scale : Scale.Model
+  , scale : Scale
   , offset : (Int, Int)
   , scaling : Bool
   , prototypes : Prototypes
@@ -275,7 +275,7 @@ selectedObjects model =
   ) model.selectedObjects
 
 
-screenToImageWithOffset : Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int)
+screenToImageWithOffset : Scale -> (Int, Int) -> (Int, Int) -> (Int, Int)
 screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
     ( Scale.screenToImage scale screenX - offsetX
     , Scale.screenToImage scale screenY - offsetY
