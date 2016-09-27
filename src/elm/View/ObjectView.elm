@@ -7,8 +7,9 @@ import Json.Decode as Decode
 import Util.HtmlUtil exposing (..)
 import View.Styles as S
 import View.Icons as Icons
-import Model.Scale as Scale
+import Model.Scale as Scale exposing (Scale)
 import String
+
 
 type alias Id = String
 
@@ -32,7 +33,7 @@ noEvents =
   }
 
 
-viewDesk : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Float -> Bool -> Bool -> Scale.Model -> Bool -> Bool -> Html msg
+viewDesk : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Bool -> Html msg
 viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha scale disableTransition personMatched =
   let
     personMatchIcon =
@@ -53,7 +54,7 @@ viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha sc
     viewInternal selected eventOptions styles nameView personMatchIcon
 
 
-viewLabel : EventOptions msg -> (Int, Int, Int, Int) -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale.Model -> Bool -> Html msg
+viewLabel : EventOptions msg -> (Int, Int, Int, Int) -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Bool -> Html msg
 viewLabel eventOptions rect backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale disableTransition =
   let
     screenRect =
@@ -116,7 +117,7 @@ resizeGripView selected onStartResize =
       text ""
 
 
-personMatchingView : Scale.Model -> String -> Bool -> Html msg
+personMatchingView : Scale -> String -> Bool -> Html msg
 personMatchingView scale name personMatched =
   let
     ratio =
@@ -130,7 +131,7 @@ personMatchingView scale name personMatched =
       text ""
 
 
-objectLabelView : String -> Float -> Scale.Model -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
+objectLabelView : String -> Float -> Scale -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
 objectLabelView color fontSize scale disableTransition screenRect name =
   let
     (_, _, _, height) =

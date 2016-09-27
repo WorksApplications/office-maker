@@ -1,10 +1,10 @@
 module Model.ProfilePopupLogic exposing (..)
 
-import Model.Scale as Scale
+import Model.Scale as Scale exposing (Scale)
 import Model.Object as Object exposing (..)
 
 
-centerTopScreenXYOfObject : Scale.Model -> (Int, Int) -> Object -> (Int, Int)
+centerTopScreenXYOfObject : Scale -> (Int, Int) -> Object -> (Int, Int)
 centerTopScreenXYOfObject scale (offsetX, offsetY) object =
   let
     (x, y, w, h) =
@@ -13,7 +13,7 @@ centerTopScreenXYOfObject scale (offsetX, offsetY) object =
     Scale.imageToScreenForPosition scale (offsetX + x + w//2, offsetY + y)
 
 
-bottomScreenYOfObject : Scale.Model -> (Int, Int) -> Object -> Int
+bottomScreenYOfObject : Scale -> (Int, Int) -> Object -> Int
 bottomScreenYOfObject scale (offsetX, offsetY) object =
   let
     (x, y, w, h) =
@@ -37,7 +37,7 @@ calcPopupTopFromObjectTop popupHeight objTop =
   objTop - (popupHeight + 10)
 
 
-adjustOffset : (Int, Int) -> (Int, Int) -> Scale.Model -> (Int, Int) -> Object -> (Int, Int)
+adjustOffset : (Int, Int) -> (Int, Int) -> Scale -> (Int, Int) -> Object -> (Int, Int)
 adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale (offsetX, offsetY) object =
   let
     (objCenter, objTop) =

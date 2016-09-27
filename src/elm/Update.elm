@@ -32,6 +32,7 @@ import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
 import API.API as API
+import API.Cache as Cache
 
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
@@ -87,7 +88,7 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       , floorsInfo = []
       , floor = EditingFloor.init initialFloor
       , windowSize = initialSize
-      , scale = Scale.init
+      , scale = Scale.default
       , offset = (35, 35)
       , scaling = False
       , prototypes = Prototypes.init []

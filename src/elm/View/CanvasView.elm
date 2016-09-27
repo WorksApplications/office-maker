@@ -21,14 +21,14 @@ import Update exposing (..)
 import Model.Model as Model exposing (..)
 import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
-import Model.Scale as Scale
+import Model.Scale as Scale exposing (Scale)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 
 import Json.Decode as Decode
 
 
-adjustImagePositionOfMovingObject : Int -> Scale.Model -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
+adjustImagePositionOfMovingObject : Int -> Scale -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
 adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, top) =
   let
     (dx, dy) =
@@ -39,7 +39,7 @@ adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, 
 
 type alias ObjectViewOption =
   { editMode: EditMode
-  , scale: Scale.Model
+  , scale: Scale
   , selected: Bool
   , isGhost: Bool
   , object: Object
@@ -382,7 +382,7 @@ canvasImage floor =
     ] []
 
 
-temporaryStampView : Scale.Model -> Bool -> StampCandidate -> (String, Html msg)
+temporaryStampView : Scale -> Bool -> StampCandidate -> (String, Html msg)
 temporaryStampView scale selected (prototype, (left, top)) =
   let
     (deskWidth, deskHeight) = prototype.size

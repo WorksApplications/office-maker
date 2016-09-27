@@ -4,40 +4,44 @@ module Model.Scale exposing (..)
 type Action = ScaleUp | ScaleDown
 
 
-type alias Model =
+type alias Scale =
   { scaleDown : Int
   }
 
 
-init : Model
-init =
-  { scaleDown = 0
+default : Scale
+default = init 0
+
+
+init : Int -> Scale
+init scaleDown =
+  { scaleDown = scaleDown
   }
 
 
-update : Action -> Model -> Model
+update : Action -> Scale -> Scale
 update action model =
   case action of
     ScaleUp ->
       { model | scaleDown = max 0 (model.scaleDown - 1) }
-      
+
     ScaleDown ->
       { model | scaleDown = min 4 (model.scaleDown + 1) }
 
 
-screenToImageForPosition : Model -> (Int, Int) -> (Int, Int)
+screenToImageForPosition : Scale -> (Int, Int) -> (Int, Int)
 screenToImageForPosition model (screenX, screenY) =
   ( screenToImage model screenX
   , screenToImage model screenY)
 
 
-imageToScreenForPosition : Model -> (Int, Int) -> (Int, Int)
+imageToScreenForPosition : Scale -> (Int, Int) -> (Int, Int)
 imageToScreenForPosition model (imageX, imageY) =
   ( imageToScreen model imageX
   , imageToScreen model imageY)
 
 
-imageToScreenForRect : Model -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
+imageToScreenForRect : Scale -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
 imageToScreenForRect model (x, y, w, h) =
   ( imageToScreen model x
   , imageToScreen model y
@@ -46,7 +50,7 @@ imageToScreenForRect model (x, y, w, h) =
   )
 
 
-screenToImageForRect : Model -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
+screenToImageForRect : Scale -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
 screenToImageForRect model (x, y, w, h) =
   ( screenToImage model x
   , screenToImage model y
@@ -55,21 +59,21 @@ screenToImageForRect model (x, y, w, h) =
   )
 
 
-screenToImage : Model -> Int -> Int
+screenToImage : Scale -> Int -> Int
 screenToImage model imageLength =
   imageLength * (2 ^ model.scaleDown)
 
 
-imageToScreen : Model -> Int -> Int
+imageToScreen : Scale -> Int -> Int
 imageToScreen model screenLength =
   screenLength // (2 ^ model.scaleDown)
 
 
-imageToScreenRatio : Model -> Float
+imageToScreenRatio : Scale -> Float
 imageToScreenRatio model =
   1.0 / (2 ^ (toFloat model.scaleDown))
 
 
-ratio : Model -> Model -> Float
+ratio : Scale -> Scale -> Float
 ratio old new =
   (toFloat (2 ^ old.scaleDown)) / (toFloat (2 ^ new.scaleDown))

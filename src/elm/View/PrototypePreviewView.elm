@@ -49,7 +49,7 @@ eachView (width, height) index (prototype, selected) =
     left = width // 2 - w // 2
     top = height // 2 - h // 2
   in
-    snd <| CanvasView.temporaryStampView Scale.init False (prototype, (left + index * width, top))
+    snd <| CanvasView.temporaryStampView Scale.default False (prototype, (left + index * width, top))
 
 
 buttons : Int -> List (Prototype, Bool) -> List (Html Msg)
