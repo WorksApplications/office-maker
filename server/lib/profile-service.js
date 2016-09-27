@@ -1,5 +1,4 @@
 var request = require('request');
-var uuid = require('uuid');
 var log = require('./log.js');
 
 function send(token, method, url, data) {
@@ -26,17 +25,21 @@ function send(token, method, url, data) {
   });
 }
 
-function get(token, url) {
-  return send(token, 'GET', url);
+function get(token, url, exclusiveStartKey) {
+  return send(token, 'GET', url, null, exclusiveStartKey);
 }
 
 function post(token, url, data) {
   return send(token, 'POST', url, data);
 }
 
+function put(token, url, data) {
+  return send(token, 'PUT', url, data);
+}
+
 function fixPerson(profile) {
   return {
-    id: profile.id,
+    id: profile.userId,
     tenantId: profile.tenantId,
     name: profile.name,
     empNo: profile.employeeId,
@@ -58,34 +61,33 @@ function getPerson(root, token, personId) {
   });
 }
 
-function getPersonByUserId(root, token, userId) {
-  return get(token, root + '/1/profiles?userId=' + encodeURIComponent(userId)).then((data) => {
-    if(data.profiles[0]) {
-      return Promise.resolve(fixPerson(data.profiles[0]));
+function getPeopleByOrg(root, token, org, exclusiveStartKey) {
+  var url = root + '/1/profiles?q=' + encodeURIComponent(org)
+    + (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '')
+  return get(token, url).then((data) => {
+    var people = data.profiles.map(fixPerson)
+    if(data.lastEvaluatedKey) {
+      return getPeopleByOrg(root, token, org, data.lastEvaluatedKey).then((people2) => {
+        return Promise.resolve(people.concat(people2));
+      });
+    } else {
+      return Promise.resolve(people);
     }
-    return Promise.resolve(null);
   });
 }
 
-function getPeopleByOrg(root, token, org) {
-  return get(token, root + '/1/profiles?organization=' + encodeURIComponent(org)).then((data) => {
-    return Promise.resolve(data.profiles.map(fixPerson));
-  });
-}
-
-function addPerson(root, token, person) {
-  person.id = uuid.v4();
+function savePerson(root, token, person) {
   person.userId = person.mail;
   person.employeeId = person.empNo;
   person.ruby = '' || null;
   person.cellPhone = person.tel || null;
   person.extensionPhone = person.tel || null;
   person.picture = person.image || null;
-  person.organization = person.org || null;
+  person.organization = person.org || null;//TODO
   person.post = '' || null;
   person.rank = '' || null;
   person.workspace = '' || null;
-  return post(token, root + '/1/profiles', person);
+  return put(token, root + '/1/profiles/' + encodeURIComponent(person.userId), person);
 }
 
 function search(root, token, query) {
@@ -96,8 +98,7 @@ function search(root, token, query) {
 
 module.exports = {
   getPerson: getPerson,
-  getPersonByUserId: getPersonByUserId,
   getPeopleByOrg: getPeopleByOrg,
-  addPerson: addPerson,
+  savePerson: savePerson,
   search: search
 };

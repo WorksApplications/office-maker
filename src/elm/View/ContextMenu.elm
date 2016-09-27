@@ -1,6 +1,7 @@
 module View.ContextMenu exposing (view)
 
 import Maybe
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -25,7 +26,16 @@ view model =
         selectSameOrgOption =
           ObjectsOperation.findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
-          Just [ contextMenuItemView (SelectSameOrg personId) "Select Same Org." ]
+            let
+              str =
+                -- case Dict.get personId model.personInfo of
+                --   Just person ->
+                --     "Select " ++ person.org
+                --
+                --   Nothing ->
+                    "Select Same Org."
+            in
+              Just [ contextMenuItemView (SelectSameOrg personId) str ]
 
         forOneDesk =
           if [id] == model.selectedObjects then

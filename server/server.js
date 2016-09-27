@@ -136,7 +136,9 @@ app.get('/api/1/people', inTransaction((conn, req, res) => {
     return db.getFloorOfVersionWithObjects(conn, user.tenantId, floorId, floorVersion).then((floor) => {
       var peopleSet = {};
       floor.objects.forEach((object) => {
-        peopleSet[object.personId] = true;
+        if (object.personId) {
+          peopleSet[object.personId] = true;
+        }
       });
       return profileService.getPerson(config.profileServiceRoot, token, personId).then((person) => {
         if(!person) {
@@ -164,7 +166,7 @@ app.get('/api/1/self', inTransaction((conn, req, res) => {
         role: 'guest',
       });
     }
-    return profileService.getPersonByUserId(config.profileServiceRoot, token, user.id).then((person) => {
+    return profileService.getPerson(config.profileServiceRoot, token, user.id).then((person) => {
       if(person == null) {
         throw "Relevant person for " + user.id + " not ound."
       }
@@ -179,13 +181,9 @@ app.get('/api/1/users/:id', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var userId = req.params.id;
   return getSelf(conn, token).then((user) => {
-    return profileService.getPersonByUserId(config.profileServiceRoot, token, userId).then((person) => {
-      // TODO
-      return Promise.resolve({
-        id: userId,
-        role: 'admin',
-        person: person
-      });
+    return profileService.getPerson(config.profileServiceRoot, token, userId).then((person) => {
+      user.person = person
+      return Promise.resolve(user);
     });
   });
 }));
