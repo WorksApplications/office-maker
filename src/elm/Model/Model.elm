@@ -2,34 +2,20 @@ module Model.Model exposing (..)
 
 import Date exposing (Date)
 import Maybe
-import Task exposing (Task, andThen, onError)
-import Debug
-import Window
-import String
-import Process
-import Keyboard
 import Dict exposing (Dict)
-import Navigation
 import Time exposing (Time)
-import Http
-import Dom
-import Basics.Extra exposing (never)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
-import Util.DictUtil exposing (..)
-import Util.File exposing (..)
+import Util.DictUtil as DictUtil
 
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Scale as Scale
-import Model.API as API
-import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Floor)
-import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
@@ -37,11 +23,11 @@ import Model.URL as URL
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
-import Model.ClickboardData as ClickboardData
+
+import API.API as API
 
 import FloorProperty
 import SearchBox
-import Header exposing (..)
 import ObjectNameInput
 
 
@@ -392,4 +378,11 @@ currentFloorForView model =
     _ ->
       Just (EditingFloor.present model.floor)
 
+
+registerPeople : List Person -> Model -> Model
+registerPeople people model =
+  { model |
+    personInfo =
+      DictUtil.addAll (.id) people model.personInfo
+  }
 --

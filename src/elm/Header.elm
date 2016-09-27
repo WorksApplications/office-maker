@@ -8,7 +8,7 @@ import Html.Events exposing (..)
 
 import Model.Person exposing (..)
 import Model.User as User exposing (..)
-import Model.API as API
+import API.API as API
 
 import View.Styles as S
 import View.Icons as Icons

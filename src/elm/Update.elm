@@ -3,7 +3,6 @@ module Update exposing (..)
 import Date exposing (Date)
 import Maybe
 import Task exposing (Task, andThen, onError)
-import Debug
 import Window
 import String
 import Process
@@ -13,20 +12,18 @@ import Navigation
 import Time exposing (Time)
 import Http
 import Dom
-import Basics.Extra exposing (never)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
-import Util.DictUtil exposing (..)
+import Util.DictUtil as DictUtil
 import Util.File exposing (..)
 
-import Model.Model as Model exposing (..)
+import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Scale as Scale
-import Model.API as API
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Floor)
@@ -34,8 +31,8 @@ import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
+import API.API as API
 
-import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClickboardData as ClickboardData
@@ -153,6 +150,7 @@ type Msg = NoOp
   | ShowContextMenuOnFloorInfo Id
   | GoToFloor String Bool
   | SelectSameOrg String
+  | GotSameOrgPeople (List Person)
   | SelectIsland Id
   | WindowSize (Int, Int)
   | MouseWheel Float
@@ -352,10 +350,10 @@ update removeToken setSelectionStart action model =
         newModel =
           case model.draggingContext of
             Selector ->
-              syncSelectedByRect <| updateSelectorRect (x, y) model
+              Model.syncSelectedByRect <| Model.updateSelectorRect (x, y) model
 
             ShiftOffset ->
-              updateOffsetByScreenPos (x, y) model
+              Model.updateOffsetByScreenPos (x, y) model
 
             _ ->
               model
@@ -410,7 +408,7 @@ update removeToken setSelectionStart action model =
                   objectsExcept target =
                     List.filter (\e -> idOf e /= idOf target) allObjects
                 in
-                  case (findObjectById allObjects lastTouchedId, primarySelectedObject model) of
+                  case (findObjectById allObjects lastTouchedId, Model.primarySelectedObject model) of
                     (Just e, Just primary) ->
                       List.map idOf <|
                         primary :: (withinRange (primary, e) (objectsExcept primary)) --keep primary
@@ -444,7 +442,7 @@ update removeToken setSelectionStart action model =
             Select ->
               let
                 (x, y) = fitPositionToGrid model.gridSize <|
-                  screenToImageWithOffset model.scale (clientX, clientY) model.offset
+                  Model.screenToImageWithOffset model.scale (clientX, clientY) model.offset
               in
                 Just (x, y, model.gridSize, model.gridSize)
 
@@ -530,7 +528,7 @@ update removeToken setSelectionStart action model =
               }
 
             newModel =
-              startEdit e model
+              Model.startEdit e model
           in
             newModel !
               [ requestCandidate id name
@@ -638,7 +636,7 @@ update removeToken setSelectionStart action model =
           { model |
             candidateRequest = candidateRequest
           , personInfo =
-              addAll (.id) people model.personInfo
+              DictUtil.addAll (.id) people model.personInfo
           , candidates = List.map .id people
           }
       in
@@ -667,7 +665,7 @@ update removeToken setSelectionStart action model =
           List.concatMap snd pairs
 
         personInfo =
-          addAll (.id) allPeople model.personInfo
+          DictUtil.addAll (.id) allPeople model.personInfo
       in
         { model |
           floor = newFloor
@@ -714,24 +712,50 @@ update removeToken setSelectionStart action model =
         contextMenu = NoContextMenu
       } ! [ loadCmd, modifyUrlCmd ]
 
-    SelectSameOrg org ->
+    SelectSameOrg personId ->
       let
-        objects =
-          (EditingFloor.present model.floor).objects
+        floor =
+          EditingFloor.present model.floor
+
+        cmd =
+          performAPI
+            GotSameOrgPeople
+            ( API.getPeopleByFloorAndOrg
+                model.apiConfig
+                floor.id
+                model.floor.version
+                personId
+            )
+
+        newModel =
+          { model |
+            contextMenu = NoContextMenu
+          }
+      in
+        newModel ! [ cmd ]
+
+    GotSameOrgPeople people ->
+      let
+        personIds =
+          List.map .id people
 
         newSelectedObjects =
           List.filterMap (\obj ->
-            if Object.relatedOrg obj == Just org then
-              Just (idOf obj)
-            else
-              Nothing
-          ) (selectedObjects model)
+            case Object.relatedPerson obj of
+              Just personId ->
+                if List.member personId personIds then
+                  Just (idOf obj)
+                else
+                  Nothing
+
+              Nothing ->
+                Nothing
+          ) (EditingFloor.present model.floor).objects
 
         newModel =
           { model |
             selectedObjects = newSelectedObjects
-          , contextMenu = NoContextMenu
-          }
+          } |> Model.registerPeople people
       in
         newModel ! []
 
@@ -958,7 +982,7 @@ update removeToken setSelectionStart action model =
           updateOnSearchBoxEvent event model'
 
         newOffset =
-          adjustOffset selectedResult model'
+          Model.adjustOffset selectedResult model'
 
         model'' =
           { model' |
@@ -968,17 +992,14 @@ update removeToken setSelectionStart action model =
 
         newModel =
           case selectedResult of
-            Just id -> adjustPositionByFocus id model''
+            Just id -> Model.adjustPositionByFocus id model''
             Nothing -> model''
 
       in
         newModel ! [ Cmd.map SearchBoxMsg cmd1, cmd2 ]
 
     RegisterPeople people ->
-      { model |
-        personInfo =
-          addAll (.id) people model.personInfo
-      } ! []
+      Model.registerPeople people model ! []
 
     UpdatePersonCandidate objectId personIds ->
       let
@@ -1044,7 +1065,7 @@ update removeToken setSelectionStart action model =
           Just id
 
         newOffset =
-          adjustOffset selectedResult model
+          Model.adjustOffset selectedResult model
       in
         { model |
           selectedResult = selectedResult
@@ -1313,7 +1334,7 @@ noOpCmd task =
 
 updateOnFinishStamp : Model -> (Model, Cmd Msg)
 updateOnFinishStamp model =
-  fst <| updateOnFinishStamp' (stampCandidates model) model
+  fst <| updateOnFinishStamp' (Model.stampCandidates model) model
 
 
 updateOnFinishStamp' : List StampCandidate -> Model -> ((Model, Cmd Msg), List (Id, String))
@@ -1356,7 +1377,7 @@ updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
 updateOnFinishPen (x, y) model =
   let
     (newFloor, newSeed, cmd) =
-      case temporaryPen model (x, y) of
+      case Model.temporaryPen model (x, y) of
         Just (color, name, (left, top, width, height)) ->
           let
             (newId, newSeed) =
@@ -1388,7 +1409,7 @@ updateOnFinishResize id (x, y) model =
     Just e ->
       let
         (newFloor, cmd) =
-          case temporaryResizeRect model (x, y) (rect e) of
+          case Model.temporaryResizeRect model (x, y) (rect e) of
             Just (_, _, width, height) ->
               EditingFloor.commit
                 (saveFloorCmd model.apiConfig)
@@ -1409,7 +1430,7 @@ updateOnFinishLabel model =
   let
     (left, top) =
       fitPositionToGrid model.gridSize <|
-        screenToImageWithOffset model.scale model.pos model.offset
+        Model.screenToImageWithOffset model.scale model.pos model.offset
 
     (width, height) =
       fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
@@ -1442,7 +1463,7 @@ updateOnFinishLabel model =
       Just e ->
         let
           newModel =
-            startEdit e model'
+            Model.startEdit e model'
         in
           newModel ! [ saveCmd, focusCmd ]
 
@@ -1695,7 +1716,7 @@ updateByKeyEvent event model =
 
     (True, ShortCut.C) ->
       { model |
-        copiedObjects = selectedObjects model
+        copiedObjects = Model.selectedObjects model
       } ! []
 
     (True, ShortCut.V) ->
@@ -1729,21 +1750,21 @@ updateByKeyEvent event model =
       in
         { model |
           floor = newFloor
-        , copiedObjects = selectedObjects model
+        , copiedObjects = Model.selectedObjects model
         , selectedObjects = []
         } ! [ saveCmd ]
 
     (_, ShortCut.UpArrow) ->
-      shiftSelectionToward ObjectsOperation.Up model ! []
+      Model.shiftSelectionToward ObjectsOperation.Up model ! []
 
     (_, ShortCut.DownArrow) ->
-      shiftSelectionToward ObjectsOperation.Down model ! []
+      Model.shiftSelectionToward ObjectsOperation.Down model ! []
 
     (_, ShortCut.LeftArrow) ->
-      shiftSelectionToward ObjectsOperation.Left model ! []
+      Model.shiftSelectionToward ObjectsOperation.Left model ! []
 
     (_, ShortCut.RightArrow) ->
-      shiftSelectionToward ObjectsOperation.Right model ! []
+      Model.shiftSelectionToward ObjectsOperation.Right model ! []
 
     (_, ShortCut.Del) ->
       let
@@ -1755,7 +1776,7 @@ updateByKeyEvent event model =
         } ! [ saveCmd ]
 
     (_, ShortCut.Other 9) ->
-      shiftSelectionToward ObjectsOperation.Right model ! []
+      Model.shiftSelectionToward ObjectsOperation.Right model ! []
 
     _ ->
       model ! []

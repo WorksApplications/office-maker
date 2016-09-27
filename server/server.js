@@ -123,6 +123,36 @@ app.get('/api/1/people/:id', inTransaction((conn, req, res) => {
   });
 }));
 
+app.get('/api/1/people', inTransaction((conn, req, res) => {
+  var token = getAuthToken(req);
+  var options = url.parse(req.url, true).query;
+  var floorId = options.floorId;
+  var floorVersion = options.floorVersion;
+  var personId = options.personId;
+  if(!floorId || !floorVersion || !personId) {
+    return Promise.reject(400);
+  }
+  return getSelf(conn, token).then((user) => {
+    return db.getFloorOfVersionWithObjects(conn, user.tenantId, floorId, floorVersion).then((floor) => {
+      var peopleSet = {};
+      floor.objects.forEach((object) => {
+        peopleSet[object.personId] = true;
+      });
+      return profileService.getPerson(config.profileServiceRoot, token, personId).then((person) => {
+        if(!person) {
+          log.system.warn("person not found: " + personId);
+          return Promise.resolve([]);
+        }
+        return profileService.getPeopleByOrg(config.profileServiceRoot, token, person.org).then((people) => {
+          return Promise.resolve(people.filter((person) => {
+            return peopleSet[person.id];
+          }));
+        });
+      });
+    });
+  });
+}));
+
 app.get('/api/1/self', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   if(!token) {

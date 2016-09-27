@@ -7,7 +7,7 @@ import Html.Attributes exposing (type', value, action, method, style, autofocus)
 import Task
 import Http
 
-import Model.API as API
+import API.API as API
 import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import View.Styles as Styles
@@ -89,7 +89,7 @@ update message model =
             Http.NetworkError ->
               -- "network error"
               "unauthorized"
-              
+
             _ ->
               "unauthorized"
       in

@@ -221,11 +221,6 @@ relatedPerson e =
       Nothing
 
 
-relatedOrg : Object -> Maybe String
-relatedOrg e =
-  Nothing -- TODO
-
-
 backgroundColorEditable : Object -> Bool
 backgroundColorEditable e =
   case e of

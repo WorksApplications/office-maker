@@ -1,4 +1,4 @@
-module Model.API exposing (
+module API.API exposing (
       getAuth
     , search
     , saveEditingFloor
@@ -16,6 +16,7 @@ module Model.API exposing (
     , getDiffSource
     , getPerson
     , getPersonByUser
+    , getPeopleByFloorAndOrg
     , getColors
     , getPrototypes
     , savePrototypes
@@ -38,9 +39,9 @@ import Model.Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.Floor as Floor exposing (Floor)
 import Model.Prototype exposing (Prototype)
-import Model.Serialization exposing (..)
 import Model.SearchResult exposing (SearchResult)
 import Model.ColorPalette exposing (ColorPalette)
+import API.Serialization exposing (..)
 
 
 type alias Error = Http.Error
@@ -187,7 +188,7 @@ personCandidate config name =
     Task.succeed []
   else
     getWithoutCache
-      decodePersons
+      decodePeople
       (config.apiRoot ++ "/1/candidates/" ++ Http.uriEncode name)
       (authorization config.token)
 
@@ -203,10 +204,10 @@ saveEditingImage config id file =
 
 getPerson : Config -> Id -> Task Error Person
 getPerson config id =
-    HttpUtil.get
-      decodePerson
-      (config.apiRoot ++ "/1/people/" ++ id)
-      (authorization config.token)
+  HttpUtil.get
+    decodePerson
+    (config.apiRoot ++ "/1/people/" ++ id)
+    (authorization config.token)
 
 
 getPersonByUser : Config -> Id -> Task Error Person
@@ -232,6 +233,20 @@ getPersonByUser config id =
           , image = Nothing
           }
       )
+
+
+getPeopleByFloorAndOrg : Config -> String -> Int -> String -> Task Error (List Person)
+getPeopleByFloorAndOrg config floorId floorVersion personId =
+  HttpUtil.get
+    decodePeople
+    ( Http.url
+        (config.apiRoot ++ "/1/people")
+        [ ("floorId", floorId)
+        , ("floorVersion", toString floorVersion)
+        , ("personId", personId)
+        ]
+    )
+    (authorization config.token)
 
 
 login : String -> String -> String -> Task Error String

@@ -67,6 +67,12 @@ function getPersonByUserId(root, token, userId) {
   });
 }
 
+function getPeopleByOrg(root, token, org) {
+  return get(token, root + '/1/profiles?organization=' + encodeURIComponent(org)).then((data) => {
+    return Promise.resolve(data.profiles.map(fixPerson));
+  });
+}
+
 function addPerson(root, token, person) {
   person.id = uuid.v4();
   person.userId = person.mail;
@@ -91,6 +97,7 @@ function search(root, token, query) {
 module.exports = {
   getPerson: getPerson,
   getPersonByUserId: getPersonByUserId,
+  getPeopleByOrg: getPeopleByOrg,
   addPerson: addPerson,
   search: search
 };

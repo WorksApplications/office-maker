@@ -3,7 +3,7 @@ module Model.Errors exposing (..)
 import Dom
 import Util.File as File
 
-import Model.API as API exposing (..)
+import API.API as API exposing (..)
 
 type GlobalError
   = APIError API.Error

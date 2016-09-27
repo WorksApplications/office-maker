@@ -6,8 +6,9 @@ import Html.Attributes exposing (..)
 import View.Styles as Styles
 
 import Model.Errors exposing (GlobalError(..))
-import Model.API as API
+import API.API as API
 import Http
+
 
 view : GlobalError -> Html msg
 view e =

@@ -5,7 +5,7 @@ import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events
-import Model.API as API
+import API.API as API
 import Model.SearchResult exposing (SearchResult)
 
 import Util.HtmlUtil exposing (..)
