@@ -40,7 +40,7 @@ function fixPerson(profile) {
     tenantId: profile.tenantId,
     name: profile.name,
     empNo: profile.employeeId,
-    org: profile.organization,
+    org: profile.post || '',//TODO
     tel: profile.cellPhone || profile.extensionPhone,
     mail: profile.mail,
     image: profile.picture
