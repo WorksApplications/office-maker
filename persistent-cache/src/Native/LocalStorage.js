@@ -1,5 +1,5 @@
 
-var _elm_lang$persistent_cache$Native_LocalStorage = function() {
+var _user$project$Native_LocalStorage = function() {
 
 if (!localStorage || !localStorage.getItem || !localStorage.setItem)
 {
