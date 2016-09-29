@@ -5,7 +5,7 @@ type alias Id = String
 type alias Person =
   { id : Id
   , name : String
-  , org : String
+  , post : String
   , mail : Maybe String
   , tel : Maybe String
   , image : Maybe String

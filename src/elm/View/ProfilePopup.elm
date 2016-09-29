@@ -52,7 +52,7 @@ innerView maybeCloseMsg person =
     , div [ style Styles.personDetailPopupPersonName ] [ text person.name ]
     , tel person
     , mail person
-    , div [ style Styles.personDetailPopupPersonOrg ] [ text person.org ]
+    , div [ style Styles.personDetailPopupPersonPost ] [ text person.post ]
     ]
 
 

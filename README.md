@@ -52,7 +52,7 @@ CAUTION: This product is under construction.
 |Prototype| { id : UUID, name : String, size : (Int, Int), color : String } |
 |Image| Binary |
 |SearchResult| [(Object, String)] |
-|Person| { id : String, name : String, org : String, tel? : String, mail? : String, image? : URL } |
+|Person| { id : String, name : String, post : String, tel? : String, mail? : String, image? : URL } |
 |Role| "admin" "general" |
 |Color| { id : String, ord : Int, type : String, color : String } |
 |UUID| String |

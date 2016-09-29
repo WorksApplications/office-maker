@@ -2,7 +2,7 @@ var request = require('request');
 var log = require('./log.js');
 
 function send(token, method, url, data) {
-  log.system.debug(method, url);
+  log.system.info(method, url);
   return new Promise((resolve, reject) => {
     var options = {
       method: method,
@@ -16,7 +16,7 @@ function send(token, method, url, data) {
     request(options, function(e, response, body) {
       if (e || response.statusCode >= 400) {
         log.system.error(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
-        body && log.system.error(body.message);
+        body && body.message && log.system.error(body.message);
         reject(body ? body.message : e || response.statusCode);
       } else {
         resolve(body);
@@ -43,10 +43,10 @@ function fixPerson(profile) {
     tenantId: profile.tenantId,
     name: profile.name,
     empNo: profile.employeeId,
-    org: profile.post || '',//TODO
+    post: profile.post || '',//TODO
     tel: profile.cellPhone || profile.extensionPhone,
     mail: profile.mail,
-    image: profile.picture
+    image: profile.picture || ''//TODO or default.png
   };
 }
 
@@ -61,13 +61,13 @@ function getPerson(root, token, personId) {
   });
 }
 
-function getPeopleByOrg(root, token, org, exclusiveStartKey) {
-  var url = root + '/1/profiles?q=' + encodeURIComponent(org)
+function getPeopleByPost(root, token, post, exclusiveStartKey) {
+  var url = root + '/1/profiles?q=' + encodeURIComponent(post)
     + (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '')
   return get(token, url).then((data) => {
     var people = data.profiles.map(fixPerson)
     if(data.lastEvaluatedKey) {
-      return getPeopleByOrg(root, token, org, data.lastEvaluatedKey).then((people2) => {
+      return getPeopleByPost(root, token, post, data.lastEvaluatedKey).then((people2) => {
         return Promise.resolve(people.concat(people2));
       });
     } else {
@@ -79,12 +79,12 @@ function getPeopleByOrg(root, token, org, exclusiveStartKey) {
 function savePerson(root, token, person) {
   person.userId = person.mail;
   person.employeeId = person.empNo;
-  person.ruby = '' || null;
+  person.ruby = person.ruby || null;
   person.cellPhone = person.tel || null;
   person.extensionPhone = person.tel || null;
   person.picture = person.image || null;
-  person.organization = person.org || null;//TODO
-  person.post = '' || null;
+  person.organization = person.organization || null;//TODO
+  person.post = person.post || null;
   person.rank = '' || null;
   person.workspace = '' || null;
   return put(token, root + '/1/profiles/' + encodeURIComponent(person.userId), person);
@@ -98,7 +98,7 @@ function search(root, token, query) {
 
 module.exports = {
   getPerson: getPerson,
-  getPeopleByOrg: getPeopleByOrg,
+  getPeopleByPost: getPeopleByPost,
   savePerson: savePerson,
   search: search
 };

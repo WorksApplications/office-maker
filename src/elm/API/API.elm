@@ -16,7 +16,7 @@ module API.API exposing (
     , getDiffSource
     , getPerson
     , getPersonByUser
-    , getPeopleByFloorAndOrg
+    , getPeopleByFloorAndPost
     , getColors
     , getPrototypes
     , savePrototypes
@@ -227,7 +227,7 @@ getPersonByUser config id =
           -- TODO how to deal with invalid person?
           { id = ""
           , name = ""
-          , org = ""
+          , post = ""
           , mail = Nothing
           , tel = Nothing
           , image = Nothing
@@ -235,8 +235,8 @@ getPersonByUser config id =
       )
 
 
-getPeopleByFloorAndOrg : Config -> String -> Int -> String -> Task Error (List Person)
-getPeopleByFloorAndOrg config floorId floorVersion personId =
+getPeopleByFloorAndPost : Config -> String -> Int -> String -> Task Error (List Person)
+getPeopleByFloorAndPost config floorId floorVersion personId =
   HttpUtil.get
     decodePeople
     ( Http.url

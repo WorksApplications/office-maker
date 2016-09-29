@@ -158,12 +158,12 @@ decodeColorEntity =
 decodePerson : Decoder Person
 decodePerson =
   decode
-    (\id name org mail tel image ->
-      { id = id, name = name, org = org, mail = mail, tel = tel, image = image}
+    (\id name post mail tel image ->
+      { id = id, name = name, post = post, mail = mail, tel = tel, image = image}
     )
     |> required "id" D.string
     |> required "name" D.string
-    |> required "org" D.string
+    |> required "post" D.string
     |> optional' "mail" D.string
     |> optional' "tel" D.string
     |> optional' "image" D.string

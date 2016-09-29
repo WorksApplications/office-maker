@@ -1016,8 +1016,8 @@ personDetailPopupPersonName =
   , ("left", "100px")
   ]
 
-personDetailPopupPersonOrg : S
-personDetailPopupPersonOrg =
+personDetailPopupPersonPost : S
+personDetailPopupPersonPost =
   [ ("position", "absolute")
   , ("font-size", "small")
   , ("top", "105px")
@@ -1136,8 +1136,8 @@ candidateItemPersonMail =
     ]
 
 
-candidateItemPersonOrg : S
-candidateItemPersonOrg =
+candidateItemPersonPost : S
+candidateItemPersonPost =
   [ ("position", "absolute")
   , ("font-size", "small")
   , ("top", "40px")

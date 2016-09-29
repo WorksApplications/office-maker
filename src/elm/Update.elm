@@ -150,8 +150,8 @@ type Msg = NoOp
   | ShowContextMenuOnObject Id
   | ShowContextMenuOnFloorInfo Id
   | GoToFloor String Bool
-  | SelectSameOrg String
-  | GotSameOrgPeople (List Person)
+  | SelectSamePost String
+  | GotSamePostPeople (List Person)
   | SelectIsland Id
   | WindowSize (Int, Int)
   | MouseWheel Float
@@ -713,15 +713,15 @@ update removeToken setSelectionStart action model =
         contextMenu = NoContextMenu
       } ! [ loadCmd, modifyUrlCmd ]
 
-    SelectSameOrg personId ->
+    SelectSamePost personId ->
       let
         floor =
           EditingFloor.present model.floor
 
         cmd =
           performAPI
-            GotSameOrgPeople
-            ( API.getPeopleByFloorAndOrg
+            GotSamePostPeople
+            ( API.getPeopleByFloorAndPost
                 model.apiConfig
                 floor.id
                 model.floor.version
@@ -735,7 +735,7 @@ update removeToken setSelectionStart action model =
       in
         newModel ! [ cmd ]
 
-    GotSameOrgPeople people ->
+    GotSamePostPeople people ->
       let
         personIds =
           List.map .id people

@@ -250,7 +250,7 @@ candidatesViewEach candidateIndex objectId index person =
       ]
       [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
       , mail person
-      , div [ style Styles.candidateItemPersonOrg ] [ text person.org ]
+      , div [ style Styles.candidateItemPersonPost ] [ text person.post ]
       ]
   )
 

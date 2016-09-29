@@ -23,23 +23,23 @@ view model =
 
     Object (x, y) id ->
       let
-        selectSameOrgOption =
+        selectSamePostOption =
           ObjectsOperation.findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
             let
               str =
                 -- case Dict.get personId model.personInfo of
                 --   Just person ->
-                --     "Select " ++ person.org
+                --     "Select " ++ person.post
                 --
                 --   Nothing ->
-                    "Select Same Org."
+                    "Select Same Post"
             in
-              Just [ contextMenuItemView (SelectSameOrg personId) str ]
+              Just [ contextMenuItemView (SelectSamePost personId) str ]
 
         forOneDesk =
           if [id] == model.selectedObjects then
-            (Maybe.withDefault [] selectSameOrgOption) ++
+            (Maybe.withDefault [] selectSamePostOption) ++
             [ contextMenuItemView (SelectIsland id) "Select Island"
             , contextMenuItemView (RegisterPrototype id) "Register as stamp"
             , contextMenuItemView (Rotate id) "Rotate"
