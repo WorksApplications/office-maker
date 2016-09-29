@@ -32,6 +32,7 @@ import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
+import Model.I18n as I18n exposing (Language)
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
@@ -110,6 +111,7 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       , personPopupSize = (300, 160)
       , lang = defaultUserState.lang
       , cache = Cache.cache
+      , headerState = Header.init
       }
 
     initCmd = performAPI (\(userState, user) -> Initialized userState user) <|
@@ -174,7 +176,12 @@ type Msg
   | Rotate Id
   | FirstNameOnly (List Id)
   | RemoveSpaces (List Id)
-  | HeaderMsg Header.Msg
+  | UpdateHeaderState Header.Msg
+  | SignIn
+  | SignOut
+  | ToggleEditing
+  | TogglePrintView
+  | SelectLang Language
   | SearchBoxMsg SearchBox.Msg
   | RegisterPeople (List Person)
   | RequestCandidate Id String
@@ -955,44 +962,45 @@ update removeToken setSelectionStart action model =
         , contextMenu = NoContextMenu
         } ! [ saveCmd ]
 
-    HeaderMsg action ->
+    UpdateHeaderState msg ->
+      { model | headerState = Header.update msg model.headerState } ! []
+
+    SignIn ->
+      model ! [ Task.perform (always NoOp) (always NoOp) API.goToLogin ]
+
+    SignOut ->
+      model ! [ removeToken {} ]
+
+    ToggleEditing ->
       let
-        (cmd, event) =
-          Header.update action
-
-        (newModel, cmd2) =
-          case event of
-            Header.OnLogout ->
-              model ! [ (removeToken {}) ]
-
-            Header.OnToggleEditing ->
-              let
-                nextIsEditing =
-                  case model.editMode of
-                    Viewing _ -> True
-                    _ -> False
-              in
-                model !
-                  [ Navigation.modifyUrl <|
-                      URL.stringify <|
-                        URL.updateEditMode nextIsEditing model.url
-                  ]
-
-            Header.OnTogglePrintView opened ->
-              { model |
-                editMode =
-                  if opened then
-                    Viewing True
-                  else if model.url.editMode then
-                    Select
-                  else
-                    Viewing False
-              } ! []
-
-            Header.None ->
-              model ! []
+        nextIsEditing =
+          case model.editMode of
+            Viewing _ -> True
+            _ -> False
       in
-        newModel ! [ Cmd.map HeaderMsg cmd, cmd2 ]
+        model !
+          [ Navigation.modifyUrl <|
+              URL.stringify <|
+                URL.updateEditMode nextIsEditing model.url
+          ]
+
+    TogglePrintView ->
+      { model |
+        editMode =
+          case model.editMode of
+            Viewing False ->
+              Viewing True
+
+            _ ->
+              if model.url.editMode then
+                Select
+              else
+                Viewing False
+
+      } ! []
+
+    SelectLang lang ->
+      { model | lang = lang } ! []
 
     SearchBoxMsg msg ->
       let
@@ -1285,8 +1293,10 @@ updateOnSearchBoxEvent event model =
               case objectIdAndFloorId of
                 Just (e, fid) ->
                   Just (idOf e)
+
                 Nothing ->
                   Nothing
+
             _ -> Nothing
       in
         (selectedResult, regesterPersonCmd)
@@ -1299,6 +1309,7 @@ updateOnSearchBoxEvent event model =
               ( Just (idOf e)
               , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just fid) model.url)
               )
+
             Nothing ->
               (Nothing, Cmd.none)
 

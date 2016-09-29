@@ -154,6 +154,27 @@ signOut lang =
     EN -> "Sign out"
 
 
+close : Language -> String
+close lang =
+  case lang of
+    JA -> "閉じる"
+    EN -> "Close"
+
+
+print : Language -> String
+print lang =
+  case lang of
+    JA -> "印刷"
+    EN -> "Print"
+
+
+edit : Language -> String
+edit lang =
+  case lang of
+    JA -> "編集"
+    EN -> "Edit"
+
+
 ----
 
 name : Language -> String

@@ -31,6 +31,7 @@ import API.Cache as Cache exposing (Cache, UserState)
 import FloorProperty
 import SearchBox
 import ObjectNameInput
+import Header
 
 
 type alias Model =
@@ -71,6 +72,7 @@ type alias Model =
   , personPopupSize : (Int, Int)
   , lang : Language
   , cache : Cache
+  , headerState : Header.State
   }
 
 

@@ -19,6 +19,7 @@ zIndex :
   , messageBar : String
   , contextMenu : String
   , modalBackground : String
+  , userMenuView : String
   }
 zIndex =
   { labelObject = "50"
@@ -33,6 +34,7 @@ zIndex =
   , messageBar = "700"
   , contextMenu = "800"
   , modalBackground = "900"
+  , userMenuView = "1000"
   }
 
 
@@ -608,6 +610,32 @@ headerMenuItem =
     , ("line-height", "37px")
     , ("font-size", "15px")
     ]
+
+
+userMenuView : S
+userMenuView =
+  [ ("position", "absolute")
+  , ("background", "rgb(100, 100, 120)")
+  , ("box-shadow", "rgba(0, 0, 0, 0.2) 0px 3px 4px inset")
+  , ("padding", "10px")
+  , ("top", px 37) -- TODO
+  , ("width", px 150)
+  , ("z-index", zIndex.userMenuView)
+  ]
+
+
+langSelectView : S
+langSelectView =
+  [ ("display", "flex") ]
+
+
+langSelectViewItem : Bool -> S
+langSelectViewItem selected =
+  [ ("background-color", if selected then selectColor else "")
+  , ("text-align", "center")
+  , ("flex-grow", "1")
+  , ("cursor", "pointer")
+  ]
 
 
 editingToggleContainer : Bool -> S

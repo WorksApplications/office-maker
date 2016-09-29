@@ -123,3 +123,8 @@ editingToggle =
 printButton : Svg msg
 printButton =
   print headerIconColor 22
+
+
+userMenuToggle : Bool -> Svg msg
+userMenuToggle open =
+  (if open then caret_up else caret_down) white 16

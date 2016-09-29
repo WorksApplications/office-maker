@@ -282,13 +282,32 @@ modeSelectionViewEach viewIcon currentEditMode targetEditMode =
 view : Model -> Html Msg
 view model =
   let
-    header =
+    (title, printMode, editing) =
       case model.editMode of
         Viewing True ->
-          App.map HeaderMsg (Header.viewPrintMode (EditingFloor.present model.floor).name)
+          ((EditingFloor.present model.floor).name, True, False)
+
+        Viewing False ->
+          (model.title, False, False)
 
         _ ->
-          App.map HeaderMsg (Header.view model.lang model.title (Just (model.user, False)))
+          (model.title, False, True)
+
+    header =
+      Header.view
+        { onSignInClicked = SignIn
+        , onSignOutClicked = SignOut
+        , onToggleEditing = ToggleEditing
+        , onTogglePrintView = TogglePrintView
+        , onSelectLang = SelectLang
+        , onUpdate = UpdateHeaderState
+        , title = title
+        , lang = model.lang
+        , user = Just model.user
+        , editing = editing
+        , printMode = printMode
+        }
+        model.headerState
 
     diffView =
       Maybe.withDefault (text "") <|

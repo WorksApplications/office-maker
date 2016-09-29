@@ -10,6 +10,7 @@ import Http
 import API.API as API
 import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
+import Model.I18n exposing (Language(..))
 import View.Styles as Styles
 
 port saveToken : String -> Cmd msg
@@ -37,6 +38,7 @@ type Msg =
     InputId String
   | InputPass String
   | Submit
+  | UpdateHeaderState Header.Msg
   | Error Http.Error
   | Success String
   | TokenSaved
@@ -49,6 +51,7 @@ type alias Model =
   , error : Maybe String
   , inputId : String
   , inputPass : String
+  , headerState : Header.State
   }
 
 
@@ -59,12 +62,16 @@ init accountServiceRoot title =
   , error = Nothing
   , inputId = ""
   , inputPass = ""
+  , headerState = Header.init
   } ! []
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
+    NoOp ->
+      model ! []
+
     InputId s ->
       { model | inputId = s} ! []
 
@@ -80,6 +87,9 @@ update message model =
             model.inputPass
       in
         model ! [ Task.perform Error Success task ]
+
+    UpdateHeaderState msg ->
+      { model | headerState = Header.update msg model.headerState } ! []
 
     Error e ->
       let
@@ -101,15 +111,25 @@ update message model =
     TokenSaved ->
       model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
 
-    NoOp ->
-      model ! []
-
 
 view : Model -> Html Msg
 view model =
   div
     []
-    [ Header.view model.title Nothing |> App.map (always NoOp)
+    [ Header.view
+        { onSignInClicked = NoOp
+        , onSignOutClicked = NoOp
+        , onToggleEditing = NoOp
+        , onTogglePrintView = NoOp
+        , onSelectLang = \_ -> NoOp
+        , onUpdate = UpdateHeaderState
+        , title = model.title
+        , lang = EN
+        , user = Nothing
+        , editing = False
+        , printMode = False
+        }
+        model.headerState
     , container model
     ]
 
