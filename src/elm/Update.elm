@@ -445,7 +445,14 @@ update removeToken setSelectionStart action model =
         newModel ! [ cmd, emulateClick lastTouchedId False ]
 
     MouseUpOnCanvas ->
-      updateOnMouseUp model
+      let
+        (newModel, cmd1) =
+          updateOnMouseUp model
+
+        cmd2 =
+          Task.perform never (always NoOp) (putUserState newModel)
+      in
+        newModel ! [ cmd1, cmd2 ]
 
     MouseDownOnCanvas (clientX, clientY') ->
       let
