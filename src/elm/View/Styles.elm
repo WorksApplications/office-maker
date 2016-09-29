@@ -274,6 +274,7 @@ contextMenu (x, y) (windowWidth, windowHeight) rows =
     , ("border-style", "solid")
     , ("border-width", "1px")
     , ("border-color", "#eee")
+    , ("font-size", "15px")
     ]
 
 
@@ -460,7 +461,7 @@ button =
     , ("width", "100%")
     , ("padding", "6px 12px")
     , ("box-sizing", "border-box")
-    , ("font-size", "14px")
+    , ("font-size", "13px")
     ]
 
 
@@ -468,6 +469,7 @@ defaultButton : S
 defaultButton =
   button ++
   [ ("border", "solid 1px #aaa") ]
+
 
 input : S
 input =
@@ -479,7 +481,7 @@ input =
     , ("border", "1px solid #ddd")
     , ("padding", "6px 12px")
     , ("box-sizing", "border-box")
-    , ("font-size", "14px")
+    , ("font-size", "13px")
     ]
 
 
@@ -489,6 +491,7 @@ floorPropertyLabel =
   , ("line-height", "30px")
   , ("text-align", "right")
   , ("margin-right", "10px")
+  , ("font-size", "15px")
   ]
 
 
@@ -498,7 +501,7 @@ floorPropertyText =
   , ("height", "30px")
   , ("padding", "6px 12px")
   , ("box-sizing", "border-box")
-  , ("font-size", "14px")
+  , ("font-size", "13px")
   , ("border-bottom", "1px dotted #aaa")
   ]
 
@@ -603,6 +606,7 @@ headerMenuItem =
     [ ("text-align", "center")
     , ("justify-content", "flex-end")
     , ("line-height", "37px")
+    , ("font-size", "15px")
     ]
 
 

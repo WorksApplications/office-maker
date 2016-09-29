@@ -187,8 +187,8 @@ heightMeter lang =
 publish : Language -> String
 publish lang =
   case lang of
-    JA -> "公開"
-    EN -> "Publish"
+    JA -> "変更を確認して公開"
+    EN -> "View changes and publish"
 
 
 lastUpdateByAt : Language -> String -> String -> String
