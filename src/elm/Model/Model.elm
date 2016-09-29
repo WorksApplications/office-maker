@@ -19,12 +19,14 @@ import Model.Floor as Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
+import Model.I18n as I18n exposing (Language)
 
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 
 import API.API as API
+import API.Cache as Cache exposing (Cache, UserState)
 
 import FloorProperty
 import SearchBox
@@ -67,6 +69,8 @@ type alias Model =
   , clickEmulator : List (Id, Bool, Time)
   , candidateRequest : Dict Id (Maybe String)
   , personPopupSize : (Int, Int)
+  , lang : Language
+  , cache : Cache
   }
 
 

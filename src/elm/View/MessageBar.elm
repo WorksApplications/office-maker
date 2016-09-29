@@ -5,13 +5,14 @@ import Html.Attributes exposing (..)
 
 import View.Styles as Styles
 
+import Model.I18n as I18n exposing (Language)
 import Model.Errors exposing (GlobalError(..))
 import API.API as API
 import Http
 
 
-view : GlobalError -> Html msg
-view e =
+view : Language -> GlobalError -> Html msg
+view lang e =
   case e of
     NoError ->
       noneView
@@ -20,13 +21,13 @@ view e =
       successView message
 
     APIError e ->
-      errorView (describeAPIError e)
+      errorView (describeAPIError lang e)
 
     FileError e ->
-      errorView ("Unexpected FileError: " ++ toString e)
+      errorView (I18n.unexpectedFileError lang ++ ": " ++ toString e)
 
     HtmlError e ->
-      errorView ("Unexpected HtmlError: " ++ toString e)
+      errorView (I18n.unexpectedHtmlError lang ++ ": " ++ toString e)
 
     PasteError s ->
       errorView s
@@ -47,24 +48,23 @@ errorView message =
   div [ class "message-bar-error", style Styles.errorBar ] [ text message ]
 
 
-describeAPIError : API.Error -> String
-describeAPIError e =
+describeAPIError : Language -> API.Error -> String
+describeAPIError lang e =
   case e of
     Http.Timeout ->
-      "Timeout"
+      I18n.timeout lang
 
     Http.NetworkError ->
-      "NetworkError detected. Please refresh and try again."
+      I18n.networkErrorDetectedPleaseRefreshAndTryAgain lang
 
     Http.UnexpectedPayload str ->
-      "UnexpectedPayload: " ++ str
+      I18n.unexpectedPayload lang ++ ": " ++ str
 
     Http.BadResponse code str ->
       if code == 409 then
-        "Conflict: Someone has already changed. Please refresh and try again."
+        I18n.conflictSomeoneHasAlreadyChangedPleaseRefreshAndTryAgain lang
       else
-        "Unexpected BadResponse: " ++ toString code ++ " " ++ str
-
+        I18n.unexpectedBadResponse lang ++ ": " ++ toString code ++ " " ++ str
 
 
 --

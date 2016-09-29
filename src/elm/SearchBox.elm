@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Html.Events
 import API.API as API
 import Model.SearchResult exposing (SearchResult)
+import Model.I18n as I18n exposing (Language)
 
 import Util.HtmlUtil exposing (..)
 
@@ -138,13 +139,15 @@ resultView transformMsg format result =
       [ format result ]
 
 
-resultsView : (Msg -> msg) -> Bool -> (SearchResult -> Html msg) -> Model -> Html msg
-resultsView transformMsg isEditing format model =
+resultsView : Language -> (Msg -> msg) -> Bool -> (SearchResult -> Html msg) -> Model -> Html msg
+resultsView lang transformMsg isEditing format model =
     case model.results of
       Nothing ->
         text ""
+
       Just [] ->
-        div [] [ text "Nothing found." ]
+        div [] [ text (I18n.nothingFound lang) ]
+
       Just results ->
         let
           each result =

@@ -15,6 +15,7 @@ import View.Styles as Styles
 
 import Model.User as User exposing (User)
 import Model.Floor exposing (Floor)
+import Model.I18n as I18n exposing (Language)
 
 
 type Msg
@@ -144,14 +145,21 @@ parsePositiveInt s =
     Ok i ->
       if i > 0 then Just i else Nothing
 
+
 -- VIEW
 
-floorNameInputView : User -> Model -> Html Msg
-floorNameInputView user model =
+
+floorNameInputView : Language -> User -> Model -> Html Msg
+floorNameInputView lang user model =
   let
-    floorNameLabel = label [ style Styles.floorNameLabel ] [ text "Name" ]
+    floorNameLabel =
+      label [ style Styles.floorNameLabel ] [ text (I18n.name lang) ]
   in
-    div [ style Styles.floorNameInputContainer ] [ floorNameLabel, nameInput user model.nameInput ]
+    div
+      [ style Styles.floorNameInputContainer ]
+      [ floorNameLabel
+      , nameInput user model.nameInput
+      ]
 
 
 nameInput : User -> String -> Html Msg
@@ -167,10 +175,10 @@ nameInput user value =
     div [ style Styles.floorNameText ] [ text value ]
 
 
-floorOrdInputView : User -> Model -> Html Msg
-floorOrdInputView user model =
+floorOrdInputView : Language -> User -> Model -> Html Msg
+floorOrdInputView lang user model =
   let
-    floorOrdLabel = label [ style Styles.floorOrdLabel ] [ text "Order" ]
+    floorOrdLabel = label [ style Styles.floorOrdLabel ] [ text (I18n.order lang) ]
   in
     div [ style Styles.floorOrdInputContainer ] [ floorOrdLabel, ordInput user model.ordInput ]
 
@@ -188,12 +196,12 @@ ordInput user value =
     div [ style Styles.floorOrdText ] [ text value ]
 
 
-floorRealSizeInputView : User -> Model -> Html Msg
-floorRealSizeInputView user model =
+floorRealSizeInputView : Language -> User -> Model -> Html Msg
+floorRealSizeInputView lang user model =
   let
     useReal = True--TODO
-    widthLabel = label [ style Styles.widthHeightLabel ] [ text "Width(m)" ]
-    heightLabel = label [ style Styles.widthHeightLabel ] [ text "Height(m)" ]
+    widthLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.widthMeter lang) ]
+    heightLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.heightMeter lang) ]
   in
     div [ style Styles.floorSizeInputContainer ]
       [ widthLabel
@@ -243,19 +251,19 @@ heightValueView user useReal value =
     div [ style Styles.floorHeightText ] [text value]
 
 
-publishButtonView : User -> Html Msg
-publishButtonView user =
+publishButtonView : Language -> User -> Html Msg
+publishButtonView lang user =
   if User.isAdmin user then
     button
       [ onClick' PreparePublish
       , style Styles.publishButton ]
-      [ text "Publish" ]
+      [ text (I18n.publish lang) ]
   else
     text ""
 
 
-floorUpdateInfoView : Date -> Floor -> Html Msg
-floorUpdateInfoView visitDate floor =
+floorUpdateInfoView : Language -> Date -> Floor -> Html Msg
+floorUpdateInfoView lang visitDate floor =
   let
     date at =
       formatDateOrTime visitDate at
@@ -264,20 +272,20 @@ floorUpdateInfoView visitDate floor =
       Just { by, at } ->
         div
           [ style Styles.floorPropertyLastUpdate ]
-          [ text ("Last Update by " ++ by ++ " at " ++ date at) ]
+          [ text (I18n.lastUpdateByAt lang by (date at)) ]
       Nothing ->
         text ""
 
 
-view : Date -> User -> Floor -> Model -> List (Html Msg)
-view visitDate user floor model =
+view : Language -> Date -> User -> Floor -> Model -> List (Html Msg)
+view lang visitDate user floor model =
     [ if User.isAdmin user then
-        fileLoadButton LoadFile Styles.imageLoadButton "Load Image"
+        fileLoadButton LoadFile Styles.imageLoadButton (I18n.loadImage lang)
       else
         text ""
-    , floorNameInputView user model
-    , floorOrdInputView user model
-    , floorRealSizeInputView user model
-    , publishButtonView user
-    , floorUpdateInfoView visitDate floor
+    , floorNameInputView lang user model
+    , floorOrdInputView lang user model
+    , floorRealSizeInputView lang user model
+    , publishButtonView lang user
+    , floorUpdateInfoView lang visitDate floor
     ]

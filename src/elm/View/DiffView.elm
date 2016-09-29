@@ -16,7 +16,7 @@ import Model.Object as Object exposing (..)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.Person exposing (Person)
-
+import Model.I18n as I18n exposing (Language)
 
 type alias Options msg =
   { onClose : msg
@@ -25,18 +25,18 @@ type alias Options msg =
   }
 
 
-view : Date -> Dict String Person -> Options msg -> (Floor, Maybe Floor) -> Html msg
-view visitDate personInfo options (current, prev) =
+view : Language -> Date -> Dict String Person -> Options msg -> (Floor, Maybe Floor) -> Html msg
+view lang visitDate personInfo options (current, prev) =
   let
     header =
-      headerView visitDate current prev
+      headerView lang visitDate current prev
 
     (propertyChanges, { added, modified, deleted }) =
       FloorDiff.diff current prev
 
     body =
       div [ style Styles.diffPopupBody ]
-        [ propertyChangesView propertyChanges
+        [ propertyChangesView lang propertyChanges
         , if List.isEmpty added then text "" else h3 [] [ text ((toString (List.length added)) ++ " Additions") ]
         , if List.isEmpty added then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) added)
         , if List.isEmpty modified then text "" else h3 [] [ text ((toString (List.length modified)) ++ " Modifications") ]
@@ -49,12 +49,12 @@ view visitDate personInfo options (current, prev) =
     popup options.noOp options.onClose <|
       [ header
       , body
-      , buttons options.onClose options.onConfirm
+      , buttons lang options.onClose options.onConfirm
       ]
 
 
-headerView : Date -> Floor -> Maybe Floor -> Html msg
-headerView visitDate current prev =
+headerView : Language -> Date -> Floor -> Maybe Floor -> Html msg
+headerView lang visitDate current prev =
   h2 [ style Styles.diffPopupHeader ]
     [ text
         ( case prev of
@@ -62,16 +62,18 @@ headerView visitDate current prev =
             case update of
               Just { by , at } ->
                 "Changes from " ++ formatDateOrTime visitDate at
+
               Nothing ->
                 Debug.crash "this should never happen"
+
           Nothing ->
             "Changes"
         )
     ]
 
 
-propertyChangesView : List (String, String, String) -> Html msg
-propertyChangesView list =
+propertyChangesView : Language -> List (String, String, String) -> Html msg
+propertyChangesView lang list =
   if List.isEmpty list then
     text ""
   else
@@ -86,20 +88,20 @@ propertyChangesViewEach (propName, new, old) =
   div [] [ text (propName ++ ": " ++ old ++ " => " ++ new)]
 
 
-buttons : msg -> msg -> Html msg
-buttons onClose onConfirm =
+buttons : Language -> msg -> msg -> Html msg
+buttons lang onClose onConfirm =
   let
     cancelButton =
       button
         [ onClick onClose
         , style Styles.diffPopupCancelButton ]
-        [ text "Cancel" ]
+        [ text (I18n.cancel lang) ]
 
     confirmButton =
       button
         [ onClick onConfirm
         , style Styles.diffPopupConfirmButton ]
-        [ text "Confirm" ]
+        [ text (I18n.confirm lang) ]
   in
     div [ style Styles.diffPopupFooter ] [ cancelButton, confirmButton ]
 

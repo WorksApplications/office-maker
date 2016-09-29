@@ -35,7 +35,7 @@ import Model.User as User
 import Model.Person exposing (Person)
 import Model.SearchResult exposing (SearchResult)
 import Model.EditingFloor as EditingFloor
-
+import Model.I18n as I18n exposing (Language)
 
 mainView : Model -> Html Msg
 mainView model =
@@ -53,7 +53,7 @@ mainView model =
   in
     main' [ style (S.mainView windowHeight) ]
       [ floorInfo
-      , MessageBar.view model.error
+      , MessageBar.view model.lang model.error
       , CanvasView.view model
       , sub
       ]
@@ -76,7 +76,7 @@ floorInfoView model =
           MoveOnCanvas
           GoToFloor
           CreateNewFloor
-          (model.keys.ctrl)
+          model.keys.ctrl
           model.user
           isEditMode
           (EditingFloor.present model.floor).id
@@ -123,6 +123,7 @@ subViewForEdit model =
           []
         else
           FloorProperty.view
+            model.lang
             model.visitDate
             model.user
             (EditingFloor.present model.floor)
@@ -151,19 +152,19 @@ subViewForSearch model =
           ) model.floorsInfo
 
     format =
-      formatSearchResult floorsInfoDict model.personInfo model.selectedResult
+      formatSearchResult model.lang floorsInfoDict model.personInfo model.selectedResult
 
     isEditing =
       (model.editMode /= Viewing True && model.editMode /= Viewing False)
 
   in
     [ card <| [ SearchBox.view SearchBoxMsg model.searchBox ]
-    , card <| [ SearchBox.resultsView SearchBoxMsg isEditing format model.searchBox ]
+    , card <| [ SearchBox.resultsView model.lang SearchBoxMsg isEditing format model.searchBox ]
     ]
 
 
-formatSearchResult : Dict String Floor -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
-formatSearchResult floorsInfo personInfo selectedResult = \result ->
+formatSearchResult : Language -> Dict String Floor -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
+formatSearchResult lang floorsInfo personInfo selectedResult = \result ->
   let
     { personId, objectIdAndFloorId } = result
 
@@ -173,10 +174,12 @@ formatSearchResult floorsInfo personInfo selectedResult = \result ->
           case Dict.get fid floorsInfo of
             Just info ->
               info.name
+
             Nothing ->
               "?"
+
         Nothing ->
-          "Missing"
+          I18n.missing lang
 
     isPerson =
       personId /= Nothing
@@ -198,6 +201,7 @@ formatSearchResult floorsInfo personInfo selectedResult = \result ->
           case Dict.get id personInfo of
             Just person -> person.name
             Nothing -> nameOfObject
+
         Nothing -> nameOfObject
 
     selectable =
@@ -240,7 +244,7 @@ penView model =
           input
             [ id "paste-from-spreadsheet"
             , style S.pasteFromSpreadsheetInput
-            , placeholder "Paste from Spreadsheet"
+            , placeholder (I18n.pasteFromSpreadsheet model.lang)
             ] []
 
         Stamp ->
@@ -284,12 +288,13 @@ view model =
           App.map HeaderMsg (Header.viewPrintMode (EditingFloor.present model.floor).name)
 
         _ ->
-          App.map HeaderMsg (Header.view model.title (Just (model.user, False)))
+          App.map HeaderMsg (Header.view model.lang model.title (Just (model.user, False)))
 
     diffView =
       Maybe.withDefault (text "") <|
         Maybe.map
           ( DiffView.view
+              model.lang
               model.visitDate
               model.personInfo
               { onClose = CloseDiff, onConfirm = ConfirmDiff, noOp = NoOp }

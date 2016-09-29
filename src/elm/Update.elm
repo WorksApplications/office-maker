@@ -12,6 +12,7 @@ import Navigation
 import Time exposing (Time)
 import Http
 import Dom
+import Basics.Extra exposing (never)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -32,7 +33,7 @@ import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
 import API.API as API
-import API.Cache as Cache
+import API.Cache as Cache exposing (Cache, UserState)
 
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
@@ -68,6 +69,9 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
     initialFloor =
       Floor.init ""
 
+    defaultUserState =
+      Cache.defaultUserState
+
     toModel url searchBox =
       { apiConfig = apiConfig
       , title = title
@@ -88,8 +92,8 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       , floorsInfo = []
       , floor = EditingFloor.init initialFloor
       , windowSize = initialSize
-      , scale = Scale.default
-      , offset = (35, 35)
+      , scale = defaultUserState.scale
+      , offset = defaultUserState.offset
       , scaling = False
       , prototypes = Prototypes.init []
       , error = NoError
@@ -104,9 +108,15 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       , clickEmulator = []
       , candidateRequest = Dict.empty
       , personPopupSize = (300, 160)
+      , lang = defaultUserState.lang
+      , cache = Cache.cache
       }
 
-    initCmd = loadAuthCmd apiConfig
+    initCmd = performAPI (\(userState, user) -> Initialized userState user) <|
+      ( Cache.getWithDefault Cache.cache defaultUserState `Task.andThen` \userState ->
+          API.getAuth apiConfig `Task.andThen` \user ->
+          Task.succeed (userState, user)
+      )
   in
     case urlResult of
       -- TODO refactor
@@ -124,8 +134,9 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
           ! [ initCmd, cmd ] -- TODO modifyURL
 
 
-type Msg = NoOp
-  | AuthLoaded User
+type Msg
+  = NoOp
+  | Initialized UserState User
   | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded Floor
   | ColorsLoaded ColorPalette
@@ -262,7 +273,7 @@ update removeToken setSelectionStart action model =
     NoOp ->
       model ! []
 
-    AuthLoaded user ->
+    Initialized userState user ->
       let
         requestPrivateFloors =
           case model.editMode of
@@ -289,6 +300,8 @@ update removeToken setSelectionStart action model =
       in
         { model |
           user = user
+        , scale = userState.scale
+        , offset = userState.offset
         , editMode =
             if not (User.isGuest user) then
               if model.url.editMode then Select else Viewing False
@@ -824,10 +837,13 @@ update removeToken setSelectionStart action model =
           , scaling = True
           }
 
+        saveUserStateCmd =
+          Task.perform never (always NoOp) (putUserState newModel)
+
         cmd =
           Task.perform (always NoOp) (always ScaleEnd) (Process.sleep 200.0)
       in
-        newModel ! [ cmd ]
+        newModel ! [ saveUserStateCmd, cmd ]
 
     ScaleEnd ->
         { model | scaling = False } ! []
@@ -1806,10 +1822,9 @@ updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
       model ! []
 
 
--- TODO consider chaining
-loadAuthCmd : API.Config -> Cmd Msg
-loadAuthCmd apiConfig =
-    performAPI AuthLoaded (API.getAuth apiConfig)
+putUserState : Model -> Task x ()
+putUserState model =
+  Cache.put model.cache { scale = model.scale, offset = model.offset, lang = model.lang }
 
 
 -- TODO consider chaining

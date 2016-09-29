@@ -8,7 +8,10 @@ import Model.Scale as Scale exposing (Scale)
 import Model.I18n as I18n exposing (..)
 
 
-cache : Cache.Cache UserState
+type alias Cache = Cache.Cache UserState
+
+
+cache : Cache
 cache =
   Cache.cache
     { name = "userState"
@@ -19,19 +22,44 @@ cache =
     }
 
 
-getState : Task x (Maybe UserState)
-getState =
+defaultUserState : UserState
+defaultUserState =
+  { scale = Scale.default
+  , offset = (35, 35)
+  , lang = JA
+  }
+
+
+get : Cache -> Task x (Maybe UserState)
+get cache =
   Cache.get cache "userState"
 
 
-putState : UserState -> Task x ()
-putState model =
-  Cache.add cache "userState" model
+getWithDefault : Cache -> UserState -> Task x UserState
+getWithDefault cache defaultState =
+  Cache.get cache "userState" `andThen` \maybeState ->
+  case maybeState of
+    Just state ->
+      Task.succeed state
+
+    Nothing ->
+      put cache defaultState `andThen` \_ ->
+      Task.succeed defaultState
+
+
+put : Cache -> UserState -> Task x ()
+put cache state =
+  Cache.add cache "userState" state
+
+
+clear : Cache -> Task x ()
+clear cache =
+  Cache.clear cache
 
 
 type alias UserState =
   { scale : Scale
-  , shift : (Int, Int)
+  , offset : (Int, Int)
   , lang : Language
   }
 
@@ -39,14 +67,14 @@ type alias UserState =
 decode : Decoder UserState
 decode =
   D.object3
-  (\scale shift lang ->
+  (\scale offset lang ->
     { scale = Scale.init scale
-    , shift = shift
+    , offset = offset
     , lang = if lang == "JA" then I18n.JA else I18n.EN
     }
   )
   ("scale" := D.int)
-  ("shift" := D.tuple2 (,) D.int D.int)
+  ("offset" := D.tuple2 (,) D.int D.int)
   ("lang" := D.string)
 
 
@@ -55,7 +83,7 @@ encode : UserState -> Value
 encode state =
   E.object
     [ ("scale", E.int state.scale.scaleDown)
-    , ("shift", E.list [ E.int (fst state.shift), E.int (snd state.shift) ] )
+    , ("offset", E.list [ E.int (fst state.offset), E.int (snd state.offset) ] )
     , ("lang", E.string <| case state.lang of
         JA -> "JA"
         EN -> "EN"

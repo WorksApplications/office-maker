@@ -8,6 +8,7 @@ import Html.Events exposing (..)
 
 import Model.Person exposing (..)
 import Model.User as User exposing (..)
+import Model.I18n as I18n exposing (Language)
 import API.API as API
 
 import View.Styles as S
@@ -50,14 +51,14 @@ update action =
       (Cmd.none, OnLogout)
 
 
-view : String -> Maybe (User, Bool) -> Html Msg
-view title maybeContext =
+view : Language -> String -> Maybe (User, Bool) -> Html Msg
+view lang title maybeContext =
   header
     [ style S.header ]
     [ h1
         [ style S.h1 ]
         [ a [ style S.headerLink, href "/" ] [ text title ] ]
-    , normalMenu maybeContext
+    , normalMenu lang maybeContext
     ]
 
 
@@ -70,15 +71,15 @@ viewPrintMode title =
     ]
 
 
-normalMenu : Maybe (User, Bool) -> Html Msg
-normalMenu maybeContext =
+normalMenu : Language -> Maybe (User, Bool) -> Html Msg
+normalMenu lang maybeContext =
   menu <|
     case maybeContext of
       Just (user, editing) ->
         editingToggle user editing ::
         printButton user ::
         greeting user ::
-        (if user == Guest then login else logout) ::
+        (if user == Guest then login lang else logout lang) ::
         []
       Nothing ->
         []
@@ -105,14 +106,14 @@ printButton user =
     printButtonView False
 
 
-login : Html Msg
-login =
-  div [ style S.login, onClick Login ] [ text "Sign in" ]
+login : Language -> Html Msg
+login lang =
+  div [ style S.login, onClick Login ] [ text (I18n.signIn lang) ]
 
 
-logout : Html Msg
-logout =
-  div [ style S.logout, onClick Logout ] [ text "Sign out" ]
+logout : Language -> Html Msg
+logout lang =
+  div [ style S.logout, onClick Logout ] [ text (I18n.signOut lang) ]
 
 
 printButtonView : Bool -> Html Msg
