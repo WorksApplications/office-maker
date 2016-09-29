@@ -1022,7 +1022,7 @@ update removeToken setSelectionStart action model =
       let
         (newFloor, saveCmd) =
           case personIds of
-            head :: _ :: _ ->
+            head :: [] ->
               EditingFloor.commit
                 (saveFloorCmd model.apiConfig)
                 (Floor.setPerson objectId head)
@@ -1642,10 +1642,10 @@ updateOnFinishNameInput continueEditing id name model =
         Nothing ->
           (model.objectNameInput, Cmd.none)
 
-    updatePersonCandidateCmd =
+    registerPersonDetailCmd =
       case findObjectById allObjects id of
         Just object ->
-          updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo model.apiConfig object
+          registerPersonDetailIfAPersonIsNotRelatedTo model.apiConfig object
 
         Nothing ->
           Cmd.none
@@ -1672,11 +1672,11 @@ updateOnFinishNameInput continueEditing id name model =
       , selectedObjects = selectedObjects
       }
   in
-    newModel ! [ requestCandidateCmd, updatePersonCandidateCmd, saveCmd, focusCmd ]
+    newModel ! [ requestCandidateCmd, registerPersonDetailCmd, saveCmd, focusCmd ]
 
 
-updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg
-updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo apiConfig object =
+registerPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg
+registerPersonDetailIfAPersonIsNotRelatedTo apiConfig object =
   case Object.relatedPerson object of
     Just personId ->
       Cmd.none
@@ -1684,11 +1684,9 @@ updatePersonCandidateAndRegisterPersonDetailIfAPersonIsNotRelatedTo apiConfig ob
     Nothing ->
       let
         task =
-          API.personCandidate apiConfig (nameOf object) `andThen` \people ->
-          Task.succeed (RegisterPeople people) `andThen` \_ ->
-          Task.succeed (UpdatePersonCandidate (idOf object) (List.map .id people))
+          API.personCandidate apiConfig (nameOf object)
       in
-        performAPI identity task
+        performAPI RegisterPeople task
 
 nextObjectToInput : Object -> List Object -> Maybe Object
 nextObjectToInput object allObjects =
