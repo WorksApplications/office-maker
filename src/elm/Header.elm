@@ -94,8 +94,7 @@ userMenuToggle : (Msg -> msg) -> User -> Bool -> Html msg
 userMenuToggle onUpdate user menuOpened =
   div
     [ onClick (onUpdate ToggleUserMenu) ]
-    [ greeting user
-    , Icons.userMenuToggle menuOpened
+    [ greeting user menuOpened
     ]
 
 
@@ -185,21 +184,21 @@ editingToggleView onToggleEditing lang editing =
 --     ]
 
 
-greeting : User -> Html msg
-greeting user =
+greeting : User -> Bool -> Html msg
+greeting user menuOpened =
   case user of
     Guest ->
       text ""
 
     Admin person ->
-      greetingForPerson person
+      greetingForPerson person menuOpened
 
     General person ->
-      greetingForPerson person
+      greetingForPerson person menuOpened
 
 
-greetingForPerson : Person -> Html msg
-greetingForPerson person =
+greetingForPerson : Person -> Bool -> Html msg
+greetingForPerson person menuOpened =
   let
     image =
       case person.image of
@@ -210,9 +209,10 @@ greetingForPerson person =
           text ""
   in
     div
-      [ style S.greetingContainer ]
+      [ style S.userMenuToggle ]
       [ image
       , div [ style S.greetingName ] [ text person.name ]
+      , div [ style S.userMenuToggleIcon ] [ Icons.userMenuToggle menuOpened ]
       ]
 
 

@@ -612,6 +612,14 @@ headerMenuItem =
     ]
 
 
+userMenuToggleIcon : S
+userMenuToggleIcon =
+  [ ("margin-top", "10px")
+  , ("right", "10px")
+  , ("position", "absolute")
+  ]
+
+
 userMenuView : S
 userMenuView =
   [ ("position", "absolute")
@@ -663,12 +671,15 @@ editingToggleText =
   ]
 
 
-greetingContainer : S
-greetingContainer =
+userMenuToggle : S
+userMenuToggle =
   flex ++
     [ ("width", "150px")
+    , ("box-sizing", "border-box")
+    , ("position", "relative")
+    , ("cursor", "pointer")
     ]
-
+    
 
 greetingImage : S
 greetingImage =
