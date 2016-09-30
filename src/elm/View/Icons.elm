@@ -85,6 +85,11 @@ shapePropLabel =
   star_o proplabelColor 12
 
 
+fontSizePropLabel : Svg msg
+fontSizePropLabel =
+  font proplabelColor 12
+
+
 shapeRectangle : Svg msg
 shapeRectangle =
   square defaultColor 20

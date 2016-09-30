@@ -139,10 +139,11 @@ setPerson personId e =
 changeFontSize : Float -> Object -> Object
 changeFontSize fontSize e =
   case e of
+    Desk id rect bgColor name personId ->
+      Desk id rect bgColor name personId
+
     Label id rect bgColor name _ color shape ->
       Label id rect bgColor name fontSize color shape
-    _ ->
-      e
 
 
 idOf : Object -> Id
@@ -252,7 +253,7 @@ fontSizeEditable : Object -> Bool
 fontSizeEditable e =
   case e of
     Desk _ _ _ _ _ ->
-      False
+      True
     Label _ _ _ _ _ _ _ ->
       True
 --

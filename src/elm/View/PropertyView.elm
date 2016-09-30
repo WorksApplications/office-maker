@@ -35,12 +35,16 @@ view model =
           row [ label Icons.shapePropLabel, shapeView model ]
         else
           text ""
-      ] -- TODO fontSize, name, icon?
+      , if List.all Object.fontSizeEditable selectedObjects then
+          row [ label Icons.fontSizePropLabel, fontSizeView model ]
+        else
+          text ""
+      ] -- TODO name, icon?
 
 
 label : Html Msg -> Html Msg
 label icon =
-  div [] [ icon ]
+  div [ style S.propertyViewPropertyIcon ] [ icon ]
 
 
 row : List (Html msg) -> Html msg
@@ -117,3 +121,33 @@ shapeViewEach toMsg match toIcon shape =
     , onMouseDown' (toMsg shape)
     ]
     [ toIcon shape ]
+
+
+fontSizeView : Model -> Html Msg
+fontSizeView model =
+  fontSizeViewHelp
+    SelectFontSize
+    (fontSizeProperty (selectedObjects model))
+    [10, 12, 14, 16, 18, 20, 30, 40, 60, 80]
+
+
+fontSizeViewHelp : (Float -> Msg) -> Maybe Float -> List Float -> Html Msg
+fontSizeViewHelp toMsg selectedFontSize sizes =
+  let
+    match fontSize =
+      case selectedFontSize of
+        Just size -> fontSize == size
+        Nothing -> False
+  in
+    ul
+      [ style S.colorProperties ]
+      (List.map (fontSizeViewEach toMsg match) sizes)
+
+
+fontSizeViewEach : (Float -> Msg) -> (Float -> Bool) -> Float -> Html Msg
+fontSizeViewEach toMsg match size =
+  li
+    [ style (S.colorProperty "" (match size))
+    , onMouseDown' (toMsg size)
+    ]
+    [ text (toString size) ]

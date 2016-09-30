@@ -216,6 +216,11 @@ colorProperties =
   [("display", "flex")]
 
 
+propertyViewPropertyIcon : S
+propertyViewPropertyIcon =
+  [ ("width", "12px") ]
+
+
 colorProperty : String -> Bool -> S
 colorProperty color selected =
   [ ("background-color", color)
@@ -679,7 +684,7 @@ userMenuToggle =
     , ("position", "relative")
     , ("cursor", "pointer")
     ]
-    
+
 
 greetingImage : S
 greetingImage =

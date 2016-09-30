@@ -72,7 +72,7 @@ type Msg
   | ChangeObjectColor (List Id) String
   | ChangeObjectShape (List Id) Object.Shape
   | ChangeObjectName (List Id) String
-  | ChangeFontSize (List Id) Float
+  | ChangeObjectFontSize (List Id) Float
   | ToFirstNameOnly (List Id)
   | RemoveSpaces (List Id)
   | ResizeObject Id (Int, Int)
@@ -129,6 +129,10 @@ changeObjectName : List Id -> String -> Msg
 changeObjectName = ChangeObjectName
 
 
+changeObjectFontSize : List Id -> Float -> Msg
+changeObjectFontSize = ChangeObjectFontSize
+
+
 toFirstNameOnly : List Id -> Msg
 toFirstNameOnly = ToFirstNameOnly
 
@@ -139,10 +143,6 @@ removeSpaces = RemoveSpaces
 
 resizeObject : Id -> (Int, Int) -> Msg
 resizeObject = ResizeObject
-
-
-changeFontSize : List Id -> Float -> Msg
-changeFontSize = ChangeFontSize
 
 
 changeName : String -> Msg
@@ -243,6 +243,13 @@ update msg floor =
       in
         setObjects newObjects floor
 
+    ChangeObjectFontSize ids fontSize ->
+      let
+        newObjects =
+          partiallyChange (Object.changeFontSize fontSize) ids (objects floor)
+      in
+        setObjects newObjects floor
+
     ToFirstNameOnly ids ->
       let
         change name =
@@ -269,13 +276,6 @@ update msg floor =
       let
         newObjects =
           partiallyChange (changeSize size) [id] (objects floor)
-      in
-        setObjects newObjects floor
-
-    ChangeFontSize ids fontSize ->
-      let
-        newObjects =
-          partiallyChange (Object.changeFontSize fontSize) ids (objects floor)
       in
         setObjects newObjects floor
 

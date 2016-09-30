@@ -177,6 +177,7 @@ type Msg
   | SelectBackgroundColor String
   | SelectColor String
   | SelectShape Object.Shape
+  | SelectFontSize Float
   | ObjectNameInputMsg ObjectNameInput.Msg
   | ShowContextMenuOnObject Id
   | ShowContextMenuOnFloorInfo Id
@@ -607,6 +608,17 @@ update removeToken setSelectionStart action model =
       let
         (newFloor, saveCmd) =
           EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.changeObjectShape model.selectedObjects shape) model.floor
+      in
+        { model |
+          floor = newFloor
+        } ! [ saveCmd ]
+
+    SelectFontSize fontSize ->
+      let
+        _ = Debug.log "fontSize" fontSize
+        
+        (newFloor, saveCmd) =
+          EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.changeObjectFontSize model.selectedObjects fontSize) model.floor
       in
         { model |
           floor = newFloor
