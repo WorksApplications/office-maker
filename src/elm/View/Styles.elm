@@ -232,6 +232,7 @@ colorProperty color selected =
   , ("margin-right", "2px")
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then "#69e" else "#666")
+  , ("font-size", "12px")
   ]
 
 

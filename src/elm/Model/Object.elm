@@ -9,37 +9,64 @@ type Shape
   | Ellipse
 
 
-type Object
-  = Desk Id (Int, Int, Int, Int) String String (Maybe Person.Id) -- id (x, y, width, height) background-color name personId
-  | Label Id (Int, Int, Int, Int) String String Float String Shape -- id (x, y, width, height) background-color name fontSize color shape
+type Object =
+  Object
+    { id : Id
+    , rect : (Int, Int, Int, Int) -- (x, y, width, height)
+    , backgroundColor : String
+    , name : String
+    , fontSize : Float
+    , extension : ObjectExtension
+    }
+
+
+type ObjectExtension
+  = Desk (Maybe Person.Id)
+  | Label String Shape
 
 
 isDesk : Object -> Bool
-isDesk object =
-  case object of
-    Desk _ _ _ _ _ ->
+isDesk (Object object) =
+  case object.extension of
+    Desk _ ->
       True
+
     _ ->
       False
 
 
 isLabel : Object -> Bool
-isLabel object =
-  case object of
-    Label _ _ _ _ _ _ _ ->
+isLabel (Object object) =
+  case object.extension of
+    Label _ _ ->
       True
+
     _ ->
       False
 
 
-initDesk : Id -> (Int, Int, Int, Int) -> String -> String -> Maybe Person.Id -> Object
-initDesk =
-  Desk
+initDesk : Id -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Person.Id -> Object
+initDesk id rect backgroundColor name fontSize personId =
+  Object
+    { id = id
+    , rect = rect
+    , backgroundColor = backgroundColor
+    , name = name
+    , fontSize = fontSize
+    , extension = Desk personId
+    }
 
 
 initLabel : Id -> (Int, Int, Int, Int) -> String -> String -> Float -> String -> Shape -> Object
-initLabel =
-  Label
+initLabel id rect backgroundColor name fontSize color shape =
+  Object
+    { id = id
+    , rect = rect
+    , backgroundColor = backgroundColor
+    , name = name
+    , fontSize = fontSize
+    , extension = Label color shape
+    }
 
 
 copy : Id -> (Int, Int) -> Object -> Object
@@ -48,212 +75,156 @@ copy newId pos object =
 
 
 position : Object -> (Int, Int)
-position object =
-  case object of
-    Desk _ (x, y, w, h) bgColor name personId ->
-      (x, y)
-    Label _ (x, y, w, h) bgColor name fontSize color shape ->
+position (Object object) =
+  case object.rect of
+    (x, y, _, _) ->
       (x, y)
 
 
 changeId : String -> Object -> Object
-changeId id e =
-  case e of
-    Desk _ rect color name personId ->
-      Desk id rect color name personId
-    Label _ rect bgColor name fontSize color shape ->
-      Label id rect bgColor name fontSize color shape
+changeId id (Object object) =
+  Object { object | id = id }
 
 
 changeBackgroundColor : String -> Object -> Object
-changeBackgroundColor bgColor e =
-  case e of
-    Desk id rect _ name personId ->
-      Desk id rect bgColor name personId
-    Label id rect _ name fontSize color shape ->
-      Label id rect bgColor name fontSize color shape
+changeBackgroundColor backgroundColor (Object object) =
+  Object { object | backgroundColor = backgroundColor }
 
 
 changeColor : String -> Object -> Object
-changeColor color e =
-  case e of
-    Desk id rect bgColor name personId ->
-      e
-    Label id rect bgColor name fontSize _ shape ->
-      Label id rect bgColor name fontSize color shape
+changeColor color (Object object) =
+  case object.extension of
+    Desk _ ->
+      Object object
+
+    Label _ shape ->
+      Object { object | extension = Label color shape }
 
 
 changeShape : Shape -> Object -> Object
-changeShape shape e =
-  case e of
-    Desk id rect bgColor name personId ->
-      e
-    Label id rect bgColor name fontSize color _ ->
-      Label id rect bgColor name fontSize color shape
+changeShape shape (Object object) =
+  case object.extension of
+    Desk _ ->
+      Object object
+
+    Label color _ ->
+      Object { object | extension = Label color shape }
 
 
 changeName : String -> Object -> Object
-changeName name e =
-  case e of
-    Desk id rect bgColor _ personId ->
-      Desk id rect bgColor name personId
-    Label id rect bgColor _ fontSize color shape ->
-      Label id rect bgColor name fontSize color shape
+changeName name (Object object) =
+  Object { object | name = name }
 
 
 changeSize : (Int, Int) -> Object -> Object
-changeSize (w, h) e =
-  case e of
-    Desk id (x, y, _, _) bgColor name personId ->
-      Desk id (x, y, w, h) bgColor name personId
-    Label id (x, y, _, _) bgColor name fontSize color shape ->
-      Label id (x, y, w, h) bgColor name fontSize color shape
+changeSize (w, h) (Object object) =
+  case object.rect of
+    (x, y, _, _) ->
+      Object { object | rect = (x, y, w, h) }
 
 
 move : (Int, Int) -> Object -> Object
-move (newX, newY) e =
-  case e of
-    Desk id (_, _, width, height) bgColor name personId ->
-      Desk id (newX, newY, width, height) bgColor name personId
-    Label id (_, _, width, height) bgColor name fontSize color shape ->
-      Label id (newX, newY, width, height) bgColor name fontSize color shape
+move (x, y) (Object object) =
+  case object.rect of
+    (_, _, w, h) ->
+      Object { object | rect = (x, y, w, h) }
 
 
 rotate : Object -> Object
-rotate e =
-  let
-    (x, y, w, h) = rect e
-  in
-    changeSize (h, w) e
+rotate (Object object) =
+  case object.rect of
+    (x, y, w, h) ->
+      Object { object | rect = (x, y, h, w) }
 
 
 setPerson : Maybe Person.Id -> Object -> Object
-setPerson personId e =
-  case e of
-    Desk id rect bgColor name _ ->
-      Desk id rect bgColor name personId
+setPerson personId (Object object) =
+  case object.extension of
+    Desk _ ->
+      Object { object | extension = Desk personId }
+
     _ ->
-      e
+      Object object
 
 
 changeFontSize : Float -> Object -> Object
-changeFontSize fontSize e =
-  case e of
-    Desk id rect bgColor name personId ->
-      Desk id rect bgColor name personId
-
-    Label id rect bgColor name _ color shape ->
-      Label id rect bgColor name fontSize color shape
+changeFontSize fontSize (Object object) =
+  Object { object | fontSize = fontSize }
 
 
 idOf : Object -> Id
-idOf e =
-  case e of
-    Desk id _ _ _ _ ->
-      id
-    Label id _ _ _ _ _ _ ->
-      id
+idOf (Object object) =
+  object.id
 
 
 nameOf : Object -> String
-nameOf e =
-  case e of
-    Desk _ _ _ name _ ->
-      name
-    Label _ _ _ name _ _ _ ->
-      name
+nameOf (Object object) =
+  object.name
 
 
 backgroundColorOf : Object -> String
-backgroundColorOf e =
-  case e of
-    Desk _ _ bgColor _ _ ->
-      bgColor
-    Label _ _ bgColor _ _ _ _ ->
-      bgColor
+backgroundColorOf (Object object) =
+  object.backgroundColor
 
 
 colorOf : Object -> String
-colorOf e =
-  case e of
-    Desk _ _ _ _ _ ->
+colorOf (Object object) =
+  case object.extension of
+    Desk _ ->
       "#000"
-    Label _ _ _ _ _ color _ ->
+
+    Label color _ ->
       color
 
 
 defaultFontSize : Float
-defaultFontSize = 12
+defaultFontSize = 16
 
 
 fontSizeOf : Object -> Float
-fontSizeOf e =
-  case e of
-    Desk _ _ _ _ _ ->
-      defaultFontSize
-    Label _ _ _ _ fontSize _ _ ->
-      fontSize
+fontSizeOf (Object object) =
+  object.fontSize
 
 
 shapeOf : Object -> Shape
-shapeOf e =
-  case e of
-    Desk _ _ _ _ _ ->
+shapeOf (Object object) =
+  case object.extension of
+    Desk _ ->
       Rectangle
-    Label _ _ _ _ _ _ shape ->
+
+    Label _ shape ->
       shape
 
 
 rect : Object -> (Int, Int, Int, Int)
-rect e =
-  case e of
-    Desk _ rect _ _ _ ->
-      rect
-    Label _ rect _ _ _ _ _ ->
-      rect
+rect (Object object) =
+  object.rect
 
 
 relatedPerson : Object -> Maybe Person.Id
-relatedPerson e =
-  case e of
-    Desk _ _ _ _ personId ->
+relatedPerson (Object object) =
+  case object.extension of
+    Desk personId ->
       personId
+
     _ ->
       Nothing
 
 
 backgroundColorEditable : Object -> Bool
-backgroundColorEditable e =
-  case e of
-    Desk _ _ _ _ _ ->
-      True
-    Label _ _ _ _ _ _ _ ->
-      True
+backgroundColorEditable _ = True
 
 
 colorEditable : Object -> Bool
-colorEditable e =
-  case e of
-    Desk _ _ _ _ _ ->
-      False
-    Label _ _ _ _ _ _ _ ->
-      True
+colorEditable = isLabel
 
 
 shapeEditable : Object -> Bool
-shapeEditable e =
-  case e of
-    Desk _ _ _ _ _ ->
-      False
-    Label _ _ _ _ _ _ _ ->
-      True
+shapeEditable = isLabel
 
 
 fontSizeEditable : Object -> Bool
-fontSizeEditable e =
-  case e of
-    Desk _ _ _ _ _ ->
-      True
-    Label _ _ _ _ _ _ _ ->
-      True
+fontSizeEditable _ = True
+
+
 --

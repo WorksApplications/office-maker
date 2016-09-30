@@ -128,7 +128,7 @@ fontSizeView model =
   fontSizeViewHelp
     SelectFontSize
     (fontSizeProperty (selectedObjects model))
-    [10, 12, 14, 16, 18, 20, 30, 40, 60, 80]
+    [10, 12, 16, 20, 40, 80, 120, 160, 200, 300]
 
 
 fontSizeViewHelp : (Float -> Msg) -> Maybe Float -> List Float -> Html Msg

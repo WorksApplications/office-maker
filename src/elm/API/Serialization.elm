@@ -50,42 +50,30 @@ decodePeople =
 
 
 encodeObject : Object -> Value
-encodeObject e =
-  case e of
-    Desk id (x, y, width, height) backgroundColor name personId ->
-      E.object
-        [ ("id", E.string id)
-        , ("type", E.string "desk")
-        , ("x", E.int x)
-        , ("y", E.int y)
-        , ("width", E.int width)
-        , ("height", E.int height)
-        , ("backgroundColor", E.string backgroundColor)
-        , ("color", E.string "#000")
-        , ("shape", E.string "rectangle")
-        , ("name", E.string name)
-        , ("fontSize", E.float Object.defaultFontSize)
-        , ("personId"
-          , case personId of
-              Just id -> E.string id
-              Nothing -> E.null
-          )
-        ]
+encodeObject object =
+  let
+    (x, y, w, h) =
+      Object.rect object
+  in
+    E.object
+      [ ("id", E.string (Object.idOf object))
+      , ("type", E.string (if Object.isDesk object then "desk" else "label"))
+      , ("x", E.int x)
+      , ("y", E.int y)
+      , ("width", E.int w)
+      , ("height", E.int h)
+      , ("backgroundColor", E.string (Object.backgroundColorOf object))
+      , ("color", E.string (Object.colorOf object))
+      , ("shape", E.string (encodeShape (Object.shapeOf object)))
+      , ("name", E.string (Object.nameOf object))
+      , ("fontSize", E.float (Object.fontSizeOf object))
+      , ("personId",
+          case Object.relatedPerson object of
+            Just personId -> E.string personId
+            Nothing -> E.null
+        )
+      ]
 
-    Label id (x, y, width, height) bgColor name fontSize color shape ->
-      E.object
-        [ ("id", E.string id)
-        , ("type", E.string "label")
-        , ("x", E.int x)
-        , ("y", E.int y)
-        , ("width", E.int width)
-        , ("height", E.int height)
-        , ("backgroundColor", E.string bgColor)
-        , ("name", E.string name)
-        , ("fontSize", E.float fontSize)
-        , ("color", E.string color)
-        , ("shape", E.string (encodeShape shape))
-        ]
 
 encodeShape : Shape -> String
 encodeShape shape =
@@ -175,9 +163,9 @@ decodeObject =
   decode
     (\id tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
-        Desk id (x, y, width, height) backgroundColor name personId
+        Object.initDesk id (x, y, width, height) backgroundColor name fontSize personId
       else
-        Label id (x, y, width, height) backgroundColor name fontSize color
+        Object.initLabel id (x, y, width, height) backgroundColor name fontSize color
           (if shape == "rectangle" then
             Object.Rectangle
           else
@@ -193,7 +181,7 @@ decodeObject =
     |> required "backgroundColor" D.string
     |> required "name" D.string
     |> optional' "personId" D.string
-    |> optional "fontSize" D.float 0
+    |> optional "fontSize" D.float Object.defaultFontSize
     |> required "color" D.string
     |> required "shape" D.string
 

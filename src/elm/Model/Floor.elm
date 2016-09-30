@@ -61,7 +61,7 @@ copy id floor =
 
 
 type Msg
-  = CreateDesk (List (Id, (Int, Int, Int, Int), String, String))
+  = CreateDesk (List (Id, (Int, Int, Int, Int), String, String, Float))
   | CreateLabel (List (Id, (Int, Int, Int, Int), String, String, Float, String))
   | Move (List Id) Int (Int, Int)
   | Paste (List (Object, Id)) (Int, Int)
@@ -85,7 +85,7 @@ type Msg
   | UnsetPerson String
 
 
-createDesk : List (Id, (Int, Int, Int, Int), String, String) -> Msg
+createDesk : List (Id, (Int, Int, Int, Int), String, String, Float) -> Msg
 createDesk = CreateDesk
 
 
@@ -178,8 +178,8 @@ update msg floor =
   case msg of
     CreateDesk candidateWithNewIds ->
       let
-        create (newId, (x, y, w, h), color, name) =
-          Object.initDesk newId (x, y, w, h) color name Nothing
+        create (newId, (x, y, w, h), color, name, fontSize) =
+          Object.initDesk newId (x, y, w, h) color name fontSize Nothing
       in
         addObjects
           (List.map create candidateWithNewIds)

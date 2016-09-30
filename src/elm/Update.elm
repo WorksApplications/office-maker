@@ -615,8 +615,6 @@ update removeToken setSelectionStart action model =
 
     SelectFontSize fontSize ->
       let
-        _ = Debug.log "fontSize" fontSize
-        
         (newFloor, saveCmd) =
           EditingFloor.commit (saveFloorCmd model.apiConfig) (Floor.changeObjectFontSize model.selectedObjects fontSize) model.floor
       in
@@ -739,7 +737,7 @@ update removeToken setSelectionStart action model =
             [id]
       in
         { model |
-          contextMenu = Object model.pos id
+          contextMenu = Model.Object model.pos id
         , selectedObjects = selectedObjects
         } ! []
 
@@ -1421,7 +1419,7 @@ updateOnFinishStamp' stampCandidates model =
           let
             (width, height) = prototype.size
           in
-            (newId, (x, y, width, height), prototype.backgroundColor, prototype.name)
+            (newId, (x, y, width, height), prototype.backgroundColor, prototype.name, prototype.fontSize)
         )
         candidatesWithNewIds
 
@@ -1451,7 +1449,7 @@ updateOnFinishPen (x, y) model =
             (newFloor, cmd) =
               EditingFloor.commit
                 (saveFloorCmd model.apiConfig)
-                (Floor.createDesk [(newId, (left, top, width, height), color, name)])
+                (Floor.createDesk [(newId, (left, top, width, height), color, name, Object.defaultFontSize)])
                 model.floor
           in
             ( newFloor
