@@ -10,9 +10,14 @@
 	<body>
 		<script>
 			localStorage.removeItem('authToken');
+			var lang =
+            window.navigator.language ||
+            window.navigator.userLanguage ||
+            window.navigator.browserLanguage;
 			var main = Elm.Login.fullscreen({
 				accountServiceRoot: '<%= accountServiceRoot %>',
-				title: '<%= title %>'
+				title: '<%= title %>',
+				lang: lang
 			});
 			main.ports.saveToken.subscribe(function(token) {
 				localStorage.setItem('authToken', token);

@@ -10,6 +10,10 @@
 	<body>
 		<input id="paste" hidden>
 		<script>
+			var lang =
+					window.navigator.language ||
+					window.navigator.userLanguage ||
+					window.navigator.browserLanguage;
 			var main = Elm.Main.fullscreen({
 				initialSize: [window.innerWidth, window.innerHeight],
 				randomSeed: [Math.floor(Math.random()*0xFFFF), Math.floor(Math.random()*0xFFFF)],
@@ -19,7 +23,8 @@
 				apiRoot: '<%= apiRoot %>',
 				accountServiceRoot: '<%= accountServiceRoot %>',
 				title: '<%= title %>',
-				authToken: localStorage.getItem('authToken') || ''
+				authToken: localStorage.getItem('authToken') || '',
+				lang: lang
 			});
 			main.ports.removeToken.subscribe(function(token) {
 				localStorage.removeItem('authToken', token);

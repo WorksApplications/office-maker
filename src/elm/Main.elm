@@ -1,22 +1,11 @@
 port module Main exposing (..)
 
-import Update
+import Update exposing (Flags)
 import Model.URL as URL
 import View.View as View
 import Navigation
 
 import TimeTravel.Navigation as TimeTravel
-
-type alias Flags =
-  { apiRoot : String
-  , accountServiceRoot : String
-  , authToken : String
-  , title : String
-  , initialSize : (Int, Int)
-  , randomSeed : (Int, Int)
-  , visitDate : Float
-  }
-
 
 port removeToken : {} -> Cmd msg
 
@@ -35,16 +24,7 @@ main : Program Flags
 main =
   -- TimeTravel.programWithFlags urlParser
   Navigation.programWithFlags urlParser
-    { init = \flags result ->
-        Update.init
-          flags.apiRoot
-          flags.accountServiceRoot
-          flags.authToken
-          flags.title
-          flags.randomSeed
-          flags.initialSize
-          flags.visitDate
-          result
+    { init = Update.init
     , view = View.view
     , update = Update.update removeToken setSelectionStart
     , urlUpdate =  Update.urlUpdate

@@ -232,3 +232,26 @@ nothingFound lang =
   case lang of
     JA -> "見つかりませんでした。"
     EN -> "Nothing found."
+
+
+----
+
+mailAddress : Language -> String
+mailAddress lang =
+  case lang of
+    JA -> "メールアドレス"
+    EN -> "Mail address"
+
+
+password : Language -> String
+password lang =
+  case lang of
+    JA -> "パスワード"
+    EN -> "Password"
+
+
+signInTo : Language -> String -> String
+signInTo lang title =
+  case lang of
+    JA -> title ++ " にサインイン"
+    EN -> "Sign in to " ++ title

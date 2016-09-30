@@ -22,11 +22,11 @@ cache =
     }
 
 
-defaultUserState : UserState
-defaultUserState =
+defaultUserState : Language -> UserState
+defaultUserState lang =
   { scale = Scale.default
   , offset = (35, 35)
-  , lang = JA
+  , lang = lang
   }
 
 

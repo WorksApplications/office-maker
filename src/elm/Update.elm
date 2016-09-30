@@ -32,7 +32,7 @@ import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.URL as URL
-import Model.I18n as I18n exposing (Language)
+import Model.I18n as I18n exposing (Language(..))
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
@@ -48,8 +48,25 @@ import ObjectNameInput
 
 type alias Commit = Floor.Msg
 
+type alias Flags =
+  { apiRoot : String
+  , accountServiceRoot : String
+  , authToken : String
+  , title : String
+  , initialSize : (Int, Int)
+  , randomSeed : (Int, Int)
+  , visitDate : Float
+  , lang : String
+  }
 
-subscriptions : (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> (({} -> Msg) -> Sub Msg) -> ((String -> Msg) -> Sub Msg) -> Model -> Sub Msg
+
+subscriptions
+  :  (({} -> Msg) -> Sub Msg)
+  -> (({} -> Msg) -> Sub Msg)
+  -> (({} -> Msg) -> Sub Msg)
+  -> ((String -> Msg) -> Sub Msg)
+  -> Model
+  -> Sub Msg
 subscriptions tokenRemoved undo redo clipboard model =
   Sub.batch
     [ Window.resizes (\e -> WindowSize (e.width, e.height))
@@ -62,8 +79,8 @@ subscriptions tokenRemoved undo redo clipboard model =
     ]
 
 
-init : String -> String -> String -> String -> (Int, Int) -> (Int, Int) -> Float -> (Result String URL.Model) -> (Model, Cmd Msg)
-init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate urlResult =
+init : Flags -> (Result String URL.Model) -> (Model, Cmd Msg)
+init { apiRoot, accountServiceRoot, authToken, title, randomSeed, initialSize, visitDate, lang } urlResult =
   let
     apiConfig = { apiRoot = apiRoot, accountServiceRoot = accountServiceRoot, token = authToken } -- TODO
 
@@ -71,7 +88,7 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
       Floor.init ""
 
     defaultUserState =
-      Cache.defaultUserState
+      Cache.defaultUserState (if lang == "ja" then JA else EN)
 
     toModel url searchBox =
       { apiConfig = apiConfig
@@ -127,6 +144,7 @@ init apiRoot accountServiceRoot authToken title randomSeed initialSize visitDate
           (searchBox, cmd) = SearchBox.init apiConfig SearchBoxMsg url.query
         in
           (toModel url searchBox) ! [ initCmd, cmd ]
+
       Err _ ->
         let
           dummyURL = URL.dummy

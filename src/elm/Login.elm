@@ -10,23 +10,17 @@ import Http
 import API.API as API
 import Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
-import Model.I18n exposing (Language(..))
+import Model.I18n as I18n exposing (Language(..))
 import View.Styles as Styles
 
 port saveToken : String -> Cmd msg
 
 port tokenSaved : ({} -> msg) -> Sub msg
 
-type alias Flags =
-  { accountServiceRoot : String
-  , title : String
-  }
-
-
 main : Program Flags
 main =
   App.programWithFlags
-    { init = \flags -> init flags.accountServiceRoot flags.title
+    { init = init
     , view = view
     , update = update
     , subscriptions = \_ -> tokenSaved (always TokenSaved)
@@ -52,17 +46,28 @@ type alias Model =
   , inputId : String
   , inputPass : String
   , headerState : Header.State
+  , lang : Language
   }
 
 
-init : String -> String -> (Model, Cmd Msg)
-init accountServiceRoot title =
+----
+
+type alias Flags =
+  { accountServiceRoot : String
+  , title : String
+  , lang : String
+  }
+
+
+init : Flags -> (Model, Cmd Msg)
+init { accountServiceRoot, title, lang } =
   { accountServiceRoot = accountServiceRoot
   , title = title
   , error = Nothing
   , inputId = ""
   , inputPass = ""
   , headerState = Header.init
+  , lang = if lang == "ja" then JA else EN
   } ! []
 
 
@@ -138,7 +143,7 @@ container : Model -> Html Msg
 container model =
   div
     [ style Styles.loginContainer ]
-    [ h2 [ style Styles.loginCaption ] [ text ("Sign in to " ++ model.title) ]
+    [ h2 [ style Styles.loginCaption ] [ text (I18n.signInTo model.lang model.title) ]
     , div [ style Styles.loginError ] [ text (Maybe.withDefault "" model.error) ]
     , loginForm model
     ]
@@ -150,7 +155,7 @@ loginForm model =
     []
     [ div
         []
-        [ div [] [ text "Username" ]
+        [ div [] [ text (I18n.mailAddress model.lang) ]
         , input
             [ style Styles.formInput
             , onInput InputId
@@ -162,7 +167,7 @@ loginForm model =
         ]
     , div
         []
-        [ div [] [ text "Password" ]
+        [ div [] [ text (I18n.password model.lang) ]
         , input
             [ style Styles.formInput
             , onInput InputPass
@@ -174,7 +179,7 @@ loginForm model =
     , input
         [ style <| Styles.primaryButton ++ [("margin-top", "20px"), ("width", "100%")]
         , type' "submit"
-        , value "Sign in"
+        , value (I18n.signIn model.lang)
         ]
         []
     ]
