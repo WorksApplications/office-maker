@@ -145,7 +145,7 @@ app.get('/api/1/people', inTransaction((conn, req, res) => {
           log.system.warn("person not found: " + personId);
           return Promise.resolve([]);
         }
-        return profileService.getPeopleByPost(config.profileServiceRoot, token, person.psot).then((people) => {
+        return profileService.getPeopleByPost(config.profileServiceRoot, token, person.post).then((people) => {
           return Promise.resolve(people.filter((person) => {
             return peopleSet[person.id];
           }));
