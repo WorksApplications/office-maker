@@ -38,6 +38,14 @@ zIndex =
   }
 
 
+invertedTextColor : String
+invertedTextColor = "#fff"
+
+
+inputTextColor : String
+inputTextColor = "#333"
+
+
 selectColor : String
 selectColor = "#69e"
 
@@ -150,10 +158,10 @@ deskObject rect backgroundColor selected isGhost disableTransition =
   , ("z-index", if selected then zIndex.selectedDesk else "")
   , ("border-style", "solid")
   , ("border-width", if selected  then "2px" else "1px")
-  , ("border-top-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
-  , ("border-left-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
-  , ("border-bottom-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
-  , ("border-right-color", if selected  then "#69e" else "rgba(100,100,100,0.7)")
+  , ("border-top-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
+  , ("border-left-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
+  , ("border-bottom-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
+  , ("border-right-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
   , ("user-select", "none")
   , ("-webkit-user-select", "none")
   ] ++ transition ["width", "height", "top", "left"] disableTransition
@@ -175,7 +183,7 @@ labelObject isEllipse rect backgroundColor fontColor selected isGhost rectVisibl
   , ("z-index", if selected then zIndex.selectedLabelObject else zIndex.labelObject)
   , ("border-style", if rectVisible then "dashed" else "none")
   , ("border-width", if selected  then "2px" else "1px")
-  , ("border-color", if selected  then "#69e" else "rgba(100,100,100,0.3)")
+  , ("border-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
   , ("border-radius", if isEllipse  then "50%" else "")
   , ("user-select", "none")
   , ("-webkit-user-select", "none")
@@ -195,7 +203,7 @@ deskResizeGrip selected =
       [ ("border-bottom-style", "solid")
       , ("border-right-style", "solid")
       , ("border-width", "2px")
-      , ("border-color", "#69e")
+      , ("border-color", selectColor)
       ]
     else
       []
@@ -231,7 +239,7 @@ colorProperty color selected =
   , ("border-style", "solid")
   , ("margin-right", "2px")
   , ("border-width", if selected  then "2px" else "1px")
-  , ("border-color", if selected  then "#69e" else "#666")
+  , ("border-color", if selected  then selectColor else "#666")
   , ("font-size", "12px")
   ]
 
@@ -250,7 +258,7 @@ shapeProperty selected =
   , ("border-style", "solid")
   , ("margin-right", "2px")
   , ("border-width", if selected  then "2px" else "1px")
-  , ("border-color", if selected  then "#69e" else "#666")
+  , ("border-color", if selected  then selectColor else "#666")
   ]
 
 
@@ -397,7 +405,7 @@ modeSelectionViewEach selected =
   , ("margin-right", "-1px")
   , ("border", "solid 1px #666")
   , ("background-color", if selected then selectColor else "inherit")
-  , ("color", if selected then "#fff" else "inherit")
+  , ("color", if selected then invertedTextColor else "inherit")
   , ("flex-grow", "1")
   ]
 
@@ -448,7 +456,7 @@ prototypePreviewScroll isLeft =
   , ("top", "104px")
   , ("border-radius", "15px")
   , ("text-align", "center")
-  , ("color", "#fff")
+  , ("color", invertedTextColor)
   , ("background-color", "#ccc")
   , ("cursor", "pointer")
   ]
@@ -465,7 +473,6 @@ button =
     [ ("display", "block")
     , ("height", "30px")
     , ("text-align", "center")
-    , ("background-color", "#eee")
     , ("width", "100%")
     , ("padding", "6px 12px")
     , ("box-sizing", "border-box")
@@ -476,12 +483,23 @@ button =
 defaultButton : S
 defaultButton =
   button ++
-  [ ("border", "solid 1px #aaa") ]
+    [ ("background-color", "#eee")
+    , ("border", "solid 1px #aaa")
+    ]
+
+
+primaryButton : S
+primaryButton =
+  button ++
+    [ ("background-color", "rgb(100, 180, 85)")
+    , ("color", invertedTextColor)
+    , ("border", "solid 1px rgb(100, 180, 85)")
+    ]
 
 
 input : S
 input =
-    [ ("color", "#333")
+    [ ("color", inputTextColor)
     , ("width", "100%")
     , ("height", "30px")
     , ("background-color", "#fff")
@@ -747,15 +765,6 @@ formInput =
   ]
 
 
-primaryButton : S
-primaryButton =
-  button ++
-    [ ("background-color", "rgb(100, 180, 85)")
-    , ("color", "#fff")
-    , ("border", "solid 1px rgb(100, 180, 85)")
-    ]
-
-
 loginCaption : S
 loginCaption =
   []
@@ -772,7 +781,7 @@ searchBox : S
 searchBox =
   input ++
     [ ("background-color", "white")
-    , ("color", "#000")
+    , ("color", inputTextColor)
     , ("border-radius", "17px")
     , ("outline", "none")
     ]
@@ -1210,14 +1219,14 @@ unsetRelatedPersonButton =
 unsetRelatedPersonButtonHover : S
 unsetRelatedPersonButtonHover =
   [ ("background-color", "#a66")
-  , ("color", "#fff")
+  , ("color", invertedTextColor)
   ]
 
 
 messageBar : S
 messageBar =
     [ ("position", "absolute")
-    , ("color", "#fff")
+    , ("color", invertedTextColor)
     , ("width", "100%")
     , ("z-index", zIndex.messageBar)
     , ("padding", "5px 10px")
