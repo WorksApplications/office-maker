@@ -18,7 +18,7 @@ import View.ProfilePopup as ProfilePopup
 import Util.HtmlUtil exposing (..)
 
 import Update exposing (..)
-import Model.Model as Model exposing (..)
+import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale exposing (Scale)
@@ -213,7 +213,7 @@ canvasView model floor =
         ObjectNameInput.view
           (deskInfoOf model)
           (transitionDisabled model)
-          (candidatesOf model)
+          (Model.candidatesOf model)
           model.objectNameInput
 
     children1 =
@@ -363,7 +363,7 @@ objectsView model floor =
             { editMode = model.editMode
             , scale = model.scale
             , rect = (rect object)
-            , selected = isSelected model object --TODO seems not selected?
+            , selected = Model.isSelected model object --TODO seems not selected?
             , isGhost = False
             , object = object
             , contextMenuDisabled = model.keys.ctrl
@@ -405,7 +405,7 @@ temporaryStampView scale selected (prototype, (left, top)) =
 
 temporaryPenView : Model -> (Int, Int) -> Html msg
 temporaryPenView model from =
-  case temporaryPen model from of
+  case Model.temporaryPen model from of
     Just (color, name, (left, top, width, height)) ->
       ObjectView.viewDesk
         ObjectView.noEvents
@@ -427,6 +427,6 @@ temporaryStampsView : Model -> List (String, Html msg)
 temporaryStampsView model =
   List.map
     (temporaryStampView model.scale False)
-    (stampCandidates model)
+    (Model.stampCandidates model)
 
 --

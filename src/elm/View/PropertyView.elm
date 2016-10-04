@@ -10,7 +10,7 @@ import View.Icons as Icons
 
 import Util.HtmlUtil exposing (..)
 import Update exposing (..)
-import Model.Model as Model exposing (..)
+import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
@@ -56,7 +56,7 @@ backgroundColorView : Model -> Html Msg
 backgroundColorView model =
   paletteView
     SelectBackgroundColor
-    (backgroundColorProperty (selectedObjects model))
+    (backgroundColorProperty (Model.selectedObjects model))
     model.colorPalette.backgroundColors
 
 
@@ -64,7 +64,7 @@ colorView : Model -> Html Msg
 colorView model =
   paletteView
     SelectColor
-    (colorProperty (selectedObjects model))
+    (colorProperty (Model.selectedObjects model))
     model.colorPalette.textColors
 
 
@@ -94,7 +94,7 @@ shapeView : Model -> Html Msg
 shapeView model =
   let
     selectedShape =
-      shapeProperty (selectedObjects model)
+      shapeProperty (Model.selectedObjects model)
 
     shapes =
       [ Object.Rectangle, Object.Ellipse ]
@@ -127,7 +127,7 @@ fontSizeView : Model -> Html Msg
 fontSizeView model =
   fontSizeViewHelp
     SelectFontSize
-    (fontSizeProperty (selectedObjects model))
+    (fontSizeProperty (Model.selectedObjects model))
     [10, 12, 16, 20, 40, 80, 120, 160, 200, 300]
 
 

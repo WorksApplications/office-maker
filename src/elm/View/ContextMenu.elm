@@ -8,7 +8,7 @@ import Html.Attributes exposing (..)
 import View.Styles as S
 import Util.HtmlUtil exposing (..)
 import Update exposing (..)
-import Model.Model exposing (..)
+import Model.Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation
 import Model.EditingFloor as EditingFloor

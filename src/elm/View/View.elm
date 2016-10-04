@@ -26,7 +26,7 @@ import FloorProperty
 import Util.HtmlUtil exposing (..)
 
 import Update exposing (..)
-import Model.Model exposing (..)
+import Model.Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Object as Object exposing (..)
