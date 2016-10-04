@@ -280,9 +280,12 @@ update removeToken setSelectionStart action model =
             _ -> not (User.isGuest user)
 
         searchCmd =
-          performAPI
-            (GotSearchResult model.selectedFloor)
-            (API.search model.apiConfig requestPrivateFloors model.searchQuery)
+          if String.trim model.searchQuery == "" then
+            Cmd.none
+          else
+            performAPI
+              (GotSearchResult model.selectedFloor)
+              (API.search model.apiConfig requestPrivateFloors model.searchQuery)
 
         floorId =
           Maybe.withDefault ""
@@ -1016,8 +1019,14 @@ update removeToken setSelectionStart action model =
         withPrivate =
           not (User.isGuest model.user)
 
+        -- TODO dedup
         searchCmd =
-          performAPI (GotSearchResult model.selectedFloor) (API.search model.apiConfig withPrivate model.searchQuery)
+          if String.trim model.searchQuery == "" then
+            Cmd.none
+          else
+            performAPI
+              (GotSearchResult model.selectedFloor)
+              (API.search model.apiConfig withPrivate model.searchQuery)
       in
         model !
           [ searchCmd, Navigation.modifyUrl (URL.serialize model) ]
