@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Update exposing (Flags)
-import Model.URL as URL
+import URL exposing (URL)
 import View.View as View
 import Navigation
 
@@ -32,6 +32,6 @@ main =
     }
 
 
-urlParser : Navigation.Parser (Result String URL.Model)
+urlParser : Navigation.Parser (Result String URL)
 urlParser =
   Navigation.makeParser URL.parse

@@ -1,6 +1,5 @@
 module View.View exposing (view)
 
-import Dict exposing (..)
 import Maybe
 
 import Html exposing (..)
@@ -9,7 +8,6 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Lazy exposing (..)
 
-import SearchBox
 import Header
 import View.Styles as S
 import View.Icons as Icons
@@ -21,19 +19,16 @@ import View.PropertyView as PropertyView
 import View.ContextMenu as ContextMenu
 import View.Common exposing (..)
 import View.PrototypePreviewView as PrototypePreviewView
+import View.SearchResultView as SearchResultView
+import View.SearchInputView as SearchInputView
 import FloorProperty
 
 import Util.HtmlUtil exposing (..)
 
 import Update exposing (..)
 import Model.Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
-import Model.Floor exposing (Floor)
-import Model.FloorInfo as FloorInfo exposing (FloorInfo)
-import Model.Object as Object exposing (..)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.User as User
-import Model.Person exposing (Person)
-import Model.SearchResult exposing (SearchResult)
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 
@@ -142,82 +137,15 @@ subViewForSearch model =
     searchWithPrivate =
       not <| User.isGuest model.user
 
-    floorsInfoDict =
-      Dict.fromList <|
-        List.map (\f ->
-          case f of
-            FloorInfo.Public f -> (f.id, f)
-            FloorInfo.PublicWithEdit _ f -> (f.id, f)
-            FloorInfo.Private f -> (f.id, f)
-          ) model.floorsInfo
 
-    format =
-      formatSearchResult model.lang floorsInfoDict model.personInfo model.selectedResult
 
     isEditing =
       (model.editMode /= Viewing True && model.editMode /= Viewing False)
 
   in
-    [ card <| [ SearchBox.view SearchBoxMsg model.searchBox ]
-    , card <| [ SearchBox.resultsView model.lang SearchBoxMsg isEditing format model.searchBox ]
+    [ card <| [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
+    , card <| [ SearchResultView.view SelectSearchResult model ]
     ]
-
-
-formatSearchResult : Language -> Dict String Floor -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
-formatSearchResult lang floorsInfo personInfo selectedResult = \result ->
-  let
-    { personId, objectIdAndFloorId } = result
-
-    floorName =
-      case objectIdAndFloorId of
-        Just (e, fid) ->
-          case Dict.get fid floorsInfo of
-            Just info ->
-              info.name
-
-            Nothing ->
-              "?"
-
-        Nothing ->
-          I18n.missing lang
-
-    isPerson =
-      personId /= Nothing
-
-    icon =
-      div
-        [ style S.searchResultItemIcon
-        ]
-        [ if isPerson then Icons.searchResultItemPerson else text "" ]
-
-    nameOfObject =
-      case objectIdAndFloorId of
-        Just (e, fid) -> nameOf e
-        Nothing -> ""
-
-    name =
-      case personId of
-        Just id ->
-          case Dict.get id personInfo of
-            Just person -> person.name
-            Nothing -> nameOfObject
-
-        Nothing -> nameOfObject
-
-    selectable =
-      objectIdAndFloorId /= Nothing
-
-    selected =
-      case (selectedResult, objectIdAndFloorId) of
-        (Just id, Just (e, _)) ->
-          idOf e == id
-        _ ->
-          False
-  in
-    div
-      [ style <| S.searchResultItemInner selectable selected
-      ]
-      [ icon, div [] [text (name ++ "(" ++ floorName ++ ")")] ]
 
 
 subViewTab : msg -> Int -> Html msg -> Bool -> Html msg
@@ -298,7 +226,7 @@ view model =
         { onSignInClicked = SignIn
         , onSignOutClicked = SignOut
         , onToggleEditing = ToggleEditing
-        , onTogglePrintView = TogglePrintView
+        , onTogglePrintView = TogglePrintView model.editMode
         , onSelectLang = SelectLang
         , onUpdate = UpdateHeaderState
         , title = title

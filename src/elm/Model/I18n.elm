@@ -255,3 +255,11 @@ signInTo lang title =
   case lang of
     JA -> title ++ " にサインイン"
     EN -> "Sign in to " ++ title
+
+----
+
+search : Language -> String
+search lang =
+  case lang of
+    JA -> "検索"
+    EN -> "Search"

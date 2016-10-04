@@ -31,8 +31,9 @@ import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
-import Model.URL as URL
 import Model.I18n as I18n exposing (Language(..))
+import Model.SearchResult as SearchResult exposing (SearchResult)
+
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
@@ -41,9 +42,9 @@ import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClickboardData as ClickboardData
 
 import FloorProperty
-import SearchBox
 import Header exposing (..)
 import ObjectNameInput
+import URL exposing (URL)
 
 
 type alias Commit = Floor.Msg
@@ -79,7 +80,7 @@ subscriptions tokenRemoved undo redo clipboard model =
     ]
 
 
-init : Flags -> (Result String URL.Model) -> (Model, Cmd Msg)
+init : Flags -> (Result String URL) -> (Model, Cmd Msg)
 init { apiRoot, accountServiceRoot, authToken, title, randomSeed, initialSize, visitDate, lang } urlResult =
   let
     apiConfig = { apiRoot = apiRoot, accountServiceRoot = accountServiceRoot, token = authToken } -- TODO
@@ -90,7 +91,7 @@ init { apiRoot, accountServiceRoot, authToken, title, randomSeed, initialSize, v
     defaultUserState =
       Cache.defaultUserState (if lang == "ja" then JA else EN)
 
-    toModel url searchBox =
+    toModel url =
       { apiConfig = apiConfig
       , title = title
       , seed = IdGenerator.init randomSeed
@@ -120,8 +121,9 @@ init { apiRoot, accountServiceRoot, authToken, title, randomSeed, initialSize, v
       , personInfo = Dict.empty
       , diff = Nothing
       , candidates = []
-      , url = url
-      , searchBox = searchBox
+      , selectedFloor = url.floorId
+      , searchQuery = Maybe.withDefault "" url.query
+      , searchResult = Nothing
       , tab = if url.editMode then EditTab else SearchTab
       , clickEmulator = []
       , candidateRequest = Dict.empty
@@ -131,32 +133,31 @@ init { apiRoot, accountServiceRoot, authToken, title, randomSeed, initialSize, v
       , headerState = Header.init
       }
 
-    initCmd = performAPI (\(userState, user) -> Initialized userState user) <|
-      ( Cache.getWithDefault Cache.cache defaultUserState `Task.andThen` \userState ->
-          API.getAuth apiConfig `Task.andThen` \user ->
-          Task.succeed (userState, user)
-      )
+    initCmd needsEditMode =
+      performAPI
+        (\(userState, user) -> Initialized needsEditMode userState user)
+        ( Cache.getWithDefault Cache.cache defaultUserState `Task.andThen` \userState ->
+            API.getAuth apiConfig `Task.andThen` \user ->
+            Task.succeed (userState, user)
+        )
   in
     case urlResult of
-      -- TODO refactor
       Ok url ->
-        let
-          (searchBox, cmd) = SearchBox.init apiConfig SearchBoxMsg url.query
-        in
-          (toModel url searchBox) ! [ initCmd, cmd ]
+        (toModel url) ! [ initCmd url.editMode ]
 
       Err _ ->
         let
-          dummyURL = URL.dummy
-          (searchBox, cmd) = SearchBox.init apiConfig SearchBoxMsg dummyURL.query
+          url = URL.init
         in
-          (toModel dummyURL searchBox)
-          ! [ initCmd, cmd ] -- TODO modifyURL
+          (toModel url) !
+            [ initCmd url.editMode
+            , Navigation.modifyUrl (URL.stringify url)
+            ]
 
 
 type Msg
   = NoOp
-  | Initialized UserState User
+  | Initialized Bool UserState User
   | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded Floor
   | ColorsLoaded ColorPalette
@@ -199,9 +200,12 @@ type Msg
   | SignIn
   | SignOut
   | ToggleEditing
-  | TogglePrintView
+  | TogglePrintView EditMode
   | SelectLang Language
-  | SearchBoxMsg SearchBox.Msg
+  | UpdateSearchQuery String
+  | SubmitSearch
+  | GotSearchResult (Maybe String) (List SearchResult)
+  | SelectSearchResult SearchResult
   | RegisterPeople (List Person)
   | RequestCandidate Id String
   | GotCandidateSelection Id (List Person)
@@ -243,54 +247,23 @@ performAPI tagger task =
   Task.perform (Error << APIError) tagger task
 
 
-urlUpdate : Result String URL.Model -> Model -> (Model, Cmd Msg)
+urlUpdate : Result String URL -> Model -> (Model, Cmd Msg)
 urlUpdate result model =
   case result of
     Ok newURL ->
       let
-        floorId = newURL.floorId
+        _ =
+          case newURL.floorId of
+            Just id ->
+              Debug.log ("node server/commands deleteFloor " ++ id) ""
 
-        (newSearchBox, searchBoxCmd) =
-          case (model.url.query /= newURL.query, newURL.query) of
-            (True, Just query) ->
-              let
-                withPrivate =
-                  not (User.isGuest model.user)
-
-                thisFloorId =
-                  Just floorId
-              in
-                SearchBox.doSearch model.apiConfig SearchBoxMsg withPrivate thisFloorId query model.searchBox
-            _ ->
-              (model.searchBox, Cmd.none)
-
-        nextIsEditing =
-          not (User.isGuest model.user) && newURL.editMode
-
-        newEditMode =
-          if nextIsEditing then Select else Viewing False
-
-        _ = Debug.log ("node server/commands deleteFloor " ++ newURL.floorId) ""
+            Nothing ->
+              ""
       in
-        { model |
-          url = newURL
-        , editMode = newEditMode
-        , tab =
-            if nextIsEditing then
-              case model.editMode of
-                Viewing _ -> EditTab
-                _ -> model.tab
-            else
-              SearchTab
-        , searchBox = newSearchBox
-        } !
-          [ searchBoxCmd ]
+        model ! []
 
     Err _ ->
-      let
-        validURL = URL.validate model.url
-      in
-        model ! [ Navigation.modifyUrl (URL.stringify validURL) ]
+      model ! [ Navigation.modifyUrl (URL.stringify URL.init) ]
 
 
 update : ({} -> Cmd Msg) -> ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
@@ -299,21 +272,28 @@ update removeToken setSelectionStart action model =
     NoOp ->
       model ! []
 
-    Initialized userState user ->
+    Initialized needsEditMode userState user ->
       let
         requestPrivateFloors =
           case model.editMode of
             Viewing _ -> False
             _ -> not (User.isGuest user)
 
+        searchCmd =
+          performAPI
+            (GotSearchResult model.selectedFloor)
+            (API.search model.apiConfig requestPrivateFloors model.searchQuery)
+
         floorId =
-          model.url.floorId
+          Maybe.withDefault ""
 
         loadFloorCmd' =
-          if String.length floorId > 0 then
-            (loadFloorCmd model.apiConfig) requestPrivateFloors floorId
-          else
-            Cmd.none
+          case model.selectedFloor of
+            Just floorId ->
+              (loadFloorCmd model.apiConfig) requestPrivateFloors floorId
+
+            Nothing ->
+              Cmd.none
 
         loadSettingsCmd =
           if User.isGuest user then
@@ -330,13 +310,15 @@ update removeToken setSelectionStart action model =
         , offset = userState.offset
         , editMode =
             if not (User.isGuest user) then
-              if model.url.editMode then Select else Viewing False
+              if needsEditMode then Select else Viewing False
             else
               Viewing False
         }
-        ! [ loadFloorsInfoCmd model.apiConfig requestPrivateFloors
+        ! [ searchCmd
+          , loadFloorsInfoCmd model.apiConfig requestPrivateFloors
           , loadFloorCmd'
           , loadSettingsCmd
+          -- TODO if user isGuest, modify URL
           ]
 
     ColorsLoaded colorPalette ->
@@ -373,13 +355,14 @@ update removeToken setSelectionStart action model =
 
         newFloor =
           EditingFloor.changeFloorAfterSave floor model.floor
+
+        -- TODO update FloorInfo
       in
         { model |
           floor = newFloor
         , error = message
         } !
           [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-          , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just floor.id) model.url)
           ]
 
     MoveOnCanvas (clientX, clientY) ->
@@ -759,14 +742,16 @@ update removeToken setSelectionStart action model =
           else
             Cmd.none
 
-        modifyUrlCmd =
-          Navigation.modifyUrl <|
-            URL.stringify <|
-            URL.updateFloorId (Just floorId) model.url
+        newModel =
+          { model |
+            contextMenu = NoContextMenu
+          , selectedFloor = Just floorId
+          }
     in
-      { model |
-        contextMenu = NoContextMenu
-      } ! [ loadCmd, modifyUrlCmd ]
+      newModel !
+        [ loadCmd
+        , Navigation.modifyUrl (URL.serialize newModel)
+        ]
 
     SelectSamePost personId ->
       let
@@ -1001,62 +986,92 @@ update removeToken setSelectionStart action model =
 
     ToggleEditing ->
       let
-        nextIsEditing =
-          case model.editMode of
-            Viewing _ -> True
-            _ -> False
+        newModel =
+          { model |
+            editMode =
+              case model.editMode of
+                Viewing _ -> Select
+                _ -> Viewing False
+          }
       in
-        model !
-          [ Navigation.modifyUrl <|
-              URL.stringify <|
-                URL.updateEditMode nextIsEditing model.url
+        newModel !
+          [ Navigation.modifyUrl (URL.serialize newModel)
           ]
 
-    TogglePrintView ->
+    TogglePrintView prevEditMode ->
       { model |
-        editMode =
-          case model.editMode of
-            Viewing False ->
-              Viewing True
-
-            _ ->
-              if model.url.editMode then
-                Select
-              else
-                Viewing False
-
+        editMode = prevEditMode
       } ! []
 
     SelectLang lang ->
       { model | lang = lang } ! []
 
-    SearchBoxMsg msg ->
+    UpdateSearchQuery searchQuery ->
+      { model |
+        searchQuery = searchQuery
+      } ! []
+
+    SubmitSearch ->
       let
-        (searchBox, cmd1, event) =
-          SearchBox.update msg model.searchBox
+        withPrivate =
+          not (User.isGuest model.user)
 
-        model' =
-          { model | searchBox = searchBox }
-
-        (selectedResult, cmd2) =
-          updateOnSearchBoxEvent event model'
-
-        newOffset =
-          Model.adjustOffset selectedResult model'
-
-        model'' =
-          { model' |
-            selectedResult = selectedResult
-          , offset = newOffset
-          }
-
-        newModel =
-          case selectedResult of
-            Just id -> Model.adjustPositionByFocus id model''
-            Nothing -> model''
-
+        searchCmd =
+          performAPI (GotSearchResult model.selectedFloor) (API.search model.apiConfig withPrivate model.searchQuery)
       in
-        newModel ! [ Cmd.map SearchBoxMsg cmd1, cmd2 ]
+        model !
+          [ searchCmd, Navigation.modifyUrl (URL.serialize model) ]
+
+    GotSearchResult thisFloor results ->
+      let
+        regesterPersonCmd =
+          Cmd.batch <|
+          List.filterMap (\r ->
+            case r.personId of
+              Just id -> Just (regesterPersonIfNotCached model.apiConfig model.personInfo id)
+              Nothing -> Nothing
+          ) results
+
+        selectedResult =
+          case results of
+            { objectIdAndFloorId } :: [] ->
+              case objectIdAndFloorId of
+                Just (e, fid) ->
+                  Just (idOf e)
+
+                Nothing ->
+                  Nothing
+
+            _ -> Nothing
+      in
+        { model |
+          searchResult = Just ( SearchResult.reorderResults model.selectedFloor results )
+        , selectedResult = selectedResult
+        } ! [ regesterPersonCmd ]
+
+    SelectSearchResult { personId, objectIdAndFloorId } ->
+      let
+        (newModel, cmd1) =
+          case objectIdAndFloorId of
+            Just (obj, fid) ->
+              let
+                model' =
+                  { model |
+                    selectedResult = Just (idOf obj)
+                  , selectedFloor = Just fid
+                  } |> Model.adjustOffset
+              in
+                (model', Navigation.modifyUrl (URL.serialize model'))
+
+            Nothing ->
+              (model, Cmd.none)
+
+        cmd2 =
+          case personId of
+            Just id -> regesterPersonIfNotCached model.apiConfig model.personInfo id
+            Nothing -> Cmd.none
+      in
+        newModel ! [cmd1, cmd2]
 
     RegisterPeople people ->
       Model.registerPeople people model ! []
@@ -1120,17 +1135,11 @@ update removeToken setSelectionStart action model =
           case personId of
             Just id -> regesterPerson model.apiConfig id
             Nothing -> Cmd.none
-
-        selectedResult =
-          Just id
-
-        newOffset =
-          Model.adjustOffset selectedResult model
       in
-        { model |
-          selectedResult = selectedResult
-        , offset = newOffset
-        } ! [ cmd ]
+        ({ model |
+          selectedResult = Just id
+        } |> Model.adjustOffset
+        ) ! [ cmd ]
 
     CreateNewFloor ->
       let
@@ -1158,10 +1167,13 @@ update removeToken setSelectionStart action model =
             FloorLoaded
             (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
-        modifyUrlCmd =
-          Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+        newModel =
+          { model | seed = newSeed }
       in
-        { model | seed = newSeed } ! [ cmd, modifyUrlCmd ]
+        newModel !
+          [ cmd
+          , Navigation.modifyUrl (URL.serialize newModel)
+          ]
 
     CopyFloor id ->
       let
@@ -1176,13 +1188,18 @@ update removeToken setSelectionStart action model =
             FloorLoaded
             (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
-        modifyUrlCmd =
-          Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just newFloorId) model.url)
+        newModel =
+          { model |
+            seed = newSeed
+          , selectedFloor = Just newFloorId
+          , contextMenu = NoContextMenu
+          }
+
       in
-        { model |
-          seed = newSeed
-        , contextMenu = NoContextMenu
-        } ! [ cmd, modifyUrlCmd ]
+        newModel !
+          [ cmd
+          , Navigation.modifyUrl (URL.serialize newModel)
+          ]
 
     EmulateClick id down time ->
       let
@@ -1259,6 +1276,7 @@ update removeToken setSelectionStart action model =
         newModel ! []
 
 
+
 updateOnMouseUp : Model -> (Model, Cmd Msg)
 updateOnMouseUp model =
   let
@@ -1292,67 +1310,6 @@ updateOnMouseUp model =
       }
   in
     newModel ! [ cmd ]
-
-
-updateOnSearchBoxEvent : SearchBox.Event -> Model -> (Maybe Id, Cmd Msg)
-updateOnSearchBoxEvent event model =
-  case event of
-    SearchBox.OnSubmit ->
-      ( Nothing
-      , Navigation.modifyUrl ( URL.stringify <| URL.updateQuery model.searchBox.query model.url )
-      )
-
-    SearchBox.OnResults ->
-      let
-        results =
-          SearchBox.allResults model.searchBox
-
-        regesterPersonCmd =
-          Cmd.batch <|
-          List.filterMap (\r ->
-            case r.personId of
-              Just id -> Just (regesterPersonIfNotCached model.apiConfig model.personInfo id)
-              Nothing -> Nothing
-          ) results
-
-        selectedResult =
-          case results of
-            { objectIdAndFloorId } :: [] ->
-              case objectIdAndFloorId of
-                Just (e, fid) ->
-                  Just (idOf e)
-
-                Nothing ->
-                  Nothing
-
-            _ -> Nothing
-      in
-        (selectedResult, regesterPersonCmd)
-
-    SearchBox.OnSelectResult { personId, objectIdAndFloorId } ->
-      let
-        (selectedResult, cmd1) =
-          case objectIdAndFloorId of
-            Just (e, fid) ->
-              ( Just (idOf e)
-              , Navigation.modifyUrl (URL.stringify <| URL.updateFloorId (Just fid) model.url)
-              )
-
-            Nothing ->
-              (Nothing, Cmd.none)
-
-        cmd2 =
-          case personId of
-            Just id -> (regesterPersonIfNotCached model.apiConfig model.personInfo id)
-            Nothing -> Cmd.none
-      in
-        (selectedResult, Cmd.batch [cmd1, cmd2])
-
-    SearchBox.OnError e ->
-      (Nothing, performAPI (always NoOp) (Task.fail e))
-
-    SearchBox.None ->
-      (model.selectedResult, Cmd.none)
 
 
 updateOnSelectCandidate : Id -> String -> Model -> (Model, Cmd Msg)

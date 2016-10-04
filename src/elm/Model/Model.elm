@@ -18,9 +18,8 @@ import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
-import Model.URL as URL
 import Model.I18n as I18n exposing (Language)
-
+import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
@@ -29,7 +28,6 @@ import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
 import FloorProperty
-import SearchBox
 import ObjectNameInput
 import Header
 
@@ -59,9 +57,10 @@ type alias Model =
   , scaling : Bool
   , prototypes : Prototypes
   , error : GlobalError
-  , url : URL.Model
+  , selectedFloor : Maybe String
   , floorProperty : FloorProperty.Model
-  , searchBox : SearchBox.Model
+  , searchQuery : String
+  , searchResult : Maybe (List SearchResult)
   , selectedResult : Maybe Id
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
@@ -179,11 +178,11 @@ startEdit e model =
   }
 
 
-adjustOffset : Maybe Id -> Model -> (Int, Int)
-adjustOffset selectedResult model =
+adjustOffset : Model -> Model
+adjustOffset model =
   let
     maybeShiftedOffset =
-      selectedResult `Maybe.andThen` \id ->
+      model.selectedResult `Maybe.andThen` \id ->
       findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \obj ->
       relatedPerson obj `Maybe.andThen` \personId ->
       Just <|
@@ -199,8 +198,10 @@ adjustOffset selectedResult model =
             model.scale
             model.offset
             obj
-    in
-      Maybe.withDefault model.offset maybeShiftedOffset
+  in
+    { model |
+      offset = Maybe.withDefault model.offset maybeShiftedOffset
+    }
 
 
 nextObjectToInput : Object -> List Object -> Maybe Object
@@ -219,10 +220,6 @@ nextObjectToInput object allObjects =
           Just e
       _ ->
         Nothing
-
-
-adjustPositionByFocus : Id -> Model -> Model
-adjustPositionByFocus focused model = model
 
 
 candidatesOf : Model -> List Person
@@ -379,7 +376,7 @@ currentFloorForView : Model -> Maybe Floor
 currentFloorForView model =
   case model.editMode of
     Viewing _ ->
-      FloorInfo.findViewingFloor model.url.floorId model.floorsInfo
+      FloorInfo.findViewingFloor (Maybe.withDefault "" model.selectedFloor) model.floorsInfo
 
     _ ->
       Just (EditingFloor.present model.floor)
