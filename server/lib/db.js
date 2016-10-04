@@ -39,6 +39,7 @@ function saveObjects(conn, data) {
     var sqls = toBeInserted.map((object) => {
       return sql.insert('objects', schema.objectKeyValues(data.floorId, data.newFloorVersion, object));
     });
+    sqls.unshift(`delete from objects where floorId = "${data.floorId}" and floorVersion < ${data.newFloorVersion} and floorVersion > ${data.lastPublicFloorVersion}`);
     return rdb.batch(conn, sqls).then(() => {
       return Promise.resolve(toBeInserted);
     });
@@ -152,31 +153,38 @@ function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
   newFloor.public = false;
   newFloor.updateBy = updateBy;
   newFloor.updateAt = new Date().getTime();
-  return getFloor(conn, tenantId, true, newFloor.id).then((floor) => {
-    var baseVersion = newFloor.version;//TODO
-    var oldFloorVersion = floor ? floor.version : -1;
-    newFloor.version = oldFloorVersion + 1;
-    var sqls = [
-      sql.insert('floors', schema.floorKeyValues(tenantId, newFloor))
-    ];
-    return rdb.batch(conn, sqls).then(() => {
-      return saveObjects(conn, {
-        floorId: newFloor.id,
-        baseFloorVersion: baseVersion,
-        oldFloorVersion: oldFloorVersion,
-        newFloorVersion: newFloor.version,
-        added: newFloor.added,
-        modified: newFloor.modified,
-        deleted: newFloor.deleted
-      }).then((objects) => {
-        delete newFloor.added;
-        delete newFloor.modified;
-        delete newFloor.deleted;
-        newFloor.objects = objects;
-        return Promise.resolve(newFloor);
+
+  return getFloor(conn, tenantId, false, newFloor.id).then((lastPublicFloor) => {
+    return Promise.resolve(lastPublicFloor ? lastPublicFloor.version : -1);
+  }).then(lastPublicFloorVersion => {
+    return getFloor(conn, tenantId, true, newFloor.id).then((floor) => {
+      var baseVersion = newFloor.version;//TODO
+      var oldFloorVersion = floor ? floor.version : -1;
+      newFloor.version = oldFloorVersion + 1;
+      var sqls = [
+        sql.insert('floors', schema.floorKeyValues(tenantId, newFloor))
+      ];
+      return rdb.batch(conn, sqls).then(() => {
+        return saveObjects(conn, {
+          floorId: newFloor.id,
+          baseFloorVersion: baseVersion,
+          oldFloorVersion: oldFloorVersion,
+          newFloorVersion: newFloor.version,
+          lastPublicFloorVersion: lastPublicFloorVersion,
+          added: newFloor.added,
+          modified: newFloor.modified,
+          deleted: newFloor.deleted
+        }).then((objects) => {
+          delete newFloor.added;
+          delete newFloor.modified;
+          delete newFloor.deleted;
+          newFloor.objects = objects;
+          return Promise.resolve(newFloor);
+        });
       });
     });
   });
+
 }
 
 function publishFloor(conn, tenantId, floorId, updateBy) {
@@ -200,6 +208,7 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
         baseFloorVersion: baseVersion,
         oldFloorVersion: oldFloorVersion,
         newFloorVersion: floor.version,
+        lastPublicFloorVersion: floor.version,
         added: [],
         modified: [],
         deleted: []
