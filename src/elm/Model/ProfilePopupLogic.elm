@@ -56,19 +56,19 @@ adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale (
       bottomScreenYOfObject scale (offsetX, offsetY) object
 
     offsetX' =
-      adjust containerWidth left right offsetX
+      adjust scale containerWidth left right offsetX
 
     offsetY' =
-      adjust containerHeight top bottom offsetY
+      adjust scale containerHeight top bottom offsetY
   in
     (offsetX', offsetY')
 
 
-adjust : Int -> Int -> Int -> Int -> Int
-adjust length min max offset =
+adjust : Scale -> Int -> Int -> Int -> Int -> Int
+adjust scale length min max offset =
   if min < 0 then
-    offset - min
+    offset - Scale.screenToImage scale (min - 0)
   else if max > length then
-    offset - (max - length)
+    offset - Scale.screenToImage scale (max - length)
   else
     offset

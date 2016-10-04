@@ -184,8 +184,8 @@ adjustOffset selectedResult model =
   let
     maybeShiftedOffset =
       selectedResult `Maybe.andThen` \id ->
-      findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \e ->
-      relatedPerson e `Maybe.andThen` \personId ->
+      findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \obj ->
+      relatedPerson obj `Maybe.andThen` \personId ->
       Just <|
         let
           (windowWidth, windowHeight) =
@@ -198,7 +198,7 @@ adjustOffset selectedResult model =
             model.personPopupSize
             model.scale
             model.offset
-            e
+            obj
     in
       Maybe.withDefault model.offset maybeShiftedOffset
 
