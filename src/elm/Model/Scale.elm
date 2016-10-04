@@ -1,7 +1,7 @@
 module Model.Scale exposing (..)
 
 
-type Action = ScaleUp | ScaleDown
+type Msg = ScaleUp | ScaleDown
 
 
 type alias Scale =
@@ -19,59 +19,59 @@ init scaleDown =
   }
 
 
-update : Action -> Scale -> Scale
-update action model =
-  case action of
+update : Msg -> Scale -> Scale
+update msg scale =
+  case msg of
     ScaleUp ->
-      { model | scaleDown = max 0 (model.scaleDown - 1) }
+      { scale | scaleDown = max 0 (scale.scaleDown - 1) }
 
     ScaleDown ->
-      { model | scaleDown = min 4 (model.scaleDown + 1) }
+      { scale | scaleDown = min 4 (scale.scaleDown + 1) }
 
 
 screenToImageForPosition : Scale -> (Int, Int) -> (Int, Int)
-screenToImageForPosition model (screenX, screenY) =
-  ( screenToImage model screenX
-  , screenToImage model screenY)
+screenToImageForPosition scale (screenX, screenY) =
+  ( screenToImage scale screenX
+  , screenToImage scale screenY)
 
 
 imageToScreenForPosition : Scale -> (Int, Int) -> (Int, Int)
-imageToScreenForPosition model (imageX, imageY) =
-  ( imageToScreen model imageX
-  , imageToScreen model imageY)
+imageToScreenForPosition scale (imageX, imageY) =
+  ( imageToScreen scale imageX
+  , imageToScreen scale imageY)
 
 
 imageToScreenForRect : Scale -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
-imageToScreenForRect model (x, y, w, h) =
-  ( imageToScreen model x
-  , imageToScreen model y
-  , imageToScreen model w
-  , imageToScreen model h
+imageToScreenForRect scale (x, y, w, h) =
+  ( imageToScreen scale x
+  , imageToScreen scale y
+  , imageToScreen scale w
+  , imageToScreen scale h
   )
 
 
 screenToImageForRect : Scale -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
-screenToImageForRect model (x, y, w, h) =
-  ( screenToImage model x
-  , screenToImage model y
-  , screenToImage model w
-  , screenToImage model h
+screenToImageForRect scale (x, y, w, h) =
+  ( screenToImage scale x
+  , screenToImage scale y
+  , screenToImage scale w
+  , screenToImage scale h
   )
 
 
 screenToImage : Scale -> Int -> Int
-screenToImage model imageLength =
-  imageLength * (2 ^ model.scaleDown)
+screenToImage scale imageLength =
+  imageLength * (2 ^ scale.scaleDown)
 
 
 imageToScreen : Scale -> Int -> Int
-imageToScreen model screenLength =
-  screenLength // (2 ^ model.scaleDown)
+imageToScreen scale screenLength =
+  screenLength // (2 ^ scale.scaleDown)
 
 
 imageToScreenRatio : Scale -> Float
-imageToScreenRatio model =
-  1.0 / (2 ^ (toFloat model.scaleDown))
+imageToScreenRatio scale =
+  1.0 / (2 ^ (toFloat scale.scaleDown))
 
 
 ratio : Scale -> Scale -> Float
