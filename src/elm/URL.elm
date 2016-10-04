@@ -74,6 +74,9 @@ stringify { floorId, query, editMode } =
 
 stringifyParams : List (String, String) -> String
 stringifyParams params =
+  if params == [] then
+    ""
+  else
     "?" ++
       ( String.join "&" <|
         List.map (\(k, v) -> k ++ "=" ++ v) params
@@ -100,23 +103,5 @@ serialize =
   stringify << fromModel
 
 
-updateQuery : String -> URL -> URL
-updateQuery newQuery url =
-  { url | query = Just newQuery }
-
-
-updateEditMode : Bool -> URL -> URL
-updateEditMode editMode url =
-  { url | editMode = editMode }
-
-
-updateFloorId : Maybe String -> URL -> URL
-updateFloorId newId url =
-  { url | floorId = newId }
-
-
-hashFromFloorId : String -> String
-hashFromFloorId floorId =
-  "#" ++ floorId
 
 --
