@@ -97,6 +97,11 @@ var loginHtml = ejs.render(fs.readFileSync(templateDir + '/login.html', 'utf8'),
   accountServiceRoot: config.accountServiceRoot,
   title: config.title
 });
+var masterHtml = ejs.render(fs.readFileSync(templateDir + '/master.html', 'utf8'), {
+  apiRoot: config.apiRoot,
+  accountServiceRoot: config.accountServiceRoot,
+  title: config.title
+});
 
 app.get('/', (req, res) => {
   res.send(indexHtml);
@@ -108,6 +113,10 @@ app.get('/login', (req, res) => {
 
 app.get('/logout', (req, res) => {
   res.redirect('/login');
+});
+
+app.get('/master', (req, res) => {
+  res.send(masterHtml);
 });
 
 app.get('/api/1/people/:id', inTransaction((conn, req, res) => {

@@ -246,8 +246,8 @@ urlUpdate result model =
 
 
 update : ({} -> Cmd Msg) -> ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
-update removeToken setSelectionStart action model =
-  case debugMsg action of
+update removeToken setSelectionStart msg model =
+  case debugMsg msg of
     NoOp ->
       model ! []
 

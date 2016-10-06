@@ -28,17 +28,6 @@ main =
 
 --------
 
-type Msg =
-    InputId String
-  | InputPass String
-  | Submit
-  | UpdateHeaderState Header.Msg
-  | Error Http.Error
-  | Success String
-  | TokenSaved
-  | NoOp
-
-
 type alias Model =
   { accountServiceRoot : String
   , title : String
@@ -57,6 +46,19 @@ type alias Flags =
   , title : String
   , lang : String
   }
+
+
+----
+
+type Msg =
+    InputId String
+  | InputPass String
+  | Submit
+  | UpdateHeaderState Header.Msg
+  | Error Http.Error
+  | Success String
+  | TokenSaved
+  | NoOp
 
 
 init : Flags -> (Model, Cmd Msg)
