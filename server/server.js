@@ -28,8 +28,8 @@ var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pa
 var publicDir = __dirname + '/public';
 
 app.use(log.express);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 
 function inTransaction(f) {
   return function(req, res) {
