@@ -106,6 +106,53 @@ gridSize : Int
 gridSize = 8 -- 2^N
 
 
+init : API.Config -> String -> (Int, Int) -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
+init apiConfig title initialSize randomSeed visitDate editMode query scale offset lang =
+  let
+    initialFloor =
+      Floor.empty
+  in
+    { apiConfig = apiConfig
+    , title = title
+    , seed = IdGenerator.init randomSeed
+    , visitDate = Date.fromTime visitDate
+    , user = User.guest
+    , pos = (0, 0)
+    , draggingContext = NoDragging
+    , selectedObjects = []
+    , copiedObjects = []
+    , objectNameInput = ObjectNameInput.init
+    , gridSize = gridSize
+    , selectorRect = Nothing
+    , keys = ShortCut.init
+    , editMode = if editMode then Select else Viewing False
+    , colorPalette = ColorPalette.init []
+    , contextMenu = NoContextMenu
+    , floorsInfo = []
+    , floor = Nothing
+    , windowSize = initialSize
+    , scale = scale
+    , offset = offset
+    , scaling = False
+    , prototypes = Prototypes.init []
+    , error = NoError
+    , floorProperty = FloorProperty.init initialFloor.name 0 0 0
+    , selectedResult = Nothing
+    , personInfo = Dict.empty
+    , diff = Nothing
+    , candidates = []
+    , searchQuery = query
+    , searchResult = Nothing
+    , tab = if editMode then EditTab else SearchTab
+    , clickEmulator = []
+    , candidateRequest = Dict.empty
+    , personPopupSize = (300, 160)
+    , lang = lang
+    , cache = Cache.cache
+    , headerState = Header.init
+    }
+
+
 updateSelectorRect : (Int, Int) -> Model -> Model
 updateSelectorRect (canvasX, canvasY) model =
   { model |

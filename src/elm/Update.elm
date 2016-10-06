@@ -81,75 +81,53 @@ subscriptions tokenRemoved undo redo clipboard model =
 
 
 init : Flags -> (Result String URL) -> (Model, Cmd Msg)
-init { apiRoot, accountServiceRoot, authToken, title, randomSeed, initialSize, visitDate, lang } urlResult =
+init flags urlResult =
   let
-    apiConfig = { apiRoot = apiRoot, accountServiceRoot = accountServiceRoot, token = authToken } -- TODO
+    apiConfig =
+      { apiRoot = flags.apiRoot
+      , accountServiceRoot = flags.accountServiceRoot
+      , token = flags.authToken
+      } -- TODO
 
-    initialFloor =
-      Floor.empty
-
-    defaultUserState =
-      Cache.defaultUserState (if lang == "ja" then JA else EN)
+    userState =
+      Cache.defaultUserState (if flags.lang == "ja" then JA else EN)
 
     toModel url =
-      { apiConfig = apiConfig
-      , title = title
-      , seed = IdGenerator.init randomSeed
-      , visitDate = Date.fromTime visitDate
-      , user = User.guest
-      , pos = (0, 0)
-      , draggingContext = NoDragging
-      , selectedObjects = []
-      , copiedObjects = []
-      , objectNameInput = ObjectNameInput.init
-      , gridSize = Model.gridSize
-      , selectorRect = Nothing
-      , keys = ShortCut.init
-      , editMode = if url.editMode then Select else Viewing False
-      , colorPalette = ColorPalette.init []
-      , contextMenu = NoContextMenu
-      , floorsInfo = []
-      , floor = Nothing
-      , windowSize = initialSize
-      , scale = defaultUserState.scale
-      , offset = defaultUserState.offset
-      , scaling = False
-      , prototypes = Prototypes.init []
-      , error = NoError
-      , floorProperty = FloorProperty.init initialFloor.name 0 0 0
-      , selectedResult = Nothing
-      , personInfo = Dict.empty
-      , diff = Nothing
-      , candidates = []
-      , searchQuery = Maybe.withDefault "" url.query
-      , searchResult = Nothing
-      , tab = if url.editMode then EditTab else SearchTab
-      , clickEmulator = []
-      , candidateRequest = Dict.empty
-      , personPopupSize = (300, 160)
-      , lang = defaultUserState.lang
-      , cache = Cache.cache
-      , headerState = Header.init
-      }
+      Model.init
+        apiConfig
+        flags.title
+        flags.initialSize
+        flags.randomSeed
+        flags.visitDate
+        url.editMode
+        (Maybe.withDefault "" url.query)
+        userState.scale
+        userState.offset
+        userState.lang
   in
     case urlResult of
       Ok url ->
-        (toModel url) ! [ initCmd apiConfig url.editMode defaultUserState ]
+        (toModel url)
+        ! [ initCmd apiConfig url.editMode userState url.floorId ]
 
       Err _ ->
         let
-          url = URL.init
+          url =
+            URL.init
+
+          model =
+            toModel url
         in
-          (toModel url) !
-            [ initCmd apiConfig url.editMode defaultUserState
+          model !
+            [ initCmd apiConfig url.editMode userState url.floorId
             , Navigation.modifyUrl (URL.stringify url)
             ]
 
 
-initCmd : API.Config -> Bool -> UserState -> Cmd Msg
-initCmd apiConfig needsEditMode defaultUserState =
+initCmd : API.Config -> Bool -> UserState -> Maybe String -> Cmd Msg
+initCmd apiConfig needsEditMode defaultUserState selectedFloor =
   performAPI
-    (\(userState, user) -> Initialized needsEditMode userState user)
+    (\(userState, user) -> Initialized selectedFloor needsEditMode userState user)
     ( Cache.getWithDefault Cache.cache defaultUserState `Task.andThen` \userState ->
         API.getAuth apiConfig `Task.andThen` \user ->
         Task.succeed (userState, user)
@@ -158,7 +136,7 @@ initCmd apiConfig needsEditMode defaultUserState =
 
 type Msg
   = NoOp
-  | Initialized Bool UserState User
+  | Initialized (Maybe String) Bool UserState User
   | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded Floor
   | ColorsLoaded ColorPalette
@@ -273,10 +251,8 @@ update removeToken setSelectionStart action model =
     NoOp ->
       model ! []
 
-    Initialized needsEditMode userState user ->
+    Initialized selectedFloor needsEditMode userState user ->
       let
-        selectedFloor = Nothing -- FIXME
-
         requestPrivateFloors =
           case model.editMode of
             Viewing _ -> False
@@ -1861,7 +1837,7 @@ updateByKeyEvent event model =
           case model.selectorRect of
             Just (x, y, w, h) ->
               (x, y)
-              
+
             Nothing -> (0, 0) --TODO
 
         (copiedIdsWithNewIds, newSeed) =
