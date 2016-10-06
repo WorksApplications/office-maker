@@ -8,19 +8,28 @@ import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 type alias Id = String
 
-type alias Floor =
+
+type alias FloorBase =
   { id : Id
   , version : Int
   , name : String
   , ord : Int
-  , objects: List Object
-  , width : Int
+  , public : Bool
+  }
+
+
+type alias Detailed a =
+  { a |
+    width : Int
   , height : Int
   , realSize : Maybe (Int, Int)
   , image : Maybe String
-  , public : Bool
   , update : Maybe { by : Id, at : Date }
+  , objects: List Object
   }
+
+
+type alias Floor = Detailed FloorBase
 
 
 init : Id -> Floor
@@ -37,6 +46,15 @@ init id =
   , public = False
   , update = Nothing
   }
+
+
+empty : Floor
+empty = init ""
+
+
+baseOf : Floor -> FloorBase
+baseOf { id, version, name, ord, public } =
+  FloorBase id version name ord public
 
 
 initWithOrder : Id -> Int -> Floor

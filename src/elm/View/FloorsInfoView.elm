@@ -6,8 +6,8 @@ import Html.Events exposing (..)
 import View.Styles as Styles
 
 import Model.User as User exposing (User)
-import Model.Floor exposing (Floor)
-import Model.FloorInfo as FloorInfo exposing (FloorInfo)
+import Model.Floor exposing (Floor, FloorBase)
+import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 
 import Util.HtmlUtil exposing (..)
 
@@ -33,14 +33,14 @@ linkBox contextmenuMsg clickMsg liStyle hoverStyle innerStyle inner =
     [ span [ style innerStyle ] inner ]
 
 
-eachView : (String -> msg) -> (String -> msg) -> Bool -> User -> Bool -> String -> FloorInfo -> Maybe (Html msg)
+eachView : (String -> msg) -> (String -> msg) -> Bool -> User -> Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
 eachView contextmenuMsg onClickMsg disableContextmenu user isEditMode currentFloorId floorInfo =
   Maybe.map
     (\floor ->
       eachView'
         (if not disableContextmenu && (not (User.isGuest user)) && isEditMode then Just (contextmenuMsg floor.id) else Nothing)
         (onClickMsg floor.id)
-        (currentFloorId == floor.id)
+        (currentFloorId == Just floor.id)
         (markAsPrivate floorInfo)
         (markAsModified isEditMode floorInfo)
         floor
@@ -48,7 +48,7 @@ eachView contextmenuMsg onClickMsg disableContextmenu user isEditMode currentFlo
     (getFloor isEditMode floorInfo)
 
 
-eachView' : Maybe msg -> msg -> Bool -> Bool -> Bool -> Floor -> Html msg
+eachView' : Maybe msg -> msg -> Bool -> Bool -> Bool -> FloorBase -> Html msg
 eachView' contextmenuMsg onClickMsg selected markAsPrivate markAsModified floor =
   linkBox
     contextmenuMsg
@@ -71,7 +71,7 @@ createButton msg =
     [ text "+" ]
 
 
-view : (String -> msg) -> ((Int, Int) -> msg) -> (String -> Bool -> msg) -> msg -> Bool -> User -> Bool -> String -> List FloorInfo -> Html msg
+view : (String -> msg) -> ((Int, Int) -> msg) -> (String -> Bool -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> List FloorInfo -> Html msg
 view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorInfoList =
   let
     requestPrivate =
@@ -101,40 +101,40 @@ view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu user is
 getOrd : Bool -> FloorInfo -> Int
 getOrd isEditMode info =
   case info of
-    FloorInfo.Public floor ->
+    Public floor ->
       floor.ord
 
-    FloorInfo.PublicWithEdit lastPublicFloor currentPrivateFloor ->
+    PublicWithEdit lastPublicFloor currentPrivateFloor ->
       if isEditMode then currentPrivateFloor.ord else lastPublicFloor.ord
 
-    FloorInfo.Private floor ->
+    Private floor ->
       if isEditMode then floor.ord else -1
 
 
-getFloor : Bool -> FloorInfo -> Maybe Floor
+getFloor : Bool -> FloorInfo -> Maybe FloorBase
 getFloor isEditMode info =
   case info of
-    FloorInfo.Public floor ->
+    Public floor ->
       Just floor
 
-    FloorInfo.PublicWithEdit lastPublicFloor currentPrivateFloor ->
+    PublicWithEdit lastPublicFloor currentPrivateFloor ->
       if isEditMode then Just currentPrivateFloor else Just lastPublicFloor
 
-    FloorInfo.Private floor ->
+    Private floor ->
       if isEditMode then Just floor else Nothing
 
 
 markAsPrivate : FloorInfo -> Bool
 markAsPrivate floorInfo =
   case floorInfo of
-    FloorInfo.Public _ -> False
-    FloorInfo.PublicWithEdit _ _ -> False
-    FloorInfo.Private _ -> True
+    Public _ -> False
+    PublicWithEdit _ _ -> False
+    Private _ -> True
 
 
 markAsModified : Bool -> FloorInfo -> Bool
 markAsModified isEditMode floorInfo =
   case floorInfo of
-    FloorInfo.Public _ -> False
-    FloorInfo.PublicWithEdit _ _ -> if isEditMode then True else False
-    FloorInfo.Private _ -> False
+    Public _ -> False
+    PublicWithEdit _ _ -> if isEditMode then True else False
+    Private _ -> False

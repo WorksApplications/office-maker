@@ -115,13 +115,13 @@ getFloorMaybe config id =
     _ -> Task.fail e
 
 
-getFloorsInfo : Config -> Bool -> Task Error (List FloorInfo)
-getFloorsInfo config withPrivate =
+getFloorsInfo : Config -> Task Error (List FloorInfo)
+getFloorsInfo config =
   let
     url =
       Http.url
         (config.apiRoot ++ "/1/floors")
-        (if withPrivate then [("all", "true")] else [])
+        []
   in
     getWithoutCache
       decodeFloorInfoList

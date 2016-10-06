@@ -49,7 +49,7 @@ type alias Model =
   , editMode : EditMode
   , colorPalette : ColorPalette
   , contextMenu : ContextMenu
-  , floor : EditingFloor
+  , floor : Maybe EditingFloor
   , floorsInfo : List FloorInfo
   , windowSize : (Int, Int)
   , scale : Scale
@@ -57,7 +57,6 @@ type alias Model =
   , scaling : Bool
   , prototypes : Prototypes
   , error : GlobalError
-  , selectedFloor : Maybe String
   , floorProperty : FloorProperty.Model
   , searchQuery : String
   , searchResult : Maybe (List SearchResult)
@@ -135,7 +134,7 @@ syncSelectedByRect model =
         Just (left, top, width, height) ->
           let
             floor =
-              EditingFloor.present model.floor
+              getEditingFloorOrDummy model
 
             objects =
               withinRect
@@ -183,7 +182,7 @@ adjustOffset model =
   let
     maybeShiftedOffset =
       model.selectedResult `Maybe.andThen` \id ->
-      findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \obj ->
+      findObjectById (getEditingFloorOrDummy model).objects id `Maybe.andThen` \obj ->
       relatedPerson obj `Maybe.andThen` \personId ->
       Just <|
         let
@@ -230,7 +229,7 @@ candidatesOf model =
 shiftSelectionToward : ObjectsOperation.Direction -> Model -> Model
 shiftSelectionToward direction model =
   let
-    floor = (EditingFloor.present model.floor)
+    floor = (getEditingFloorOrDummy model)
     selected = selectedObjects model
   in
     case selected of
@@ -267,14 +266,14 @@ primarySelectedObject : Model -> Maybe Object
 primarySelectedObject model =
   case model.selectedObjects of
     head :: _ ->
-      findObjectById (Floor.objects <| (EditingFloor.present model.floor)) head
+      findObjectById (Floor.objects <| (getEditingFloorOrDummy model)) head
     _ -> Nothing
 
 
 selectedObjects : Model -> List Object
 selectedObjects model =
   List.filterMap (\id ->
-    findObjectById (EditingFloor.present model.floor).objects id
+    findObjectById (getEditingFloorOrDummy model).objects id
   ) model.selectedObjects
 
 
@@ -372,20 +371,26 @@ validateRect (left, top, right, bottom) =
       Nothing
 
 
-currentFloorForView : Model -> Maybe Floor
-currentFloorForView model =
-  case model.editMode of
-    Viewing _ ->
-      FloorInfo.findViewingFloor (Maybe.withDefault "" model.selectedFloor) model.floorsInfo
-
-    _ ->
-      Just (EditingFloor.present model.floor)
-
-
 registerPeople : List Person -> Model -> Model
 registerPeople people model =
   { model |
     personInfo =
       DictUtil.addAll (.id) people model.personInfo
   }
+
+
+getEditingFloorOrDummy : Model -> Floor
+getEditingFloorOrDummy model =
+  getEditingFloor model
+    |> Maybe.withDefault Floor.empty
+
+
+
+getEditingFloor : Model -> Maybe Floor
+getEditingFloor model =
+  model.floor
+    |> Maybe.map EditingFloor.present
+
+
+
 --

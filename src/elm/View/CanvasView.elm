@@ -119,7 +119,7 @@ transitionDisabled model =
 
 view : Model -> Html Msg
 view model =
-  case Model.currentFloorForView model of
+  case Model.getEditingFloor model of
     Just floor ->
       let
         popup' =
@@ -130,14 +130,9 @@ view model =
               Just personId ->
                 Dict.get personId model.personInfo `Maybe.andThen` \person ->
                 Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
+                
               Nothing ->
                 Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
-
-        inner =
-          if floor.id == "" then
-            []
-          else
-            [ canvasView model floor, popup']
 
         isRangeSelectMode =
           model.editMode == Select && model.keys.ctrl
@@ -151,7 +146,7 @@ view model =
           , onMouseLeave' LeaveCanvas
           , onMouseWheel MouseWheel
           ]
-          inner
+          [ canvasView model floor, popup']
 
     Nothing ->
       div

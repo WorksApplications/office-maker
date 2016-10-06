@@ -26,7 +26,7 @@ import FloorProperty
 import Util.HtmlUtil exposing (..)
 
 import Update exposing (..)
-import Model.Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
+import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.User as User
 import Model.EditingFloor as EditingFloor
@@ -74,24 +74,21 @@ floorInfoView model =
           model.keys.ctrl
           model.user
           isEditMode
-          (EditingFloor.present model.floor).id
+          (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
           model.floorsInfo
 
 
 subView : Model -> Html Msg
 subView model =
   let
-    floorIdIsNotSet =
-      (EditingFloor.present model.floor).id == ""
-
     pane =
-      if model.tab == SearchTab || floorIdIsNotSet then
+      if model.tab == SearchTab || model.floor == Nothing then
         subViewForSearch model
       else
         subViewForEdit model
 
     tabs =
-      if floorIdIsNotSet then
+      if model.floor == Nothing then
         []
       else
         case (model.editMode, User.isGuest model.user) of
@@ -114,15 +111,17 @@ subViewForEdit model =
     floorView =
       List.map
         (App.map FloorPropertyMsg)
-        (if (EditingFloor.present model.floor).id == "" then
-          []
-        else
-          FloorProperty.view
-            model.lang
-            model.visitDate
-            model.user
-            (EditingFloor.present model.floor)
-            model.floorProperty
+        (case model.floor of
+          Just editingFloor ->
+            FloorProperty.view
+              model.lang
+              model.visitDate
+              model.user
+              (EditingFloor.present editingFloor)
+              model.floorProperty
+
+          _ ->
+            []
         )
   in
     [ card <| penView model
@@ -136,8 +135,6 @@ subViewForSearch model =
   let
     searchWithPrivate =
       not <| User.isGuest model.user
-
-
 
     isEditing =
       (model.editMode /= Viewing True && model.editMode /= Viewing False)
@@ -211,11 +208,11 @@ view : Model -> Html Msg
 view model =
   let
     (title, printMode, editing) =
-      case model.editMode of
-        Viewing True ->
-          ((EditingFloor.present model.floor).name, True, False)
+      case (model.floor, model.editMode) of
+        (Just floor, Viewing True) ->
+          ((EditingFloor.present floor).name, True, False)
 
-        Viewing False ->
+        (_, Viewing False) ->
           (model.title, False, False)
 
         _ ->

@@ -243,12 +243,8 @@ app.put('/api/1/colors', inTransaction((conn, req, res) => {
 app.get('/api/1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   return getSelf(conn, getAuthToken(req)).then((user) => {
-    if(!user && options.all) {
-      return Promise.reject(403);
-    }
     var tenantId = user ? user.tenantId : '';
-    // ignore all option for now
-    return db.getFloorsInfoWithObjects(conn, tenantId).then((floorInfoList) => {
+    return db.getFloorsInfo(conn, tenantId).then((floorInfoList) => {
       return Promise.resolve(floorInfoList);
     })
   });

@@ -3,8 +3,10 @@ module URL exposing (..)
 import Dict
 import String
 import Model.Model as Model exposing (Model, EditMode(..))
+import Model.EditingFloor as EditingFloor
 import Util.UrlParser as UrlParser
 import Navigation
+
 
 type alias URL =
   { floorId: Maybe String
@@ -85,7 +87,7 @@ stringifyParams params =
 
 fromModel : Model -> URL
 fromModel model =
-  { floorId = model.selectedFloor
+  { floorId = Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor
   , query =
       if String.length model.searchQuery == 0 then
         Nothing

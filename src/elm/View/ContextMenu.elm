@@ -8,7 +8,7 @@ import Html.Attributes exposing (..)
 import View.Styles as S
 import Util.HtmlUtil exposing (..)
 import Update exposing (..)
-import Model.Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
+import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation
 import Model.EditingFloor as EditingFloor
@@ -25,7 +25,7 @@ view model =
     Object (x, y) id ->
       let
         selectSamePostOption =
-          ObjectsOperation.findObjectById (EditingFloor.present model.floor).objects id `Maybe.andThen` \obj ->
+          ObjectsOperation.findObjectById (Model.getEditingFloorOrDummy model).objects id `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
             let
               str =

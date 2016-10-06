@@ -5,8 +5,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events
 import Model.Object exposing (..)
-import Model.Floor exposing (Floor)
-import Model.FloorInfo as FloorInfo
+import Model.Floor exposing (Floor, FloorBase)
+import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 import Model.Person exposing (Person)
 import Model.Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.SearchResult exposing (SearchResult)
@@ -24,9 +24,9 @@ view onSelectResult model =
       Dict.fromList <|
         List.map (\f ->
           case f of
-            FloorInfo.Public f -> (f.id, f)
-            FloorInfo.PublicWithEdit _ f -> (f.id, f)
-            FloorInfo.Private f -> (f.id, f)
+            Public f -> (f.id, f)
+            PublicWithEdit _ f -> (f.id, f)
+            Private f -> (f.id, f)
           ) model.floorsInfo
 
     format =
@@ -68,7 +68,7 @@ viewEach onSelectResult format result =
       [ format result ]
 
 
-formatSearchResult : Language -> Dict String Floor -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
+formatSearchResult : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
 formatSearchResult lang floorsInfo personInfo selectedResult = \result ->
   let
     { personId, objectIdAndFloorId } = result

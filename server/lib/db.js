@@ -125,9 +125,9 @@ function getFloorsWithObjects(conn, tenantId, withPrivate) {
   });
 }
 
-function getFloorsInfoWithObjects(conn, tenantId) {
-  return getFloorsWithObjects(conn, tenantId, false).then((floorsNotIncludingLastPrivate) => {
-    return getFloorsWithObjects(conn, tenantId, true).then((floorsIncludingLastPrivate) => {
+function getFloorsInfo(conn, tenantId) {
+  return getFloors(conn, tenantId, false).then((floorsNotIncludingLastPrivate) => {
+    return getFloors(conn, tenantId, true).then((floorsIncludingLastPrivate) => {
       var floorInfos = {};
       floorsNotIncludingLastPrivate.forEach((floor) => {
         floorInfos[floor.id] = floorInfos[floor.id] || [];
@@ -337,7 +337,7 @@ module.exports = {
   saveColors: saveColors,
   getFloorWithObjects: getFloorWithObjects,
   getFloorOfVersionWithObjects: getFloorOfVersionWithObjects,
-  getFloorsInfoWithObjects: getFloorsInfoWithObjects,
+  getFloorsInfo: getFloorsInfo,
   saveFloorWithObjects: saveFloorWithObjects,
   publishFloor: publishFloor,
   deleteFloorWithObjects: deleteFloorWithObjects,

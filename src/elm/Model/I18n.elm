@@ -125,7 +125,7 @@ unexpectedPayload lang =
 conflictSomeoneHasAlreadyChangedPleaseRefreshAndTryAgain : Language -> String
 conflictSomeoneHasAlreadyChangedPleaseRefreshAndTryAgain lang =
   case lang of
-    JA -> "コンフリクト: 他のユーザがすでに変更しています。リフレッシュ(F5)してからもう一度試してください。"
+    JA -> "競合: 他のユーザがすでに変更しています。リフレッシュ(F5)してからもう一度試してください。"
     EN -> "Conflict: Someone has already changed. Please refresh(F5) and try again."
 
 

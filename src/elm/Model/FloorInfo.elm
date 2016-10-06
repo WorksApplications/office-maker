@@ -1,14 +1,14 @@
 module Model.FloorInfo exposing (..)
 
-import Model.Floor exposing (Floor)
+import Model.Floor exposing (FloorBase)
 
 
 -- TODO List FloorInfo => Dict String FloorInfo
 
 type FloorInfo
-  = Public Floor
-  | PublicWithEdit Floor Floor
-  | Private Floor
+  = Public FloorBase
+  | PublicWithEdit FloorBase FloorBase
+  | Private FloorBase
 
 
 idOf : FloorInfo -> String
@@ -24,7 +24,7 @@ idOf info =
       floor.id
 
 
-findViewingFloor : String -> List FloorInfo -> Maybe Floor
+findViewingFloor : String -> List FloorInfo -> Maybe FloorBase
 findViewingFloor floorId list =
   case List.filter (\info -> idOf info == floorId) list of
     x :: _ ->
@@ -41,7 +41,7 @@ findViewingFloor floorId list =
       Nothing
 
 
-findFloor : String -> Int -> List FloorInfo -> Maybe Floor
+findFloor : String -> Int -> List FloorInfo -> Maybe FloorBase
 findFloor floorId version list =
   case List.filter (\info -> idOf info == floorId) list of
     x :: _ ->
@@ -69,7 +69,7 @@ findFloor floorId version list =
       Nothing
 
 
-addNewFloor : Floor -> List FloorInfo -> List FloorInfo
+addNewFloor : FloorBase -> List FloorInfo -> List FloorInfo
 addNewFloor newFloor list =
   case list of
     [] ->

@@ -8,7 +8,7 @@ import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, cus
 
 import Util.DecodeUtil exposing (..)
 
-import Model.Floor as Floor exposing (Floor)
+import Model.Floor as Floor exposing (Floor, FloorBase)
 import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
@@ -230,6 +230,23 @@ decodeFloor =
     |> optional' "updateAt" D.float
 
 
+decodeFloorBase : Decoder FloorBase
+decodeFloorBase =
+  decode
+    (\id version name ord public ->
+      { id = id
+      , version = version
+      , name = name
+      , ord = ord
+      , public = public
+      })
+    |> required "id" D.string
+    |> required "version" D.int
+    |> required "name" D.string
+    |> required "ord" D.int
+    |> optional "public" D.bool False
+
+
 decodeFloorInfo : Decoder FloorInfo
 decodeFloorInfo = D.map (\(lastFloor, lastFloorWithEdit) ->
   if lastFloorWithEdit.public then
@@ -238,7 +255,7 @@ decodeFloorInfo = D.map (\(lastFloor, lastFloorWithEdit) ->
     FloorInfo.PublicWithEdit lastFloor lastFloorWithEdit
   else
     FloorInfo.Private lastFloorWithEdit
-  ) (D.tuple2 (,) decodeFloor decodeFloor)
+  ) (D.tuple2 (,) decodeFloorBase decodeFloorBase)
 
 
 decodePrototype : Decoder Prototype
