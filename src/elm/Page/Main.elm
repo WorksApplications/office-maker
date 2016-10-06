@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module Page.Main exposing (..)
 
 import Update exposing (Flags)
 import URL exposing (URL)

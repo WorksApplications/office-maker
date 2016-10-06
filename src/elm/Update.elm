@@ -41,9 +41,9 @@ import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClickboardData as ClickboardData
 
-import FloorProperty
-import Header exposing (..)
-import ObjectNameInput
+import Component.FloorProperty as FloorProperty
+import Component.Header as Header exposing (..)
+import Component.ObjectNameInput as ObjectNameInput
 import URL exposing (URL)
 
 

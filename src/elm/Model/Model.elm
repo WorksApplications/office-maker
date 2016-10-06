@@ -27,9 +27,9 @@ import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
-import FloorProperty
-import ObjectNameInput
-import Header
+import Component.FloorProperty as FloorProperty
+import Component.ObjectNameInput as ObjectNameInput
+import Component.Header as Header
 
 
 type alias Model =

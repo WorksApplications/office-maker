@@ -10,7 +10,7 @@ import Html.Events exposing (..)
 import Html.Keyed as Keyed
 import Html.Lazy exposing (..)
 
-import ObjectNameInput
+import Component.ObjectNameInput as ObjectNameInput
 import View.Styles as S
 import View.ObjectView as ObjectView
 import View.ProfilePopup as ProfilePopup
@@ -130,7 +130,7 @@ view model =
               Just personId ->
                 Dict.get personId model.personInfo `Maybe.andThen` \person ->
                 Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
-                
+
               Nothing ->
                 Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
 

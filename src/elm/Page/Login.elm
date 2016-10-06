@@ -1,4 +1,4 @@
-port module Login exposing (..)
+port module Page.Login exposing (..)
 
 import Html exposing (Html, text, div, input, form, h2)
 import Html.App as App
@@ -8,7 +8,7 @@ import Task
 import Http
 
 import API.API as API
-import Header
+import Component.Header as Header
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Model.I18n as I18n exposing (Language(..))
 import View.Styles as Styles

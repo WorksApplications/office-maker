@@ -1,4 +1,4 @@
-module FloorProperty exposing(..)
+module Component.FloorProperty exposing(..)
 
 import String
 import Date exposing (Date)

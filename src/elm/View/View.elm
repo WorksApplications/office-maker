@@ -8,7 +8,6 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Lazy exposing (..)
 
-import Header
 import View.Styles as S
 import View.Icons as Icons
 import View.MessageBar as MessageBar
@@ -21,11 +20,14 @@ import View.Common exposing (..)
 import View.PrototypePreviewView as PrototypePreviewView
 import View.SearchResultView as SearchResultView
 import View.SearchInputView as SearchInputView
-import FloorProperty
+
+import Component.FloorProperty as FloorProperty
+import Component.Header as Header
 
 import Util.HtmlUtil exposing (..)
 
 import Update exposing (..)
+
 import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.User as User

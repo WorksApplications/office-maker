@@ -1,4 +1,4 @@
-module ObjectNameInput exposing (..)
+module Component.ObjectNameInput exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
