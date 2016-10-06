@@ -138,7 +138,7 @@ type Msg
   = NoOp
   | Initialized (Maybe String) Bool UserState User
   | FloorsInfoLoaded (List FloorInfo)
-  | FloorLoaded Floor
+  | FloorLoaded (Maybe Floor)
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
   | ImageSaved String Int Int
@@ -1053,9 +1053,27 @@ update removeToken setSelectionStart action model =
                 Viewing _ -> Select
                 _ -> Viewing False
           }
+
+        withPrivate =
+          case newModel.editMode of
+            Viewing _ -> False
+            _ -> True
+
+        loadFloorCmd =
+          case model.floor of
+            Just floor ->
+              let
+                floorId =
+                  (EditingFloor.present floor).id
+              in
+                performAPI FloorLoaded (loadFloor model.apiConfig withPrivate floorId)
+
+            Nothing ->
+              Cmd.none
       in
         newModel !
-          [ Navigation.modifyUrl (URL.serialize newModel)
+          [ loadFloorCmd
+          , Navigation.modifyUrl (URL.serialize newModel)
           ]
 
     TogglePrintView prevEditMode ->
@@ -1250,7 +1268,7 @@ update removeToken setSelectionStart action model =
 
         cmd =
           performAPI
-            FloorLoaded
+            (FloorLoaded << Just)
             (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
         newModel =
@@ -1271,7 +1289,7 @@ update removeToken setSelectionStart action model =
 
         saveCmd =
           performAPI
-            FloorLoaded
+            (FloorLoaded << Just)
             (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
         newModel =
@@ -1578,37 +1596,46 @@ updateOnFinishLabel model =
       model ! []
 
 
-updateOnFloorLoaded : Floor -> Model -> (Model, Cmd Msg)
-updateOnFloorLoaded floor model =
-  let
-    (realWidth, realHeight) =
-      Floor.realSize floor
+updateOnFloorLoaded : Maybe Floor -> Model -> (Model, Cmd Msg)
+updateOnFloorLoaded maybeFloor model =
+  case maybeFloor of
+    Just floor ->
+      let
+        (realWidth, realHeight) =
+          Floor.realSize floor
 
-    newModel =
-      Model.adjustOffset
-        { model |
-          floorsInfo = FloorInfo.addNewFloor (Floor.baseOf floor) model.floorsInfo -- TODO ?
-        , floor = Just (EditingFloor.init floor)
-        , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
-        }
+        newModel =
+          Model.adjustOffset
+            { model |
+              floorsInfo = FloorInfo.addNewFloor (Floor.baseOf floor) model.floorsInfo -- TODO ?
+            , floor = Just (EditingFloor.init floor)
+            , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
+            }
 
-    cmd =
-      case floor.update of
-        Nothing ->
-          Cmd.none
-
-        Just { by } ->
-          case Dict.get by model.personInfo of
-            Just _ -> Cmd.none
+        cmd =
+          case floor.update of
             Nothing ->
-              let
-                task =
-                  API.getPersonByUser model.apiConfig by `andThen` \person ->
-                    Task.succeed (RegisterPeople [person])
-              in
-                performAPI identity task
-  in
-    newModel ! [ cmd ]
+              Cmd.none
+
+            Just { by } ->
+              case Dict.get by model.personInfo of
+                Just _ -> Cmd.none
+                Nothing ->
+                  let
+                    task =
+                      API.getPersonByUser model.apiConfig by `andThen` \person ->
+                        Task.succeed (RegisterPeople [person])
+                  in
+                    performAPI identity task
+      in
+        newModel ! [ cmd, Navigation.modifyUrl (URL.serialize newModel) ]
+
+    Nothing ->
+      let
+        newModel =
+          { model | floor = Nothing }
+      in
+        newModel ! [ Navigation.modifyUrl (URL.serialize newModel) ]
 
 
 focusCmd : Cmd Msg
@@ -1931,25 +1958,24 @@ putUserState model =
   Cache.put model.cache { scale = model.scale, offset = model.offset, lang = model.lang }
 
 
-loadFloor : API.Config -> Bool -> String -> Task API.Error Floor
+loadFloor : API.Config -> Bool -> String -> Task API.Error (Maybe Floor)
 loadFloor apiConfig forEdit floorId =
-  let
-    task =
-      if forEdit then
-        API.getEditingFloor apiConfig floorId
-      else
-        API.getFloor apiConfig floorId
-  in
-    recover404 (Floor.init floorId) task
+  recover404 <|
+    if forEdit then
+      API.getEditingFloor apiConfig floorId
+    else
+      API.getFloor apiConfig floorId
 
 
-recover404 : a -> Task API.Error a -> Task API.Error a
-recover404 a task =
-  (flip Task.onError) (\e ->
-    case e of
-      Http.BadResponse 404 _ ->
-        Task.succeed a
+recover404 : Task API.Error a -> Task API.Error (Maybe a)
+recover404 task =
+  task
+    |> Task.map Just
+    |> ( flip Task.onError) (\e ->
+          case e of
+            Http.BadResponse 404 _ ->
+              Task.succeed Nothing
 
-      e ->
-        Task.fail e
-  ) task
+            e ->
+              Task.fail e
+       )
