@@ -11,7 +11,7 @@ import API.API as API
 import View.HeaderView as HeaderView
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Model.I18n as I18n exposing (Language(..))
-import View.Styles as Styles
+import View.LoginStyles as Styles
 
 port saveToken : String -> Cmd msg
 
@@ -46,8 +46,6 @@ type alias Flags =
   , lang : String
   }
 
-
-----
 
 type Msg =
     InputId String
@@ -113,6 +111,8 @@ update message model =
       model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
 
 
+----
+
 view : Model -> Html Msg
 view model =
   div
@@ -160,7 +160,7 @@ loginForm model =
             []
         ]
     , input
-        [ style <| Styles.primaryButton ++ [("margin-top", "20px"), ("width", "100%")]
+        [ style Styles.loginSubmitButton
         , type' "submit"
         , value (I18n.signIn model.lang)
         ]
