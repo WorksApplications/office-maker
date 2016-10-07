@@ -8,7 +8,7 @@ import Task
 import Http
 
 import API.API as API
-import Component.Header as Header
+import View.HeaderView as HeaderView
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Model.I18n as I18n exposing (Language(..))
 import View.Styles as Styles
@@ -34,7 +34,6 @@ type alias Model =
   , error : Maybe String
   , inputId : String
   , inputPass : String
-  , headerState : Header.State
   , lang : Language
   }
 
@@ -54,7 +53,6 @@ type Msg =
     InputId String
   | InputPass String
   | Submit
-  | UpdateHeaderState Header.Msg
   | Error Http.Error
   | Success String
   | TokenSaved
@@ -68,7 +66,6 @@ init { accountServiceRoot, title, lang } =
   , error = Nothing
   , inputId = ""
   , inputPass = ""
-  , headerState = Header.init
   , lang = if lang == "ja" then JA else EN
   } ! []
 
@@ -95,9 +92,6 @@ update message model =
       in
         model ! [ Task.perform Error Success task ]
 
-    UpdateHeaderState msg ->
-      { model | headerState = Header.update msg model.headerState } ! []
-
     Error e ->
       let
         _ = Debug.log "Error" e
@@ -123,20 +117,7 @@ view : Model -> Html Msg
 view model =
   div
     []
-    [ Header.view
-        { onSignInClicked = NoOp
-        , onSignOutClicked = NoOp
-        , onToggleEditing = NoOp
-        , onTogglePrintView = NoOp
-        , onSelectLang = \_ -> NoOp
-        , onUpdate = UpdateHeaderState
-        , title = model.title
-        , lang = EN
-        , user = Nothing
-        , editing = False
-        , printMode = False
-        }
-        model.headerState
+    [ HeaderView.view model.title (Just "/") (text "")
     , container model
     ]
 

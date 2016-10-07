@@ -123,6 +123,7 @@ ordEvent ord =
   case String.toInt ord of
     Ok ord ->
       OnOrdChange ord
+
     Err s ->
       None
 
@@ -134,6 +135,7 @@ sizeEvent newModel =
        ) of
     (Just width, Just height) ->
       OnRealSizeChange (width, height)
+
     _ ->
       None
 
@@ -273,6 +275,7 @@ floorUpdateInfoView lang visitDate floor =
         div
           [ style Styles.floorPropertyLastUpdate ]
           [ text (I18n.lastUpdateByAt lang by (date at)) ]
+          
       Nothing ->
         text ""
 

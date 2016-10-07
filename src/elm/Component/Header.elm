@@ -10,6 +10,7 @@ import Model.I18n as I18n exposing (Language(..))
 
 import View.Styles as S
 import View.Icons as Icons
+import View.HeaderView as HeaderView
 
 import InlineHover exposing (hover)
 
@@ -48,24 +49,9 @@ type alias Context msg =
 view : Context msg -> State -> Html msg
 view context state =
   if context.printMode then
-    viewPrintMode context
+    HeaderView.view context.title Nothing (menu [ printButtonView context.onTogglePrintView context.lang True ])
   else
-    header
-      [ style S.header ]
-      [ h1
-          [ style S.h1 ]
-          [ a [ style S.headerLink, href "/" ] [ text context.title ] ]
-      , normalMenu context state
-      ]
-
-
-viewPrintMode : Context msg -> Html msg
-viewPrintMode context =
-  header
-    [ style S.header ]
-    [ h1 [ style S.h1 ] [ text context.title ]
-    , menu [ printButtonView context.onTogglePrintView context.lang True ]
-    ]
+    HeaderView.view context.title (Just "/") (normalMenu context state)
 
 
 normalMenu : Context msg -> State -> Html msg

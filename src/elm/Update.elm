@@ -1391,7 +1391,6 @@ update removeToken setSelectionStart msg model =
         newModel ! []
 
 
-
 updateOnMouseUp : Model -> (Model, Cmd Msg)
 updateOnMouseUp model =
   let
@@ -1458,11 +1457,6 @@ emulateClick id down =
   Task.perform identity identity <|
   Time.now `Task.andThen` \time ->
   (Task.succeed (EmulateClick id down time))
-
-
-noOpCmd : Task a () -> Cmd Msg
-noOpCmd task =
-  Task.perform (always NoOp) (always NoOp) task
 
 
 updateOnFinishStamp : Model -> (Model, Cmd Msg)
@@ -1652,70 +1646,70 @@ focusCmd =
 
 updateFloorByFloorPropertyEvent : API.Config -> FloorProperty.Event -> Seed -> EditingFloor -> ((EditingFloor, Seed), Cmd Msg)
 updateFloorByFloorPropertyEvent apiConfig event seed efloor =
-    case event of
-      FloorProperty.None ->
-        (efloor, seed) ! []
+  case event of
+    FloorProperty.None ->
+      (efloor, seed) ! []
 
-      FloorProperty.OnNameChange name ->
-        let
-          (newFloor, saveCmd) =
-            EditingFloor.commit
-              (saveFloorCmd apiConfig)
-              (Floor.changeName name)
-              efloor
-        in
-          (newFloor, seed) ! [ saveCmd ]
+    FloorProperty.OnNameChange name ->
+      let
+        (newFloor, saveCmd) =
+          EditingFloor.commit
+            (saveFloorCmd apiConfig)
+            (Floor.changeName name)
+            efloor
+      in
+        (newFloor, seed) ! [ saveCmd ]
 
-      FloorProperty.OnOrdChange ord ->
-        let
-          (newFloor, saveCmd) =
-            EditingFloor.commit
-              (saveFloorCmd apiConfig)
-              (Floor.changeOrd ord)
-              efloor
-        in
-          (newFloor, seed) ! [ saveCmd ]
+    FloorProperty.OnOrdChange ord ->
+      let
+        (newFloor, saveCmd) =
+          EditingFloor.commit
+            (saveFloorCmd apiConfig)
+            (Floor.changeOrd ord)
+            efloor
+      in
+        (newFloor, seed) ! [ saveCmd ]
 
-      FloorProperty.OnRealSizeChange (w, h) ->
-        let
-          (newFloor, saveCmd) =
-            EditingFloor.commit
-              (saveFloorCmd apiConfig)
-              (Floor.changeRealSize (w, h))
-              efloor
-        in
-          (newFloor, seed) ! [ saveCmd ]
+    FloorProperty.OnRealSizeChange (w, h) ->
+      let
+        (newFloor, saveCmd) =
+          EditingFloor.commit
+            (saveFloorCmd apiConfig)
+            (Floor.changeRealSize (w, h))
+            efloor
+      in
+        (newFloor, seed) ! [ saveCmd ]
 
-      FloorProperty.OnFileWithDataURL file dataURL ->
-        let
-          (id, newSeed) =
-            IdGenerator.new seed
+    FloorProperty.OnFileWithDataURL file dataURL ->
+      let
+        (id, newSeed) =
+          IdGenerator.new seed
 
-          url = id
+        url = id
 
-          (width, height) =
-            getSizeOfImage dataURL
+        (width, height) =
+          getSizeOfImage dataURL
 
-          saveImageCmd =
-            performAPI
-              (always <| ImageSaved url width height)
-              (API.saveEditingImage apiConfig url file)
-        in
-          (efloor, newSeed) ! [ saveImageCmd ]
+        saveImageCmd =
+          performAPI
+            (always <| ImageSaved url width height)
+            (API.saveEditingImage apiConfig url file)
+      in
+        (efloor, newSeed) ! [ saveImageCmd ]
 
-      FloorProperty.OnPreparePublish ->
-        let
-          cmd =
-            performAPI GotDiffSource (API.getDiffSource apiConfig (EditingFloor.present efloor).id)
-        in
-          (efloor, seed) ! [ cmd ]
+    FloorProperty.OnPreparePublish ->
+      let
+        cmd =
+          performAPI GotDiffSource (API.getDiffSource apiConfig (EditingFloor.present efloor).id)
+      in
+        (efloor, seed) ! [ cmd ]
 
-      FloorProperty.OnFileLoadFailed err ->
-        let
-          cmd =
-            Task.perform (Error << FileError) (always NoOp) (Task.fail err)
-        in
-          (efloor, seed) ! [ cmd ]
+    FloorProperty.OnFileLoadFailed err ->
+      let
+        cmd =
+          Task.perform (Error << FileError) (always NoOp) (Task.fail err)
+      in
+        (efloor, seed) ! [ cmd ]
 
 
 regesterPersonOfObject : API.Config -> Object -> Cmd Msg
@@ -1834,7 +1828,7 @@ nextObjectToInput object allObjects =
           Nothing
         else
           Just e
-          
+
       _ ->
         Nothing
 
