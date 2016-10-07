@@ -761,14 +761,21 @@ update removeToken setSelectionStart msg model =
         } ! []
 
     ShowContextMenuOnFloorInfo id ->
-      { model |
-        contextMenu =
-          -- TODO idealy, change floor and show context menu
-          if (Model.getEditingFloorOrDummy model).id == id then
-            FloorInfo model.pos id
-          else
-            NoContextMenu
-      } ! []
+      case model.floor of
+        Just editingFloor ->
+          { model |
+            contextMenu =
+              -- TODO idealy, change floor and show context menu
+              if (EditingFloor.present editingFloor).id == id then
+                FloorInfo model.pos id
+              else
+                NoContextMenu
+          } ! []
+
+        Nothing ->
+          model ! []
+
+
 
     GoToFloor floorId requestLastEdit ->
       let
@@ -841,25 +848,33 @@ update removeToken setSelectionStart msg model =
         newModel ! []
 
     SelectIsland id ->
-      let
-        newModel =
-          case findObjectById (Model.getEditingFloorOrDummy model).objects id of
-            Just object ->
-              let
-                island' =
-                  island
-                    [object]
-                    (List.filter (\e -> (idOf e) /= id)
-                    (Model.getEditingFloorOrDummy model).objects)
-              in
-                { model |
-                  selectedObjects = List.map idOf island'
-                , contextMenu = NoContextMenu
-                }
-            Nothing ->
-              model
-      in
-        newModel ! []
+      case model.floor of
+        Just editingFloor ->
+          let
+            floor =
+              EditingFloor.present editingFloor
+
+            newModel =
+              case findObjectById floor.objects id of
+                Just object ->
+                  let
+                    island' =
+                      island
+                        [object]
+                        (List.filter (\e -> (idOf e) /= id) floor.objects)
+                  in
+                    { model |
+                      selectedObjects = List.map idOf island'
+                    , contextMenu = NoContextMenu
+                    }
+
+                Nothing ->
+                  model
+          in
+            newModel ! []
+
+        Nothing ->
+          model ! []
 
     KeyCodeMsg isDown keyCode ->
       let
@@ -877,10 +892,10 @@ update removeToken setSelectionStart msg model =
           model.pos
 
         newScale =
-            if value < 0 then
-              Scale.update Scale.ScaleUp model.scale
-            else
-              Scale.update Scale.ScaleDown model.scale
+          if value < 0 then
+            Scale.update Scale.ScaleUp model.scale
+          else
+            Scale.update Scale.ScaleDown model.scale
 
         ratio =
           Scale.ratio model.scale newScale
@@ -1521,24 +1536,20 @@ updateOnFinishPen (x, y) model =
 
 updateOnFinishResize : Id -> (Int, Int) -> Model -> (Model, Cmd Msg)
 updateOnFinishResize id (x, y) model =
-  case (model.floor, findObjectById (Model.getEditingFloorOrDummy model).objects id) of
-    (Just floor, Just e) ->
-      case Model.temporaryResizeRect model (x, y) (rect e) of
-        Just (_, _, width, height) ->
-          let
-            (newFloor, cmd) =
-              EditingFloor.commit
-                (saveFloorCmd model.apiConfig)
-                (Floor.resizeObject id (width, height))
-                floor
-          in
-            { model | floor = Just newFloor } ! [ cmd ]
-
-        Nothing ->
-          model ! []
-
-    _ ->
-      model ! []
+  model.floor
+    |> (flip Maybe.andThen) (\editingFloor -> findObjectById (EditingFloor.present editingFloor).objects id
+    |> (flip Maybe.andThen) (\e -> Model.temporaryResizeRect model (x, y) (rect e)
+    |> Maybe.map (\(_, _, width, height) ->
+        let
+          (newFloor, cmd) =
+            EditingFloor.commit
+              (saveFloorCmd model.apiConfig)
+              (Floor.resizeObject id (width, height))
+              editingFloor
+        in
+          { model | floor = Just newFloor } ! [ cmd ]
+      )))
+    |> Maybe.withDefault (model ! [])
 
 
 updateOnFinishLabel : Model -> (Model, Cmd Msg)
@@ -1808,6 +1819,7 @@ registerPersonDetailIfAPersonIsNotRelatedTo apiConfig object =
       in
         performAPI RegisterPeople task
 
+
 nextObjectToInput : Object -> List Object -> Maybe Object
 nextObjectToInput object allObjects =
   let
@@ -1822,6 +1834,7 @@ nextObjectToInput object allObjects =
           Nothing
         else
           Just e
+          
       _ ->
         Nothing
 
@@ -1891,16 +1904,16 @@ updateByKeyEvent event model =
         } ! [ saveCmd ]
 
     (Just floor, _, ShortCut.UpArrow) ->
-      moveSelectionToward Up model
+      moveSelectionToward Up model floor
 
     (Just floor, _, ShortCut.DownArrow) ->
-      moveSelectionToward Down model
+      moveSelectionToward Down model floor
 
     (Just floor, _, ShortCut.LeftArrow) ->
-      moveSelectionToward Left model
+      moveSelectionToward Left model floor
 
     (Just floor, _, ShortCut.RightArrow) ->
-      moveSelectionToward Right model
+      moveSelectionToward Right model floor
 
     (Just floor, _, ShortCut.Del) ->
       let
@@ -1918,26 +1931,21 @@ updateByKeyEvent event model =
       model ! []
 
 
-moveSelectionToward : Direction -> Model -> (Model, Cmd Msg)
-moveSelectionToward direction model =
-  case model.floor of
-    Just editingFloor ->
-      let
-        shift =
-          Direction.shiftTowards direction gridSize
+moveSelectionToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg)
+moveSelectionToward direction model editingFloor =
+  let
+    shift =
+      Direction.shiftTowards direction gridSize
 
-        (newFloor, saveCmd) =
-          EditingFloor.commit
-            (saveFloorCmd model.apiConfig)
-            (Floor.move model.selectedObjects model.gridSize shift)
-            editingFloor
-      in
-        { model |
-          floor = Just newFloor
-        } ! [ saveCmd ]
-
-    Nothing ->
-      model ! []
+    (newFloor, saveCmd) =
+      EditingFloor.commit
+        (saveFloorCmd model.apiConfig)
+        (Floor.move model.selectedObjects model.gridSize shift)
+        editingFloor
+  in
+    { model |
+      floor = Just newFloor
+    } ! [ saveCmd ]
 
 
 updateByMoveObjectEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> (Model, Cmd Msg)
