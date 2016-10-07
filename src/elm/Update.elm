@@ -19,6 +19,7 @@ import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
 import Util.File exposing (..)
 
+import Model.Direction as Direction exposing (..)
 import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Model.EditMode as EditMode exposing (EditMode(..))
 import Model.User as User exposing (User)
@@ -1815,7 +1816,7 @@ nextObjectToInput object allObjects =
         [object]
         (List.filter (\e -> (idOf e) /= (idOf object)) allObjects)
   in
-    case ObjectsOperation.nearest ObjectsOperation.Down object island' of
+    case ObjectsOperation.nearest Down object island' of
       Just e ->
         if idOf object == idOf e then
           Nothing
@@ -1890,16 +1891,16 @@ updateByKeyEvent event model =
         } ! [ saveCmd ]
 
     (Just floor, _, ShortCut.UpArrow) ->
-      Model.shiftSelectionToward ObjectsOperation.Up model ! []
+      moveSelectionToward Up model
 
     (Just floor, _, ShortCut.DownArrow) ->
-      Model.shiftSelectionToward ObjectsOperation.Down model ! []
+      moveSelectionToward Down model
 
     (Just floor, _, ShortCut.LeftArrow) ->
-      Model.shiftSelectionToward ObjectsOperation.Left model ! []
+      moveSelectionToward Left model
 
     (Just floor, _, ShortCut.RightArrow) ->
-      Model.shiftSelectionToward ObjectsOperation.Right model ! []
+      moveSelectionToward Right model
 
     (Just floor, _, ShortCut.Del) ->
       let
@@ -1911,9 +1912,31 @@ updateByKeyEvent event model =
         } ! [ saveCmd ]
 
     (Just floor, _, ShortCut.Other 9) ->
-      Model.shiftSelectionToward ObjectsOperation.Right model ! []
+      Model.shiftSelectionToward Right model ! []
 
     _ ->
+      model ! []
+
+
+moveSelectionToward : Direction -> Model -> (Model, Cmd Msg)
+moveSelectionToward direction model =
+  case model.floor of
+    Just editingFloor ->
+      let
+        shift =
+          Direction.shiftTowards direction gridSize
+
+        (newFloor, saveCmd) =
+          EditingFloor.commit
+            (saveFloorCmd model.apiConfig)
+            (Floor.move model.selectedObjects model.gridSize shift)
+            editingFloor
+      in
+        { model |
+          floor = Just newFloor
+        } ! [ saveCmd ]
+
+    Nothing ->
       model ! []
 
 

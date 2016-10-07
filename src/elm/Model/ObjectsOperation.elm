@@ -2,6 +2,7 @@ module Model.ObjectsOperation exposing (..)
 
 {- this module does not know Model or Floor -}
 
+import Model.Direction exposing (..)
 import Model.Object as Object exposing (..)
 import Util.ListUtil exposing (..)
 
@@ -44,18 +45,6 @@ island current rest =
       current ++ newObjects
     else
       island (current ++ newObjects) rest'
-
-
-type Direction = Up | Left | Right | Down
-
-
-opposite : Direction -> Direction
-opposite direction =
-  case direction of
-    Left -> Right
-    Right -> Left
-    Up -> Down
-    Down -> Up
 
 
 compareBy : Direction -> Object -> Object -> Order
@@ -253,7 +242,7 @@ maximumPartsOf direction list =
             LT -> memo
             EQ -> e :: memo
             GT -> [e]
-            
+
         _ -> [e]
   in
     List.foldl f [] list

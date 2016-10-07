@@ -9,6 +9,7 @@ import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
 
+import Model.Direction exposing (..)
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
@@ -251,7 +252,7 @@ nextObjectToInput object allObjects =
         [object]
         (List.filter (\e -> (idOf e) /= (idOf object)) allObjects)
   in
-    case ObjectsOperation.nearest ObjectsOperation.Down object island' of
+    case ObjectsOperation.nearest Down object island' of
       Just e ->
         if idOf object == idOf e then
           Nothing
@@ -266,10 +267,11 @@ candidatesOf model =
   List.filterMap (\personId -> Dict.get personId model.personInfo) model.candidates
 
 
-shiftSelectionToward : ObjectsOperation.Direction -> Model -> Model
+shiftSelectionToward : Direction -> Model -> Model
 shiftSelectionToward direction model =
   let
-    floor = (getEditingFloorOrDummy model)
+    floor = getEditingFloorOrDummy model
+
     selected = selectedObjects model
   in
     case selected of
@@ -286,7 +288,9 @@ shiftSelectionToward direction model =
                     newObjects = [e]
                   in
                     List.map idOf newObjects
-                _ -> model.selectedObjects
+
+                _ ->
+                  model.selectedObjects
         in
           { model |
             selectedObjects = toBeSelected
@@ -297,9 +301,7 @@ shiftSelectionToward direction model =
 -- TODO bad naming
 isSelected : Model -> Object -> Bool
 isSelected model object =
-  case model.editMode of
-    Viewing _ -> False
-    _ -> List.member (idOf object) model.selectedObjects
+  EditMode.isEditMode model.editMode && List.member (idOf object) model.selectedObjects
 
 
 primarySelectedObject : Model -> Maybe Object
