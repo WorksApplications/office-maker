@@ -287,6 +287,7 @@ update removeToken setSelectionStart msg model =
           user = user
         , scale = userState.scale
         , offset = userState.offset
+        , lang = userState.lang
         , editMode =
             if not (User.isGuest user) then
               if needsEditMode then Select else Viewing False
@@ -1095,7 +1096,11 @@ update removeToken setSelectionStart msg model =
       } ! []
 
     SelectLang lang ->
-      { model | lang = lang } ! []
+      let
+        newModel =
+          { model | lang = lang }
+      in
+        newModel ! [ Task.perform never (always NoOp) (putUserState newModel) ]
 
     UpdateSearchQuery searchQuery ->
       { model |
