@@ -28,7 +28,8 @@ import Util.HtmlUtil exposing (..)
 
 import Update exposing (..)
 
-import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
+import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Model.EditMode as EditMode exposing (EditMode(..))
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.User as User
 import Model.EditingFloor as EditingFloor
@@ -40,7 +41,7 @@ mainView model =
     (_, windowHeight) = model.windowSize
 
     sub =
-      if model.editMode == Viewing True then
+      if EditMode.isPrintMode model.editMode then
         text ""
       else
         subView model
@@ -58,26 +59,19 @@ mainView model =
 
 floorInfoView : Model -> Html Msg
 floorInfoView model =
-  case model.editMode of
-    Viewing True ->
-      text ""
-
-    _ ->
-      let
-        isEditMode =
-          model.editMode /= Viewing True && model.editMode /= Viewing False
-
-      in
-        FloorsInfoView.view
-          ShowContextMenuOnFloorInfo
-          MoveOnCanvas
-          GoToFloor
-          CreateNewFloor
-          model.keys.ctrl
-          model.user
-          isEditMode
-          (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
-          model.floorsInfo
+  if EditMode.isPrintMode model.editMode then
+    text ""
+  else
+    FloorsInfoView.view
+      ShowContextMenuOnFloorInfo
+      MoveOnCanvas
+      GoToFloor
+      CreateNewFloor
+      model.keys.ctrl
+      model.user
+      (EditMode.isEditMode model.editMode)
+      (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
+      model.floorsInfo
 
 
 subView : Model -> Html Msg
@@ -134,17 +128,9 @@ subViewForEdit model =
 
 subViewForSearch : Model -> List (Html Msg)
 subViewForSearch model =
-  let
-    searchWithPrivate =
-      not <| User.isGuest model.user
-
-    isEditing =
-      (model.editMode /= Viewing True && model.editMode /= Viewing False)
-
-  in
-    [ card <| [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
-    , card <| [ SearchResultView.view SelectSearchResult model ]
-    ]
+  [ card <| [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
+  , card <| [ SearchResultView.view SelectSearchResult model ]
+  ]
 
 
 subViewTab : msg -> Int -> Html msg -> Bool -> Html msg
@@ -161,9 +147,6 @@ penView model =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
-
-    stampMode =
-      (model.editMode == Stamp)
   in
     [ modeSelectionView model
     , case model.editMode of

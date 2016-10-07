@@ -19,7 +19,8 @@ import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
 import Util.File exposing (..)
 
-import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
+import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Model.EditMode as EditMode exposing (EditMode(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
@@ -254,9 +255,7 @@ update removeToken setSelectionStart msg model =
     Initialized selectedFloor needsEditMode userState user ->
       let
         requestPrivateFloors =
-          case model.editMode of
-            Viewing _ -> False
-            _ -> not (User.isGuest user)
+          EditMode.isEditMode model.editMode && not (User.isGuest user)
 
         searchCmd =
           if String.trim model.searchQuery == "" then
@@ -1055,9 +1054,7 @@ update removeToken setSelectionStart msg model =
           }
 
         withPrivate =
-          case newModel.editMode of
-            Viewing _ -> False
-            _ -> True
+          EditMode.isEditMode newModel.editMode && not (User.isGuest newModel.user)
 
         loadFloorCmd =
           case model.floor of
@@ -1152,9 +1149,7 @@ update removeToken setSelectionStart msg model =
                     }
 
                 requestPrivateFloors =
-                  case model'.editMode of
-                    Viewing _ -> False
-                    _ -> not (User.isGuest model'.user) -- TODO ?
+                  EditMode.isEditMode model'.editMode && not (User.isGuest model'.user)
               in
                 model' !
                   [ performAPI FloorLoaded (loadFloor model'.apiConfig requestPrivateFloors floorId)

@@ -18,7 +18,9 @@ import View.ProfilePopup as ProfilePopup
 import Util.HtmlUtil exposing (..)
 
 import Update exposing (..)
-import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
+import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+
 import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale exposing (Scale)
@@ -138,7 +140,7 @@ view model =
           model.editMode == Select && model.keys.ctrl
       in
         div
-          [ style (S.canvasContainer (model.editMode == Viewing True) isRangeSelectMode)
+          [ style (S.canvasContainer (EditMode.isPrintMode model.editMode) isRangeSelectMode)
           , onMouseMove' MoveOnCanvas
           , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)

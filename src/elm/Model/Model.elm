@@ -23,6 +23,7 @@ import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
+import Model.EditMode as EditMode exposing (EditMode(..))
 
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
@@ -78,14 +79,6 @@ type ContextMenu =
     NoContextMenu
   | Object (Int, Int) Id
   | FloorInfo (Int, Int) Id
-
-
-type EditMode =
-    Viewing Bool
-  | Select
-  | Pen
-  | Stamp
-  | LabelMode
 
 
 type DraggingContext =

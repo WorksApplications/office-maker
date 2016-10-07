@@ -2,8 +2,9 @@ module URL exposing (..)
 
 import Dict
 import String
-import Model.Model as Model exposing (Model, EditMode(..))
+import Model.Model as Model exposing (Model)
 import Model.EditingFloor as EditingFloor
+import Model.EditMode as EditMode exposing (EditMode(..))
 import Util.UrlParser as UrlParser
 import Navigation
 

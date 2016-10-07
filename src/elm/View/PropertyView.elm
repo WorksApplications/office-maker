@@ -10,7 +10,7 @@ import View.Icons as Icons
 
 import Util.HtmlUtil exposing (..)
 import Update exposing (..)
-import Model.Model as Model exposing (Model, ContextMenu(..), EditMode(..), DraggingContext(..), Tab(..))
+import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
