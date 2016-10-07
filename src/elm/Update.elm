@@ -206,6 +206,7 @@ type Msg
   | Redo
   | Focused
   | PasteFromClipboard String
+  | SyncFloor
   | Error GlobalError
 
 
@@ -298,7 +299,6 @@ update removeToken setSelectionStart msg model =
           , performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
           , loadFloorCmd
           , loadSettingsCmd
-          -- TODO if user isGuest, modify URL
           ]
 
     ColorsLoaded colorPalette ->
@@ -1384,6 +1384,25 @@ update removeToken setSelectionStart msg model =
             { newModel |
               selectedObjects = List.map fst newIdNamePairs
             } ! [ cmd, autoMatchingCmd ]
+
+        _ ->
+          model ! []
+
+    SyncFloor ->
+      case model.floor of
+        Just editingFloor ->
+          let
+            requestPrivateFloors =
+              EditMode.isEditMode model.editMode && not (User.isGuest model.user)
+
+            floorId =
+              (EditingFloor.present editingFloor).id
+
+            loadFloorCmd =
+              performAPI FloorLoaded (loadFloor model.apiConfig requestPrivateFloors floorId)
+          in
+            model !
+              [ loadFloorCmd ]
 
         _ ->
           model ! []
