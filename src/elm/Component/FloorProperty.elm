@@ -40,7 +40,7 @@ type Event
   | None
 
 
-type alias Model =
+type alias FloorProperty =
   { nameInput : String
   , realWidthInput : String
   , realHeightInput : String
@@ -48,7 +48,7 @@ type alias Model =
   }
 
 
-init : String -> Int -> Int -> Int -> Model
+init : String -> Int -> Int -> Int -> FloorProperty
 init name realWidth realHeight ord =
   { nameInput = name
   , realWidthInput = toString realWidth
@@ -62,7 +62,7 @@ validName s =
   String.length s > 0
 
 
-update : Msg -> Model -> (Model, Cmd Msg, Event)
+update : Msg -> FloorProperty -> (FloorProperty, Cmd Msg, Event)
 update message model =
   case message of
     NoOp ->
@@ -128,7 +128,7 @@ ordEvent ord =
       None
 
 
-sizeEvent : Model -> Event
+sizeEvent : FloorProperty -> Event
 sizeEvent newModel =
   case ( parsePositiveInt newModel.realWidthInput
        , parsePositiveInt newModel.realHeightInput
@@ -151,7 +151,7 @@ parsePositiveInt s =
 -- VIEW
 
 
-floorNameInputView : Language -> User -> Model -> Html Msg
+floorNameInputView : Language -> User -> FloorProperty -> Html Msg
 floorNameInputView lang user model =
   let
     floorNameLabel =
@@ -177,7 +177,7 @@ nameInput user value =
     div [ style Styles.floorNameText ] [ text value ]
 
 
-floorOrdInputView : Language -> User -> Model -> Html Msg
+floorOrdInputView : Language -> User -> FloorProperty -> Html Msg
 floorOrdInputView lang user model =
   let
     floorOrdLabel = label [ style Styles.floorOrdLabel ] [ text (I18n.order lang) ]
@@ -198,7 +198,7 @@ ordInput user value =
     div [ style Styles.floorOrdText ] [ text value ]
 
 
-floorRealSizeInputView : Language -> User -> Model -> Html Msg
+floorRealSizeInputView : Language -> User -> FloorProperty -> Html Msg
 floorRealSizeInputView lang user model =
   let
     useReal = True--TODO
@@ -275,12 +275,12 @@ floorUpdateInfoView lang visitDate floor =
         div
           [ style Styles.floorPropertyLastUpdate ]
           [ text (I18n.lastUpdateByAt lang by (date at)) ]
-          
+
       Nothing ->
         text ""
 
 
-view : Language -> Date -> User -> Floor -> Model -> List (Html Msg)
+view : Language -> Date -> User -> Floor -> FloorProperty -> List (Html Msg)
 view lang visitDate user floor model =
     [ if User.isAdmin user then
         fileLoadButton LoadFile Styles.imageLoadButton (I18n.loadImage lang)

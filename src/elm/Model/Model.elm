@@ -29,8 +29,8 @@ import Model.EditMode as EditMode exposing (EditMode(..))
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
-import Component.FloorProperty as FloorProperty
-import Component.ObjectNameInput as ObjectNameInput
+import Component.FloorProperty as FloorProperty exposing (FloorProperty)
+import Component.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Component.Header as Header
 
 
@@ -44,7 +44,7 @@ type alias Model =
   , draggingContext : DraggingContext
   , selectedObjects : List Id
   , copiedObjects : List Object
-  , objectNameInput : ObjectNameInput.Model
+  , objectNameInput : ObjectNameInput
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
   , keys : ShortCut.Model
@@ -59,7 +59,7 @@ type alias Model =
   , scaling : Bool
   , prototypes : Prototypes
   , error : GlobalError
-  , floorProperty : FloorProperty.Model
+  , floorProperty : FloorProperty
   , searchQuery : String
   , searchResult : Maybe (List SearchResult)
   , selectedResult : Maybe Id
