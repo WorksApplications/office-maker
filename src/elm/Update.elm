@@ -1503,20 +1503,20 @@ updateOnFinishStamp' stampCandidates model floor =
         )
         candidatesWithNewIds
 
-    candidatesWithNewIds' =
+    newObjects =
       List.map
         (\((prototype, (x, y)), newId) ->
           let
             (width, height) = prototype.size
           in
-            (newId, (x, y, width, height), prototype.backgroundColor, prototype.name, prototype.fontSize)
+            Object.initDesk newId (x, y, width, height) prototype.backgroundColor prototype.name prototype.fontSize Nothing
         )
         candidatesWithNewIds
 
     (newFloor, cmd) =
       EditingFloor.commit
         (saveFloorCmd model.apiConfig)
-        (Floor.createDesk candidatesWithNewIds')
+        (Floor.addObjects newObjects)
         floor
   in
     (({ model |
@@ -1537,7 +1537,7 @@ updateOnFinishPen (x, y) model =
         (newFloor, cmd) =
           EditingFloor.commit
             (saveFloorCmd model.apiConfig)
-            (Floor.createDesk [(newId, (left, top, width, height), color, name, Object.defaultFontSize)])
+            (Floor.addObjects [ Object.initDesk newId (left, top, width, height) color name Object.defaultFontSize Nothing ])
             floor
       in
         { model |
@@ -1593,7 +1593,7 @@ updateOnFinishLabel model =
         (newFloor, saveCmd) =
           EditingFloor.commit
             (saveFloorCmd model.apiConfig)
-            (Floor.createLabel [(newId, (left, top, width, height), bgColor, name, fontSize, color)])
+            (Floor.addObjects [ Object.initLabel newId (left, top, width, height) bgColor name fontSize color Object.Rectangle])
             floor
 
         model' =

@@ -78,28 +78,6 @@ copy id floor =
   }
 
 
-createDesk : List (Id, (Int, Int, Int, Int), String, String, Float) -> Floor -> Floor
-createDesk candidateWithNewIds floor =
-  let
-    create (newId, (x, y, w, h), color, name, fontSize) =
-      Object.initDesk newId (x, y, w, h) color name fontSize Nothing
-  in
-    addObjects
-      (List.map create candidateWithNewIds)
-      floor
-
-
-createLabel : List (Id, (Int, Int, Int, Int), String, String, Float, String) -> Floor -> Floor
-createLabel candidateWithNewIds floor =
-  let
-    create (newId, (x, y, w, h), bgColor, name, fontSize, color) =
-      Object.initLabel newId (x, y, w, h) bgColor name fontSize color Object.Rectangle
-  in
-    addObjects
-      (List.map create candidateWithNewIds)
-      floor
-
-
 move : List Id -> Int -> (Int, Int) -> Floor -> Floor
 move ids gridSize (dx, dy) floor =
   setObjects
