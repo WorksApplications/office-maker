@@ -25,8 +25,8 @@ init = False
 
 
 update : Msg -> State -> State
-update action menuOpened =
-  case action of
+update msg menuOpened =
+  case msg of
     ToggleUserMenu ->
       not menuOpened
 

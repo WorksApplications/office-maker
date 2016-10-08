@@ -212,13 +212,13 @@ debug = False --|| True
 
 
 debugMsg : Msg -> Msg
-debugMsg action =
+debugMsg msg =
   if debug then
-    case action of
-      MoveOnCanvas _ -> action
-      _ -> Debug.log "action" action
+    case msg of
+      MoveOnCanvas _ -> msg
+      _ -> Debug.log "msg" msg
   else
-    action
+    msg
 
 
 performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
@@ -934,11 +934,11 @@ update removeToken setSelectionStart msg model =
     ChangeMode mode ->
         { model | editMode = mode } ! []
 
-    PrototypesMsg action ->
+    PrototypesMsg msg ->
       let
         newModel =
           { model |
-            prototypes = Prototypes.update action model.prototypes
+            prototypes = Prototypes.update msg model.prototypes
           , editMode = Stamp -- TODO if event == select
           }
       in

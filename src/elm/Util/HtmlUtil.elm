@@ -131,8 +131,8 @@ onContextMenu' e =
 
 
 onMouseWheel : (Float -> a) -> Attribute a
-onMouseWheel toAction =
-  onWithOptions "wheel" { stopPropagation = True, preventDefault = True } (Decode.map toAction decodeWheelEvent)
+onMouseWheel toMsg =
+  onWithOptions "wheel" { stopPropagation = True, preventDefault = True } (Decode.map toMsg decodeWheelEvent)
 
 
 mouseDownDefence : a -> Attribute a
@@ -150,11 +150,11 @@ decodeWheelEvent =
 
 
 form' : a -> List (Attribute a) -> List (Html a) -> Html a
-form' action attribtes children =
+form' msg attribtes children =
   Html.form
     ([ Html.Attributes.action "javascript:void(0);"
     , Html.Attributes.method "POST"
-    , Html.Events.onSubmit action
+    , Html.Events.onSubmit msg
     ] ++ attribtes)
     children
 
