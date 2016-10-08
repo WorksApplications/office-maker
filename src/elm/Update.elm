@@ -1,6 +1,5 @@
 module Update exposing (..)
 
-import Date exposing (Date)
 import Maybe
 import Task exposing (Task, andThen, onError)
 import Window
@@ -48,8 +47,6 @@ import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
 import URL exposing (URL)
 
-
-type alias Commit = Floor.Msg
 
 type alias Flags =
   { apiRoot : String

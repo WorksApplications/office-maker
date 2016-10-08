@@ -34,14 +34,14 @@ create saveFloorCmd newFloor =
     ({ version = newFloor.version, undoList = newUndoList }, cmd)
 
 
-commit : (Floor -> ObjectsChange -> Cmd msg) -> Floor.Msg -> EditingFloor -> (EditingFloor, Cmd msg)
-commit saveFloorCmd msg efloor =
+commit : (Floor -> ObjectsChange -> Cmd msg) -> (Floor -> Floor) -> EditingFloor -> (EditingFloor, Cmd msg)
+commit saveFloorCmd f efloor =
   let
     floor =
       efloor.undoList.present
 
     newFloor =
-      Floor.update msg floor
+      f floor
 
     (propChanged, objectsChange) =
       FloorDiff.diff newFloor (Just floor)
