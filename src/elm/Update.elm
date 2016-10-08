@@ -1579,7 +1579,7 @@ updateOnFinishLabel model =
         (width, height) =
           fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
 
-        bgColor = "transparent" -- text color TODO configure?
+        bgColor = "transparent" -- TODO configure?
 
         color = "#000"
 
@@ -1857,7 +1857,7 @@ nextObjectToInput object allObjects =
 savePrototypesCmd : API.Config -> List Prototype -> Cmd Msg
 savePrototypesCmd apiConfig prototypes =
   performAPI
-    (always (NoOp))
+    (always NoOp)
     (API.savePrototypes apiConfig prototypes)
 
 

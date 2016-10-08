@@ -242,16 +242,15 @@ candidatesView candidateIndex objectId people =
 candidatesViewEach : Int -> Id -> Int -> Person -> (String, Html Msg)
 candidatesViewEach candidateIndex objectId index person =
   ( person.id
-  ,
-  hover Styles.candidateItemHover
-    li
-      [ style (Styles.candidateItem (candidateIndex == index))
-      , onMouseDown' (SelectCandidate objectId person.id)
-      ]
-      [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
-      , mail person
-      , div [ style Styles.candidateItemPersonPost ] [ text person.post ]
-      ]
+  , hover Styles.candidateItemHover
+      li
+        [ style (Styles.candidateItem (candidateIndex == index))
+        , onMouseDown' (SelectCandidate objectId person.id)
+        ]
+        [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
+        , mail person
+        , div [ style Styles.candidateItemPersonPost ] [ text person.post ]
+        ]
   )
 
 
