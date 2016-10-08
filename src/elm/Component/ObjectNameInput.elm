@@ -7,6 +7,9 @@ import Html.Keyed as Keyed
 
 import Json.Decode as Decode
 import Util.HtmlUtil exposing (..)
+
+import Model.Scale as Scale exposing (Scale)
+import Model.Object as Object exposing (Object)
 import Model.Person exposing (Person)
 
 import View.Styles as Styles
