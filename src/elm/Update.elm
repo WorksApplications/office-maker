@@ -1,6 +1,5 @@
 module Update exposing (..)
 
-import Date exposing (Date)
 import Maybe
 import Task exposing (Task, andThen, onError)
 import Window
@@ -48,8 +47,6 @@ import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
 import URL exposing (URL)
 
-
-type alias Commit = Floor.Msg
 
 type alias Flags =
   { apiRoot : String
@@ -216,13 +213,13 @@ debug = False --|| True
 
 
 debugMsg : Msg -> Msg
-debugMsg action =
+debugMsg msg =
   if debug then
-    case action of
-      MoveOnCanvas _ -> action
-      _ -> Debug.log "action" action
+    case msg of
+      MoveOnCanvas _ -> msg
+      _ -> Debug.log "msg" msg
   else
-    action
+    msg
 
 
 performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
@@ -970,11 +967,11 @@ update removeToken setSelectionStart msg model =
     ChangeMode mode ->
         { model | editMode = mode } ! []
 
-    PrototypesMsg action ->
+    PrototypesMsg msg ->
       let
         newModel =
           { model |
-            prototypes = Prototypes.update action model.prototypes
+            prototypes = Prototypes.update msg model.prototypes
           , editMode = Stamp -- TODO if event == select
           }
       in
@@ -1551,19 +1548,19 @@ updateOnFinishStamp' stampCandidates model floor =
         )
         candidatesWithNewIds
 
-    candidatesWithNewIds' =
+    newObjects =
       List.map
         (\((prototype, (x, y)), newId) ->
           let
             (width, height) = prototype.size
           in
-            (newId, (x, y, width, height), prototype.backgroundColor, prototype.name, prototype.fontSize)
+            Object.initDesk newId (x, y, width, height) prototype.backgroundColor prototype.name prototype.fontSize Nothing
         )
         candidatesWithNewIds
 
     (newFloor, objectsChange) =
       EditingFloor.update
-        (Floor.createDesk candidatesWithNewIds')
+        (Floor.addObjects newObjects)
         floor
 
     saveCmd =
@@ -1586,7 +1583,7 @@ updateOnFinishPen (x, y) model =
 
         (newFloor, objectsChange) =
           EditingFloor.update
-            (Floor.createDesk [(newId, (left, top, width, height), color, name, Object.defaultFontSize)])
+            (Floor.addObjects [ Object.initDesk newId (left, top, width, height) color name Object.defaultFontSize Nothing ])
             floor
 
         saveCmd =
@@ -1633,7 +1630,7 @@ updateOnFinishLabel model =
         (width, height) =
           fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
 
-        bgColor = "transparent" -- text color TODO configure?
+        bgColor = "transparent" -- TODO configure?
 
         color = "#000"
 
@@ -1646,7 +1643,7 @@ updateOnFinishLabel model =
 
         (newFloor, objectsChange) =
           EditingFloor.update
-            (Floor.createLabel [(newId, (left, top, width, height), bgColor, name, fontSize, color)])
+            (Floor.addObjects [ Object.initLabel newId (left, top, width, height) bgColor name fontSize color Object.Rectangle])
             floor
 
         saveCmd =
@@ -1921,7 +1918,7 @@ nextObjectToInput object allObjects =
 savePrototypesCmd : API.Config -> List Prototype -> Cmd Msg
 savePrototypesCmd apiConfig prototypes =
   performAPI
-    (always (NoOp))
+    (always NoOp)
     (API.savePrototypes apiConfig prototypes)
 
 
@@ -1936,7 +1933,7 @@ saveFloorCmd : API.Config -> Floor -> Int -> ObjectsChange -> Cmd Msg
 saveFloorCmd apiConfig floor version change =
   performAPI
     FloorSaved
-    (API.saveEditingFloor apiConfig { floor | version = version } change)
+    (API.saveEditingFloor apiConfig { floor | version = version } change) -- TODO better API
 
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)

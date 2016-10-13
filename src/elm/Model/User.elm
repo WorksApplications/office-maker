@@ -6,8 +6,8 @@ import Model.Person exposing (Person)
 type alias Id = String
 
 
-type User =
-    Admin Person
+type User
+  = Admin Person
   | General Person
   | Guest
 

@@ -19,29 +19,14 @@ init floor =
   }
 
 
--- create : (Floor -> ObjectsChange -> Cmd msg) -> Floor -> (EditingFloor, ObjectsChange)
--- create saveFloorCmd newFloor =
---   let
---     (propChanged, objectsChange) =
---       FloorDiff.diff newFloor Nothing
---
---     newUndoList =
---       UndoList.init newFloor
---
---     cmd =
---       saveFloorCmd newFloor objectsChange
---   in
---     ({ version = newFloor.version, undoList = newUndoList }, cmd)
-
-
-update : Floor.Msg -> EditingFloor -> (EditingFloor, Maybe ObjectsChange)
-update msg efloor =
+update : (Floor -> Floor) -> EditingFloor -> (EditingFloor, Maybe ObjectsChange)
+update f efloor =
   let
     floor =
       efloor.undoList.present
 
     newFloor =
-      Floor.update msg floor
+      f floor
 
     (propChanged, objectsChange) =
       FloorDiff.diff newFloor (Just floor)
@@ -61,18 +46,6 @@ update msg efloor =
       else
         Nothing
     )
-
-  --   cmd =
-  --     if changed then
-  --       saveFloorCmd
-  --         { newFloor |
-  --           version = efloor.version -- TODO better API
-  --         }
-  --         objectsChange
-  --     else
-  --       Cmd.none
-  -- in
-  --   ({ efloor | undoList = newUndoList }, cmd)
 
 
 undo : EditingFloor -> EditingFloor

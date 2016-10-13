@@ -2,10 +2,8 @@ module View.HeaderView exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 
 import View.Styles as S
-import View.Icons as Icons
 
 
 view : String -> Maybe String -> Html msg -> Html msg

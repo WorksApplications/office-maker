@@ -124,18 +124,6 @@ view model =
   case Model.getEditingFloor model of
     Just floor ->
       let
-        popup' =
-          Maybe.withDefault (text "") <|
-          model.selectedResult `Maybe.andThen` \id ->
-          findObjectById floor.objects id `Maybe.andThen` \e ->
-            case Object.relatedPerson e of
-              Just personId ->
-                Dict.get personId model.personInfo `Maybe.andThen` \person ->
-                Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
-
-              Nothing ->
-                Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
-
         isRangeSelectMode =
           model.editMode == Select && model.keys.ctrl
       in
@@ -148,7 +136,7 @@ view model =
           , onMouseLeave' LeaveCanvas
           , onMouseWheel MouseWheel
           ]
-          [ canvasView model floor, popup']
+          [ canvasView model floor, profilePopupView model floor ]
 
     Nothing ->
       div
@@ -156,31 +144,63 @@ view model =
         ] []
 
 
+profilePopupView : Model -> Floor -> Html Msg
+profilePopupView model floor =
+  Maybe.withDefault (text "") <|
+  model.selectedResult `Maybe.andThen` \id ->
+  findObjectById floor.objects id `Maybe.andThen` \e ->
+    case Object.relatedPerson e of
+      Just personId ->
+        Dict.get personId model.personInfo `Maybe.andThen` \person ->
+        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
+
+      Nothing ->
+        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
+
+
 canvasView : Model -> Floor -> Html Msg
 canvasView model floor =
+  let
+    deskInfoOf scale personInfo id =
+      Maybe.map
+        (\e ->
+          ( Scale.imageToScreenForRect scale (Object.rect e)
+          , relatedPerson e `Maybe.andThen` (\id -> Dict.get id personInfo)
+          )
+        )
+        (findObjectById floor.objects id)
+
+    nameInput =
+      App.map ObjectNameInputMsg <|
+        ObjectNameInput.view
+          (deskInfoOf model.scale model.personInfo)
+          (transitionDisabled model)
+          (Model.candidatesOf model)
+          model.objectNameInput
+
+    children1 =
+      ("canvas-image", canvasImage floor) ::
+      ("canvas-name-input", nameInput) ::
+      ("canvas-selector-rect", selectorRectView model) ::
+      (objectsView model floor)
+
+    children2 =
+      ("canvas-temporary-pen", temporaryPenView model) ::
+      (temporaryStampsView model)
+  in
+    Keyed.node
+      "div"
+      [ style (canvasViewStyles model floor) ]
+      ( children1 ++ children2 )
+
+
+canvasViewStyles : Model -> Floor -> List (String, String)
+canvasViewStyles model floor =
   let
     (isViewing, isPrintMode) =
       case model.editMode of
         Viewing print -> (True, print)
         _ -> (False, False)
-
-    objects =
-      objectsView model floor
-
-    selectorRect =
-      case (model.editMode, model.selectorRect) of
-        (Select, Just rect) ->
-          div [style (S.selectorRect (transitionDisabled model) (Scale.imageToScreenForRect model.scale rect) )] []
-        _ -> text ""
-
-    temporaryStamps' =
-      temporaryStampsView model
-
-    temporaryPen' =
-      case model.draggingContext of
-        PenFromScreenPos (x, y) ->
-          temporaryPenView model (x, y)
-        _ -> text ""
 
     (offsetX, offsetY) = model.offset
 
@@ -188,52 +208,11 @@ canvasView model floor =
       Scale.imageToScreenForRect
         model.scale
         (offsetX, offsetY, Floor.width floor, Floor.height floor)
-
-    image =
-      canvasImage floor
-
-    deskInfoOf model id =
-      Maybe.map
-        (\e ->
-          let
-            id = idOf e
-            maybePersonId = relatedPerson e
-          in
-            ( Scale.imageToScreenForRect model.scale (Object.rect e)
-            , maybePersonId `Maybe.andThen` (\id -> Dict.get id model.personInfo)
-            )
-        )
-        (findObjectById floor.objects id)
-
-    nameInput =
-      App.map ObjectNameInputMsg <|
-        ObjectNameInput.view
-          (deskInfoOf model)
-          (transitionDisabled model)
-          (Model.candidatesOf model)
-          model.objectNameInput
-
-    children1 =
-      ("canvas-image", image) ::
-      ("canvas-name-input", nameInput) ::
-      ("canvas-selector-rect", selectorRect) ::
-      objects
-
-    children2 =
-      ("canvas-temporary-pen", temporaryPen') ::
-      temporaryStamps'
-
-    styles =
-      if isPrintMode then
-        S.canvasViewForPrint model.windowSize rect
-      else
-        S.canvasView isViewing (transitionDisabled model) rect
-
   in
-    Keyed.node
-      "div"
-      [ style styles ]
-      ( children1 ++ children2 )
+    if isPrintMode then
+      S.canvasViewForPrint model.windowSize rect
+    else
+      S.canvasView isViewing (transitionDisabled model) rect
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)
@@ -400,24 +379,28 @@ temporaryStampView scale selected (prototype, (left, top)) =
     )
 
 
-temporaryPenView : Model -> (Int, Int) -> Html msg
-temporaryPenView model from =
-  case Model.temporaryPen model from of
-    Just (color, name, (left, top, width, height)) ->
-      ObjectView.viewDesk
-        ObjectView.noEvents
-        False
-        (left, top, width, height)
-        color
-        name --name
-        Object.defaultFontSize
-        False -- selected
-        False -- alpha
-        model.scale
-        True -- disableTransition
-        False -- personMatched
-    Nothing ->
-      text ""
+temporaryPenView : Model -> Html msg
+temporaryPenView model =
+  case model.draggingContext of
+    PenFromScreenPos (x, y) ->
+      case Model.temporaryPen model (x, y) of
+        Just (color, name, (left, top, width, height)) ->
+          ObjectView.viewDesk
+            ObjectView.noEvents
+            False
+            (left, top, width, height)
+            color
+            name --name
+            Object.defaultFontSize
+            False -- selected
+            False -- alpha
+            model.scale
+            True -- disableTransition
+            False -- personMatched
+
+        _ -> text ""
+
+    _ -> text ""
 
 
 temporaryStampsView : Model -> List (String, Html msg)
@@ -425,5 +408,17 @@ temporaryStampsView model =
   List.map
     (temporaryStampView model.scale False)
     (Model.stampCandidates model)
+
+
+selectorRectView : Model -> Html msg
+selectorRectView model =
+  case (model.editMode, model.selectorRect) of
+    (Select, Just rect) ->
+      div
+        [ style (S.selectorRect (transitionDisabled model) (Scale.imageToScreenForRect model.scale rect) )
+        ]
+        []
+
+    _ -> text ""
 
 --

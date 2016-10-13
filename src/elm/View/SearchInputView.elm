@@ -1,9 +1,7 @@
 module View.SearchInputView exposing (..)
 
-import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events
 import Model.I18n as I18n exposing (Language)
 
 import View.Styles as S

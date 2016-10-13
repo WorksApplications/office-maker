@@ -67,11 +67,11 @@ view model =
 
 
 contextMenuItemView : Msg -> String -> Html Msg
-contextMenuItemView action text' =
+contextMenuItemView msg text' =
   hover
     S.contextMenuItemHover
     div
     [ style S.contextMenuItem
-    , onMouseDown' action
+    , onMouseDown' msg
     ]
     [ text text' ]

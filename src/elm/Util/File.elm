@@ -8,15 +8,18 @@ type FileList = FileList Json.Decode.Value
 type File = File Json.Decode.Value
 type Error = Unexpected String
 
+
 readAsDataURL : File -> Task Error String
 readAsDataURL (File file) =
     Task.mapError
       (always (Unexpected (toString file)))
       (Native.File.readAsDataURL file)
 
+
 length : FileList -> Int
 length (FileList list) =
   Native.File.length list
+
 
 getAt : Int -> FileList -> Maybe File
 getAt index fileList =
@@ -27,9 +30,11 @@ getAt index fileList =
       else
         Nothing
 
+
 decodeFile : Decoder FileList
 decodeFile =
   Json.Decode.map FileList (at ["target", "files"] (value))
+
 
 getSizeOfImage : String -> (Int, Int)
 getSizeOfImage =

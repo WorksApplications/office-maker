@@ -4,7 +4,7 @@ const path = require('path');
 const slash = require('slash');
 const minimatch = require('minimatch');
 
-
+var runServer = !process.argv.filter(a => { return a == '--no-server' }).length;
 var server = null;
 
 var queued = {
@@ -22,7 +22,7 @@ function taskBuild(cb) {
   }
 }
 function taskServer(cb) {
-  if(queued.server) {
+  if(runServer && queued.server) {
     queued.server = false;
     server && server.kill();
     server = cp.spawn('node', ['server/server'], {stdio: 'inherit'});
@@ -32,8 +32,8 @@ function taskServer(cb) {
   }
 }
 function run() {
-  taskBuild(function() {
-    taskServer(function() {
+  taskBuild(() => {
+    taskServer(() => {
       setTimeout(run, 300);
     });
   });

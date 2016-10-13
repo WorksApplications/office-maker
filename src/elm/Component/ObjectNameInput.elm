@@ -7,6 +7,9 @@ import Html.Keyed as Keyed
 
 import Json.Decode as Decode
 import Util.HtmlUtil exposing (..)
+
+import Model.Scale as Scale exposing (Scale)
+import Model.Object as Object exposing (Object)
 import Model.Person exposing (Person)
 
 import View.Styles as Styles
@@ -14,7 +17,7 @@ import View.ProfilePopup as ProfilePopup
 
 import InlineHover exposing (hover)
 
-type alias Model =
+type alias ObjectNameInput =
   { editingObject : Maybe (String, String)
   , ctrl : Bool
   , shift : Bool
@@ -23,7 +26,7 @@ type alias Model =
 
 type alias Id = String
 
-init : Model
+init : ObjectNameInput
 init =
   { editingObject = Nothing
   , ctrl = False
@@ -47,12 +50,12 @@ type Event =
   | None
 
 
-isEditing : Model -> Bool
+isEditing : ObjectNameInput -> Bool
 isEditing model =
   model.editingObject /= Nothing
 
 
-update : Msg -> Model -> (Model, Event)
+update : Msg -> ObjectNameInput -> (ObjectNameInput, Event)
 update message model =
   case message of
     NoOp ->
@@ -132,17 +135,17 @@ selectedCandidateId candidateIndex candidates =
       List.head (List.drop candidateIndex candidates)
 
 
-updateNewEdit : (Maybe (String, String)) -> Model -> Model
+updateNewEdit : (Maybe (String, String)) -> ObjectNameInput -> ObjectNameInput
 updateNewEdit editingObject model =
   { model | editingObject = editingObject }
 
 
-start : (String, String) -> Model -> Model
+start : (String, String) -> ObjectNameInput -> ObjectNameInput
 start =
   updateNewEdit << Just
 
 
-forceFinish : Model -> (Model, Maybe (Id, String))
+forceFinish : ObjectNameInput -> (ObjectNameInput, Maybe (Id, String))
 forceFinish model =
   case model.editingObject of
     Just (id, name) ->
@@ -152,7 +155,7 @@ forceFinish model =
       (model, Nothing)
 
 
-view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> Model -> Html Msg
+view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
 view deskInfoOf transitionDisabled candidates model =
   case model.editingObject of
     Just (id, name) ->
@@ -166,7 +169,7 @@ view deskInfoOf transitionDisabled candidates model =
       text ""
 
 
-view' : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> Model -> Html Msg
+view' : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
 view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
   let
     candidates' =
@@ -242,16 +245,15 @@ candidatesView candidateIndex objectId people =
 candidatesViewEach : Int -> Id -> Int -> Person -> (String, Html Msg)
 candidatesViewEach candidateIndex objectId index person =
   ( person.id
-  ,
-  hover Styles.candidateItemHover
-    li
-      [ style (Styles.candidateItem (candidateIndex == index))
-      , onMouseDown' (SelectCandidate objectId person.id)
-      ]
-      [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
-      , mail person
-      , div [ style Styles.candidateItemPersonPost ] [ text person.post ]
-      ]
+  , hover Styles.candidateItemHover
+      li
+        [ style (Styles.candidateItem (candidateIndex == index))
+        , onMouseDown' (SelectCandidate objectId person.id)
+        ]
+        [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
+        , mail person
+        , div [ style Styles.candidateItemPersonPost ] [ text person.post ]
+        ]
   )
 
 
