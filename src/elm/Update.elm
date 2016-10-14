@@ -1413,10 +1413,34 @@ update removeToken setSelectionStart msg model =
       } ! []
 
     Undo ->
-      { model | floor = Maybe.map EditingFloor.undo model.floor } ! []
+      case model.floor of
+        Nothing ->
+          model ! []
+
+        Just floor ->
+          let
+            newFloor =
+              EditingFloor.undo floor
+
+            saveCmd =
+              requestSaveFloorCmd newFloor floor
+          in
+            { model | floor = Just newFloor } ! [ saveCmd ]
 
     Redo ->
-      { model | floor = Maybe.map EditingFloor.redo model.floor } ! []
+      case model.floor of
+        Nothing ->
+          model ! []
+
+        Just floor ->
+          let
+            newFloor =
+              EditingFloor.redo floor
+
+            saveCmd =
+              requestSaveFloorCmd newFloor floor
+          in
+            { model | floor = Just newFloor } ! [ saveCmd ]
 
     Focused ->
       model ! [ setSelectionStart {} ]
