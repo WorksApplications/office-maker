@@ -5,7 +5,7 @@ function exec(conn, sql) {
   return new Promise((resolve, reject) => {
     conn.query(sql, (e, rows, fields) => {
       if(e) {
-        log.system.error('SQL failed: ' + sql.split('\n').join());
+        log.system.error('SQL failed: ' + sql.split('\n').join(), e.message);
         reject(e);
       } else {
         (rows.length ? rows : []).forEach((row) => {

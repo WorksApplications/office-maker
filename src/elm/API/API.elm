@@ -32,7 +32,6 @@ import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
 import Model.Floor as Floor exposing (Floor)
-import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
@@ -41,6 +40,7 @@ import Model.Floor as Floor exposing (Floor)
 import Model.Prototype exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
 import Model.ColorPalette exposing (ColorPalette)
+import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 import API.Serialization exposing (..)
 
 

@@ -9,7 +9,6 @@ import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, cus
 import Util.DecodeUtil exposing (..)
 
 import Model.Floor as Floor exposing (Floor, FloorBase)
-import Model.FloorDiff as FloorDiff exposing (..)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
@@ -17,6 +16,7 @@ import Model.Object as Object exposing (..)
 import Model.Prototype exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
 import Model.ColorPalette as ColorPalette exposing (ColorPalette, ColorEntity)
+import Model.ObjectsChange as ObjectsChange exposing (..)
 
 
 decodeAuthToken : Decoder String

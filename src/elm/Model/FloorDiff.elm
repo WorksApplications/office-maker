@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 
 import Model.Object as Object exposing (..)
 import Model.Floor as Floor exposing (Floor)
+import Model.ObjectsChange as ObjectsChange exposing (..)
 
 
 type alias Options msg =
@@ -14,24 +15,8 @@ type alias Options msg =
   }
 
 
-type alias ObjectModification =
-  { new : Object, old : Object, changes : List String }
-
-
-type alias ObjectsChange =
-  { added : List Object
-  , modified : List ObjectModification
-  , deleted : List Object
-  }
-
-
 type alias PropChanges =
   List (String, String, String)
-
-
-noObjectsChange : ObjectsChange
-noObjectsChange =
-  { added = [], modified = [], deleted = [] }
 
 
 diff : Floor -> Maybe Floor -> (PropChanges, ObjectsChange)

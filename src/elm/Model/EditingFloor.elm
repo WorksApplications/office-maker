@@ -1,7 +1,8 @@
 module Model.EditingFloor exposing (..)
 
 import Model.Floor as Floor exposing (Floor)
-import Model.FloorDiff as FloorDiff exposing (ObjectsChange)
+import Model.FloorDiff as FloorDiff
+import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 
 import Util.UndoList as UndoList exposing (UndoList)
 
@@ -19,7 +20,7 @@ init floor =
   }
 
 
-update : (Floor -> Floor) -> EditingFloor -> (EditingFloor, Maybe ObjectsChange)
+update : (Floor -> Floor) -> EditingFloor -> EditingFloor
 update f efloor =
   let
     floor =
@@ -32,7 +33,7 @@ update f efloor =
       FloorDiff.diff newFloor (Just floor)
 
     changed =
-      propChanged /= [] || objectsChange /= FloorDiff.noObjectsChange
+      propChanged /= [] || objectsChange /= ObjectsChange.empty
 
     newUndoList =
       if changed then
@@ -40,12 +41,7 @@ update f efloor =
       else
         efloor.undoList
   in
-    ( { efloor | undoList = newUndoList }
-    , if changed then
-        Just objectsChange
-      else
-        Nothing
-    )
+    { efloor | undoList = newUndoList }
 
 
 undo : EditingFloor -> EditingFloor
