@@ -3,7 +3,7 @@ module Model.Floor exposing (..)
 import String
 import Regex
 import Date exposing (Date)
-import Model.Object as Object exposing (..)
+import Model.Object as Object exposing (Object)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 type alias Id = String
@@ -95,13 +95,13 @@ paste copiedWithNewIds (baseX, baseY) floor =
 delete : List Id -> Floor -> Floor
 delete ids floor =
   setObjects
-    (List.filter (\object -> not (List.member (idOf object) ids)) (objects floor))
+    (List.filter (\object -> not (List.member (Object.idOf object) ids)) (objects floor))
     floor
 
 
 rotateObject : Id -> Floor -> Floor
 rotateObject id floor =
-  setObjects (partiallyChange Object.rotate [id] (objects floor)) floor
+  changeObjects (Object.rotate) [id] floor
 
 
 changeId : Id -> Floor -> Floor
@@ -110,48 +110,33 @@ changeId id floor =
 
 
 changeObjectColor : List Id -> String -> Floor -> Floor
-changeObjectColor ids bgColor floor =
-  let
-    newObjects =
-      partiallyChange (changeBackgroundColor bgColor) ids (objects floor)
-  in
-    setObjects newObjects floor
+changeObjectColor ids color floor =
+  changeObjects (Object.changeColor color) ids floor
 
 
 changeObjectBackgroundColor : List Id -> String -> Floor -> Floor
 changeObjectBackgroundColor ids color floor =
-  let
-    newObjects =
-      partiallyChange (changeColor color) ids (objects floor)
-  in
-    setObjects newObjects floor
+  changeObjects (Object.changeBackgroundColor color) ids floor
 
 
 changeObjectShape : List Id -> Object.Shape -> Floor -> Floor
 changeObjectShape ids shape floor =
-  let
-    newObjects =
-      partiallyChange (changeShape shape) ids (objects floor)
-  in
-    setObjects newObjects floor
+  changeObjects (Object.changeShape shape) ids floor
 
 
 changeObjectName : List Id -> String -> Floor -> Floor
 changeObjectName ids name floor =
-  let
-    newObjects =
-      partiallyChange (Object.changeName name) ids (objects floor)
-  in
-    setObjects newObjects floor
+  changeObjects (Object.changeName name) ids floor
 
 
 changeObjectFontSize : List Id -> Float -> Floor -> Floor
 changeObjectFontSize ids fontSize floor =
-  let
-    newObjects =
-      partiallyChange (Object.changeFontSize fontSize) ids (objects floor)
-  in
-    setObjects newObjects floor
+  changeObjects (Object.changeFontSize fontSize) ids floor
+
+
+changeObjects : (Object -> Object) -> List Id -> Floor -> Floor
+changeObjects f ids floor =
+  setObjects (partiallyChange f ids (objects floor)) floor
 
 
 toFirstNameOnly : List Id -> Floor -> Floor
@@ -163,7 +148,7 @@ toFirstNameOnly ids floor =
         x :: _ -> x
 
     newObjects =
-      partiallyChange (\e -> (flip Object.changeName) e <| change <| nameOf e) ids (objects floor)
+      partiallyChange (\e -> (flip Object.changeName) e <| change <| Object.nameOf e) ids (objects floor)
   in
     setObjects newObjects floor
 
@@ -175,18 +160,14 @@ removeSpaces ids floor =
       (Regex.replace Regex.All (Regex.regex "[ \r\n　]") (\_ -> "")) name
 
     newObjects =
-      partiallyChange (\e -> (flip Object.changeName) e <| change <| nameOf e) ids (objects floor)
+      partiallyChange (\e -> (flip Object.changeName) e <| change <| Object.nameOf e) ids (objects floor)
   in
     setObjects newObjects floor
 
 
 resizeObject : Id -> (Int, Int) -> Floor -> Floor
 resizeObject id size floor =
-  let
-    newObjects =
-      partiallyChange (changeSize size) [id] (objects floor)
-  in
-    setObjects newObjects floor
+  changeObjects (Object.changeSize size) [id] floor
 
 
 changeName : String -> Floor -> Floor
@@ -217,11 +198,7 @@ changeRealSize (width, height) floor =
 
 setPerson : String -> String -> Floor -> Floor
 setPerson objectId personId floor =
-  let
-    newObjects =
-      partiallyChange (Object.setPerson (Just personId)) [objectId] (objects floor)
-  in
-    setObjects newObjects floor
+  changeObjects (Object.setPerson (Just personId)) [objectId] floor
 
 
 setPeople : List (String, String) -> Floor -> Floor
@@ -238,11 +215,7 @@ setPeople pairs floor =
 
 unsetPerson : String -> Floor -> Floor
 unsetPerson objectId floor =
-  let
-    newObjects =
-      partiallyChange (Object.setPerson Nothing) [objectId] (objects floor)
-  in
-    setObjects newObjects floor
+  changeObjects (Object.setPerson Nothing) [objectId] floor
 
 
 {- 10cm -> 8px -}
