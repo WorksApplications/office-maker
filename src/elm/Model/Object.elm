@@ -178,7 +178,7 @@ colorOf (Object object) =
 
 
 defaultFontSize : Float
-defaultFontSize = 16
+defaultFontSize = 20
 
 
 fontSizeOf : Object -> Float

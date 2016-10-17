@@ -12,7 +12,7 @@ var prototypes = [
     height: gridSize * 12,//120cm
     backgroundColor: "#eee",
     color: "#000",
-    fontSize: 14,
+    fontSize: 20,
     shape: 'rectangle'
   }, { id: "2",
     name: "",
@@ -20,7 +20,7 @@ var prototypes = [
     height: gridSize * 7,//70cm
     backgroundColor: "#eee",
     color: "#000",
-    fontSize: 14,
+    fontSize: 20,
     shape: 'rectangle'
   }
 ];
