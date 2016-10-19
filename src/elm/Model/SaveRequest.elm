@@ -1,12 +1,10 @@
-module Model.SaveRequestDebouncer exposing (..)
-
+module Model.SaveRequest exposing (..)
 
 import Model.Floor exposing (Floor)
 import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 import Model.FloorDiff as FloorDiff
 
 type alias Id = String
-
 
 type SaveRequest
   = SaveFloor Int Floor Floor
@@ -18,47 +16,13 @@ type SaveRequestOpt
   | PublishFloorOpt Id
 
 
-type SaveRequestDebouncer
-  = SaveRequestDebouncer { ready : Bool, requests : List SaveRequest }
+reduceRequest : List SaveRequest -> List SaveRequestOpt
+reduceRequest list =
+  fst <| List.foldr reduceRequestHelp ([], Nothing) list
 
 
-init : SaveRequestDebouncer
-init =
-  SaveRequestDebouncer { ready = True, requests = [] }
-
-
-isReady : SaveRequestDebouncer -> Bool
-isReady (SaveRequestDebouncer { ready }) =
-  ready
-
-
-isEmpty : SaveRequestDebouncer -> Bool
-isEmpty (SaveRequestDebouncer { requests }) =
-  List.isEmpty requests
-
-
-push : SaveRequest -> SaveRequestDebouncer -> SaveRequestDebouncer
-push request (SaveRequestDebouncer debouncer) =
-  SaveRequestDebouncer { debouncer | requests = request :: debouncer.requests }
-
-
-unlock : SaveRequestDebouncer -> SaveRequestDebouncer
-unlock (SaveRequestDebouncer debouncer) =
-  SaveRequestDebouncer { debouncer | ready = True }
-
-
-lockAndGetReducedRequests : SaveRequestDebouncer -> (SaveRequestDebouncer, List SaveRequestOpt)
-lockAndGetReducedRequests (SaveRequestDebouncer debouncer) =
-  let
-    (list, maybeOldFloor) =
-      debouncer.requests
-        |> List.foldr reduceRequest ([], Nothing)
-  in
-    (SaveRequestDebouncer { debouncer | ready = False, requests = [] }, list)
-
-
-reduceRequest : SaveRequest -> (List SaveRequestOpt, Maybe Floor) -> (List SaveRequestOpt, Maybe Floor)
-reduceRequest req (list, maybeBaseFloor) =
+reduceRequestHelp : SaveRequest -> (List SaveRequestOpt, Maybe Floor) -> (List SaveRequestOpt, Maybe Floor)
+reduceRequestHelp req (list, maybeBaseFloor) =
   case req of
     SaveFloor version floor oldFloor ->
       let

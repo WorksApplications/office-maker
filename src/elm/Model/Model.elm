@@ -4,6 +4,7 @@ import Date exposing (Date)
 import Maybe
 import Dict exposing (Dict)
 import Time exposing (Time)
+import Debounce exposing (Debounce)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -25,7 +26,7 @@ import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.EditMode as EditMode exposing (EditMode(..))
-import Model.SaveRequestDebouncer as SaveRequestDebouncer exposing (SaveRequest, SaveRequestDebouncer)
+import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
 
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
@@ -74,7 +75,7 @@ type alias Model =
   , lang : Language
   , cache : Cache
   , headerState : Header.State
-  , saveRequestDebouncer : SaveRequestDebouncer
+  , saveFloorDebounce : Debounce SaveRequest
   }
 
 
@@ -146,7 +147,7 @@ init apiConfig title initialSize randomSeed visitDate editMode query scale offse
     , lang = lang
     , cache = Cache.cache
     , headerState = Header.init
-    , saveRequestDebouncer = SaveRequestDebouncer.init
+    , saveFloorDebounce = Debounce.init
     }
 
 

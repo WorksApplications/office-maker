@@ -8,10 +8,11 @@ import Process
 import Keyboard
 import Dict exposing (Dict)
 import Navigation
-import Time exposing (Time)
+import Time exposing (Time, second)
 import Http
 import Dom
 import Basics.Extra exposing (never)
+import Debounce exposing (Debounce)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -34,7 +35,7 @@ import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
 import Model.SearchResult as SearchResult exposing (SearchResult)
-import Model.SaveRequestDebouncer as SaveRequestDebouncer exposing (SaveRequest(..), SaveRequestOpt(..), SaveRequestDebouncer)
+import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
 
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
@@ -142,7 +143,8 @@ type Msg
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)
   | ImageSaved String Int Int
-  | RequestSave (Maybe SaveRequest)
+  | RequestSave SaveRequest
+  | SaveFloorDebounceMsg Debounce.Msg
   | FloorSaved (Dict String (Floor, Bool))
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
@@ -225,6 +227,13 @@ debugMsg msg =
 performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
 performAPI tagger task =
   Task.perform (Error << APIError) tagger task
+
+
+saveFloorDebounceConfig : Debounce.Config Msg
+saveFloorDebounceConfig =
+  { strategy = Debounce.later (1 * second)
+  , transform = SaveFloorDebounceMsg
+  }
 
 
 urlUpdate : Result String URL -> Model -> (Model, Cmd Msg)
@@ -330,30 +339,34 @@ update removeToken setSelectionStart msg model =
 
     RequestSave request ->
       let
-        saveRequestDebouncer =
-          case request of
-            Just request ->
-              SaveRequestDebouncer.push request model.saveRequestDebouncer
-
-            Nothing ->
-              SaveRequestDebouncer.unlock model.saveRequestDebouncer
-
-        (saveRequestDebouncer', cmd) =
-          if SaveRequestDebouncer.isReady saveRequestDebouncer &&
-             not (SaveRequestDebouncer.isEmpty saveRequestDebouncer) then
-            let
-              (saveRequestDebouncer', requests) =
-                SaveRequestDebouncer.lockAndGetReducedRequests saveRequestDebouncer
-
-              cmd =
-                performAPI FloorSaved (batchSaveFloor model.apiConfig requests)
-            in
-              (saveRequestDebouncer', cmd)
-          else
-            (saveRequestDebouncer, Cmd.none)
+        (saveFloorDebounce, cmd) =
+          Debounce.push
+            saveFloorDebounceConfig
+            request
+            model.saveFloorDebounce
       in
         { model |
-          saveRequestDebouncer = saveRequestDebouncer'
+          saveFloorDebounce = saveFloorDebounce
+        } ! [cmd]
+
+    SaveFloorDebounceMsg msg ->
+      let
+        save head tail =
+          let
+            reducedRequests =
+              SaveRequest.reduceRequest (head :: tail)
+          in
+            performAPI FloorSaved (batchSaveFloor model.apiConfig reducedRequests)
+
+        (saveFloorDebounce, cmd) =
+          Debounce.update
+            saveFloorDebounceConfig
+            (Debounce.takeAll save)
+            msg
+            model.saveFloorDebounce
+      in
+        { model |
+          saveFloorDebounce = saveFloorDebounce
         } ! [cmd]
 
     FloorSaved dict ->
@@ -390,10 +403,7 @@ update removeToken setSelectionStart msg model =
                   (model, cmd)
               ) (model, Cmd.none)
       in
-        newModel !
-          [ cmd
-          , Task.perform (always NoOp) RequestSave (Process.sleep 2000.0 `andThen` \_ -> Task.succeed Nothing)
-          ]
+        newModel ! [ cmd ]
 
     MoveOnCanvas (clientX, clientY) ->
       let
@@ -1969,7 +1979,7 @@ requestPublishFloorCmd id =
 
 requestCmd : SaveRequest -> Cmd Msg
 requestCmd req =
-  Task.perform identity identity (Task.succeed (RequestSave (Just req)))
+  Task.perform identity identity (Task.succeed (RequestSave req))
 
 
 batchSaveFloor : API.Config -> List SaveRequestOpt -> Task Http.Error (Dict String (Floor, Bool))
