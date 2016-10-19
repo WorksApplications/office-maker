@@ -189,6 +189,7 @@ type Msg
   | SelectSearchResult SearchResult
   | RegisterPeople (List Person)
   | RequestCandidate Id String
+  | SearchCandidateDebounceMsg Debounce.Msg
   | GotCandidateSelection Id (List Person)
   | GotMatchingList (List (Id, List Person))
   | UpdatePersonCandidate Id (List Id)
@@ -233,6 +234,13 @@ saveFloorDebounceConfig : Debounce.Config Msg
 saveFloorDebounceConfig =
   { strategy = Debounce.later (1 * second)
   , transform = SaveFloorDebounceMsg
+  }
+
+
+searchCandidateDebounceConfig : Debounce.Config Msg
+searchCandidateDebounceConfig =
+  { strategy = Debounce.soon (0.4 * second)
+  , transform = SearchCandidateDebounceMsg
   }
 
 
@@ -733,43 +741,41 @@ update removeToken setSelectionStart msg model =
             model' ! []
 
     RequestCandidate objectId name ->
-      case Dict.get objectId model.candidateRequest of
-        Just (Just _) ->
-          { model |
-            candidateRequest =
-              Dict.insert objectId (Just name) model.candidateRequest
-          } ! []
+      let
+        (searchCandidateDebounce, cmd) =
+          Debounce.push
+            searchCandidateDebounceConfig
+            (objectId, name)
+            model.searchCandidateDebounce
+      in
+        { model |
+          searchCandidateDebounce = searchCandidateDebounce
+        } ! [ cmd ]
 
-        _ ->
-          { model |
-            candidateRequest =
-              Dict.insert objectId Nothing model.candidateRequest
-          }
-          ! [ performAPI (GotCandidateSelection objectId) (API.personCandidate model.apiConfig name) ]
+    SearchCandidateDebounceMsg msg ->
+      let
+        search (objectId, name) =
+          performAPI
+            (GotCandidateSelection objectId)
+            (API.personCandidate model.apiConfig name)
+
+        (searchCandidateDebounce, cmd) =
+          Debounce.update
+            searchCandidateDebounceConfig
+            (Debounce.takeLast search)
+            msg
+            model.searchCandidateDebounce
+      in
+        { model |
+          searchCandidateDebounce = searchCandidateDebounce
+        } ! [ cmd ]
 
     GotCandidateSelection objectId people ->
-      let
-        (candidateRequest, newRequestCmd) =
-          case Dict.get objectId model.candidateRequest of
-            Just (Just name) ->
-              ( Dict.insert objectId Nothing model.candidateRequest
-              , performAPI (GotCandidateSelection objectId) (API.personCandidate model.apiConfig name)
-              )
-
-            _ ->
-              ( Dict.remove objectId model.candidateRequest
-              , Cmd.none
-              )
-
-        newModel =
-          { model |
-            candidateRequest = candidateRequest
-          , personInfo =
-              DictUtil.addAll (.id) people model.personInfo
-          , candidates = List.map .id people
-          }
-      in
-        newModel ! [ newRequestCmd ]
+      { model |
+        personInfo =
+          DictUtil.addAll (.id) people model.personInfo
+      , candidates = List.map .id people
+      } ! []
 
     GotMatchingList pairs ->
       case model.floor of
@@ -835,7 +841,6 @@ update removeToken setSelectionStart msg model =
 
         Nothing ->
           model ! []
-
 
 
     GoToFloor floorId requestLastEdit ->

@@ -70,7 +70,7 @@ type alias Model =
   , candidates : List Id
   , tab : Tab
   , clickEmulator : List (Id, Bool, Time)
-  , candidateRequest : Dict Id (Maybe String)
+  , searchCandidateDebounce : Debounce (Id, String)
   , personPopupSize : (Int, Int)
   , lang : Language
   , cache : Cache
@@ -142,7 +142,7 @@ init apiConfig title initialSize randomSeed visitDate editMode query scale offse
     , searchResult = Nothing
     , tab = if editMode then EditTab else SearchTab
     , clickEmulator = []
-    , candidateRequest = Dict.empty
+    , searchCandidateDebounce = Debounce.init
     , personPopupSize = (300, 160)
     , lang = lang
     , cache = Cache.cache
