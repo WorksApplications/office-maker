@@ -1744,11 +1744,8 @@ updateOnFloorLoaded maybeFloor model =
             }
 
         cmd =
-          case floor.update of
-            Nothing ->
-              Cmd.none
-
-            Just { by } ->
+          case (User.isGuest model.user, floor.update) of
+            (False, Just { by }) ->
               case Dict.get by model.personInfo of
                 Just _ -> Cmd.none
                 Nothing ->
@@ -1758,6 +1755,8 @@ updateOnFloorLoaded maybeFloor model =
                         Task.succeed (RegisterPeople [person])
                   in
                     performAPI identity task
+            _ ->
+              Cmd.none
       in
         newModel ! [ cmd, Navigation.modifyUrl (URL.serialize newModel) ]
 

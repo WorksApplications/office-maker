@@ -282,9 +282,6 @@ app.get('/api/1/floors/:id/:version', inTransaction((conn, req, res) => {
 app.get('/api/1/floors/:id', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   return getSelf(conn, getAuthToken(req)).then((user) => {
-    if(!user) {
-      return Promise.reject(404);
-    }
     if(!user && options.all) {
       return Promise.reject(403);
     }
