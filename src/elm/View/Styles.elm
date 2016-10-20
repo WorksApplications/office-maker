@@ -786,7 +786,7 @@ floorsInfoViewItem selected private =
     , ("border-bottom", if selected then "solid 2px " ++ selectColor else "solid 1px #d0d0d0")
     , ("border-top", if selected then "solid 2px " ++ selectColor else "none")
     , ("border-left", if selected then "solid 2px " ++ selectColor else "none")
-    , ("width", "72px")
+    , ("min-width", "72px")
     , ("box-sizing", "border-box")
     , ("height", "30px")
     , ("position", "relative")
@@ -804,15 +804,10 @@ floorsInfoViewItemHover private =
 floorsInfoViewItemLink : S
 floorsInfoViewItemLink =
     [ ("display", "block")
-    , ("left", "0")
-    , ("right", "0")
-    , ("position", "absolute")
     , ("text-align", "center")
     , ("vertical-align", "middle")
     , ("line-height", "30px")
-    , ("overflow", "hidden")
-    , ("white-space", "nowrap")
-    , ("text-overflow", "ellipsis")
+    , ("padding", "0 8px")
     ]
 
 
