@@ -298,17 +298,26 @@ update removeToken setSelectionStart msg model =
               [ performAPI ColorsLoaded (API.getColors model.apiConfig)
               , performAPI PrototypesLoaded (API.getPrototypes model.apiConfig)
               ]
+
+        editMode =
+          if not (User.isGuest user) then
+            if needsEditMode then Select else Viewing False
+          else
+            Viewing False
+
+        tab =
+          if needsEditMode && not (User.isGuest user) then
+            EditTab
+          else
+            SearchTab
       in
         { model |
           user = user
         , scale = userState.scale
         , offset = userState.offset
         , lang = userState.lang
-        , editMode =
-            if not (User.isGuest user) then
-              if needsEditMode then Select else Viewing False
-            else
-              Viewing False
+        , editMode = editMode
+        , tab = tab
         }
         ! [ searchCmd
           , performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
