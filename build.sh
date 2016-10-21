@@ -1,6 +1,6 @@
 elm-make src/elm/Page/Main.elm --output=index.js --warn &&
 elm-make src/elm/Page/Login.elm --output=login.js --warn &&
-elm-make src/elm/Page/Master.elm --output=master.js --warn &&
+elm-make src/elm/Page/Master/Main.elm --output=master.js --warn &&
 mkdir -p server/public &&
 mkdir -p server/public/images &&
 mkdir -p server/public/images/floors &&
