@@ -1,11 +1,14 @@
-port module Page.Main exposing (..)
+port module Page.Map.Main exposing (..)
 
-import Update exposing (Flags)
-import URL exposing (URL)
-import View.View as View
+
 import Navigation
 
 import TimeTravel.Navigation as TimeTravel
+
+import Page.Map.Update as Update exposing (Flags)
+import Page.Map.View as View
+import Page.Map.URL as URL exposing (URL)
+
 
 port removeToken : {} -> Cmd msg
 

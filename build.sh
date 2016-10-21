@@ -1,4 +1,4 @@
-elm-make src/elm/Page/Main.elm --output=index.js --warn &&
+elm-make src/elm/Page/Map/Main.elm --output=index.js --warn &&
 elm-make src/elm/Page/Login.elm --output=login.js --warn &&
 elm-make src/elm/Page/Master/Main.elm --output=master.js --warn &&
 mkdir -p server/public &&

@@ -1,4 +1,4 @@
-module View.ContextMenu exposing (view)
+module Page.Map.ContextMenu exposing (view)
 
 import Maybe
 import Dict
@@ -7,14 +7,14 @@ import Html.Attributes exposing (..)
 
 import View.Styles as S
 import Util.HtmlUtil exposing (..)
-import Update exposing (..)
-import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n
 import InlineHover exposing (hover)
 
+import Page.Map.Update exposing (..)
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 
 view : Model -> Html Msg
 view model =

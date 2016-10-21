@@ -1,4 +1,4 @@
-module View.PropertyView exposing (view)
+module Page.Map.PropertyView exposing (view)
 
 import Maybe
 
@@ -9,11 +9,11 @@ import View.Styles as S
 import View.Icons as Icons
 
 import Util.HtmlUtil exposing (..)
-import Update exposing (..)
-import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
+import Page.Map.Update exposing (..)
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 
 view : Model -> List (Html Msg)
 view model =

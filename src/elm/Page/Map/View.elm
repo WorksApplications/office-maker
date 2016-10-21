@@ -1,4 +1,4 @@
-module View.View exposing (view)
+module Page.Map.View exposing (view)
 
 import Maybe
 
@@ -13,12 +13,7 @@ import View.Icons as Icons
 import View.MessageBarForMainView as MessageBar
 import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
-import View.CanvasView as CanvasView
-import View.PropertyView as PropertyView
-import View.ContextMenu as ContextMenu
 import View.Common exposing (..)
-import View.PrototypePreviewView as PrototypePreviewView
-import View.SearchResultView as SearchResultView
 import View.SearchInputView as SearchInputView
 
 import Component.FloorProperty as FloorProperty
@@ -26,14 +21,19 @@ import Component.Header as Header
 
 import Util.HtmlUtil exposing (..)
 
-import Update exposing (..)
-
-import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Model.EditMode as EditMode exposing (EditMode(..))
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.User as User
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
+
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Update exposing (..)
+import Page.Map.CanvasView as CanvasView
+import Page.Map.PropertyView as PropertyView
+import Page.Map.ContextMenu as ContextMenu
+import Page.Map.PrototypePreviewView as PrototypePreviewView
+import Page.Map.SearchResultView as SearchResultView
 
 mainView : Model -> Html Msg
 mainView model =

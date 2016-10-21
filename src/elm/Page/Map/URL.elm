@@ -1,12 +1,15 @@
-module URL exposing (..)
+module Page.Map.URL exposing (..)
 
 import Dict
 import String
-import Model.Model as Model exposing (Model)
+
+import Navigation
+
 import Model.EditingFloor as EditingFloor
 import Model.EditMode as EditMode exposing (EditMode(..))
 import Util.UrlParser as UrlParser
-import Navigation
+
+import Page.Map.Model as Model exposing (Model)
 
 
 type alias URL =

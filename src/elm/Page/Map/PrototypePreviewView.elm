@@ -1,4 +1,4 @@
-module View.PrototypePreviewView exposing (view)
+module Page.Map.PrototypePreviewView exposing (view)
 
 import Maybe
 
@@ -6,16 +6,17 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 import View.Styles as S
-import View.CanvasView as CanvasView
+import View.ObjectView as ObjectView
 
 import Util.HtmlUtil exposing (..)
 import Util.ListUtil exposing (..)
 
-import Update exposing (..)
-import Model.Scale as Scale
+import Model.Scale as Scale exposing (Scale)
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
+import Model.Object as Object exposing (..)
 
+import Page.Map.Update exposing (..)
 
 view : List (Prototype, Bool) -> Bool -> Html Msg
 view prototypes stampMode =
@@ -49,7 +50,28 @@ eachView (width, height) index (prototype, selected) =
     left = width // 2 - w // 2
     top = height // 2 - h // 2
   in
-    snd <| CanvasView.temporaryStampView Scale.default False (prototype, (left + index * width, top))
+    snd <| temporaryStampView Scale.default False (prototype, (left + index * width, top))
+
+
+temporaryStampView : Scale -> Bool -> StampCandidate -> (String, Html msg)
+temporaryStampView scale selected (prototype, (left, top)) =
+  let
+    (deskWidth, deskHeight) = prototype.size
+  in
+    ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight
+    , ObjectView.viewDesk
+        ObjectView.noEvents
+        False
+        (left, top, deskWidth, deskHeight)
+        prototype.backgroundColor
+        prototype.name --name
+        Object.defaultFontSize
+        selected
+        False -- alpha
+        scale
+        True -- disableTransition
+        False -- personMatched
+    )
 
 
 buttons : Int -> List (Prototype, Bool) -> List (Html Msg)

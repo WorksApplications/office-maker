@@ -1,4 +1,4 @@
-module Update exposing (..)
+module Page.Map.Update exposing (..)
 
 import Maybe
 import Task exposing (Task, andThen, onError)
@@ -20,7 +20,6 @@ import Util.DictUtil as DictUtil
 import Util.File exposing (..)
 
 import Model.Direction as Direction exposing (..)
-import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Model.EditMode as EditMode exposing (EditMode(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
@@ -36,19 +35,19 @@ import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
 import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
-
-import API.API as API
-import API.Cache as Cache exposing (Cache, UserState)
-
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClickboardData as ClickboardData
 
+import API.API as API
+import API.Cache as Cache exposing (Cache, UserState)
+
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
-import URL exposing (URL)
 
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.URL as URL exposing (URL)
 
 type alias Flags =
   { apiRoot : String

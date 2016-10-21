@@ -1,7 +1,8 @@
-module View.CanvasView exposing (view, temporaryStampView)
+module Page.Map.CanvasView exposing (view, temporaryStampView)
 
 import Dict exposing (..)
 import Maybe
+import Json.Decode as Decode
 
 import Html exposing (..)
 import Html.App as App
@@ -17,18 +18,15 @@ import View.ProfilePopup as ProfilePopup
 
 import Util.HtmlUtil exposing (..)
 
-import Update exposing (..)
 import Model.EditMode as EditMode exposing (EditMode(..))
-import Model.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
-
 import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale exposing (Scale)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 
-import Json.Decode as Decode
-
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Update exposing (..)
 
 adjustImagePositionOfMovingObject : Int -> Scale -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
 adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, top) =

@@ -1,4 +1,4 @@
-module Model.Model exposing (..)
+module Page.Map.Model exposing (..)
 
 import Date exposing (Date)
 import Maybe
