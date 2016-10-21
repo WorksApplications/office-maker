@@ -25,6 +25,7 @@ import View.MessageBar as MessageBar
 import Page.Master.Model exposing (Model)
 import Page.Master.Msg exposing (Msg(..))
 
+
 view : Model -> Html Msg
 view model =
   div
@@ -55,14 +56,18 @@ headerView model =
 
 colorMasterView : Model -> List (Html Msg)
 colorMasterView model =
-  List.indexedMap row model.colorPalette.backgroundColors
+  [ h2 [] [ text "Background Colors (for desks and labels)"]
+  , div [] <| List.indexedMap (row True) model.colorPalette.backgroundColors
+  , h2 [] [ text "Text Colors (for labels)"]
+  , div [] <| List.indexedMap (row False) model.colorPalette.textColors
+  ]
 
 
-row : Int -> String -> Html Msg
-row index color =
+row : Bool -> Int -> String -> Html Msg
+row isBackgroundColor index color =
   div [ style [("height", "30px"), ("display", "flex")] ]
     [ colorSample color
-    , input [ onInput (InputColor True index), value color ] []
+    , input [ onInput (InputColor isBackgroundColor index), value color ] []
     ]
 
 

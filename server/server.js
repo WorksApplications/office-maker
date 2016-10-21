@@ -230,7 +230,7 @@ app.get('/api/1/colors', inTransaction((conn, req, res) => {
     }
     return db.getColors(conn, user.tenantId).then((colors) => {
       return Promise.resolve(colors);
-    })
+    });
   })
 }));
 
@@ -240,12 +240,12 @@ app.put('/api/1/colors', inTransaction((conn, req, res) => {
       return Promise.reject(403);
     }
     var colors = req.body;
-    if(!colors || !prototypes_.length) {
+    if(!colors || !colors.length) {
       return Promise.reject(403);
     }
     return db.saveColors(conn, user.tenantId, colors).then(() => {
       return Promise.resolve({});
-    })
+    });
   });
 }));
 
@@ -255,7 +255,7 @@ app.get('/api/1/floors', inTransaction((conn, req, res) => {
     var tenantId = user ? user.tenantId : '';
     return db.getFloorsInfo(conn, tenantId).then((floorInfoList) => {
       return Promise.resolve(floorInfoList);
-    })
+    });
   });
 }));
 

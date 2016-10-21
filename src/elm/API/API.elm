@@ -18,6 +18,7 @@ module API.API exposing (
     , getPersonByUser
     , getPeopleByFloorAndPost
     , getColors
+    , saveColors
     , getPrototypes
     , savePrototypes
     , Config
@@ -151,6 +152,14 @@ getColors config =
     decodeColors
     (Http.url (config.apiRoot ++ "/1/colors") [])
     (authorization config.token)
+
+
+saveColors : Config -> ColorPalette -> Task Error ()
+saveColors config colorPalette =
+  putJsonNoResponse
+    (config.apiRoot ++ "/1/colors")
+    (authorization config.token)
+    (Http.string <| serializeColorPalette colorPalette)
 
 
 getDiffSource : Config -> String -> Task Error (Floor, Maybe Floor)

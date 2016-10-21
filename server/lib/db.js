@@ -320,7 +320,8 @@ function getColors(conn, tenantId) {
 }
 
 function saveColors(conn, tenantId, colors) {
-  var inserts = colors.map((c) => {
+  var inserts = colors.map((c, index) => {
+    c.id = index + '';
     return schema.colorKeyValues(tenantId, c);
   }).map((keyValues) => {
     return sql.insert('colors', keyValues);

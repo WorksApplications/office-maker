@@ -56,7 +56,7 @@ initCmd apiConfig defaultUserState =
     identity
     ( Cache.getWithDefault Cache.cache defaultUserState `Task.andThen` \userState ->
       API.getAuth apiConfig `Task.andThen` \user ->
-        if User.isGuest user then
+        if not (User.isAdmin user) then
           Task.succeed NotAuthorized
         else
           API.getColors apiConfig `Task.andThen` \colorPalette ->
@@ -86,7 +86,7 @@ update removeToken message model =
     Loaded userState user colorPalette prototypes ->
       { model
       | colorPalette = colorPalette
-      } ! [] -- TODO
+      } ! []
 
     UpdateHeaderState msg ->
       { model | headerState = Header.update msg model.headerState } ! []
@@ -115,7 +115,7 @@ update removeToken message model =
         (saveColorDebounce, cmd) =
           Debounce.update
             saveColorDebounceConfig
-            (Debounce.takeLast saveColorPalette)
+            (Debounce.takeLast (saveColorPalette model.apiConfig))
             msg
             model.saveColorDebounce
       in
@@ -128,6 +128,6 @@ update removeToken message model =
       { model | error = Just (toString e) } ! []
 
 
-saveColorPalette : ColorPalette -> Cmd Msg
-saveColorPalette colorPalette =
-  Cmd.none -- TODO
+saveColorPalette : API.Config -> ColorPalette -> Cmd Msg
+saveColorPalette apiConfig colorPalette =
+  performAPI (\_ -> NoOp) (API.saveColors apiConfig colorPalette)

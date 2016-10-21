@@ -137,7 +137,6 @@ decodeColorEntity : Decoder ColorEntity
 decodeColorEntity =
   decode
     ColorEntity
-    |> required "id" D.string
     |> required "ord" D.int
     |> required "type" D.string
     |> required "color" D.string
@@ -298,9 +297,33 @@ encodePrototype { id, color, backgroundColor, name, size, fontSize, shape } =
       ]
 
 
+encodeColorPalette : ColorPalette -> Value
+encodeColorPalette colorPalette =
+  encodeColorEntities (makeColorEntities colorPalette)
+
+
+encodeColorEntities : List ColorEntity -> Value
+encodeColorEntities entities =
+  E.list (List.map encodeColorEntitity entities)
+
+
+encodeColorEntitity : ColorEntity -> Value
+encodeColorEntitity entity =
+  E.object
+    [ ("ord", E.int entity.ord)
+    , ("color", E.string entity.color)
+    , ("type", E.string entity.type_)
+    ]
+
+
 serializePrototypes : List Prototype -> String
 serializePrototypes prototypes =
   E.encode 0 (E.list (List.map encodePrototype prototypes))
+
+
+serializeColorPalette : ColorPalette -> String
+serializeColorPalette colorPalette =
+  E.encode 0 (encodeColorPalette colorPalette)
 
 
 serializeFloor : Floor -> ObjectsChange -> String
@@ -314,8 +337,7 @@ serializeLogin userId pass =
 
 
 type alias ColorEntity =
-  { id : String
-  , ord : Int
+  { ord : Int
   , type_ : String
   , color : String
   }
@@ -348,3 +370,14 @@ makeColorPalette entities =
     { backgroundColors = backgroundColors
     , textColors = textColors
     }
+
+
+makeColorEntities : ColorPalette -> List ColorEntity
+makeColorEntities colorPalette =
+  List.indexedMap (makeColorEntity "color") colorPalette.textColors ++
+  List.indexedMap (makeColorEntity "backgroundColor") colorPalette.backgroundColors
+
+
+makeColorEntity : String -> Int -> String -> ColorEntity
+makeColorEntity type_ ord color =
+  { ord = ord, color = color, type_ = type_ }
