@@ -15,7 +15,7 @@ import Model.Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.Prototype exposing (Prototype)
 import Model.SearchResult exposing (SearchResult)
-import Model.ColorPalette as ColorPalette exposing (ColorPalette, ColorEntity)
+import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.ObjectsChange as ObjectsChange exposing (..)
 
 
@@ -26,7 +26,7 @@ decodeAuthToken =
 
 decodeColors : Decoder ColorPalette
 decodeColors =
-  D.map ColorPalette.init (D.list decodeColorEntity)
+  D.map makeColorPalette (D.list decodeColorEntity)
 
 
 decodePrototypes : Decoder (List Prototype)
@@ -311,3 +311,40 @@ serializeFloor floor change =
 serializeLogin : String -> String -> String
 serializeLogin userId pass =
     E.encode 0 (encodeLogin userId pass)
+
+
+type alias ColorEntity =
+  { id : String
+  , ord : Int
+  , type_ : String
+  , color : String
+  }
+
+
+makeColorPalette : List ColorEntity -> ColorPalette
+makeColorPalette entities =
+  let
+    sorted =
+      List.sortBy (.ord) entities
+
+    backgroundColors =
+      List.filterMap (\e ->
+        if e.type_ == "backgroundColor" then
+          Just e.color
+        else
+          Nothing
+      )
+      sorted
+
+    textColors =
+      List.filterMap (\e ->
+        if e.type_ == "color" then
+          Just e.color
+        else
+          Nothing
+      )
+      sorted
+  in
+    { backgroundColors = backgroundColors
+    , textColors = textColors
+    }

@@ -10,7 +10,7 @@ import Html.Lazy exposing (..)
 
 import View.Styles as S
 import View.Icons as Icons
-import View.MessageBar as MessageBar
+import View.MessageBarForMainView as MessageBar
 import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
 import View.CanvasView as CanvasView

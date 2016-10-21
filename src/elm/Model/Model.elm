@@ -123,7 +123,7 @@ init apiConfig title initialSize randomSeed visitDate editMode query scale offse
     , selectorRect = Nothing
     , keys = ShortCut.init
     , editMode = if editMode then Select else Viewing False
-    , colorPalette = ColorPalette.init []
+    , colorPalette = ColorPalette.empty
     , contextMenu = NoContextMenu
     , floorsInfo = []
     , floor = Nothing
