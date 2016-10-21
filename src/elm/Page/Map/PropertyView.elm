@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 
 import View.Styles as S
 import View.Icons as Icons
+import View.Common exposing (..)
 
 import Util.HtmlUtil exposing (..)
 import Model.Object as Object
@@ -24,19 +25,19 @@ view model =
       []
     else
       [ if List.all Object.backgroundColorEditable selectedObjects then
-          row [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
+          formControl [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
         else
           text ""
       , if List.all Object.colorEditable selectedObjects then
-          row [ label Icons.colorPropLabel, colorView model ]
+          formControl [ label Icons.colorPropLabel, colorView model ]
         else
           text ""
       , if List.all Object.shapeEditable selectedObjects then
-          row [ label Icons.shapePropLabel, shapeView model ]
+          formControl [ label Icons.shapePropLabel, shapeView model ]
         else
           text ""
       , if List.all Object.fontSizeEditable selectedObjects then
-          row [ label Icons.fontSizePropLabel, fontSizeView model ]
+          formControl [ label Icons.fontSizePropLabel, fontSizeView model ]
         else
           text ""
       ] -- TODO name, icon?
@@ -45,11 +46,6 @@ view model =
 label : Html Msg -> Html Msg
 label icon =
   div [ style S.propertyViewPropertyIcon ] [ icon ]
-
-
-row : List (Html msg) -> Html msg
-row children =
-  div [ style S.formControl ] children
 
 
 backgroundColorView : Model -> Html Msg

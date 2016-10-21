@@ -1,6 +1,6 @@
 module Page.Login.Styles exposing (..)
 
-import View.Styles as Styles exposing (..)
+import View.Styles as Styles
 
 type alias S = List (String, String)
 
@@ -24,19 +24,19 @@ loginCaption =
 
 loginError : S
 loginError =
-  [ ("color", errorTextColor)
+  [ ("color", Styles.errorTextColor)
   , ("margin-bottom", "15px")
   ]
 
 
 loginSubmitButton : S
 loginSubmitButton =
-  primaryButton ++ [("margin-top", "20px"), ("width", "100%")]
+  Styles.primaryButton ++ [("margin-top", "20px"), ("width", "100%")]
 
 
 formInput : S
 formInput =
-  input ++ [ ("padding", "7px 8px")
+  Styles.input ++ [ ("padding", "7px 8px")
   , ("vertical-align", "middle")
   , ("font-size", "13px")
   , ("margin-top", "5px")
