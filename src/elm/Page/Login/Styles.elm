@@ -1,4 +1,4 @@
-module View.LoginStyles exposing (..)
+module Page.Login.Styles exposing (..)
 
 import View.Styles as Styles exposing (..)
 

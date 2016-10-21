@@ -1,4 +1,4 @@
-port module Page.Login exposing (..)
+port module Page.Login.Main exposing (..)
 
 import Html exposing (Html, text, div, input, form, h2)
 import Html.App as App
@@ -11,7 +11,7 @@ import API.API as API
 import View.HeaderView as HeaderView
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Model.I18n as I18n exposing (Language(..))
-import View.LoginStyles as Styles
+import Page.Login.Styles as Styles
 
 port saveToken : String -> Cmd msg
 
