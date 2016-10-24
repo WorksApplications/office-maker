@@ -6,7 +6,6 @@ import Http
 import Navigation
 
 import Html exposing (..)
-import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
