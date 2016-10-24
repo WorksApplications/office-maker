@@ -3,15 +3,11 @@ module Page.Map.ContextMenu exposing (view)
 import Maybe
 import Dict
 import Html exposing (..)
-import Html.Attributes exposing (..)
 
-import View.Styles as S
-import Util.HtmlUtil exposing (..)
+import View.ContextMenu as ContextMenu
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation
-import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n
-import InlineHover exposing (hover)
 
 import Page.Map.Update exposing (..)
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
@@ -36,42 +32,31 @@ view model =
                 --   Nothing ->
                     (I18n.selectSamePost model.lang)
             in
-              Just [ contextMenuItemView (SelectSamePost personId) str ]
+              Just [ (SelectSamePost personId, str) ]
 
         forOneDesk =
           if [id] == model.selectedObjects then
             (Maybe.withDefault [] selectSamePostOption) ++
-            [ contextMenuItemView (SelectIsland id) (I18n.selectIsland model.lang)
-            , contextMenuItemView (RegisterPrototype id) (I18n.registerAsStamp model.lang)
-            , contextMenuItemView (Rotate id) (I18n.rotate model.lang)
+            [ (SelectIsland id, I18n.selectIsland model.lang)
+            , (RegisterPrototype id, I18n.registerAsStamp model.lang)
+            , (Rotate id, I18n.rotate model.lang)
             ]
           else
             []
 
         common =
-          [ contextMenuItemView (FirstNameOnly model.selectedObjects) (I18n.pickupFirstWord model.lang)
-          , contextMenuItemView (RemoveSpaces model.selectedObjects) (I18n.removeSpaces model.lang)
+          [ (FirstNameOnly model.selectedObjects, I18n.pickupFirstWord model.lang)
+          , (RemoveSpaces model.selectedObjects, I18n.removeSpaces model.lang)
           ]
+
+        items =
+          forOneDesk ++ common
       in
-        div
-          [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
-          ]
-          (forOneDesk ++ common)
+        ContextMenu.view items model.windowSize (x, y)
 
     FloorInfo (x, y) id ->
-      div
-        [ style (S.contextMenu (x, y + 37) (fst model.windowSize, snd model.windowSize) 2) -- TODO
-        ]
-        [ contextMenuItemView (CopyFloor id) (I18n.copyFloor model.lang)
-        ]
-
-
-contextMenuItemView : Msg -> String -> Html Msg
-contextMenuItemView msg text' =
-  hover
-    S.contextMenuItemHover
-    div
-    [ style S.contextMenuItem
-    , onMouseDown' msg
-    ]
-    [ text text' ]
+      let
+        items =
+          [(CopyFloor id, I18n.copyFloor model.lang)]
+      in
+        ContextMenu.view items model.windowSize (x, y)
