@@ -18,6 +18,13 @@ selectIsland lang =
     EN -> "Select island"
 
 
+selectSameColor : Language -> String
+selectSameColor lang =
+  case lang of
+    JA -> "同じ色を選択する"
+    EN -> "Select same color"
+
+
 registerAsStamp : Language -> String
 registerAsStamp lang =
   case lang of

@@ -166,6 +166,7 @@ type Msg
   | SelectSamePost String
   | GotSamePostPeople (List Person)
   | SelectIsland Id
+  | SelectSameColor Id
   | WindowSize (Int, Int)
   | MouseWheel Float
   | ChangeMode EditMode
@@ -939,6 +940,35 @@ update removeToken setSelectionStart msg model =
                   in
                     { model |
                       selectedObjects = List.map idOf island'
+                    , contextMenu = NoContextMenu
+                    }
+
+                Nothing ->
+                  model
+          in
+            newModel ! []
+
+        Nothing ->
+          model ! []
+
+    SelectSameColor id ->
+      case model.floor of
+        Just editingFloor ->
+          let
+            floor =
+              EditingFloor.present editingFloor
+
+            newModel =
+              case findObjectById floor.objects id of
+                Just object ->
+                  let
+                    target =
+                      List.filter
+                        (\e -> (backgroundColorOf e) == (backgroundColorOf object))
+                        floor.objects
+                  in
+                    { model |
+                      selectedObjects = List.map idOf target
                     , contextMenu = NoContextMenu
                     }
 

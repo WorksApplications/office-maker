@@ -38,6 +38,7 @@ view model =
           if [id] == model.selectedObjects then
             (Maybe.withDefault [] selectSamePostOption) ++
             [ (SelectIsland id, I18n.selectIsland model.lang)
+            , (SelectSameColor id, I18n.selectSameColor model.lang)
             , (RegisterPrototype id, I18n.registerAsStamp model.lang)
             , (Rotate id, I18n.rotate model.lang)
             ]
