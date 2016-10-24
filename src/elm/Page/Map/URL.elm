@@ -60,8 +60,8 @@ init =
   }
 
 
-stringify : URL -> String
-stringify { floorId, query, editMode } =
+stringify : String -> URL -> String
+stringify root { floorId, query, editMode } =
   let
     params =
       (List.filterMap
@@ -72,10 +72,10 @@ stringify { floorId, query, editMode } =
   in
     case floorId of
       Just id ->
-        stringifyParams params ++ "#" ++ id
+        root ++ stringifyParams params ++ "#" ++ id
 
       Nothing ->
-        stringifyParams params
+        root ++ stringifyParams params
 
 
 stringifyParams : List (String, String) -> String
@@ -106,7 +106,7 @@ fromModel model =
 
 serialize : Model -> String
 serialize =
-  stringify << fromModel
+  (stringify "/") << fromModel
 
 
 

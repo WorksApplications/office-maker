@@ -120,7 +120,7 @@ init flags urlResult =
         in
           model !
             [ initCmd apiConfig url.editMode userState url.floorId
-            , Navigation.modifyUrl (URL.stringify url)
+            , Navigation.modifyUrl (URL.stringify "/" url)
             ]
 
 
@@ -260,7 +260,7 @@ urlUpdate result model =
         model ! []
 
     Err _ ->
-      model ! [ Navigation.modifyUrl (URL.stringify URL.init) ]
+      model ! [ Navigation.modifyUrl (URL.stringify "/" URL.init) ]
 
 
 update : ({} -> Cmd Msg) -> ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
@@ -1184,6 +1184,11 @@ update removeToken setSelectionStart msg model =
               case model.editMode of
                 Viewing _ -> Select
                 _ -> Viewing False
+
+          , tab =
+              case model.editMode of
+                Viewing _ -> EditTab
+                _ -> SearchTab
           }
 
         withPrivate =
