@@ -24,7 +24,11 @@ type Strategy msg =
 type alias Popup = Bool
 
 
-type Msg msg = NoOp | Confirm msg | Close msg
+type Msg msg
+  = NoOp
+  | Open
+  | Confirm msg
+  | Close msg
 
 
 init : Popup
@@ -37,6 +41,9 @@ update msg model =
     NoOp ->
       model ! []
 
+    Open ->
+      True ! []
+
     Close msg ->
       False ! [ Task.perform identity identity <| Task.succeed msg ]
 
@@ -44,8 +51,8 @@ update msg model =
       False ! [ Task.perform identity identity <| Task.succeed msg ]
 
 
-open : Popup
-open = True
+open : (Msg msg -> msg) -> msg
+open f = f Open
 
 
 popup : Config msg -> List (Html msg) -> Popup -> Html msg
