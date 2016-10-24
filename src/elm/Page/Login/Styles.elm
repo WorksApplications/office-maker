@@ -1,6 +1,6 @@
 module Page.Login.Styles exposing (..)
 
-import View.Styles as Styles
+import View.CommonStyles as Styles
 
 type alias S = List (String, String)
 
