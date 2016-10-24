@@ -295,8 +295,43 @@ canvasViewForPrint (windowWidth, windowHeight) (_, _, w, h) =
 
 canvasImage : S
 canvasImage =
-  [ ("width", "100%")
+  [ ("position", "absolute")
+  , ("top", "0")
+  , ("left", "0")
+  , ("width", "100%")
   , ("height", "100%")
+  ]
+
+
+gridLayer : S
+gridLayer =
+  [ ("position", "relative")
+  , ("top", "0")
+  , ("left", "0")
+  , ("width", "100%")
+  , ("height", "100%")
+  ]
+
+
+gridBorderValue : String
+gridBorderValue = "dotted 1px #ccc"
+
+
+gridLayerVirticalLine : Int -> S
+gridLayerVirticalLine left =
+  [ ("border-right", gridBorderValue)
+  , ("position", "absolute")
+  , ("left", px left)
+  , ("height", "100%")
+  ]
+
+
+gridLayerHorizontalLine : Int -> S
+gridLayerHorizontalLine top =
+  [ ("border-bottom", gridBorderValue)
+  , ("position", "absolute")
+  , ("top", px top)
+  , ("width", "100%")
   ]
 
 

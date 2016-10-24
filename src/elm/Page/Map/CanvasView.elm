@@ -15,6 +15,7 @@ import Component.ObjectNameInput as ObjectNameInput
 import View.Styles as S
 import View.ObjectView as ObjectView
 import View.ProfilePopup as ProfilePopup
+import Page.Map.GridLayer as GridLayer
 
 import Util.HtmlUtil exposing (..)
 
@@ -176,8 +177,15 @@ canvasView model floor =
           (Model.candidatesOf model)
           model.objectNameInput
 
+    gridLayer =
+      if EditMode.isEditMode model.editMode then
+        GridLayer.view model floor
+      else
+        text ""
+
     children1 =
       ("canvas-image", canvasImage floor) ::
+      ("grid-layer", gridLayer) ::
       ("canvas-name-input", nameInput) ::
       ("canvas-selector-rect", selectorRectView model) ::
       (objectsView model floor)

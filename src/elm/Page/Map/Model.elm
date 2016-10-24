@@ -98,16 +98,13 @@ type DraggingContext =
 type Tab =
   SearchTab | EditTab
 
-
-gridSize : Int
-gridSize = 8 -- 2^N
-
-
 init : API.Config -> String -> (Int, Int) -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
 init apiConfig title initialSize randomSeed visitDate editMode query scale offset lang =
   let
     initialFloor =
       Floor.empty
+
+    gridSize = 8  -- 2^N
   in
     { apiConfig = apiConfig
     , title = title
