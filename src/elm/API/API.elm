@@ -3,6 +3,7 @@ module API.API exposing (
     , search
     , saveEditingFloor
     , publishEditingFloor
+    , deleteEditingFloor
     , getEditingFloor
     , getFloor
     , getFloorOfVersion
@@ -71,6 +72,14 @@ publishEditingFloor config id =
   putJson
     decodeFloor
     (config.apiRoot ++ "/1/floors/" ++ id ++ "/public")
+    (authorization config.token)
+    (Http.string "")
+
+
+deleteEditingFloor : Config -> String -> Task Error ()
+deleteEditingFloor config id =
+  deleteJsonNoResponse
+    (config.apiRoot ++ "/1/floors/" ++ id)
     (authorization config.token)
     (Http.string "")
 

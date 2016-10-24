@@ -45,6 +45,7 @@ import API.Cache as Cache exposing (Cache, UserState)
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
+import Component.Dialog
 
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Page.Map.URL as URL exposing (URL)
@@ -1875,6 +1876,9 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
           performAPI GotDiffSource (API.getDiffSource apiConfig (EditingFloor.present efloor).id)
       in
         (efloor, seed) ! [ cmd ]
+
+    FloorProperty.OnDeleteFloor ->
+      (efloor, seed) ! [ ]
 
     FloorProperty.OnFileLoadFailed err ->
       let

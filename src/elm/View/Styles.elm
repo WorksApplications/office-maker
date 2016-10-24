@@ -473,6 +473,16 @@ publishButton =
   formControl ++ primaryButton
 
 
+deleteFloorButton : S
+deleteFloorButton =
+  formControl ++ defaultButton
+
+
+deleteFloorButtonHover : S
+deleteFloorButtonHover =
+  formControl ++ dangerButton
+  
+
 floorNameInputContainer : S
 floorNameInputContainer =
   formControl ++ flex

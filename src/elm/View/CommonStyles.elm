@@ -76,6 +76,7 @@ button =
     , ("padding", "6px 12px")
     , ("box-sizing", "border-box")
     , ("font-size", "13px")
+    , ("cursor", "pointer")
     ]
 
 
@@ -93,6 +94,15 @@ primaryButton =
     [ ("background-color", "rgb(100, 180, 85)")
     , ("color", invertedTextColor)
     , ("border", "solid 1px rgb(100, 180, 85)")
+    ]
+
+
+dangerButton : S
+dangerButton =
+  button ++
+    [ ("background-color", "rgb(221, 116, 116)")
+    , ("color", invertedTextColor)
+    , ("border", "solid 1px rgb(221, 116, 116)")
     ]
 
 

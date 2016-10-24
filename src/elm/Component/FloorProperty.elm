@@ -17,6 +17,8 @@ import Model.User as User exposing (User)
 import Model.Floor exposing (Floor)
 import Model.I18n as I18n exposing (Language)
 
+import InlineHover exposing (hover)
+
 
 type Msg
   = NoOp
@@ -27,6 +29,7 @@ type Msg
   | LoadFile FileList
   | GotDataURL File String
   | PreparePublish
+  | DeleteFloor
   | FileError File.Error
 
 
@@ -36,6 +39,7 @@ type Event
   | OnRealSizeChange (Int, Int)
   | OnFileWithDataURL File String
   | OnPreparePublish
+  | OnDeleteFloor
   | OnFileLoadFailed File.Error
   | None
 
@@ -113,6 +117,9 @@ update message model =
 
     PreparePublish ->
         (model, Cmd.none, OnPreparePublish)
+
+    DeleteFloor ->
+        (model, Cmd.none, OnDeleteFloor)
 
     FileError err ->
         (model, Cmd.none, OnFileLoadFailed err)
@@ -264,6 +271,19 @@ publishButtonView lang user =
     text ""
 
 
+deleteButtonView : Language -> User -> Floor -> Html Msg
+deleteButtonView lang user floor =
+  if User.isAdmin user && List.isEmpty floor.objects then
+    hover Styles.deleteFloorButtonHover
+    button
+      [ onClick' DeleteFloor
+      , style Styles.deleteFloorButton
+      ]
+      [ text (I18n.deleteFloor lang) ]
+  else
+    text ""
+
+
 floorUpdateInfoView : Language -> Date -> Floor -> Html Msg
 floorUpdateInfoView lang visitDate floor =
   let
@@ -290,5 +310,6 @@ view lang visitDate user floor model =
     , floorOrdInputView lang user model
     , floorRealSizeInputView lang user model
     , publishButtonView lang user
+    , deleteButtonView lang user floor
     , floorUpdateInfoView lang visitDate floor
     ]

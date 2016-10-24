@@ -219,6 +219,13 @@ publish lang =
     EN -> "View changes and publish"
 
 
+deleteFloor : Language -> String
+deleteFloor lang =
+  case lang of
+    JA -> "フロアを削除"
+    EN -> "Delete this floor"
+
+
 lastUpdateByAt : Language -> String -> String -> String
 lastUpdateByAt lang by at =
   case lang of
