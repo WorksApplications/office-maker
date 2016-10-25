@@ -358,6 +358,21 @@ app.put('/api/1/floors/:id/public', inTransaction((conn, req, res) => {
   });
 }));
 
+app.delete('/api/1/floors/:id', inTransaction((conn, req, res) => {
+  var token = getAuthToken(req)
+  return getSelf(conn, token).then((user) => {
+    if(!user || user.role !== 'admin') {
+      return Promise.reject(403);
+    }
+    var id = req.params.id;
+    var updateBy = user.id;
+    return db.deleteFloor(conn, user.tenantId, id).then(() => {
+      log.system.info('deleted floor');
+      return Promise.resolve();
+    });
+  });
+}));
+
 app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
   return new Promise((resolve, reject) => {
     getSelf(conn, getAuthToken(req)).then((user) => {

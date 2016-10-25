@@ -146,6 +146,7 @@ type Msg
   | RequestSave SaveRequest
   | SaveFloorDebounceMsg Debounce.Msg
   | FloorSaved (Dict String (Floor, Bool))
+  | FloorDeleted Floor
   | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
@@ -422,6 +423,20 @@ update removeToken setSelectionStart msg model =
               ) (model, Cmd.none)
       in
         newModel ! [ cmd ]
+
+    FloorDeleted floor ->
+      let
+        message =
+          Success ("Successfully deleted " ++ floor.name)
+
+        -- TODO update FloorInfo
+      in
+        { model |
+          floor = Nothing
+        , error = message
+        } !
+          [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+          ]
 
     MoveOnCanvas (clientX, clientY) ->
       let
@@ -1878,7 +1893,14 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
         (efloor, seed) ! [ cmd ]
 
     FloorProperty.OnDeleteFloor ->
-      (efloor, seed) ! [ ]
+      let
+        floor =
+          EditingFloor.present efloor
+
+        cmd =
+          performAPI (\_ -> FloorDeleted floor) (API.deleteEditingFloor apiConfig floor.id)
+      in
+        (efloor, seed) ! [ cmd ]
 
     FloorProperty.OnFileLoadFailed err ->
       let

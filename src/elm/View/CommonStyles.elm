@@ -70,14 +70,14 @@ formControl =
 
 button : S
 button =
-    [ ("display", "block")
-    , ("text-align", "center")
-    , ("width", "100%")
-    , ("padding", "6px 12px")
-    , ("box-sizing", "border-box")
-    , ("font-size", "13px")
-    , ("cursor", "pointer")
-    ]
+  [ ("display", "block")
+  , ("text-align", "center")
+  , ("width", "100%")
+  , ("padding", "6px 12px")
+  , ("box-sizing", "border-box")
+  , ("font-size", "13px")
+  , ("cursor", "pointer")
+  ]
 
 
 defaultButton : S
@@ -108,24 +108,24 @@ dangerButton =
 
 input : S
 input =
-    [ ("color", inputTextColor)
-    , ("width", "100%")
-    , ("background-color", "#fff")
-    , ("box-shadow", "inset 0 1px 2px rgba(0,0,0,0.075)")
-    , ("border", "1px solid #ddd")
-    , ("padding", "6px 12px")
-    , ("box-sizing", "border-box")
-    , ("font-size", "13px")
-    ]
+  [ ("color", inputTextColor)
+  , ("width", "100%")
+  , ("background-color", "#fff")
+  , ("box-shadow", "inset 0 1px 2px rgba(0,0,0,0.075)")
+  , ("border", "1px solid #ddd")
+  , ("padding", "6px 12px")
+  , ("box-sizing", "border-box")
+  , ("font-size", "13px")
+  ]
 
 
 popup : Int -> S
 popup padding =
-    [ ("box-sizing", "border-box")
-    , ("padding", px padding)
-    , ("background-color", "#fff")
-    , ("position", "absolute")
-    ]
+  [ ("box-sizing", "border-box")
+  , ("padding", px padding)
+  , ("background-color", "#fff")
+  , ("position", "absolute")
+  ]
 
 
 modalBackground : String -> S
@@ -137,4 +137,29 @@ modalBackground zIndex =
   , ("top", "0")
   , ("bottom", "0")
   , ("z-index", zIndex)
+  ]
+
+
+dialog : S
+dialog =
+  popup 20 ++
+    [ ("margin", "auto")
+    , ("left", "0")
+    , ("right", "0")
+    , ("top", "0")
+    , ("bottom", "0")
+    , ("width", px 300)
+    , ("height", px 150)
+    ]
+
+
+dialogFooter : S
+dialogFooter =
+  [ ("position", "absolute")
+  , ("left", "0")
+  , ("bottom", "0")
+  , ("display", "flex")
+  , ("padding", px 20)
+  , ("width", "100%")
+  , ("box-sizing", "border-box")
   ]

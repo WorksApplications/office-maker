@@ -17,6 +17,8 @@ import Model.User as User exposing (User)
 import Model.Floor exposing (Floor)
 import Model.I18n as I18n exposing (Language)
 
+import Component.Dialog as Dialog exposing (Dialog)
+
 import InlineHover exposing (hover)
 
 
@@ -29,6 +31,8 @@ type Msg
   | LoadFile FileList
   | GotDataURL File String
   | PreparePublish
+  | SelectDeleteFloor
+  | DeleteDialogMsg (Dialog.Msg Msg)
   | DeleteFloor
   | FileError File.Error
 
@@ -49,6 +53,7 @@ type alias FloorProperty =
   , realWidthInput : String
   , realHeightInput : String
   , ordInput : String
+  , deleteFloorDialog : Dialog
   }
 
 
@@ -58,6 +63,7 @@ init name realWidth realHeight ord =
   , realWidthInput = toString realWidth
   , realHeightInput = toString realHeight
   , ordInput = toString ord
+  , deleteFloorDialog = Dialog.init
   }
 
 
@@ -117,6 +123,16 @@ update message model =
 
     PreparePublish ->
         (model, Cmd.none, OnPreparePublish)
+
+    SelectDeleteFloor ->
+      (model, Dialog.open DeleteDialogMsg, None)
+
+    DeleteDialogMsg msg ->
+      let
+        (deleteFloorDialog, newMsg) =
+          Dialog.update msg model.deleteFloorDialog
+      in
+        ({ model | deleteFloorDialog = deleteFloorDialog }, newMsg, None)
 
     DeleteFloor ->
         (model, Cmd.none, OnDeleteFloor)
@@ -276,7 +292,7 @@ deleteButtonView lang user floor =
   if User.isAdmin user && List.isEmpty floor.objects then
     hover Styles.deleteFloorButtonHover
     button
-      [ onClick' DeleteFloor
+      [ onClick' SelectDeleteFloor
       , style Styles.deleteFloorButton
       ]
       [ text (I18n.deleteFloor lang) ]
@@ -312,4 +328,11 @@ view lang visitDate user floor model =
     , publishButtonView lang user
     , deleteButtonView lang user floor
     , floorUpdateInfoView lang visitDate floor
+    , Dialog.view
+        { strategy = Dialog.ConfirmOrClose ("delete", DeleteFloor) ("cancel", NoOp)
+        , transform = DeleteDialogMsg
+        }
+        "delete this floor?"
+        model.deleteFloorDialog
     ]
+    

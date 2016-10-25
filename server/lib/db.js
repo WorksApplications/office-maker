@@ -236,6 +236,13 @@ function deleteUnrelatedObjects(conn) {
   );
 }
 
+function deleteFloor(conn, tenantId, floorId) {
+  var sqls = [
+    sql.delete('floors', sql.whereList([['id', floorId], ['tenantId', tenantId]]))
+  ];
+  return rdb.batch(conn, sqls);
+}
+
 function deleteFloorWithObjects(conn, tenantId, floorId) {
   var sqls = [
     sql.delete('floors', sql.whereList([['id', floorId], ['tenantId', tenantId]])),
@@ -341,6 +348,7 @@ module.exports = {
   getFloorsInfo: getFloorsInfo,
   saveFloorWithObjects: saveFloorWithObjects,
   publishFloor: publishFloor,
+  deleteFloor: deleteFloor,
   deleteFloorWithObjects: deleteFloorWithObjects,
   deletePrototype: deletePrototype,
   saveImage: saveImage,
