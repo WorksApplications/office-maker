@@ -2,7 +2,6 @@ var request = require('request');
 var log = require('./log.js');
 
 function send(token, method, url, data) {
-  log.system.info(method, url);
   return new Promise((resolve, reject) => {
     var options = {
       method: method,
@@ -19,6 +18,7 @@ function send(token, method, url, data) {
         body && body.message && log.system.error(body.message);
         reject(body ? body.message : e || response.statusCode);
       } else {
+        log.system.debug(response.statusCode, 'profile service: success ' + method + ' ' + url);
         resolve(body);
       }
     });
