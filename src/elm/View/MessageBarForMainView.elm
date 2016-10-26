@@ -1,15 +1,14 @@
 module View.MessageBarForMainView exposing(view)
 
+import Http
 import Html exposing (..)
-import Html.Attributes exposing (..)
 
-import View.Styles as Styles
 import View.MessageBar as MessageBar
 
 import Model.I18n as I18n exposing (Language)
 import Model.Errors exposing (GlobalError(..))
+
 import API.API as API
-import Http
 
 
 view : Language -> GlobalError -> Html msg

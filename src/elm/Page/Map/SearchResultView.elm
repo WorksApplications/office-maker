@@ -2,8 +2,6 @@ module Page.Map.SearchResultView exposing (..)
 
 import Dict exposing (Dict)
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events
 import Model.Object exposing (..)
 import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
@@ -13,7 +11,6 @@ import Model.SearchResult exposing (SearchResult)
 import Model.I18n as I18n exposing (Language)
 
 import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
-import View.Styles as S
 
 import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Page.Map.Msg exposing (Msg(..))
@@ -46,26 +43,22 @@ view onSelectResult model =
                 case toItemViewModel model.lang floorsInfoDict model.personInfo model.selectedResult result of
                   Just item ->
                     let
-                      onSelectResultMsg = onSelectResult result
+                      onSelectResultMsg =
+                        onSelectResult result
 
-                      onStartDraggingMsg = Nothing
+                      onStartDraggingMsg =
+                        if EditMode.isEditMode model.editMode then
+                          Just StartDraggingFromMissingPerson
+                        else
+                          Nothing
                     in
-                      Just <| viewEach onSelectResultMsg onStartDraggingMsg model.lang item
+                      Just <| SearchResultItemView.view onSelectResultMsg onStartDraggingMsg model.lang item
 
                   Nothing ->
                     Nothing
               )
         in
           ul [] children
-
-
-viewEach : msg -> Maybe (String -> msg) -> Language -> Item -> Html msg
-viewEach onSelectResult onStartDragging lang item =
-    li
-      [ Html.Events.onClick onSelectResult
-      , style S.searchResultItem
-      ]
-      [ SearchResultItemView.view onStartDragging lang item ]
 
 
 toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item

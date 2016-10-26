@@ -35,7 +35,6 @@ import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
 import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
-import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClickboardData as ClickboardData
 
@@ -45,7 +44,6 @@ import API.Cache as Cache exposing (Cache, UserState)
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ObjectNameInput as ObjectNameInput
-import Component.Dialog
 
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Page.Map.Msg exposing (Msg(..))

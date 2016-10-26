@@ -691,10 +691,19 @@ searchBox =
     ]
 
 
-searchResultItem : S
-searchResultItem =
-    [ ("padding", "5px")
-    ]
+searchResultItem : Bool -> S
+searchResultItem draggable =
+  [ ("margin-bottom", "8px")
+  ] ++
+    ( if draggable then
+        [ ("background-color", "#abc")
+        , ("padding", "5px")
+        , ("border", "solid 1px #aaa")
+        , ("cursor", "move")
+        ]
+      else
+        []
+    )
 
 
 searchResultItemInner : Bool -> Bool -> S
