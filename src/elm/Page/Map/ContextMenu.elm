@@ -9,7 +9,7 @@ import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation
 import Model.I18n as I18n
 
-import Page.Map.Update exposing (..)
+import Page.Map.Msg exposing (..)
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 
 view : Model -> Html Msg

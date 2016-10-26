@@ -27,7 +27,7 @@ import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Scale as Scale
 import Model.Prototype exposing (Prototype)
-import Model.Prototypes as Prototypes exposing (..)
+import Model.Prototypes as Prototypes exposing (Prototypes, StampCandidate)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
@@ -43,11 +43,12 @@ import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
 import Component.FloorProperty as FloorProperty
-import Component.Header as Header exposing (..)
+import Component.Header as Header
 import Component.ObjectNameInput as ObjectNameInput
 import Component.Dialog
 
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
 
 type alias Flags =
@@ -133,85 +134,6 @@ initCmd apiConfig needsEditMode defaultUserState selectedFloor =
         API.getAuth apiConfig `Task.andThen` \user ->
         Task.succeed (userState, user)
     )
-
-
-type Msg
-  = NoOp
-  | Initialized (Maybe String) Bool UserState User
-  | FloorsInfoLoaded (List FloorInfo)
-  | FloorLoaded (Maybe Floor)
-  | ColorsLoaded ColorPalette
-  | PrototypesLoaded (List Prototype)
-  | ImageSaved String Int Int
-  | RequestSave SaveRequest
-  | SaveFloorDebounceMsg Debounce.Msg
-  | FloorSaved (Dict String (Floor, Bool))
-  | FloorDeleted Floor
-  | MoveOnCanvas (Int, Int)
-  | EnterCanvas
-  | LeaveCanvas
-  | MouseUpOnCanvas
-  | MouseDownOnCanvas (Int, Int)
-  | MouseDownOnObject Id (Int, Int)
-  | MouseUpOnObject Id
-  | MouseDownOnResizeGrip Id
-  | StartEditObject Id
-  | KeyCodeMsg Bool Int
-  | SelectBackgroundColor String
-  | SelectColor String
-  | SelectShape Object.Shape
-  | SelectFontSize Float
-  | ObjectNameInputMsg ObjectNameInput.Msg
-  | ShowContextMenuOnObject Id
-  | ShowContextMenuOnFloorInfo Id
-  | GoToFloor String Bool
-  | SelectSamePost String
-  | GotSamePostPeople (List Person)
-  | SelectIsland Id
-  | SelectSameColor Id
-  | WindowSize (Int, Int)
-  | MouseWheel Float
-  | ChangeMode EditMode
-  | ScaleEnd
-  | PrototypesMsg Prototypes.Msg
-  | RegisterPrototype Id
-  | FloorPropertyMsg FloorProperty.Msg
-  | Rotate Id
-  | FirstNameOnly (List Id)
-  | RemoveSpaces (List Id)
-  | UpdateHeaderState Header.Msg
-  | SignIn
-  | SignOut
-  | ToggleEditing
-  | TogglePrintView EditMode
-  | SelectLang Language
-  | UpdateSearchQuery String
-  | SubmitSearch
-  | GotSearchResult (List SearchResult)
-  | SelectSearchResult SearchResult
-  | StartDraggingFromMissingPerson Id
-  | RegisterPeople (List Person)
-  | RequestCandidate Id String
-  | SearchCandidateDebounceMsg Debounce.Msg
-  | GotCandidateSelection Id (List Person)
-  | GotMatchingList (List (Id, List Person))
-  | UpdatePersonCandidate Id (List Id)
-  | GotDiffSource (Floor, Maybe Floor)
-  | CloseDiff
-  | ConfirmDiff
-  | ChangeTab Tab
-  | ClosePopup
-  | ShowDetailForObject Id
-  | CreateNewFloor
-  | CopyFloor String
-  | EmulateClick Id Bool Time
-  | TokenRemoved
-  | Undo
-  | Redo
-  | Focused
-  | PasteFromClipboard String
-  | SyncFloor
-  | Error GlobalError
 
 
 debug : Bool
@@ -1531,7 +1453,7 @@ update removeToken setSelectionStart msg model =
         (Just floor, Just (left, top, _, _)) ->
           let
             prototype =
-              selectedPrototype model.prototypes
+              Prototypes.selectedPrototype model.prototypes
 
             candidates =
               ClickboardData.toObjectCandidates prototype (left, top) s
@@ -2174,7 +2096,7 @@ moveSelectionToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg)
 moveSelectionToward direction model editingFloor =
   let
     shift =
-      Direction.shiftTowards direction gridSize
+      Direction.shiftTowards direction model.gridSize
 
     newFloor =
       EditingFloor.update

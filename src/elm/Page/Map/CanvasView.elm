@@ -27,7 +27,7 @@ import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
-import Page.Map.Update exposing (..)
+import Page.Map.Msg exposing (..)
 
 adjustImagePositionOfMovingObject : Int -> Scale -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
 adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, top) =

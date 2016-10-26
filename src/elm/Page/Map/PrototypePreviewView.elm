@@ -16,7 +16,7 @@ import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (StampCandidate)
 import Model.Object as Object exposing (..)
 
-import Page.Map.Update exposing (..)
+import Page.Map.Msg exposing (..)
 
 view : List (Prototype, Bool) -> Bool -> Html Msg
 view prototypes stampMode =

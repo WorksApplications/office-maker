@@ -28,7 +28,7 @@ import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
-import Page.Map.Update exposing (..)
+import Page.Map.Msg exposing (Msg(..))
 import Page.Map.CanvasView as CanvasView
 import Page.Map.PropertyView as PropertyView
 import Page.Map.ContextMenu as ContextMenu

@@ -16,7 +16,7 @@ import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
 import View.Styles as S
 
 import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
-import Page.Map.Update exposing (Msg(..))
+import Page.Map.Msg exposing (Msg(..))
 
 
 view : (SearchResult -> Msg) -> Model -> Html Msg

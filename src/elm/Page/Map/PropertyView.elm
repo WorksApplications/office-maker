@@ -13,7 +13,7 @@ import Util.HtmlUtil exposing (..)
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
-import Page.Map.Update exposing (..)
+import Page.Map.Msg exposing (..)
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 
 view : Model -> List (Html Msg)
