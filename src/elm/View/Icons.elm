@@ -105,6 +105,11 @@ searchResultItemPerson =
   user defaultColor 20
 
 
+searchResultItemPost : Svg msg
+searchResultItemPost =
+  user defaultColor 20
+
+
 personDetailPopupPersonTel : Svg msg
 personDetailPopupPersonTel =
   phone defaultColor 16

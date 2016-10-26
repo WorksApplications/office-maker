@@ -12,6 +12,7 @@ import Model.EditMode as EditMode exposing (EditMode(..))
 import Model.SearchResult exposing (SearchResult)
 import Model.I18n as I18n exposing (Language)
 
+import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
 import View.Icons as Icons
 import View.Styles as S
 
@@ -71,58 +72,37 @@ viewEach onSelectResult format result =
 
 
 formatSearchResult : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
-formatSearchResult lang floorsInfo personInfo selectedResult = \result ->
+formatSearchResult lang floorsInfo personInfo currentlyFocusedObjectId = \result ->
   let
-    { personId, objectIdAndFloorId } = result
+    maybeItem =
+      case (result.objectIdAndFloorId, result.personId) of
+        (Just (e, fid), Just personId) ->
+          case (Dict.get fid floorsInfo, Dict.get personId personInfo) of
+            (Just info, Just person) ->
+              Just (SearchResultItemView.Object (nameOf e) info.name (Just person.name) (Just (idOf e) == currentlyFocusedObjectId))
 
-    floorName =
-      case objectIdAndFloorId of
-        Just (e, fid) ->
-          case Dict.get fid floorsInfo of
+            _ ->
+              Nothing
+
+        (Just (e, floorId), _) ->
+          case Dict.get floorId floorsInfo of
             Just info ->
-              info.name
+              Just (SearchResultItemView.Object (nameOf e) info.name Nothing (Just (idOf e) == currentlyFocusedObjectId))
 
-            Nothing ->
-              "?"
+            _ ->
+              Nothing
 
-        Nothing ->
-          I18n.missing lang
+        (Nothing, Just personId) ->
+          case Dict.get personId personInfo of
+            Just person -> Just (SearchResultItemView.MissingPerson person.name)
+            Nothing -> Nothing
 
-    isPerson =
-      personId /= Nothing
-
-    icon =
-      div
-        [ style S.searchResultItemIcon
-        ]
-        [ if isPerson then Icons.searchResultItemPerson else text "" ]
-
-    nameOfObject =
-      case objectIdAndFloorId of
-        Just (e, fid) -> nameOf e
-        Nothing -> ""
-
-    name =
-      case personId of
-        Just id ->
-          case Dict.get id personInfo of
-            Just person -> person.name
-            Nothing -> nameOfObject
-
-        Nothing -> nameOfObject
-
-    selectable =
-      objectIdAndFloorId /= Nothing
-
-    selected =
-      case (selectedResult, objectIdAndFloorId) of
-        (Just id, Just (e, _)) ->
-          idOf e == id
         _ ->
-          False
+          Nothing
   in
-    div
-      [ style <| S.searchResultItemInner selectable selected
-      ]
-      [ icon, div [] [text (name ++ "(" ++ floorName ++ ")")] ]
---
+    case maybeItem of
+      Just item ->
+        SearchResultItemView.view lang False item
+
+      Nothing ->
+        text ""

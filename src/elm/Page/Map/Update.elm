@@ -189,6 +189,7 @@ type Msg
   | SubmitSearch
   | GotSearchResult (List SearchResult)
   | SelectSearchResult SearchResult
+  | StartDraggingFromSearchResult Id Id
   | RegisterPeople (List Person)
   | RequestCandidate Id String
   | SearchCandidateDebounceMsg Debounce.Msg
@@ -1323,6 +1324,13 @@ update removeToken setSelectionStart msg model =
             Nothing -> Cmd.none
       in
         newModel ! [cmd1, cmd2]
+
+    StartDraggingFromSearchResult personId floorId ->
+      { model |
+        contextMenu = NoContextMenu
+      , draggingContext = MoveFromSearchResult personId floorId
+      } ! []
+
 
     RegisterPeople people ->
       Model.registerPeople people model ! []
