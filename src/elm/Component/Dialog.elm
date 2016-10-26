@@ -7,8 +7,8 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App as App
 
-import View.Styles as S
-import View.CommonStyles as CS
+import View.DialogView as DialogView
+import View.CommonStyles as S
 
 
 type alias Config msg =
@@ -25,8 +25,7 @@ type alias Dialog = Bool
 
 
 type Msg msg
-  = NoOp
-  | Open
+  = Open
   | Confirm msg
   | Close msg
 
@@ -38,9 +37,6 @@ init = False
 update : Msg msg -> Dialog -> (Dialog, Cmd msg)
 update msg model =
   case msg of
-    NoOp ->
-      model ! []
-
     Open ->
       True ! []
 
@@ -64,31 +60,23 @@ view config content opened =
         case config.strategy of
           ConfirmOrClose (confirmText, confirmMsg) (cancelText, cancelMsg) ->
             App.map config.transform <|
-              div [ style CS.dialogFooter ]
-                [ button [ style CS.defaultButton, onClick (Close cancelMsg) ] [ text cancelText ]
-                , button [ style CS.primaryButton, onClick (Confirm confirmMsg) ] [ text confirmText ]
+              div [ style S.dialogFooter ]
+                [ button [ style S.defaultButton, onClick (Close cancelMsg) ] [ text cancelText ]
+                , button [ style S.primaryButton, onClick (Confirm confirmMsg) ] [ text confirmText ]
                 ]
+
+      clickBackgroundMsg =
+        config.transform <|
+          case config.strategy of
+            ConfirmOrClose _ (cancelText, cancelMsg) ->
+              Close cancelMsg
     in
-      div
-        [ style S.modalBackground
-        , onClick (config.transform <|
-            case config.strategy of
-              ConfirmOrClose _ (cancelText, cancelMsg) ->
-                Close cancelMsg
-          )
-        ]
-        [ div
-            [ style CS.dialog
-            , onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed <| config.transform NoOp)
-            ]
-            [ div [] [ text content ]
-            , footer
-            ]
+      DialogView.viewWithSize clickBackgroundMsg 100000 300 150
+        [ div [] [ text content ]
+        , footer
         ]
   else
     text ""
-
-
 
 
 

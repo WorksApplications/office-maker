@@ -11,6 +11,7 @@ import Html.Events exposing (..)
 import Util.DateUtil exposing (..)
 
 import View.Styles as Styles
+import View.DialogView as DialogView
 
 import Model.Object as Object exposing (..)
 import Model.Floor as Floor exposing (Floor)
@@ -21,7 +22,6 @@ import Model.I18n as I18n exposing (Language)
 type alias Options msg =
   { onClose : msg
   , onConfirm : msg
-  , noOp : msg
   }
 
 
@@ -46,7 +46,7 @@ view lang visitDate personInfo options (current, prev) =
         ]
 
   in
-    popup options.noOp options.onClose <|
+    popup options.onClose <|
       [ header
       , body
       , buttons lang options.onClose options.onConfirm
@@ -106,21 +106,9 @@ buttons lang onClose onConfirm =
     div [ style Styles.diffPopupFooter ] [ cancelButton, confirmButton ]
 
 
-popup : msg -> msg -> List (Html msg) -> Html msg
-popup noOp onClose inner =
-  div
-    [ style Styles.modalBackground
-    , onClick onClose
-    ]
-    [ div
-        [ style Styles.diffPopup
-        , onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed noOp)
-        ]
-        [ div [ style Styles.diffPopupInnerContainer ] inner ]
-    ]
-
-
-
-
+popup : msg -> List (Html msg) -> Html msg
+popup onClose inner =
+  DialogView.viewWithMarginParcentage onClose 100000 10 20
+    [ div [ style Styles.diffPopupInnerContainer ] inner ]
 
 --

@@ -226,7 +226,7 @@ view model =
               model.lang
               model.visitDate
               model.personInfo
-              { onClose = CloseDiff, onConfirm = ConfirmDiff, noOp = NoOp }
+              { onClose = CloseDiff, onConfirm = ConfirmDiff }
           )
           model.diff
   in

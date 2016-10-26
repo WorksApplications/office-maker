@@ -119,16 +119,16 @@ input =
   ]
 
 
-popup : Int -> S
-popup padding =
+popup : Int -> String -> S
+popup padding position =
   [ ("box-sizing", "border-box")
   , ("padding", px padding)
   , ("background-color", "#fff")
-  , ("position", "absolute")
+  , ("position", position)
   ]
 
 
-modalBackground : String -> S
+modalBackground : Int -> S
 modalBackground zIndex =
   [ ("background-color", "rgba(0,0,0,0.5)")
   , ("position", "fixed")
@@ -136,20 +136,32 @@ modalBackground zIndex =
   , ("right", "0")
   , ("top", "0")
   , ("bottom", "0")
-  , ("z-index", zIndex)
+  , ("z-index", toString zIndex)
   ]
 
 
-dialog : S
-dialog =
-  popup 20 ++
+dialogWithSize : Int -> Int -> Int -> S
+dialogWithSize zIndex width height =
+  popup 20 "fixed" ++
     [ ("margin", "auto")
     , ("left", "0")
     , ("right", "0")
     , ("top", "0")
     , ("bottom", "0")
-    , ("width", px 300)
-    , ("height", px 150)
+    , ("width", px width)
+    , ("height", px height)
+    , ("z-index", toString zIndex)
+    ]
+
+
+dialogWithMarginParcentage : Int -> Int -> Int -> S
+dialogWithMarginParcentage zIndex top left =
+  popup 20 "fixed" ++
+    [ ("left", percent left)
+    , ("right", percent left)
+    , ("top", percent top)
+    , ("bottom", percent top)
+    , ("z-index", toString zIndex)
     ]
 
 

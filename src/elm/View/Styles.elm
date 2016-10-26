@@ -20,7 +20,7 @@ zIndex :
   , subView : String
   , messageBar : String
   , contextMenu : String
-  , modalBackground : String
+  , modalBackground : Int
   , userMenuView : String
   }
 zIndex =
@@ -35,7 +35,7 @@ zIndex =
   , candidatesView = "660"
   , messageBar = "700"
   , contextMenu = "800"
-  , modalBackground = "900"
+  , modalBackground = 900
   , userMenuView = "1000"
   }
 
@@ -481,7 +481,7 @@ deleteFloorButton =
 deleteFloorButtonHover : S
 deleteFloorButtonHover =
   formControl ++ dangerButton
-  
+
 
 floorNameInputContainer : S
 floorNameInputContainer =
@@ -786,27 +786,12 @@ personNotMatched ratio =
 
 defaultPopup : S
 defaultPopup =
-  popup 20
+  popup 20 "absolute"
 
 
 smallPopup : S
 smallPopup =
-  popup 10
-
-
-modalBackground : S
-modalBackground =
-  Common.modalBackground zIndex.modalBackground
-
-
-diffPopup : S
-diffPopup =
-  defaultPopup ++
-    [ ("left", "20%")
-    , ("right", "20%")
-    , ("top", "10%")
-    , ("bottom", "10%")
-    ] ++ shadow
+  popup 10 "absolute"
 
 
 diffPopupHeader : S
