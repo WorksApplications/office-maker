@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events
+import Html.Events exposing (..)
 
 import Model.Object exposing (..)
 import Model.Floor exposing (Floor, FloorBase)
@@ -18,6 +18,7 @@ import View.Styles as S
 
 type alias PostName = String
 type alias ObjectName = String
+type alias PersonId = String
 type alias PersonName = String
 type alias FloorName = String
 
@@ -26,11 +27,11 @@ type alias FloorName = String
 type Item
   = Post PostName
   | Object ObjectName FloorName (Maybe PersonName) Bool
-  | MissingPerson PersonName
+  | MissingPerson PersonId PersonName
 
 
-view : Language -> Bool -> Item -> Html msg
-view lang allowedToDrag item =
+view : Maybe (PersonId -> msg) -> Language -> Item -> Html msg
+view onStartDrag lang item =
   case item of
     Post postName ->
       itemViewCommon True False postIcon <|
@@ -44,9 +45,17 @@ view lang allowedToDrag item =
       itemViewCommon True focused noIcon <|
         div [] [ text (objectName ++ "(" ++ floorName ++ ")") ]
 
-    MissingPerson personName ->
+    MissingPerson personId personName ->
       itemViewCommon False False personIcon <|
-        div [] [ text (personName ++ "(" ++ I18n.missing lang ++ ")") ]
+        div
+          ( case onStartDrag of
+              Just onStartDrag ->
+                [ onMouseDown (onStartDrag personId) ]
+
+              Nothing ->
+                []
+          )
+          [ text (personName ++ "(" ++ I18n.missing lang ++ ")") ]
 
 
 itemViewCommon : Bool -> Bool -> Html msg -> Html msg -> Html msg

@@ -13,7 +13,6 @@ import Model.SearchResult exposing (SearchResult)
 import Model.I18n as I18n exposing (Language)
 
 import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
-import View.Icons as Icons
 import View.Styles as S
 
 import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
@@ -31,78 +30,67 @@ view onSelectResult model =
             PublicWithEdit _ f -> (f.id, f)
             Private f -> (f.id, f)
           ) model.floorsInfo
-
-    format =
-      formatSearchResult model.lang floorsInfoDict model.personInfo model.selectedResult
-
-    isEditing =
-      model.editMode /= Viewing True && model.editMode /= Viewing False
   in
-    view' model.lang onSelectResult isEditing format model.searchResult
-
-
-
-view' : Language -> (SearchResult -> msg) -> Bool -> (SearchResult -> Html msg) -> (Maybe (List SearchResult)) -> Html msg
-view' lang onSelectResult isEditing format maybeResults =
-    case maybeResults of
+    case model.searchResult of
       Nothing ->
         text ""
 
       Just [] ->
-        div [] [ text (I18n.nothingFound lang) ]
+        div [] [ text (I18n.nothingFound model.lang) ]
 
       Just results ->
         let
-          each result =
-            viewEach onSelectResult format result
-
           children =
-            List.map each results
+            results
+              |> List.filterMap (\result ->
+                case toItemViewModel model.lang floorsInfoDict model.personInfo model.selectedResult result of
+                  Just item ->
+                    let
+                      onSelectResultMsg = onSelectResult result
+
+                      onStartDraggingMsg = Nothing
+                    in
+                      Just <| viewEach onSelectResultMsg onStartDraggingMsg model.lang item
+
+                  Nothing ->
+                    Nothing
+              )
         in
           ul [] children
 
 
-viewEach : (SearchResult -> msg) -> (SearchResult -> Html msg) -> SearchResult -> Html msg
-viewEach onSelectResult format result =
+viewEach : msg -> Maybe (String -> msg) -> Language -> Item -> Html msg
+viewEach onSelectResult onStartDragging lang item =
     li
-      [ Html.Events.onClick (onSelectResult result)
+      [ Html.Events.onClick onSelectResult
       , style S.searchResultItem
       ]
-      [ format result ]
+      [ SearchResultItemView.view onStartDragging lang item ]
 
 
-formatSearchResult : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Html Msg
-formatSearchResult lang floorsInfo personInfo currentlyFocusedObjectId = \result ->
-  let
-    maybeItem =
-      case (result.objectIdAndFloorId, result.personId) of
-        (Just (e, fid), Just personId) ->
-          case (Dict.get fid floorsInfo, Dict.get personId personInfo) of
-            (Just info, Just person) ->
-              Just (SearchResultItemView.Object (nameOf e) info.name (Just person.name) (Just (idOf e) == currentlyFocusedObjectId))
-
-            _ ->
-              Nothing
-
-        (Just (e, floorId), _) ->
-          case Dict.get floorId floorsInfo of
-            Just info ->
-              Just (SearchResultItemView.Object (nameOf e) info.name Nothing (Just (idOf e) == currentlyFocusedObjectId))
-
-            _ ->
-              Nothing
-
-        (Nothing, Just personId) ->
-          case Dict.get personId personInfo of
-            Just person -> Just (SearchResultItemView.MissingPerson person.name)
-            Nothing -> Nothing
+toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item
+toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
+  case (result.objectIdAndFloorId, result.personId) of
+    (Just (e, fid), Just personId) ->
+      case (Dict.get fid floorsInfo, Dict.get personId personInfo) of
+        (Just info, Just person) ->
+          Just (SearchResultItemView.Object (nameOf e) info.name (Just person.name) (Just (idOf e) == currentlyFocusedObjectId))
 
         _ ->
           Nothing
-  in
-    case maybeItem of
-      Just item ->
-        SearchResultItemView.view lang False item
 
-      Nothing ->
-        text ""
+    (Just (e, floorId), _) ->
+      case Dict.get floorId floorsInfo of
+        Just info ->
+          Just (SearchResultItemView.Object (nameOf e) info.name Nothing (Just (idOf e) == currentlyFocusedObjectId))
+
+        _ ->
+          Nothing
+
+    (Nothing, Just personId) ->
+      case Dict.get personId personInfo of
+        Just person -> Just (SearchResultItemView.MissingPerson personId person.name)
+        Nothing -> Nothing
+
+    _ ->
+      Nothing

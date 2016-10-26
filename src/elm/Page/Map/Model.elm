@@ -93,7 +93,7 @@ type DraggingContext =
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
-  | MoveFromSearchResult Id Id
+  | MoveFromSearchResult
 
 
 type Tab =
