@@ -55,8 +55,17 @@ absoluteRect rect' =
   ("position", "absolute") :: (rect rect')
 
 
-card : S
-card =
+card : Maybe Int -> S
+card maybeHeight =
+  ( case maybeHeight of
+      Just height ->
+        [ ("height", px height)
+        , ("overflow-y", "scroll")
+        ]
+
+      Nothing ->
+        []
+  ) ++
   [ ("padding", "20px")
   , ("box-shadow", "rgba(0, 0, 0, 0.08451) -2px 2px 4px inset")
   ]

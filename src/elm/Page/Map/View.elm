@@ -120,16 +120,16 @@ subViewForEdit model =
             []
         )
   in
-    [ card <| penView model
-    , card <| PropertyView.view model
-    , card <| floorView
+    [ card Nothing <| penView model
+    , card Nothing <| PropertyView.view model
+    , card Nothing <| floorView
     ]
 
 
 subViewForSearch : Model -> List (Html Msg)
 subViewForSearch model =
-  [ card <| [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
-  , card <| [ SearchResultView.view SelectSearchResult model ]
+  [ card Nothing [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
+  , card (Just 500) [ SearchResultView.view SelectSearchResult model ]
   ]
 
 

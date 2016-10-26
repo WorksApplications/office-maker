@@ -6,9 +6,9 @@ import Html.Attributes exposing (..)
 import View.CommonStyles as S
 
 
-card : List (Html msg) -> Html msg
-card children =
-  div [ style S.card ] children
+card : Maybe Int -> List (Html msg) -> Html msg
+card maybeHeight children =
+  div [ style (S.card maybeHeight) ] children
 
 
 formControl : List (Html msg) -> Html msg
