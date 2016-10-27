@@ -24,7 +24,7 @@ type Item
   | MissingPerson PersonId PersonName
 
 
-view : msg -> Maybe (PersonId -> msg) -> Language -> Item -> Html msg
+view : msg -> Maybe (PersonId -> PersonName -> msg) -> Language -> Item -> Html msg
 view onSelect onStartDrag lang item =
   case item of
     Post postName ->
@@ -47,7 +47,7 @@ view onSelect onStartDrag lang item =
         wrap =
           case onStartDrag of
             Just onStartDrag ->
-              wrapForDrag (onStartDrag personId)
+              wrapForDrag (onStartDrag personId personName)
 
             Nothing ->
               identity

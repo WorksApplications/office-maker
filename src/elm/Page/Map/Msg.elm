@@ -82,7 +82,7 @@ type Msg
   | SubmitSearch
   | GotSearchResult (List SearchResult)
   | SelectSearchResult SearchResult
-  | StartDraggingFromMissingPerson Id
+  | StartDraggingFromMissingPerson String String
   | RegisterPeople (List Person)
   | RequestCandidate Id String
   | SearchCandidateDebounceMsg Debounce.Msg

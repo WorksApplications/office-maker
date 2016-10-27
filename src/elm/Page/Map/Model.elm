@@ -16,6 +16,7 @@ import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Scale as Scale exposing (Scale)
+import Model.Prototype as Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
@@ -93,7 +94,7 @@ type DraggingContext =
   | PenFromScreenPos (Int, Int)
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
-  | MoveFromSearchResult
+  | MoveFromSearchResult Prototype String
 
 
 type Tab =
@@ -330,38 +331,45 @@ screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
 
 stampCandidates : Model -> List StampCandidate
 stampCandidates model =
-  case model.editMode of
-    Stamp ->
-      let
-        prototype =
-          selectedPrototype model.prototypes
+  let
+    prototype =
+      selectedPrototype model.prototypes
 
-        (offsetX, offsetY) = model.offset
+    (offsetX, offsetY) = model.offset
 
-        (x2, y2) =
-          model.pos
+    (x2, y2) =
+      model.pos
 
-        (x2', y2') =
-          screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
-      in
-        case model.draggingContext of
-          StampFromScreenPos (x1, y1) ->
-            let
-              (x1', y1') =
-                screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
-            in
-              stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
+    (x2', y2') =
+      screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
+  in
+    case (model.editMode, model.draggingContext) of
+      (_, MoveFromSearchResult prototype personId) ->
+        let
+          (deskWidth, deskHeight) = prototype.size
 
-          _ ->
-            let
-              (deskWidth, deskHeight) = prototype.size
+          (left, top) =
+            fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+        in
+          [ (prototype, (left, top)) ]
 
-              (left, top) =
-                fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
-            in
-              [ (prototype, (left, top))
-              ]
-    _ -> []
+      (Stamp, StampFromScreenPos (x1, y1)) ->
+        let
+          (x1', y1') =
+            screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
+        in
+          stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
+
+      (Stamp, _) ->
+        let
+          (deskWidth, deskHeight) = prototype.size
+
+          (left, top) =
+            fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+        in
+          [ (prototype, (left, top)) ]
+
+      _ -> []
 
 
 temporaryPen : Model -> (Int, Int) -> Maybe (String, String, (Int, Int, Int, Int))

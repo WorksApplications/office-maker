@@ -364,6 +364,13 @@ canvasImage floor =
     ] []
 
 
+temporaryStampsView : Model -> List (String, Html msg)
+temporaryStampsView model =
+  List.map
+    (temporaryStampView model.scale False)
+    (Model.stampCandidates model)
+
+
 temporaryStampView : Scale -> Bool -> StampCandidate -> (String, Html msg)
 temporaryStampView scale selected (prototype, (left, top)) =
   let
@@ -407,13 +414,6 @@ temporaryPenView model =
         _ -> text ""
 
     _ -> text ""
-
-
-temporaryStampsView : Model -> List (String, Html msg)
-temporaryStampsView model =
-  List.map
-    (temporaryStampView model.scale False)
-    (Model.stampCandidates model)
 
 
 selectorRectView : Model -> Html msg

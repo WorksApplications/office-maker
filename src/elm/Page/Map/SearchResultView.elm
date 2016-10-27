@@ -60,7 +60,7 @@ view onSelectResult model =
                     Nothing
               )
         in
-          ul [ style S.searchResult ] children
+          div [ style S.searchResult ] children
 
 
 toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item

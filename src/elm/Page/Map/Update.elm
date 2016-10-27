@@ -1248,11 +1248,15 @@ update removeToken setSelectionStart msg model =
       in
         newModel ! [cmd1, cmd2]
 
-    StartDraggingFromMissingPerson personId ->
-      { model |
-        contextMenu = NoContextMenu
-      , draggingContext = MoveFromSearchResult
-      } ! []
+    StartDraggingFromMissingPerson personId personName ->
+      let
+        prototype =
+          Prototypes.selectedPrototype model.prototypes
+      in
+        { model |
+          contextMenu = NoContextMenu
+        , draggingContext = MoveFromSearchResult { prototype | name = personName } personId
+        } ! []
 
     RegisterPeople people ->
       Model.registerPeople people model ! []
@@ -1550,6 +1554,9 @@ updateOnMouseUp model =
 
         ResizeFromScreenPos id pos ->
           updateOnFinishResize id pos model
+
+        MoveFromSearchResult prototype personId ->
+          updateOnFinishStamp model
 
         _ ->
           model ! []
