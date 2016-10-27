@@ -2,6 +2,7 @@ module Page.Map.SearchResultView exposing (..)
 
 import Dict exposing (Dict)
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Model.Object exposing (..)
 import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
@@ -11,6 +12,7 @@ import Model.SearchResult exposing (SearchResult)
 import Model.I18n as I18n exposing (Language)
 
 import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
+import View.Styles as S
 
 import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Page.Map.Msg exposing (Msg(..))
