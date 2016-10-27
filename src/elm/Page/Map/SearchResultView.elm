@@ -8,7 +8,8 @@ import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 import Model.Person exposing (Person)
 import Model.EditMode as EditMode exposing (EditMode(..))
-import Model.SearchResult exposing (SearchResult)
+import Model.SearchResult as SearchResult exposing (SearchResult)
+import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 
 import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
@@ -20,6 +21,26 @@ import Page.Map.Msg exposing (Msg(..))
 
 view : Model -> Html Msg
 view model =
+  case model.searchResult of
+    Nothing ->
+      div [ style S.searchResult ] [ text "" ]
+
+    Just [] ->
+      div [ style S.searchResult ] [ text (I18n.nothingFound model.lang) ]
+
+    Just results ->
+      let
+        grouped =
+          SearchResult.groupByPostAndReorder
+            (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
+            model.personInfo
+            results
+      in
+        div [ style S.searchResult ] ( List.map (viewListForOnePost model) grouped )
+
+
+viewListForOnePost : Model -> (Maybe String, List SearchResult) -> Html Msg
+viewListForOnePost model (maybePostName, results) =
   let
     floorsInfoDict =
       Dict.fromList <|
@@ -29,38 +50,40 @@ view model =
             PublicWithEdit _ f -> (f.id, f)
             Private f -> (f.id, f)
           ) model.floorsInfo
-  in
-    case model.searchResult of
-      Nothing ->
-        div [ style S.searchResult ] [ text "" ]
 
-      Just [] ->
-        div [ style S.searchResult ] [ text (I18n.nothingFound model.lang) ]
+    children =
+      results
+        |> List.filterMap (\result ->
+          case toItemViewModel model.lang floorsInfoDict model.personInfo model.selectedResult result of
+            Just item ->
+              let
+                onSelectResultMsg =
+                  SelectSearchResult result
 
-      Just results ->
-        let
-          children =
-            results
-              |> List.filterMap (\result ->
-                case toItemViewModel model.lang floorsInfoDict model.personInfo model.selectedResult result of
-                  Just item ->
-                    let
-                      onSelectResultMsg =
-                        SelectSearchResult result
-
-                      onStartDraggingMsg =
-                        if EditMode.isEditMode model.editMode then
-                          Just StartDraggingFromMissingPerson
-                        else
-                          Nothing
-                    in
-                      Just <| SearchResultItemView.view onSelectResultMsg onStartDraggingMsg model.lang item
-
-                  Nothing ->
+                onStartDraggingMsg =
+                  if EditMode.isEditMode model.editMode then
+                    Just StartDraggingFromMissingPerson
+                  else
                     Nothing
-              )
-        in
-          div [ style S.searchResult ] children
+              in
+                Just <| SearchResultItemView.view onSelectResultMsg onStartDraggingMsg model.lang item
+
+            Nothing ->
+              Nothing
+        )
+
+    groupHeader =
+      case maybePostName of
+        Just name ->
+          div [ style S.searchResultGroupHeader ] [ text name ]
+
+        Nothing ->
+          div [ style S.searchResultGroupHeader ] [ text "No Post" ]
+  in
+    div [ style S.searchResultGroup ]
+      [ groupHeader
+      , div [] children
+      ]
 
 
 toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item

@@ -1208,11 +1208,7 @@ update removeToken setSelectionStart msg model =
 
             _ -> Nothing
 
-        searchResult =
-          Just <|
-            SearchResult.reorderResults
-              (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
-              results
+        searchResult = Just results
       in
         { model |
           searchResult = searchResult

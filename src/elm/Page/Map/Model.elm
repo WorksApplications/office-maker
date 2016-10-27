@@ -22,7 +22,7 @@ import Model.Floor as Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language)
-import Model.SearchResult as SearchResult exposing (SearchResult)
+import Model.SearchResult as SearchResult exposing (SearchResult, SearchResultsForOnePost)
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)

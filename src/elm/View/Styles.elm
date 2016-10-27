@@ -1145,6 +1145,19 @@ searchResult =
   ]
 
 
+searchResultGroup : S
+searchResultGroup =
+  [ ("margin-bottom", "12px")
+  ]
+
+
+searchResultGroupHeader : S
+searchResultGroupHeader =
+  [ ("color", "#aaa")
+  , ("margin-bottom", "5px")
+  ]
+
+
 searchResultItem : Bool -> S
 searchResultItem draggable =
   [ ("margin-bottom", "8px")
