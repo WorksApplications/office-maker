@@ -1,7 +1,6 @@
 module Model.SearchResult exposing (..)
 
 import Dict exposing (Dict)
-import List.Extra as ListX
 import Model.Object exposing (Object)
 import Model.Person exposing (Person)
 
