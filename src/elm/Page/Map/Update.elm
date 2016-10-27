@@ -1030,6 +1030,7 @@ update removeToken setSelectionStart msg model =
                   , size = (w, h)
                   , fontSize = fontSizeOf e
                   , shape = shapeOf e
+                  , personId = Nothing
                   }
                   model.prototypes
             in
@@ -1255,7 +1256,13 @@ update removeToken setSelectionStart msg model =
       in
         { model |
           contextMenu = NoContextMenu
-        , draggingContext = MoveFromSearchResult { prototype | name = personName } personId
+        , draggingContext =
+            MoveFromSearchResult
+              { prototype
+              | name = personName
+              , personId = Just personId
+              }
+              personId
         } ! []
 
     RegisterPeople people ->
@@ -1629,7 +1636,13 @@ updateOnFinishStamp' stampCandidates model floor =
           let
             (width, height) = prototype.size
           in
-            Object.initDesk newId (x, y, width, height) prototype.backgroundColor prototype.name prototype.fontSize Nothing
+            Object.initDesk
+              newId
+              (x, y, width, height)
+              prototype.backgroundColor
+              prototype.name
+              prototype.fontSize
+              prototype.personId
         )
         candidatesWithNewIds
 
@@ -1890,7 +1903,7 @@ regesterPerson apiConfig personId =
 
 regesterPersonIfNotCached : API.Config -> Dict String Person -> String -> Cmd Msg
 regesterPersonIfNotCached apiConfig personInfo personId =
-  if Dict.member personId personInfo then
+  if Debug.log personId <| Dict.member personId personInfo then
     Cmd.none
   else
     regesterPerson apiConfig personId

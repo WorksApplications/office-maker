@@ -268,6 +268,7 @@ decodePrototype =
       , size = (width, height)
       , fontSize = fontSize
       , shape = if shape == "Ellipse" then Ellipse else Rectangle
+      , personId = Nothing
       }
     )
     |> required "id" D.string

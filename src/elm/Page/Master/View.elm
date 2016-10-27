@@ -31,7 +31,7 @@ view model =
     []
     [ headerView model
     , messageBar model
-    , card <| colorMasterView model
+    , card Nothing <| colorMasterView model
     ]
 
 

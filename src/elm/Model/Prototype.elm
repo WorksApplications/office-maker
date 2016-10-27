@@ -14,4 +14,5 @@ type alias Prototype =
   , size : (Int, Int)
   , fontSize : Float
   , shape : Shape
+  , personId : Maybe String
   }

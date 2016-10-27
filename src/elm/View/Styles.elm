@@ -1150,7 +1150,7 @@ searchResultItem draggable =
   [ ("margin-bottom", "8px")
   ] ++
     ( if draggable then
-        [ ("background-color", "#abc")
+        [ ("background-color", "#cde")
         , ("padding", "5px")
         , ("border", "solid 1px #aaa")
         , ("cursor", "move")

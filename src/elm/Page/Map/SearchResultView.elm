@@ -18,8 +18,8 @@ import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab
 import Page.Map.Msg exposing (Msg(..))
 
 
-view : (SearchResult -> Msg) -> Model -> Html Msg
-view onSelectResult model =
+view : Model -> Html Msg
+view model =
   let
     floorsInfoDict =
       Dict.fromList <|
@@ -46,7 +46,7 @@ view onSelectResult model =
                   Just item ->
                     let
                       onSelectResultMsg =
-                        onSelectResult result
+                        SelectSearchResult result
 
                       onStartDraggingMsg =
                         if EditMode.isEditMode model.editMode then
