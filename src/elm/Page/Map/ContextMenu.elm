@@ -24,30 +24,25 @@ view model =
           ObjectsOperation.findObjectById (Model.getEditingFloorOrDummy model).objects id `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
             let
-              str =
-                -- case Dict.get personId model.personInfo of
-                --   Just person ->
-                --     "Select " ++ person.post
-                --
-                --   Nothing ->
-                    (I18n.selectSamePost model.lang)
+              annotation =
+                Maybe.map (.post) (Dict.get personId model.personInfo)
             in
-              Just [ (SelectSamePost personId, str) ]
+              Just [ (SelectSamePost personId, I18n.selectSamePost model.lang, annotation) ]
 
         forOneDesk =
           if [id] == model.selectedObjects then
             (Maybe.withDefault [] selectSamePostOption) ++
-            [ (SelectIsland id, I18n.selectIsland model.lang)
-            , (SelectSameColor id, I18n.selectSameColor model.lang)
-            , (RegisterPrototype id, I18n.registerAsStamp model.lang)
-            , (Rotate id, I18n.rotate model.lang)
+            [ (SelectIsland id, I18n.selectIsland model.lang, Nothing)
+            , (SelectSameColor id, I18n.selectSameColor model.lang, Nothing)
+            , (RegisterPrototype id, I18n.registerAsStamp model.lang, Nothing)
+            , (Rotate id, I18n.rotate model.lang, Nothing)
             ]
           else
             []
 
         common =
-          [ (FirstNameOnly model.selectedObjects, I18n.pickupFirstWord model.lang)
-          , (RemoveSpaces model.selectedObjects, I18n.removeSpaces model.lang)
+          [ (FirstNameOnly model.selectedObjects, I18n.pickupFirstWord model.lang, Nothing)
+          , (RemoveSpaces model.selectedObjects, I18n.removeSpaces model.lang, Nothing)
           ]
 
         items =
@@ -58,6 +53,6 @@ view model =
     FloorInfo (x, y) id ->
       let
         items =
-          [(CopyFloor id, I18n.copyFloor model.lang)]
+          [(CopyFloor id, I18n.copyFloor model.lang, Nothing)]
       in
         ContextMenu.view items model.windowSize (x, y)

@@ -225,11 +225,18 @@ subView =
     ]
 
 
+contextMenuItemHeight : Int
+contextMenuItemHeight = 28
+
+
+contextMenuItemHeightWithAnnotation : Int
+contextMenuItemHeightWithAnnotation = 40
+
+
 contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
-contextMenu (x, y) (windowWidth, windowHeight) rows =
+contextMenu (x, y) (windowWidth, windowHeight) height =
   let
-    width = 200
-    height = rows * 20 --TODO
+    width = 300
     x' = min x (windowWidth - width)
     y' = min y (windowHeight - height)
   in
@@ -247,16 +254,25 @@ contextMenu (x, y) (windowWidth, windowHeight) rows =
     ]
 
 
-contextMenuItem : S
-contextMenuItem =
-  [ ("padding", "5px")
+contextMenuItem : Bool -> S
+contextMenuItem withAnnotation =
+  [ ("padding", "5px 15px")
   , ("cursor", "pointer")
+  , ("height", px (if withAnnotation then contextMenuItemHeightWithAnnotation else contextMenuItemHeight))
+  , ("box-sizing", "border-box")
   ]
 
 
 contextMenuItemHover : S
 contextMenuItemHover =
   [ ("background-color", "#9ce")
+  ]
+
+
+contextMenuItemAnnotation : S
+contextMenuItemAnnotation =
+  [ ("color", "#aaa")
+  , ("font-size", "10px")
   ]
 
 
