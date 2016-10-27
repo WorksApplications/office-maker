@@ -707,31 +707,6 @@ searchBox =
     ]
 
 
-searchResultItem : Bool -> S
-searchResultItem draggable =
-  [ ("margin-bottom", "8px")
-  ] ++
-    ( if draggable then
-        [ ("background-color", "#abc")
-        , ("padding", "5px")
-        , ("border", "solid 1px #aaa")
-        , ("cursor", "move")
-        ]
-      else
-        []
-    )
-
-
-searchResultItemInner : Bool -> Bool -> S
-searchResultItemInner selectable selected =
-  -- [("background-color", if selected then hoverBackgroundColor else "")]
-  [ ("text-decoration", if selectable then "underline" else "")
-  , ("cursor", if selectable then "pointer" else "")
-  , ("font-weight", if selected then "bold" else "")
-  ]
-  ++ flex
-
-
 floorsInfoView : S
 floorsInfoView =
     [ ("position", "absolute")
@@ -903,6 +878,7 @@ popupPointerBase =
     , ("position", "absolute")
     , ("background-color", "#fff")
     ]
+
 
 popupPointerButtom : S
 popupPointerButtom =
@@ -1161,6 +1137,37 @@ mainView windowHeight =
   , ("position", "relative")
   , ("overflow", "hidden")
   ] ++ flex
+
+
+searchResult : S
+searchResult =
+  [ ("font-size", "14px")
+  ]
+
+
+searchResultItem : Bool -> S
+searchResultItem draggable =
+  [ ("margin-bottom", "8px")
+  ] ++
+    ( if draggable then
+        [ ("background-color", "#abc")
+        , ("padding", "5px")
+        , ("border", "solid 1px #aaa")
+        , ("cursor", "move")
+        ]
+      else
+        []
+    )
+
+
+searchResultItemInner : Bool -> Bool -> S
+searchResultItemInner selectable selected =
+  -- [("background-color", if selected then hoverBackgroundColor else "")]
+  [ ("text-decoration", if selectable then "underline" else "")
+  , ("cursor", if selectable then "pointer" else "")
+  , ("font-weight", if selected then "bold" else "")
+  ]
+  ++ flex
 
 
 searchResultItemIcon : S

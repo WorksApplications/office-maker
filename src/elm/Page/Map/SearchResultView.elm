@@ -30,10 +30,10 @@ view onSelectResult model =
   in
     case model.searchResult of
       Nothing ->
-        text ""
+        div [ style S.searchResult ] [ text "" ]
 
       Just [] ->
-        div [] [ text (I18n.nothingFound model.lang) ]
+        div [ style S.searchResult ] [ text (I18n.nothingFound model.lang) ]
 
       Just results ->
         let
@@ -58,7 +58,7 @@ view onSelectResult model =
                     Nothing
               )
         in
-          ul [] children
+          ul [ style S.searchResult ] children
 
 
 toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item
