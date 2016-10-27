@@ -249,7 +249,7 @@ contextMenu (x, y) (windowWidth, windowHeight) height =
     , ("box-sizing", "border-box")
     , ("border-style", "solid")
     , ("border-width", "1px")
-    , ("border-color", "#eee")
+    , ("border-color", "#aaa")
     , ("font-size", "15px")
     ]
 

@@ -1899,7 +1899,7 @@ regesterPerson apiConfig personId =
 
 regesterPersonIfNotCached : API.Config -> Dict String Person -> String -> Cmd Msg
 regesterPersonIfNotCached apiConfig personInfo personId =
-  if Debug.log personId <| Dict.member personId personInfo then
+  if Dict.member personId personInfo then
     Cmd.none
   else
     regesterPerson apiConfig personId

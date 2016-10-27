@@ -129,7 +129,7 @@ subViewForEdit model =
 subViewForSearch : Model -> List (Html Msg)
 subViewForSearch model =
   [ card Nothing [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
-  , card (Just 500) [ SearchResultView.view model ]
+  , card (Just (snd model.windowSize - 37 - 69)) [ SearchResultView.view model ]
   ]
 
 

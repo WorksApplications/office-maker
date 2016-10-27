@@ -61,6 +61,7 @@ card maybeHeight =
       Just height ->
         [ ("height", px height)
         , ("overflow-y", "scroll")
+        , ("box-sizing", "border-box")
         ]
 
       Nothing ->
