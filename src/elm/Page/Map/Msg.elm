@@ -58,6 +58,7 @@ type Msg
   | ShowContextMenuOnFloorInfo Id
   | GoToFloor String Bool
   | SelectSamePost String
+  | SearchSamePost String
   | GotSamePostPeople (List Person)
   | SelectIsland Id
   | SelectSameColor Id

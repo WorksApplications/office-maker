@@ -767,11 +767,20 @@ update removeToken setSelectionStart msg model =
             model.selectedObjects
           else
             [id]
+
+        maybeLoadPersonCmd =
+          model.floor `Maybe.andThen` \eFloor ->
+          ObjectsOperation.findObjectById (EditingFloor.present eFloor).objects id `Maybe.andThen` \obj ->
+          Object.relatedPerson obj `Maybe.andThen` \personId ->
+          Just (getAndCachePersonIfNotCached personId model)
+
+        cmd =
+          Maybe.withDefault Cmd.none maybeLoadPersonCmd
       in
         { model |
           contextMenu = Model.Object model.pos id
         , selectedObjects = selectedObjects
-        } ! []
+        } ! [ cmd ]
 
     ShowContextMenuOnFloorInfo id ->
       case model.floor of
@@ -833,6 +842,14 @@ update removeToken setSelectionStart msg model =
               }
           in
             newModel ! [ cmd ]
+
+    SearchSamePost postName ->
+      submitSearch
+        { model
+        | searchQuery = postName
+        , tab = SearchTab
+        , contextMenu = NoContextMenu
+        }
 
     GotSamePostPeople people ->
       let
@@ -1166,21 +1183,7 @@ update removeToken setSelectionStart msg model =
       } ! []
 
     SubmitSearch ->
-      let
-        withPrivate =
-          not (User.isGuest model.user)
-
-        -- TODO dedup
-        searchCmd =
-          if String.trim model.searchQuery == "" then
-            Cmd.none
-          else
-            performAPI
-              GotSearchResult
-              (API.search model.apiConfig withPrivate model.searchQuery)
-      in
-        model !
-          [ searchCmd, Navigation.modifyUrl (URL.serialize model) ]
+      submitSearch model
 
     GotSearchResult results ->
       let
@@ -1505,6 +1508,25 @@ update removeToken setSelectionStart msg model =
         newModel ! []
 
 
+submitSearch : Model -> (Model, Cmd Msg)
+submitSearch model =
+  let
+    withPrivate =
+      not (User.isGuest model.user)
+
+    -- TODO dedup
+    searchCmd =
+      if String.trim model.searchQuery == "" then
+        Cmd.none
+      else
+        performAPI
+          GotSearchResult
+          (API.search model.apiConfig withPrivate model.searchQuery)
+  in
+    model !
+      [ searchCmd, Navigation.modifyUrl (URL.serialize model) ]
+
+
 updateOnMouseUp : Model -> (Model, Cmd Msg)
 updateOnMouseUp model =
   let
@@ -1732,15 +1754,8 @@ updateOnFloorLoaded maybeFloor model =
         cmd =
           case (User.isGuest model.user, floor.update) of
             (False, Just { by }) ->
-              case Dict.get by model.personInfo of
-                Just _ -> Cmd.none
-                Nothing ->
-                  let
-                    task =
-                      API.getPersonByUser model.apiConfig by `andThen` \person ->
-                        Task.succeed (RegisterPeople [person])
-                  in
-                    performAPI identity task
+              getAndCachePersonIfNotCached by model
+
             _ ->
               Cmd.none
       in
@@ -1752,6 +1767,18 @@ updateOnFloorLoaded maybeFloor model =
           { model | floor = Nothing }
       in
         newModel ! [ Navigation.modifyUrl (URL.serialize newModel) ]
+
+
+getAndCachePersonIfNotCached : String -> Model -> Cmd Msg
+getAndCachePersonIfNotCached personId model =
+  case Dict.get personId model.personInfo of
+    Just _ ->
+      Cmd.none
+
+    Nothing ->
+      performAPI
+        (\person -> RegisterPeople [person])
+        (API.getPersonByUser model.apiConfig personId)
 
 
 focusCmd : Cmd Msg

@@ -11,6 +11,13 @@ selectSamePost lang =
     EN -> "Select people in the same post"
 
 
+searchSamePost : Language -> String
+searchSamePost lang =
+  case lang of
+    JA -> "同じ部署の人を検索"
+    EN -> "Search people in the same post"
+
+
 selectIsland : Language -> String
 selectIsland lang =
   case lang of

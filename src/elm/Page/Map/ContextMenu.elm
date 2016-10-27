@@ -7,6 +7,7 @@ import Html exposing (..)
 import View.ContextMenu as ContextMenu
 import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation
+import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n
 
 import Page.Map.Msg exposing (..)
@@ -20,18 +21,19 @@ view model =
 
     Object (x, y) id ->
       let
-        selectSamePostOption =
-          ObjectsOperation.findObjectById (Model.getEditingFloorOrDummy model).objects id `Maybe.andThen` \obj ->
+        itemsForPerson =
+          model.floor `Maybe.andThen` \eFloor ->
+          ObjectsOperation.findObjectById (EditingFloor.present eFloor).objects id `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
-            let
-              annotation =
-                Maybe.map (.post) (Dict.get personId model.personInfo)
-            in
-              Just [ (SelectSamePost personId, I18n.selectSamePost model.lang, annotation) ]
+          Dict.get personId model.personInfo `Maybe.andThen` \person ->
+            Just <|
+            [ (SelectSamePost personId, I18n.selectSamePost model.lang, Just person.post)
+            , (SearchSamePost person.post, I18n.searchSamePost model.lang, Just person.post)
+            ]
 
         forOneDesk =
           if [id] == model.selectedObjects then
-            (Maybe.withDefault [] selectSamePostOption) ++
+            (Maybe.withDefault [] itemsForPerson) ++
             [ (SelectIsland id, I18n.selectIsland model.lang, Nothing)
             , (SelectSameColor id, I18n.selectSameColor model.lang, Nothing)
             , (RegisterPrototype id, I18n.registerAsStamp model.lang, Nothing)
