@@ -71,9 +71,9 @@ viewListForOnePost model (maybePostName, results) =
                     Nothing
 
                 onStartDraggingExistingObjectMsg =
-                  if EditMode.isEditMode model.editMode then
-                    Just StartDraggingFromExistingObject
-                  else
+                  -- if EditMode.isEditMode model.editMode then
+                  --   Just StartDraggingFromExistingObject
+                  -- else
                     Nothing
               in
                 Just <| SearchResultItemView.view onSelectResultMsg onStartDraggingMsg onStartDraggingExistingObjectMsg model.lang item

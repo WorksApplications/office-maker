@@ -1167,7 +1167,8 @@ searchResultGroupHeaderHover =
 
 searchResultItem : Bool -> S
 searchResultItem draggable =
-  [ ("margin-bottom", "8px")
+  [ ("margin-top", "8px")
+  , ("margin-bottom", "8px")
   ] ++
     ( if draggable then
         [ ("background-color", "#cde")
