@@ -1482,23 +1482,23 @@ update removeToken setSelectionStart msg model =
             candidates =
               ClickboardData.toObjectCandidates prototype (left, top) s
 
-            ((newModel, cmd), newIdNamePairs) =
+            ((newModel, cmd), newObjects) =
               updateOnFinishStamp' candidates model floor
 
             task =
               List.foldl
-                (\(objectId, name) prevTask ->
+                (\object prevTask ->
                   prevTask `andThen` \list ->
                     Task.map (\people ->
-                      (objectId, people) :: list
-                    ) (API.personCandidate model.apiConfig name)
-                ) (Task.succeed []) newIdNamePairs
+                      (Object.idOf object, people) :: list
+                    ) (API.personCandidate model.apiConfig (Object.nameOf object)) -- TODO too many requests
+                ) (Task.succeed []) newObjects
 
             autoMatchingCmd =
               performAPI GotMatchingList task
           in
             { newModel |
-              selectedObjects = List.map fst newIdNamePairs
+              selectedObjects = List.map (Object.idOf) newObjects
             } ! [ cmd, autoMatchingCmd ]
 
         _ ->
@@ -1632,18 +1632,11 @@ updateOnFinishStamp model =
       model ! []
 
 
-updateOnFinishStamp' : List StampCandidate -> Model -> EditingFloor -> ((Model, Cmd Msg), List (Id, String))
+updateOnFinishStamp' : List StampCandidate -> Model -> EditingFloor -> ((Model, Cmd Msg), List Object)
 updateOnFinishStamp' stampCandidates model floor =
   let
     (candidatesWithNewIds, newSeed) =
       IdGenerator.zipWithNewIds model.seed stampCandidates
-
-    newIdNamePairs =
-      List.map
-        (\((prototype, _), newId) ->
-          (newId, prototype.name)
-        )
-        candidatesWithNewIds
 
     newObjects =
       List.map
@@ -1671,7 +1664,7 @@ updateOnFinishStamp' stampCandidates model floor =
       seed = newSeed
     , floor = Just newFloor
     , editMode = Select -- maybe selecting stamped desks would be better?
-    }, saveCmd), newIdNamePairs)
+    }, saveCmd), newObjects)
 
 
 updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
