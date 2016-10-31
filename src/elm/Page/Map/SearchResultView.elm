@@ -3,6 +3,10 @@ module Page.Map.SearchResultView exposing (..)
 import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
+
+import InlineHover exposing (hover)
+
 import Model.Object exposing (..)
 import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
@@ -75,7 +79,13 @@ viewListForOnePost model (maybePostName, results) =
     groupHeader =
       case maybePostName of
         Just name ->
-          div [ style S.searchResultGroupHeader ] [ text name ]
+          hover
+            S.searchResultGroupHeaderHover
+            div
+            [ style S.searchResultGroupHeader
+            , onClick (SearchByPost name)
+            ]
+            [ text name ]
 
         Nothing ->
           div [ style S.searchResultGroupHeader ] [ text "No Post" ]

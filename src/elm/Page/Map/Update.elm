@@ -843,7 +843,7 @@ update removeToken setSelectionStart msg model =
           in
             newModel ! [ cmd ]
 
-    SearchSamePost postName ->
+    SearchByPost postName ->
       submitSearch
         { model
         | searchQuery = postName

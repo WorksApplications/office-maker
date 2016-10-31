@@ -1155,8 +1155,15 @@ searchResultGroupHeader : S
 searchResultGroupHeader =
   [ ("color", "#aaa")
   , ("margin-bottom", "5px")
+  , ("cursor", "pointer")
   ]
 
+
+searchResultGroupHeaderHover : S
+searchResultGroupHeaderHover =
+  [ ("text-decoration", "underline")
+  ]
+  
 
 searchResultItem : Bool -> S
 searchResultItem draggable =
