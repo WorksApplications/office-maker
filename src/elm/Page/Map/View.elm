@@ -22,7 +22,7 @@ import Component.Header as Header
 import Util.HtmlUtil exposing (..)
 
 import Model.EditMode as EditMode exposing (EditMode(..))
-import Model.Prototypes as Prototypes exposing (StampCandidate)
+import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 import Model.User as User
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)

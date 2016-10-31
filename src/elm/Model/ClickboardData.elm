@@ -5,11 +5,11 @@ import String
 import HtmlParser exposing (..)
 import HtmlParser.Util exposing (..)
 
-type alias StampCandidate =
+type alias PositionedPrototype =
   (Prototype, (Int, Int))
 
 
-toObjectCandidates : Prototype -> (Int, Int) -> String -> List StampCandidate
+toObjectCandidates : Prototype -> (Int, Int) -> String -> List PositionedPrototype
 toObjectCandidates prototype (left, top) s =
   let
     rows =

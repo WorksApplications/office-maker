@@ -24,7 +24,7 @@ import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale exposing (Scale)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
-import Model.Prototypes as Prototypes exposing (StampCandidate)
+import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 import Page.Map.Msg exposing (..)
@@ -368,10 +368,10 @@ temporaryStampsView : Model -> List (String, Html msg)
 temporaryStampsView model =
   List.map
     (temporaryStampView model.scale False)
-    (Model.stampCandidates model)
+    (Model.getPositionedPrototype model)
 
 
-temporaryStampView : Scale -> Bool -> StampCandidate -> (String, Html msg)
+temporaryStampView : Scale -> Bool -> PositionedPrototype -> (String, Html msg)
 temporaryStampView scale selected (prototype, (left, top)) =
   let
     (deskWidth, deskHeight) = prototype.size

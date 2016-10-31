@@ -6,7 +6,7 @@ import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Util.ListUtil exposing (..)
 
 
-type alias StampCandidate =
+type alias PositionedPrototype =
   (Prototype, (Int, Int))
 
 
@@ -125,8 +125,8 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
     List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
 
 
-stampCandidatesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List StampCandidate
-stampCandidatesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
+positionedPrototypesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List PositionedPrototype
+positionedPrototypesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
   let
     deskSize = prototype.size
 

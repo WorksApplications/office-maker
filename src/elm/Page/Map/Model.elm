@@ -330,8 +330,8 @@ screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
     )
 
 
-stampCandidates : Model -> List StampCandidate
-stampCandidates model =
+getPositionedPrototype : Model -> List PositionedPrototype
+getPositionedPrototype model =
   let
     prototype =
       selectedPrototype model.prototypes
@@ -368,7 +368,7 @@ stampCandidates model =
           (x1', y1') =
             screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
         in
-          stampCandidatesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
+          positionedPrototypesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
 
       (Stamp, _) ->
         let

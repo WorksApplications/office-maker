@@ -13,7 +13,7 @@ import Util.ListUtil exposing (..)
 
 import Model.Scale as Scale exposing (Scale)
 import Model.Prototype exposing (Prototype)
-import Model.Prototypes as Prototypes exposing (StampCandidate)
+import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 import Model.Object as Object exposing (..)
 
 import Page.Map.Msg exposing (..)
@@ -53,7 +53,7 @@ eachView (width, height) index (prototype, selected) =
     snd <| temporaryStampView Scale.default False (prototype, (left + index * width, top))
 
 
-temporaryStampView : Scale -> Bool -> StampCandidate -> (String, Html msg)
+temporaryStampView : Scale -> Bool -> PositionedPrototype -> (String, Html msg)
 temporaryStampView scale selected (prototype, (left, top)) =
   let
     (deskWidth, deskHeight) = prototype.size

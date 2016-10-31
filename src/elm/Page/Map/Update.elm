@@ -27,13 +27,12 @@ import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Scale as Scale
 import Model.Prototype exposing (Prototype)
-import Model.Prototypes as Prototypes exposing (Prototypes, StampCandidate)
+import Model.Prototypes as Prototypes exposing (Prototypes, PositionedPrototype)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
-import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClickboardData as ClickboardData
@@ -1626,17 +1625,17 @@ updateOnFinishStamp : Model -> (Model, Cmd Msg)
 updateOnFinishStamp model =
   case model.floor of
     Just floor ->
-      fst <| updateOnFinishStamp' (Model.stampCandidates model) model floor
+      fst <| updateOnFinishStamp' (Model.getPositionedPrototype model) model floor
 
     Nothing ->
       model ! []
 
 
-updateOnFinishStamp' : List StampCandidate -> Model -> EditingFloor -> ((Model, Cmd Msg), List Object)
-updateOnFinishStamp' stampCandidates model floor =
+updateOnFinishStamp' : List PositionedPrototype -> Model -> EditingFloor -> ((Model, Cmd Msg), List Object)
+updateOnFinishStamp' prototypes model floor =
   let
     (candidatesWithNewIds, newSeed) =
-      IdGenerator.zipWithNewIds model.seed stampCandidates
+      IdGenerator.zipWithNewIds model.seed prototypes
 
     newObjects =
       List.map
