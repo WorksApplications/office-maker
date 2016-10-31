@@ -254,14 +254,14 @@ getPersonByUser config id =
 
 
 getPeopleByFloorAndPost : Config -> String -> Int -> String -> Task Error (List Person)
-getPeopleByFloorAndPost config floorId floorVersion personId =
+getPeopleByFloorAndPost config floorId floorVersion post =
   HttpUtil.get
     decodePeople
     ( Http.url
         (config.apiRoot ++ "/1/people")
         [ ("floorId", floorId)
         , ("floorVersion", toString floorVersion)
-        , ("personId", personId)
+        , ("post", post)
         ]
     )
     (authorization config.token)

@@ -137,8 +137,8 @@ app.get('/api/1/people', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var floorId = options.floorId;
   var floorVersion = options.floorVersion;
-  var personId = options.personId;
-  if(!floorId || !floorVersion || !personId) {
+  var postName = options.post;
+  if(!floorId || !floorVersion || !postName) {
     return Promise.reject(400);
   }
   return getSelf(conn, token).then((user) => {
@@ -149,16 +149,10 @@ app.get('/api/1/people', inTransaction((conn, req, res) => {
           peopleSet[object.personId] = true;
         }
       });
-      return profileService.getPerson(config.profileServiceRoot, token, personId).then((person) => {
-        if(!person) {
-          log.system.warn("person not found: " + personId);
-          return Promise.resolve([]);
-        }
-        return profileService.getPeopleByPost(config.profileServiceRoot, token, person.post).then((people) => {
-          return Promise.resolve(people.filter((person) => {
-            return peopleSet[person.id];
-          }));
-        });
+      return profileService.getPeopleByPost(config.profileServiceRoot, token, postName).then((people) => {
+        return Promise.resolve(people.filter((person) => {
+          return peopleSet[person.id];
+        }));
       });
     });
   });
@@ -191,7 +185,7 @@ app.get('/api/1/users/:id', inTransaction((conn, req, res) => {
   var userId = req.params.id;
   return getSelf(conn, token).then((user) => {
     return profileService.getPerson(config.profileServiceRoot, token, userId).then((person) => {
-      user.person = person
+      user.person = person//FIXME should not
       return Promise.resolve(user);
     });
   });

@@ -27,7 +27,7 @@ view model =
           Object.relatedPerson obj `Maybe.andThen` \personId ->
           Dict.get personId model.personInfo `Maybe.andThen` \person ->
             Just <|
-            [ (SelectSamePost personId, I18n.selectSamePost model.lang, Just person.post)
+            [ (SelectSamePost person.post, I18n.selectSamePost model.lang, Just person.post)
             , (SearchByPost person.post, I18n.searchSamePost model.lang, Just person.post)
             ]
 

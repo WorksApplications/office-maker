@@ -816,7 +816,7 @@ update removeToken setSelectionStart msg model =
         , Navigation.modifyUrl (URL.serialize newModel)
         ]
 
-    SelectSamePost personId ->
+    SelectSamePost postName ->
       case model.floor of
         Nothing ->
           model ! []
@@ -833,7 +833,7 @@ update removeToken setSelectionStart msg model =
                     model.apiConfig
                     floor.id
                     editingFloor.version
-                    personId
+                    postName
                 )
 
             newModel =
