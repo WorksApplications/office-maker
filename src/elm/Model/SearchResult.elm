@@ -74,3 +74,7 @@ reorderResults thisFloorId results =
       ) ([], [], []) results
   in
     inThisFloor ++ inOtherFloor ++ missing
+
+
+mergeObjectInfo : List Object -> List SearchResult -> List SearchResult
+mergeObjectInfo objects results = results -- TODO implement

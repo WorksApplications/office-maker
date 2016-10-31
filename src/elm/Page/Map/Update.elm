@@ -36,6 +36,7 @@ import Model.I18n as I18n exposing (Language(..))
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClickboardData as ClickboardData
+import Model.SearchResult as SearchResult
 
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
@@ -1658,11 +1659,16 @@ updateOnFinishStamp' prototypes model floor =
 
     saveCmd =
       requestSaveFloorCmd newFloor floor
+
+    searchResult =
+      model.searchResult
+        |> (Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).objects))
   in
     (({ model |
       seed = newSeed
     , floor = Just newFloor
     , editMode = Select -- maybe selecting stamped desks would be better?
+    , searchResult = searchResult
     }, saveCmd), newObjects)
 
 
