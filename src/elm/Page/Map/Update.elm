@@ -1198,10 +1198,10 @@ update removeToken setSelectionStart msg model =
 
         selectedResult =
           case results of
-            { objectIdAndFloorId } :: [] ->
-              case objectIdAndFloorId of
-                Just (e, fid) ->
-                  Just (idOf e)
+            { objectAndFloorId } :: [] ->
+              case objectAndFloorId of
+                Just (object, fid) ->
+                  Just (idOf object)
 
                 Nothing ->
                   Nothing
@@ -1215,10 +1215,10 @@ update removeToken setSelectionStart msg model =
         , selectedResult = selectedResult
         } ! [ regesterPersonCmd ]
 
-    SelectSearchResult { personId, objectIdAndFloorId } ->
+    SelectSearchResult { personId, objectAndFloorId } ->
       let
         (newModel, cmd1) =
-          case objectIdAndFloorId of
+          case objectAndFloorId of
             Just (obj, floorId) ->
               let
                 model' =

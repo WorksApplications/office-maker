@@ -190,7 +190,7 @@ decodeSearchResult =
   decode
     SearchResult
     |> optional' "personId" D.string
-    |> optional' "objectIdAndFloorId" (D.tuple2 (,) decodeObject D.string)
+    |> optional' "objectAndFloorId" (D.tuple2 (,) decodeObject D.string)
 
 
 decodeSearchResults : Decoder (List SearchResult)

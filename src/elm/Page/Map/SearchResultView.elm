@@ -104,19 +104,19 @@ viewListForOnePost model (maybePostName, results) =
 
 toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item
 toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
-  case (result.objectIdAndFloorId, result.personId) of
-    (Just (e, fid), Just personId) ->
+  case (result.objectAndFloorId, result.personId) of
+    (Just (object, fid), Just personId) ->
       case (Dict.get fid floorsInfo, Dict.get personId personInfo) of
         (Just info, Just person) ->
-          Just (SearchResultItemView.Object (idOf e) (nameOf e) info.name (Just person.name) (Just (idOf e) == currentlyFocusedObjectId))
+          Just (SearchResultItemView.Object (idOf object) (nameOf object) info.name (Just person.name) (Just (idOf object) == currentlyFocusedObjectId))
 
         _ ->
           Nothing
 
-    (Just (e, floorId), _) ->
+    (Just (object, floorId), _) ->
       case Dict.get floorId floorsInfo of
         Just info ->
-          Just (SearchResultItemView.Object (idOf e) (nameOf e) info.name Nothing (Just (idOf e) == currentlyFocusedObjectId))
+          Just (SearchResultItemView.Object (idOf object) (nameOf object) info.name Nothing (Just (idOf object) == currentlyFocusedObjectId))
 
         _ ->
           Nothing

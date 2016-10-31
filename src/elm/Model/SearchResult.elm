@@ -8,8 +8,8 @@ type alias Id = String
 
 type alias SearchResult =
   { personId : Maybe Id
-  , objectIdAndFloorId : Maybe (Object, Id)
-  }
+  , objectAndFloorId : Maybe (Object, Id)
+  } -- TODO no (nothing, nothing) pattern!
 
 
 type alias SearchResultsForOnePost =
@@ -61,9 +61,9 @@ reorderResults : Maybe String -> List SearchResult -> List SearchResult
 reorderResults thisFloorId results =
   let
     (inThisFloor, inOtherFloor, missing) =
-      List.foldl (\({ personId, objectIdAndFloorId } as result) (this, other, miss) ->
-        case objectIdAndFloorId of
-          Just (eid, fid) ->
+      List.foldl (\({ personId, objectAndFloorId } as result) (this, other, miss) ->
+        case objectAndFloorId of
+          Just (_, fid) ->
             if Just fid == thisFloorId then
               (result :: this, other, miss)
             else
@@ -77,4 +77,4 @@ reorderResults thisFloorId results =
 
 
 mergeObjectInfo : List Object -> List SearchResult -> List SearchResult
-mergeObjectInfo objects results = results -- TODO implement
+mergeObjectInfo objects results = results
