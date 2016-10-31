@@ -1261,6 +1261,22 @@ update removeToken setSelectionStart msg model =
               personId
         } ! []
 
+    StartDraggingFromExistingObject objectId name personId ->
+      let
+        prototype =
+          Prototypes.selectedPrototype model.prototypes
+      in
+        { model |
+          contextMenu = NoContextMenu
+        , draggingContext =
+            MoveExistingObjectFromSearchResult
+              { prototype
+              | name = name
+              , personId = personId
+              }
+              objectId
+        } ! []
+
     RegisterPeople people ->
       Model.registerPeople people model ! []
 
@@ -1560,6 +1576,9 @@ updateOnMouseUp model =
 
         MoveFromSearchResult prototype personId ->
           updateOnFinishStamp model
+
+        MoveExistingObjectFromSearchResult prototype objectId ->
+          model ! []
 
         _ ->
           model ! []

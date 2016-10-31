@@ -85,6 +85,15 @@ move ids gridSize (dx, dy) floor =
     floor
 
 
+overrideObject : Int -> Object -> Floor -> Floor
+overrideObject gridSize newObject floor =
+  let
+    remainingObjects =
+      List.filter (\object -> (Object.idOf object) /= (Object.idOf newObject)) (objects floor)
+  in
+    setObjects ( remainingObjects ++ [ newObject ] ) floor
+
+
 paste : List (Object, Id) -> (Int, Int) -> Floor -> Floor
 paste copiedWithNewIds (baseX, baseY) floor =
   setObjects

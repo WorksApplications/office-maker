@@ -1163,7 +1163,7 @@ searchResultGroupHeaderHover : S
 searchResultGroupHeaderHover =
   [ ("text-decoration", "underline")
   ]
-  
+
 
 searchResultItem : Bool -> S
 searchResultItem draggable =
@@ -1180,14 +1180,17 @@ searchResultItem draggable =
     )
 
 
-searchResultItemInner : Bool -> Bool -> S
-searchResultItemInner selectable selected =
-  -- [("background-color", if selected then hoverBackgroundColor else "")]
+searchResultItemInner : S
+searchResultItemInner =
+  flex
+
+
+searchResultItemInnerLabel : Bool -> Bool -> S
+searchResultItemInnerLabel selectable selected =
   [ ("text-decoration", if selectable then "underline" else "")
   , ("cursor", if selectable then "pointer" else "")
   , ("font-weight", if selected then "bold" else "")
   ]
-  ++ flex
 
 
 searchResultItemIcon : S

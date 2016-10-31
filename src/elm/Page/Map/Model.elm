@@ -95,6 +95,7 @@ type DraggingContext =
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
   | MoveFromSearchResult Prototype String
+  | MoveExistingObjectFromSearchResult Prototype Id
 
 
 type Tab =
@@ -344,7 +345,16 @@ stampCandidates model =
       screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
   in
     case (model.editMode, model.draggingContext) of
-      (_, MoveFromSearchResult prototype personId) ->
+      (_, MoveFromSearchResult prototype _) ->
+        let
+          (deskWidth, deskHeight) = prototype.size
+
+          (left, top) =
+            fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+        in
+          [ (prototype, (left, top)) ]
+
+      (_, MoveExistingObjectFromSearchResult prototype _) ->
         let
           (deskWidth, deskHeight) = prototype.size
 

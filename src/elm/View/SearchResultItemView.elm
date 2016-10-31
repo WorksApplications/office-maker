@@ -11,57 +11,76 @@ import View.Styles as S
 
 
 type alias PostName = String
+type alias ObjectId = String
 type alias ObjectName = String
 type alias PersonId = String
 type alias PersonName = String
 type alias FloorName = String
 
+
 -- View Model
 
 type Item
   = Post PostName
-  | Object ObjectName FloorName (Maybe PersonName) Bool
+  | Object ObjectId ObjectName FloorName (Maybe PersonName) Bool
   | MissingPerson PersonId PersonName
 
 
-view : msg -> Maybe (PersonId -> PersonName -> msg) -> Language -> Item -> Html msg
-view onSelect onStartDrag lang item =
+view : msg -> Maybe (PersonId -> PersonName -> msg) -> Maybe (ObjectId -> String -> (Maybe PersonId) -> msg) -> Language -> Item -> Html msg
+view onSelect onStartDragMissing onStartDragExisting lang item =
   case item of
     Post postName ->
-      wrapForNonDrag onSelect <|
-      itemViewCommon True False postIcon <|
-        div [] [ text postName ]
+      wrapForNonDrag <|
+      itemViewCommon postIcon <|
+        div [] [ itemViewLabel (Just onSelect) False postName ]
 
-    Object _ floorName (Just personName) focused ->
-      wrapForNonDrag onSelect <|
-      itemViewCommon True focused personIcon <|
-        div [] [ text (personName ++ "(" ++ floorName ++ ")") ]
-
-    Object objectName floorName Nothing focused ->
-      wrapForNonDrag onSelect <|
-      itemViewCommon True focused noIcon <|
-        div [] [ text (objectName ++ "(" ++ floorName ++ ")") ]
-
-    MissingPerson personId personName ->
+    Object objectId _ floorName (Just personName) focused ->
       let
         wrap =
-          case onStartDrag of
-            Just onStartDrag ->
-              wrapForDrag (onStartDrag personId personName)
+          case onStartDragExisting of
+            Just onStartDragExisting ->
+              wrapForDrag (onStartDragExisting objectId personName (Just personName))
 
             Nothing ->
               identity
       in
         wrap <|
-        itemViewCommon False False personIcon <|
-          div [] [ text (personName ++ "(" ++ I18n.missing lang ++ ")") ]
+        itemViewCommon personIcon <|
+          div [] [ itemViewLabel (Just onSelect) focused (personName ++ "(" ++ floorName ++ ")") ]
+
+    Object objectId objectName floorName Nothing focused ->
+      let
+        wrap =
+          case onStartDragExisting of
+            Just onStartDragExisting ->
+              wrapForDrag (onStartDragExisting objectId objectName Nothing)
+
+            Nothing ->
+              identity
+      in
+        wrap <|
+        itemViewCommon noIcon <|
+          div [] [ itemViewLabel (Just onSelect) focused (objectName ++ "(" ++ floorName ++ ")") ]
+
+    MissingPerson personId personName ->
+      let
+        wrap =
+          case onStartDragMissing of
+            Just onStartDragMissing ->
+              wrapForDrag (onStartDragMissing personId personName)
+
+            Nothing ->
+              identity
+      in
+        wrap <|
+        itemViewCommon personIcon <|
+          div [] [ itemViewLabel Nothing False (personName ++ "(" ++ I18n.missing lang ++ ")") ]
 
 
-wrapForNonDrag : msg -> Html msg -> Html msg
-wrapForNonDrag onSelect child =
+wrapForNonDrag : Html msg -> Html msg
+wrapForNonDrag child =
   div
-    [ onClick onSelect
-    , style (S.searchResultItem False)
+    [ style (S.searchResultItem False)
     ]
     [ child ]
 
@@ -75,11 +94,29 @@ wrapForDrag onStartDrag child =
     [ child ]
 
 
-itemViewCommon : Bool -> Bool -> Html msg -> Html msg -> Html msg
-itemViewCommon selectable focused icon label =
+itemViewCommon : Html msg -> Html msg -> Html msg
+itemViewCommon icon label =
   div
-    [ style (S.searchResultItemInner selectable focused) ]
+    [ style S.searchResultItemInner ]
     [ icon, label ]
+
+
+itemViewLabel : Maybe msg -> Bool -> String -> Html msg
+itemViewLabel onSelect focused s =
+  let
+    selectable = onSelect /= Nothing
+
+    events =
+      case onSelect of
+        Just onSelect ->
+          [ onClick onSelect ]
+
+        Nothing ->
+          []
+  in
+    span
+      ( events ++ [ style (S.searchResultItemInnerLabel selectable focused) ])
+      [ text s ]
 
 
 personIcon : Html msg

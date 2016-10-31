@@ -349,6 +349,13 @@ moveObjects gridSize (dx, dy) ids objects =
   ) ids objects
 
 
+moveObjectToPosition : Int -> Id -> (Int, Int) -> List Object -> List Object
+moveObjectToPosition gridSize id (newX, newY) objects =
+  partiallyChange (\e ->
+    Object.move (fitPositionToGrid gridSize (newX, newY)) e
+  ) [id] objects
+
+
 findObjectById : List Object -> Id -> Maybe Object
 findObjectById objects id =
   findBy (\object -> id == (idOf object)) objects

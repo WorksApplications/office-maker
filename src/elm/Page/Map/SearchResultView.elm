@@ -69,8 +69,14 @@ viewListForOnePost model (maybePostName, results) =
                     Just StartDraggingFromMissingPerson
                   else
                     Nothing
+
+                onStartDraggingExistingObjectMsg =
+                  if EditMode.isEditMode model.editMode then
+                    Just StartDraggingFromExistingObject
+                  else
+                    Nothing
               in
-                Just <| SearchResultItemView.view onSelectResultMsg onStartDraggingMsg model.lang item
+                Just <| SearchResultItemView.view onSelectResultMsg onStartDraggingMsg onStartDraggingExistingObjectMsg model.lang item
 
             Nothing ->
               Nothing
@@ -102,7 +108,7 @@ toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
     (Just (e, fid), Just personId) ->
       case (Dict.get fid floorsInfo, Dict.get personId personInfo) of
         (Just info, Just person) ->
-          Just (SearchResultItemView.Object (nameOf e) info.name (Just person.name) (Just (idOf e) == currentlyFocusedObjectId))
+          Just (SearchResultItemView.Object (idOf e) (nameOf e) info.name (Just person.name) (Just (idOf e) == currentlyFocusedObjectId))
 
         _ ->
           Nothing
@@ -110,7 +116,7 @@ toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
     (Just (e, floorId), _) ->
       case Dict.get floorId floorsInfo of
         Just info ->
-          Just (SearchResultItemView.Object (nameOf e) info.name Nothing (Just (idOf e) == currentlyFocusedObjectId))
+          Just (SearchResultItemView.Object (idOf e) (nameOf e) info.name Nothing (Just (idOf e) == currentlyFocusedObjectId))
 
         _ ->
           Nothing
