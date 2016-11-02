@@ -1,19 +1,31 @@
 module Model.SearchResult exposing (..)
 
 import Dict exposing (Dict)
-import Model.Object exposing (Object)
+import Model.Object as Object exposing (Object)
 import Model.Person exposing (Person)
 
 type alias Id = String
+type alias FloorId = String
+type alias PersonId = String
+type alias PersonName = String
 
-type alias SearchResult =
-  { personId : Maybe Id
-  , objectAndFloorId : Maybe (Object, Id)
-  } -- TODO no (nothing, nothing) pattern!
+type SearchResult
+  = Object Object FloorId
+  | MissingPerson PersonId
 
 
 type alias SearchResultsForOnePost =
-  (Maybe String, List SearchResult)
+  (Maybe PersonName, List SearchResult)
+
+
+getPersonId : SearchResult -> Maybe Id
+getPersonId result =
+  case result of
+    Object o _ ->
+      Object.relatedPerson o
+
+    MissingPerson personId ->
+      Just personId
 
 
 groupByPostAndReorder : Maybe String -> Dict String Person -> List SearchResult -> List SearchResultsForOnePost
@@ -25,8 +37,8 @@ groupByPostAndReorder thisFloorId personInfo results =
 groupByPost : Dict String Person -> List SearchResult -> List SearchResultsForOnePost
 groupByPost personInfo results =
   Dict.values <|
-    groupBy (\r ->
-      case r.personId of
+    groupBy (\result ->
+      case getPersonId result of
         Just id ->
           case Dict.get id personInfo of
             Just person ->
@@ -61,20 +73,48 @@ reorderResults : Maybe String -> List SearchResult -> List SearchResult
 reorderResults thisFloorId results =
   let
     (inThisFloor, inOtherFloor, missing) =
-      List.foldl (\({ personId, objectAndFloorId } as result) (this, other, miss) ->
-        case objectAndFloorId of
-          Just (_, fid) ->
-            if Just fid == thisFloorId then
+      List.foldl (\result (this, other, miss) ->
+        case result of
+          Object _ floorId ->
+            if Just floorId == thisFloorId then
               (result :: this, other, miss)
             else
               (this, result :: other, miss)
 
-          Nothing ->
+          MissingPerson _ ->
             (this, other, result :: miss)
+
       ) ([], [], []) results
   in
     inThisFloor ++ inOtherFloor ++ missing
 
 
-mergeObjectInfo : List Object -> List SearchResult -> List SearchResult
-mergeObjectInfo objects results = results
+mergeObjectInfo : String -> List Object -> List SearchResult -> List SearchResult
+mergeObjectInfo currentFloorId objects results =
+    List.concatMap (\result ->
+      case result of
+        Object object floorId ->
+          if floorId == currentFloorId then
+            case List.filter (\o -> Object.idOf object == Object.idOf o) objects of
+              [] ->
+                case Object.relatedPerson object of
+                  Just personId ->
+                    [ MissingPerson personId ]
+
+                  Nothing ->
+                    []
+
+              _ ->
+                [ result ]
+          else
+            [ result ]
+
+        MissingPerson personId ->
+          case List.filter (\object -> Object.relatedPerson object == Just personId) objects of
+            [] ->
+              [ result ]
+
+            objects ->
+              List.map (\object -> Object object currentFloorId) objects
+            
+    ) results

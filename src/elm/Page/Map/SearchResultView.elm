@@ -7,7 +7,7 @@ import Html.Events exposing (..)
 
 import InlineHover exposing (hover)
 
-import Model.Object exposing (..)
+import Model.Object as Object exposing (..)
 import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 import Model.Person exposing (Person)
@@ -104,27 +104,27 @@ viewListForOnePost model (maybePostName, results) =
 
 toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item
 toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
-  case (result.objectAndFloorId, result.personId) of
-    (Just (object, fid), Just personId) ->
-      case (Dict.get fid floorsInfo, Dict.get personId personInfo) of
-        (Just info, Just person) ->
-          Just (SearchResultItemView.Object (idOf object) (nameOf object) info.name (Just person.name) (Just (idOf object) == currentlyFocusedObjectId))
-
-        _ ->
-          Nothing
-
-    (Just (object, floorId), _) ->
+  case result of
+    SearchResult.Object object floorId ->
       case Dict.get floorId floorsInfo of
         Just info ->
-          Just (SearchResultItemView.Object (idOf object) (nameOf object) info.name Nothing (Just (idOf object) == currentlyFocusedObjectId))
+          let
+            objectIsFocused =
+              Just (idOf object) == currentlyFocusedObjectId
+
+            maybePersonName =
+              Object.relatedPerson object
+                |> (flip Maybe.andThen) (\personId -> Dict.get personId personInfo)
+                |> (flip Maybe.andThen) (\person -> Just person.name)
+
+            _ = Debug.log "Object" ((idOf object), (nameOf object), info.name)
+          in
+            Just (SearchResultItemView.Object (idOf object) (nameOf object) info.name maybePersonName objectIsFocused)
 
         _ ->
           Nothing
 
-    (Nothing, Just personId) ->
+    SearchResult.MissingPerson personId ->
       case Dict.get personId personInfo of
         Just person -> Just (SearchResultItemView.MissingPerson personId person.name)
         Nothing -> Nothing
-
-    _ ->
-      Nothing

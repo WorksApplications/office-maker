@@ -207,7 +207,7 @@ personCandidate config name =
   else
     getWithoutCache
       decodePeople
-      (config.apiRoot ++ "/1/candidates/" ++ Http.uriEncode name)
+      (config.apiRoot ++ "/1/people/search/" ++ Http.uriEncode name)
       (authorization config.token)
 
 

@@ -14,7 +14,7 @@ import Model.User as User exposing (User)
 import Model.Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.Prototype exposing (Prototype)
-import Model.SearchResult exposing (SearchResult)
+import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.ObjectsChange as ObjectsChange exposing (..)
 
@@ -185,17 +185,27 @@ decodeObject =
     |> required "shape" D.string
 
 
-decodeSearchResult : Decoder SearchResult
+decodeSearchResult : Decoder (Maybe SearchResult)
 decodeSearchResult =
   decode
-    SearchResult
+    (\maybePersonId maybeObjectAndFloorId ->
+      case (maybePersonId, maybeObjectAndFloorId) of
+        (_, Just (object, floorId)) ->
+          Just <| SearchResult.Object object floorId
+
+        (Just personId, Nothing) ->
+          Just <| SearchResult.MissingPerson personId
+
+        _ ->
+          Nothing
+    )
     |> optional' "personId" D.string
     |> optional' "objectAndFloorId" (D.tuple2 (,) decodeObject D.string)
 
 
 decodeSearchResults : Decoder (List SearchResult)
 decodeSearchResults =
-  D.list decodeSearchResult
+  D.map (List.filterMap identity) (D.list decodeSearchResult)
 
 
 decodeFloor : Decoder Floor

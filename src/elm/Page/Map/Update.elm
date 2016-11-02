@@ -1189,42 +1189,37 @@ update removeToken setSelectionStart msg model =
     GotSearchResult results ->
       let
         regesterPersonCmd =
-          Cmd.batch <|
-          List.filterMap (\r ->
-            case r.personId of
-              Just id -> Just (regesterPersonIfNotCached model.apiConfig model.personInfo id)
-              Nothing -> Nothing
-          ) results
+          results
+            |> List.filterMap SearchResult.getPersonId
+            |> List.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
+            |> Cmd.batch
 
         selectedResult =
           case results of
-            { objectAndFloorId } :: [] ->
-              case objectAndFloorId of
-                Just (object, fid) ->
-                  Just (idOf object)
+            SearchResult.Object object floorId :: [] ->
+              Just (idOf object)
 
-                Nothing ->
-                  Nothing
+            _ ->
+              Nothing
 
-            _ -> Nothing
-
-        searchResult = Just results
+        searchResult =
+          Just results
       in
         { model |
           searchResult = searchResult
         , selectedResult = selectedResult
         } ! [ regesterPersonCmd ]
 
-    SelectSearchResult { personId, objectAndFloorId } ->
+    SelectSearchResult result ->
       let
         (newModel, cmd1) =
-          case objectAndFloorId of
-            Just (obj, floorId) ->
+          case result of
+            SearchResult.Object object floorId ->
               let
                 model' =
                   Model.adjustOffset
                     { model |
-                      selectedResult = Just (idOf obj)
+                      selectedResult = Just (idOf object)
                     }
 
                 requestPrivateFloors =
@@ -1235,15 +1230,15 @@ update removeToken setSelectionStart msg model =
                   , Navigation.modifyUrl (URL.serialize model')
                   ]
 
-            Nothing ->
+            _ ->
               (model, Cmd.none)
 
-        cmd2 =
-          case personId of
-            Just id -> regesterPersonIfNotCached model.apiConfig model.personInfo id
-            Nothing -> Cmd.none
+        regesterPersonCmd =
+          SearchResult.getPersonId result
+            |> Maybe.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
+            |> Maybe.withDefault Cmd.none
       in
-        newModel ! [cmd1, cmd2]
+        newModel ! [ cmd1, regesterPersonCmd ]
 
     StartDraggingFromMissingPerson personId personName ->
       let
@@ -1662,7 +1657,7 @@ updateOnFinishStamp' prototypes model floor =
 
     searchResult =
       model.searchResult
-        |> (Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).objects))
+        |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (EditingFloor.present newFloor).objects)
   in
     (({ model |
       seed = newSeed

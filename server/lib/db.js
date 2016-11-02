@@ -283,7 +283,7 @@ function search(conn, tenantId, query, all, people) {
           // { Nothing, Just } -- objects that has no person
           arr.push({
             personId : null,
-            objectIdAndFloorId : [e, e.floorId]
+            objectAndFloorId : [e, e.floorId]
           });
         }
       });
@@ -295,20 +295,42 @@ function search(conn, tenantId, query, all, people) {
         // { Just, Just } -- people who exist in map
         arr.push({
           personId : personId,
-          objectIdAndFloorId : [e, e.floorId]
+          objectAndFloorId : [e, e.floorId]
         });
       })
       // { Just, Nothing } -- missing people
       if(!objects.length) {
         arr.push({
           personId : personId,
-          objectIdAndFloorId : null
+          objectAndFloorId : null
         });
       }
     });
     return Promise.resolve(arr);
   });
 }
+
+// function searchObjectsByName(conn, tenantId, name, all) {
+//   var filterByPublic =
+//     all ? '' : 'AND f.public = 1';
+//
+//   // TODO avoid injection
+//   var sql =
+//     `SELECT o.*
+//        FROM map2.objects AS o, map2.floors AS f
+//        WHERE o.name like "%${name}%" AND o.floorId = f.id AND o.floorVersion = f.version AND f.tenantId = "${tenantId}" ${filterByPublic}
+//        ORDER BY o.id, o.floorId, o.floorVersion`;
+//
+//   return rdb.exec(conn, sql).then((records) => {
+//     var objects = {};
+//     records.forEach(record => {
+//       objects[records.id] = record;// keep newest
+//     });
+//     return Promise.resolve(Object.keys(objects).map(objectId => {
+//       return objects[objectId];
+//     }));
+//   });
+// }
 
 function getPrototypes(conn, tenantId) {
   return rdb.exec(conn, sql.select('prototypes', sql.where('tenantId', tenantId)));

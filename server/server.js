@@ -119,6 +119,12 @@ app.get('/master', (req, res) => {
   res.send(masterHtml);
 });
 
+app.get('/api/1/people/search/:name', inTransaction((conn, req, res) => {
+  var token = getAuthToken(req);
+  var name = req.params.name;
+  return profileService.search(config.profileServiceRoot, token, name);
+}));
+
 app.get('/api/1/people/:id', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var id = req.params.id;
@@ -301,12 +307,6 @@ app.get('/api/1/search/:query', inTransaction((conn, req, res) => {
       return db.search(conn, user.tenantId, query, options.all, people);
     });
   });
-}));
-
-app.get('/api/1/candidates/:name', inTransaction((conn, req, res) => {
-  var token = getAuthToken(req);
-  var name = req.params.name;
-  return profileService.search(config.profileServiceRoot, token, name);
 }));
 
 // TODO move to service logic
