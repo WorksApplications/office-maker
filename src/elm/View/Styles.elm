@@ -413,13 +413,14 @@ pasteFromSpreadsheetInput =
   input ++ formControl
 
 
-prototypePreviewView : Bool -> S
-prototypePreviewView stampMode =
-  [ ("height", "238px")
+prototypePreviewView : Int -> S
+prototypePreviewView width =
+  [ ("width", px width)
+  , ("height", "238px")
   , ("position", "relative")
   , ("border-style", "solid")
-  , ("border-width", if stampMode then "2px" else "1px")
-  , ("border-color", if stampMode then selectColor else "#666")
+  , ("border-width", "1px")
+  , ("border-color", "#666")
   , ("box-sizing", "border-box")
   , ("margin-top", "10px")
   , ("background-color", "#fff")

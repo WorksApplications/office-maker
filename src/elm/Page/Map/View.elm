@@ -158,7 +158,7 @@ penView model =
             ] []
 
         Stamp ->
-          lazy2 PrototypePreviewView.view prototypes True
+          lazy PrototypePreviewView.view prototypes
 
         _ ->
           text ""

@@ -23,6 +23,7 @@ type alias Model =
   { apiConfig : API.Config
   , title : String
   , colorPalette : ColorPalette
+  , prototypes : List Prototype
   , error : Maybe String
   , headerState : Header.State
   , lang : Language

@@ -1,10 +1,5 @@
 module Page.Master.View exposing (..)
 
-import Time exposing (second)
-import Task
-import Http
-import Navigation
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -12,14 +7,11 @@ import Html.Events exposing (..)
 import Component.Header as Header
 
 import Model.I18n as I18n exposing (Language(..))
-import Model.User as User exposing (User)
 import Model.Prototype exposing (Prototype)
-import Model.Prototypes as Prototypes
-import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
 import View.Common exposing (..)
-import View.Styles as Styles
 import View.MessageBar as MessageBar
+import View.PrototypePreviewView as PrototypePreviewView
 
 import Page.Master.Model exposing (Model)
 import Page.Master.Msg exposing (Msg(..))
@@ -32,6 +24,7 @@ view model =
     [ headerView model
     , messageBar model
     , card Nothing <| colorMasterView model
+    , card Nothing <| prototypeMasterView model
     ]
 
 
@@ -56,17 +49,32 @@ headerView model =
 colorMasterView : Model -> List (Html Msg)
 colorMasterView model =
   [ h2 [] [ text "Background Colors (for desks and labels)"]
-  , div [] <| List.indexedMap (row True) model.colorPalette.backgroundColors
+  , div [] <| List.indexedMap (colorMasterRow True) model.colorPalette.backgroundColors
   , h2 [] [ text "Text Colors (for labels)"]
-  , div [] <| List.indexedMap (row False) model.colorPalette.textColors
+  , div [] <| List.indexedMap (colorMasterRow False) model.colorPalette.textColors
   ]
 
 
-row : Bool -> Int -> String -> Html Msg
-row isBackgroundColor index color =
+colorMasterRow : Bool -> Int -> String -> Html Msg
+colorMasterRow isBackgroundColor index color =
   div [ style [("height", "30px"), ("display", "flex")] ]
     [ colorSample color
     , input [ onInput (InputColor isBackgroundColor index), value color ] []
+    ]
+
+
+prototypeMasterView : Model -> List (Html Msg)
+prototypeMasterView model =
+  [ h2 [] [ text "Prototypes"]
+  , div [] <| List.map prototypeMasterRow model.prototypes
+  ]
+
+
+prototypeMasterRow : Prototype -> Html Msg
+prototypeMasterRow prototype =
+  div [ style [ ("display", "flex")] ]
+    [ PrototypePreviewView.singleView 300 238 prototype
+    , div [] []
     ]
 
 

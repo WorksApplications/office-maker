@@ -9,7 +9,7 @@ import Component.Header as Header
 
 import Model.I18n as I18n exposing (Language(..))
 import Model.User as User exposing (User)
--- import Model.Prototype exposing (Prototype)
+import Model.Prototype exposing (Prototype)
 -- import Model.Prototypes as Prototypes
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
@@ -43,6 +43,7 @@ init flags =
     { apiConfig = apiConfig
     , title = flags.title
     , colorPalette = ColorPalette.empty
+    , prototypes = []
     , headerState = Header.init
     , lang = defaultUserState.lang
     , saveColorDebounce = Debounce.init
@@ -86,6 +87,7 @@ update removeToken message model =
     Loaded userState user colorPalette prototypes ->
       { model
       | colorPalette = colorPalette
+      , prototypes = prototypes
       } ! []
 
     UpdateHeaderState msg ->
@@ -131,3 +133,8 @@ update removeToken message model =
 saveColorPalette : API.Config -> ColorPalette -> Cmd Msg
 saveColorPalette apiConfig colorPalette =
   performAPI (\_ -> NoOp) (API.saveColors apiConfig colorPalette)
+
+
+savePrototype : API.Config -> List Prototype -> Cmd Msg
+savePrototype apiConfig prototypes =
+  performAPI (\_ -> NoOp) (API.savePrototypes apiConfig prototypes)
