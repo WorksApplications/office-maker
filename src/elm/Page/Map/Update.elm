@@ -509,7 +509,7 @@ update removeToken setSelectionStart msg model =
         newModel =
           { model'' |
             pos = (clientX, clientY)
-          , selectedObjects = []
+          -- , selectedObjects = []
           , selectorRect = selectorRect
           , contextMenu = NoContextMenu
           , draggingContext = draggingContext
