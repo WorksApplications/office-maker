@@ -35,7 +35,7 @@ import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
-import Model.ClickboardData as ClickboardData
+import Model.ClipboardData as ClipboardData
 import Model.SearchResult as SearchResult
 
 import API.API as API
@@ -1475,7 +1475,7 @@ update removeToken setSelectionStart msg model =
               Prototypes.selectedPrototype model.prototypes
 
             candidates =
-              ClickboardData.toObjectCandidates prototype (left, top) s
+              ClipboardData.toObjectCandidates prototype (left, top) s
 
             ((newModel, cmd), newObjects) =
               updateOnFinishStamp' candidates model floor

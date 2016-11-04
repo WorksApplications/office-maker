@@ -1,4 +1,4 @@
-module Model.ClickboardData exposing (..)
+module Model.ClipboardData exposing (..)
 
 import Model.Prototype exposing (Prototype)
 import String
