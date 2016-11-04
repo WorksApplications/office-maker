@@ -61,9 +61,6 @@ parseHtml table =
 
 calcPosition : Prototype -> (Int, Int) -> Int -> Int -> (Int, Int)
 calcPosition prototype (left, top) rowIndex colIndex =
-  let
-    (width, height) = prototype.size
-    x = left + colIndex * width
-    y = top + rowIndex * height
-  in
-    (x, y)
+  ( left + colIndex * prototype.width
+  , top + rowIndex * prototype.height
+  )

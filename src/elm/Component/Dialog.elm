@@ -1,7 +1,6 @@
 module Component.Dialog exposing (..)
 
 import Task
-import Json.Decode as Decode
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)

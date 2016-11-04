@@ -89,9 +89,9 @@ prototypeParameters index prototype =
     , App.map (\color -> UpdatePrototype index { prototype | color = color} )
         <| prototypeParameter "Text Color" prototype.color
     -- , App.map (\width -> UpdatePrototype index { prototype | width = width} )
-    --     <| prototypeParameter "Width" prototype.width
+    --     <| prototypeParameter "Width" (toString prototype.width)
     -- , App.map (\height -> UpdatePrototype index { prototype | height = height} )
-    --     <| prototypeParameter "Height" prototype.height
+    --     <| prototypeParameter "Height" (toString prototype.height)
     ]
 
 
