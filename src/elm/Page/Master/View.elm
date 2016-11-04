@@ -1,6 +1,7 @@
 module Page.Master.View exposing (..)
 
 import Html exposing (..)
+import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
@@ -12,6 +13,7 @@ import Model.Prototype exposing (Prototype)
 import View.Common exposing (..)
 import View.MessageBar as MessageBar
 import View.PrototypePreviewView as PrototypePreviewView
+import View.CommonStyles as CS
 
 import Page.Master.Model exposing (Model)
 import Page.Master.Msg exposing (Msg(..))
@@ -66,15 +68,39 @@ colorMasterRow isBackgroundColor index color =
 prototypeMasterView : Model -> List (Html Msg)
 prototypeMasterView model =
   [ h2 [] [ text "Prototypes"]
-  , div [] <| List.map prototypeMasterRow model.prototypes
+  , div [] <| List.indexedMap prototypeMasterRow model.prototypes
   ]
 
 
-prototypeMasterRow : Prototype -> Html Msg
-prototypeMasterRow prototype =
+prototypeMasterRow : Int -> Prototype -> Html Msg
+prototypeMasterRow index prototype =
   div [ style [ ("display", "flex")] ]
     [ PrototypePreviewView.singleView 300 238 prototype
-    , div [] []
+    , prototypeParameters index prototype
+    ]
+
+
+prototypeParameters : Int -> Prototype -> Html Msg
+prototypeParameters index prototype =
+  div
+    []
+    [ App.map (\backgroundColor -> UpdatePrototype index { prototype | backgroundColor = backgroundColor} )
+        <| prototypeParameter "Background Color" prototype.backgroundColor
+    , App.map (\color -> UpdatePrototype index { prototype | color = color} )
+        <| prototypeParameter "Text Color" prototype.color
+    -- , App.map (\width -> UpdatePrototype index { prototype | width = width} )
+    --     <| prototypeParameter "Width" prototype.width
+    -- , App.map (\height -> UpdatePrototype index { prototype | height = height} )
+    --     <| prototypeParameter "Height" prototype.height
+    ]
+
+
+prototypeParameter : String -> String -> Html String
+prototypeParameter label value_ =
+  div
+    []
+    [ span [] [ text label ]
+    , input [ style CS.input, value value_, onInput identity ] []
     ]
 
 

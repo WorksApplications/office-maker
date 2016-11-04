@@ -20,4 +20,5 @@ type alias Model =
   , headerState : Header.State
   , lang : Language
   , saveColorDebounce : Debounce ColorPalette
+  , savePrototypeDebounce : Debounce (List Prototype)
   }

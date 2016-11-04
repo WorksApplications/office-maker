@@ -16,6 +16,8 @@ type Msg
   | Loaded UserState User ColorPalette (List Prototype)
   | UpdateHeaderState Header.Msg
   | InputColor Bool Int String
+  | UpdatePrototype Int Prototype
   | SaveColorDebounceMsg Debounce.Msg
+  | SavePrototypeDebounceMsg Debounce.Msg
   | NotAuthorized
   | APIError Http.Error
