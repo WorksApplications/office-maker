@@ -168,6 +168,13 @@ signOut lang =
     EN -> "Sign out"
 
 
+goToMaster : Language -> String
+goToMaster lang =
+  case lang of
+    JA -> "マスタメンテ画面へ"
+    EN -> "Master maintenance"
+
+
 close : Language -> String
 close lang =
   case lang of

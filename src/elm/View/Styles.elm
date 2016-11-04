@@ -613,7 +613,7 @@ userMenuView =
 
 langSelectView : S
 langSelectView =
-  flex
+  flex ++ userMenuItem
 
 
 langSelectViewItem : Bool -> S
@@ -691,11 +691,9 @@ login =
   ] ++ headerMenuItem
 
 
-logout : S
-logout =
-  [ ("width", "80px")
-  , ("cursor", "pointer")
-  ] ++ headerMenuItem
+userMenuItem : S
+userMenuItem =
+  [ ("margin", "10px 0") ]
 
 
 searchBox : S

@@ -89,6 +89,7 @@ userMenuView context =
   div
     [ style S.userMenuView ]
     [ langSelectView context.onSelectLang context.lang
+    , linkToMaster context
     , signOut context.onSignOutClicked context.lang
     ]
 
@@ -100,6 +101,23 @@ langSelectView onSelectLang lang =
     [ div [ style (S.langSelectViewItem (lang == JA)), onClick (onSelectLang JA) ] [ text "日本語" ]
     , div [ style (S.langSelectViewItem (lang == EN)), onClick (onSelectLang EN) ] [ text "English" ]
     ]
+
+
+linkToMaster : Context msg -> Html msg
+linkToMaster context =
+  case context.user of
+    Just (Admin _) ->
+      div
+        [ style S.userMenuItem ]
+        [ a [ href "/master" ] [ text ( I18n.goToMaster context.lang ) ] ]
+
+    _ ->
+      text ""
+
+
+signOut : msg -> Language -> Html msg
+signOut onSignOutClicked lang =
+  div [ style S.userMenuItem, onClick onSignOutClicked ] [ text (I18n.signOut lang) ]
 
 
 menu : List (Html msg) -> Html msg
@@ -126,11 +144,6 @@ printButton onTogglePrintView lang user =
 signIn : msg -> Language -> Html msg
 signIn onSignInClicked lang =
   div [ style S.login, onClick onSignInClicked ] [ text (I18n.signIn lang) ]
-
-
-signOut : msg -> Language -> Html msg
-signOut onSignOutClicked lang =
-  div [ style S.logout, onClick onSignOutClicked ] [ text (I18n.signOut lang) ]
 
 
 printButtonView : msg -> Language -> Bool -> Html msg
