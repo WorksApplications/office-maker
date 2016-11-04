@@ -275,7 +275,8 @@ decodePrototype =
       , name = name
       , backgroundColor = backgroundColor
       , color = color
-      , size = (width, height)
+      , width = width
+      , height = height
       , fontSize = fontSize
       , shape = if shape == "Ellipse" then Ellipse else Rectangle
       , personId = Nothing
@@ -292,20 +293,17 @@ decodePrototype =
 
 
 encodePrototype : Prototype -> Value
-encodePrototype { id, color, backgroundColor, name, size, fontSize, shape } =
-  let
-    (width, height) = size
-  in
-    E.object
-      [ ("id", E.string id)
-      , ("color", E.string color)
-      , ("backgroundColor", E.string backgroundColor)
-      , ("name", E.string name)
-      , ("width", E.int width)
-      , ("height", E.int height)
-      , ("fontSize", E.float fontSize)
-      , ("shape", E.string (encodeShape shape))
-      ]
+encodePrototype { id, color, backgroundColor, name, width, height, fontSize, shape } =
+  E.object
+    [ ("id", E.string id)
+    , ("color", E.string color)
+    , ("backgroundColor", E.string backgroundColor)
+    , ("name", E.string name)
+    , ("width", E.int width)
+    , ("height", E.int height)
+    , ("fontSize", E.float fontSize)
+    , ("shape", E.string (encodeShape shape))
+    ]
 
 
 encodeColorPalette : ColorPalette -> Value

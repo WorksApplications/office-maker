@@ -347,19 +347,15 @@ getPositionedPrototype model =
     case (model.editMode, model.draggingContext) of
       (_, MoveFromSearchResult prototype _) ->
         let
-          (deskWidth, deskHeight) = prototype.size
-
           (left, top) =
-            fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+            fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in
           [ (prototype, (left, top)) ]
 
       (_, MoveExistingObjectFromSearchResult prototype _) ->
         let
-          (deskWidth, deskHeight) = prototype.size
-
           (left, top) =
-            fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+            fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in
           [ (prototype, (left, top)) ]
 
@@ -372,10 +368,8 @@ getPositionedPrototype model =
 
       (Stamp, _) ->
         let
-          (deskWidth, deskHeight) = prototype.size
-
           (left, top) =
-            fitPositionToGrid model.gridSize (x2' - deskWidth // 2, y2' - deskHeight // 2)
+            fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in
           [ (prototype, (left, top)) ]
 

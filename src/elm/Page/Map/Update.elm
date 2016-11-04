@@ -1015,21 +1015,22 @@ update removeToken setSelectionStart msg model =
           }
       in
         case object of
-          Just e ->
+          Just o ->
             let
-              (_, _, w, h) = rect e
+              (_, _, width, height) = rect o
 
               (newId, seed) = IdGenerator.new model.seed
 
               newPrototypes =
                 Prototypes.register
                   { id = newId
-                  , color = colorOf e
-                  , backgroundColor = backgroundColorOf e
-                  , name = nameOf e
-                  , size = (w, h)
-                  , fontSize = fontSizeOf e
-                  , shape = shapeOf e
+                  , color = colorOf o
+                  , backgroundColor = backgroundColorOf o
+                  , name = nameOf o
+                  , width = width
+                  , height = height
+                  , fontSize = fontSizeOf o
+                  , shape = shapeOf o
                   , personId = Nothing
                   }
                   model.prototypes
@@ -1478,7 +1479,7 @@ update removeToken setSelectionStart msg model =
               ClipboardData.toObjectCandidates prototype (left, top) s
 
             ((newModel, cmd), newObjects) =
-              updateOnFinishStamp' candidates model floor
+              updateOnFinishStamp_ candidates model floor
 
             task =
               List.foldl
@@ -1621,14 +1622,14 @@ updateOnFinishStamp : Model -> (Model, Cmd Msg)
 updateOnFinishStamp model =
   case model.floor of
     Just floor ->
-      fst <| updateOnFinishStamp' (Model.getPositionedPrototype model) model floor
+      fst <| updateOnFinishStamp_ (Model.getPositionedPrototype model) model floor
 
     Nothing ->
       model ! []
 
 
-updateOnFinishStamp' : List PositionedPrototype -> Model -> EditingFloor -> ((Model, Cmd Msg), List Object)
-updateOnFinishStamp' prototypes model floor =
+updateOnFinishStamp_ : List PositionedPrototype -> Model -> EditingFloor -> ((Model, Cmd Msg), List Object)
+updateOnFinishStamp_ prototypes model floor =
   let
     (candidatesWithNewIds, newSeed) =
       IdGenerator.zipWithNewIds model.seed prototypes
@@ -1636,16 +1637,13 @@ updateOnFinishStamp' prototypes model floor =
     newObjects =
       List.map
         (\((prototype, (x, y)), newId) ->
-          let
-            (width, height) = prototype.size
-          in
-            Object.initDesk
-              newId
-              (x, y, width, height)
-              prototype.backgroundColor
-              prototype.name
-              prototype.fontSize
-              prototype.personId
+          Object.initDesk
+            newId
+            (x, y, prototype.width, prototype.height)
+            prototype.backgroundColor
+            prototype.name
+            prototype.fontSize
+            prototype.personId
         )
         candidatesWithNewIds
 

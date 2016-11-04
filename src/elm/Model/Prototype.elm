@@ -11,7 +11,8 @@ type alias Prototype =
   , name : String
   , color : String
   , backgroundColor : String
-  , size : (Int, Int)
+  , width : Int
+  , height : Int
   , fontSize : Float
   , shape : Shape
   , personId : Maybe String

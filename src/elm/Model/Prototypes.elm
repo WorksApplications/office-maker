@@ -128,7 +128,7 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
 positionedPrototypesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List PositionedPrototype
 positionedPrototypesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
   let
-    deskSize = prototype.size
+    deskSize = (prototype.width, prototype.height)
 
     flip (w, h) = (h, w)
 
@@ -151,6 +151,9 @@ positionedPrototypesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePo
         (indicesX, indicesY)
 
     prototype' =
-      { prototype | size = (deskWidth, deskHeight) }
+      { prototype
+      | width = deskWidth
+      , height = deskHeight
+      }
   in
     List.map ((,) prototype') all

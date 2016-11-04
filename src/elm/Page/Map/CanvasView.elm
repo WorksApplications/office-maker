@@ -373,23 +373,21 @@ temporaryStampsView model =
 
 temporaryStampView : Scale -> Bool -> PositionedPrototype -> (String, Html msg)
 temporaryStampView scale selected (prototype, (left, top)) =
-  let
-    (deskWidth, deskHeight) = prototype.size
-  in
-    ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString deskWidth ++ "_" ++ toString deskHeight
-    , ObjectView.viewDesk
-        ObjectView.noEvents
-        False
-        (left, top, deskWidth, deskHeight)
-        prototype.backgroundColor
-        prototype.name --name
-        Object.defaultFontSize
-        selected
-        False -- alpha
-        scale
-        True -- disableTransition
-        False -- personMatched
-    )
+  -- TODO How about using prototype.id?
+  ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString prototype.width ++ "_" ++ toString prototype.height
+  , ObjectView.viewDesk
+      ObjectView.noEvents
+      False
+      (left, top, prototype.width, prototype.height)
+      prototype.backgroundColor
+      prototype.name --name
+      Object.defaultFontSize
+      selected
+      False -- alpha
+      scale
+      True -- disableTransition
+      False -- personMatched
+  )
 
 
 temporaryPenView : Model -> Html msg
