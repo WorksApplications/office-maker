@@ -16,6 +16,7 @@ import View.PrototypePreviewView as PrototypePreviewView
 import View.CommonStyles as CS
 
 import Page.Master.Model exposing (Model)
+import Page.Master.PrototypeForm as PrototypeForm exposing (PrototypeForm)
 import Page.Master.Msg exposing (Msg(..))
 
 
