@@ -325,6 +325,11 @@ encodeColorEntitity entity =
     ]
 
 
+serializePrototype : Prototype -> String
+serializePrototype prototype =
+  E.encode 0 (encodePrototype prototype)
+
+
 serializePrototypes : List Prototype -> String
 serializePrototypes prototypes =
   E.encode 0 (E.list (List.map encodePrototype prototypes))

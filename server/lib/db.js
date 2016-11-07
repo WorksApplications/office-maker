@@ -336,6 +336,10 @@ function getPrototypes(conn, tenantId) {
   return rdb.exec(conn, sql.select('prototypes', sql.where('tenantId', tenantId)));
 }
 
+function savePrototype(conn, tenantId, newPrototype) {
+  return rdb.exec(conn, sql.replace('prototypes', schema.prototypeKeyValues(tenantId, newPrototype)));
+}
+
 function savePrototypes(conn, tenantId, newPrototypes) {
   var inserts = newPrototypes.map((proto) => {
     return sql.insert('prototypes', schema.prototypeKeyValues(tenantId, proto));
@@ -362,6 +366,7 @@ function saveColors(conn, tenantId, colors) {
 module.exports = {
   search: search,
   getPrototypes: getPrototypes,
+  savePrototype: savePrototype,
   savePrototypes: savePrototypes,
   getColors: getColors,
   saveColors: saveColors,

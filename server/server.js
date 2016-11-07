@@ -197,6 +197,22 @@ app.get('/api/1/users/:id', inTransaction((conn, req, res) => {
   });
 }));
 
+app.put('/api/1/prototypes/:id', inTransaction((conn, req, res) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
+    if(!user) {
+      return Promise.reject(403);
+    }
+    var prototype = req.body;
+    if(!prototype) {
+      return Promise.reject(403);
+    }
+    return db.savePrototype(conn, user.tenantId, prototype).then(() => {
+      return Promise.resolve({});
+    });
+  })
+}));
+
+
 app.get('/api/1/prototypes', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
@@ -207,6 +223,7 @@ app.get('/api/1/prototypes', inTransaction((conn, req, res) => {
     });
   });
 }));
+
 
 app.put('/api/1/prototypes', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {

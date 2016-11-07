@@ -21,6 +21,7 @@ module API.API exposing (
     , getColors
     , saveColors
     , getPrototypes
+    , savePrototype
     , savePrototypes
     , Config
     , Error
@@ -153,6 +154,14 @@ savePrototypes config prototypes =
     (config.apiRoot ++ "/1/prototypes")
     (authorization config.token)
     (Http.string <| serializePrototypes prototypes)
+
+
+savePrototype : Config -> Prototype -> Task Error ()
+savePrototype config prototype =
+  putJsonNoResponse
+    (config.apiRoot ++ "/1/prototypes/" ++ prototype.id)
+    (authorization config.token)
+    (Http.string <| serializePrototype prototype)
 
 
 getColors : Config -> Task Error ColorPalette

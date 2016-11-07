@@ -1,4 +1,4 @@
-module View.PrototypePreviewView exposing (view, singleView)
+module View.PrototypePreviewView exposing (view, singleView, emptyView)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -19,12 +19,17 @@ view containerWidth containerHeight selectedIndex prototypes =
         [ style (S.prototypePreviewViewInner containerWidth selectedIndex) ]
         (List.indexedMap (eachView containerWidth containerHeight selectedIndex) prototypes)
   in
-    div [ style (S.prototypePreviewView containerWidth) ] [ inner ]
+    div [ style (S.prototypePreviewView containerWidth containerHeight) ] [ inner ]
 
 
 singleView : Int -> Int -> Prototype -> Html msg
 singleView containerWidth containerHeight prototype =
   view containerWidth containerHeight 0 [ prototype ]
+
+
+emptyView : Int -> Int -> Html msg
+emptyView containerWidth containerHeight =
+  view containerWidth containerHeight 0 []
 
 
 eachView : Int -> Int -> Int -> Int -> Prototype -> Html msg
@@ -40,7 +45,7 @@ eachView containerWidth containerHeight selectedIndex index prototype =
       (left, top, prototype.width, prototype.height)
       prototype.backgroundColor
       prototype.name --name
-      Object.defaultFontSize
+      prototype.fontSize
       False -- selected
       False -- alpha
       Scale.default

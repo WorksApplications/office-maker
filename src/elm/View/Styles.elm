@@ -413,10 +413,10 @@ pasteFromSpreadsheetInput =
   input ++ formControl
 
 
-prototypePreviewView : Int -> S
-prototypePreviewView width =
+prototypePreviewView : Int -> Int -> S
+prototypePreviewView width height =
   [ ("width", px width)
-  , ("height", "238px")
+  , ("height", px height)
   , ("position", "relative")
   , ("border-style", "solid")
   , ("border-width", "1px")

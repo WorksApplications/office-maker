@@ -18,10 +18,10 @@ type alias Model =
   { apiConfig : API.Config
   , title : String
   , colorPalette : ColorPalette
-  , prototypes : List Prototype
+  , prototypes : List PrototypeForm
   , error : Maybe String
   , headerState : Header.State
   , lang : Language
   , saveColorDebounce : Debounce ColorPalette
-  , savePrototypeDebounce : Debounce (List Prototype)
+  , savePrototypeDebounce : Debounce Prototype
   }

@@ -18,6 +18,7 @@ import View.CommonStyles as CS
 import Page.Master.Model exposing (Model)
 import Page.Master.PrototypeForm as PrototypeForm exposing (PrototypeForm)
 import Page.Master.Msg exposing (Msg(..))
+import Page.Master.Styles as S
 
 
 view : Model -> Html Msg
@@ -73,36 +74,61 @@ prototypeMasterView model =
   ]
 
 
-prototypeMasterRow : Int -> Prototype -> Html Msg
-prototypeMasterRow index prototype =
+prototypeMasterRow : Int -> PrototypeForm -> Html Msg
+prototypeMasterRow index prototypeForm =
   div [ style [ ("display", "flex")] ]
-    [ PrototypePreviewView.singleView 300 238 prototype
-    , prototypeParameters index prototype
+    [ case PrototypeForm.toPrototype prototypeForm of
+        Ok prototype ->
+          PrototypePreviewView.singleView 300 300 prototype
+
+        _ ->
+          PrototypePreviewView.emptyView 300 300
+
+    , prototypeParameters index prototypeForm
     ]
 
 
-prototypeParameters : Int -> Prototype -> Html Msg
-prototypeParameters index prototype =
+prototypeParameters : Int -> PrototypeForm -> Html Msg
+prototypeParameters index prototypeForm =
   div
     []
-    [ App.map (\backgroundColor -> UpdatePrototype index { prototype | backgroundColor = backgroundColor} )
-        <| prototypeParameter "Background Color" prototype.backgroundColor
-    , App.map (\color -> UpdatePrototype index { prototype | color = color} )
-        <| prototypeParameter "Text Color" prototype.color
-    -- , App.map (\width -> UpdatePrototype index { prototype | width = width} )
-    --     <| prototypeParameter "Width" (toString prototype.width)
-    -- , App.map (\height -> UpdatePrototype index { prototype | height = height} )
-    --     <| prototypeParameter "Height" (toString prototype.height)
+    [ App.map (\backgroundColor -> UpdatePrototype index { prototypeForm | backgroundColor = backgroundColor} )
+        <| prototypeParameter "Background Color" prototypeForm.backgroundColor PrototypeForm.validateBackgroundColor
+    , App.map (\color -> UpdatePrototype index { prototypeForm | color = color} )
+        <| prototypeParameter "Text Color" prototypeForm.color PrototypeForm.validateColor
+    , App.map (\width -> UpdatePrototype index { prototypeForm | width = width} )
+        <| prototypeParameter "Width" (prototypeForm.width) PrototypeForm.validateWidth
+    , App.map (\height -> UpdatePrototype index { prototypeForm | height = height} )
+        <| prototypeParameter "Height" (prototypeForm.height) PrototypeForm.validateHeight
+    , App.map (\fontSize -> UpdatePrototype index { prototypeForm | fontSize = fontSize} )
+        <| prototypeParameter "Font Size" (prototypeForm.fontSize) PrototypeForm.validateFontSize
+    , App.map (\name -> UpdatePrototype index { prototypeForm | name = name} )
+        <| prototypeParameter "Name" (prototypeForm.name) PrototypeForm.validateName
     ]
 
 
-prototypeParameter : String -> String -> Html String
-prototypeParameter label value_ =
-  div
-    []
-    [ span [] [ text label ]
-    , input [ style CS.input, value value_, onInput identity ] []
-    ]
+prototypeParameter : String -> String -> (String -> Result String a) -> Html String
+prototypeParameter label value_ validate =
+  let
+    errMessage =
+      case validate value_ of
+        Ok _ ->
+          Nothing
+
+        Err s ->
+          Just s
+
+    errHtml =
+      errMessage
+        |> Maybe.map (\s -> span [ style S.validationError ] [ text s ])
+        |> Maybe.withDefault (text "")
+  in
+    div
+      []
+      [ span [] [ text label ]
+      , errHtml
+      , input [ style CS.input, value value_, onInput identity ] []
+      ]
 
 
 colorSample : String -> Html Msg

@@ -18,6 +18,7 @@ import Util.ListUtil as ListUtil
 
 import Page.Master.Model exposing (Model)
 import Page.Master.Msg exposing (Msg(..))
+import Page.Master.PrototypeForm as PrototypeForm
 
 
 type alias Flags =
@@ -75,14 +76,14 @@ performAPI tagger task =
 
 saveColorDebounceConfig : Debounce.Config Msg
 saveColorDebounceConfig =
-  { strategy = Debounce.later (1 * second)
+  { strategy = Debounce.later (0.6 * second)
   , transform = SaveColorDebounceMsg
   }
 
 
 savePrototypeDebounceConfig : Debounce.Config Msg
 savePrototypeDebounceConfig =
-  { strategy = Debounce.later (1 * second)
+  { strategy = Debounce.later (0.6 * second)
   , transform = SavePrototypeDebounceMsg
   }
 
@@ -96,7 +97,7 @@ update removeToken message model =
     Loaded userState user colorPalette prototypes ->
       { model
       | colorPalette = colorPalette
-      , prototypes = prototypes
+      , prototypes = List.map PrototypeForm.fromPrototype prototypes
       } ! []
 
     UpdateHeaderState msg ->
@@ -127,10 +128,15 @@ update removeToken message model =
           ListUtil.setAt index prototype model.prototypes
 
         (savePrototypeDebounce, cmd) =
-          Debounce.push
-            savePrototypeDebounceConfig
-            prototypes
-            model.savePrototypeDebounce
+          case PrototypeForm.toPrototype prototype of
+            Ok prototype ->
+              Debounce.push
+                savePrototypeDebounceConfig
+                prototype
+                model.savePrototypeDebounce
+
+            Err _ ->
+              model.savePrototypeDebounce ! []
       in
         { model
         | prototypes = prototypes
@@ -154,11 +160,11 @@ update removeToken message model =
         (savePrototypeDebounce, cmd) =
           Debounce.update
             savePrototypeDebounceConfig
-            (Debounce.takeLast (savePrototypes model.apiConfig))
+            (Debounce.takeLast (savePrototype model.apiConfig))
             msg
             model.savePrototypeDebounce
       in
-        { model | savePrototypeDebounce = savePrototypeDebounce } ! [] -- TODO save
+        { model | savePrototypeDebounce = savePrototypeDebounce } ! [ cmd ]
 
     NotAuthorized ->
       model ! [ Task.perform (always NoOp) (always NoOp) API.goToLogin ]
@@ -172,6 +178,6 @@ saveColorPalette apiConfig colorPalette =
   performAPI (\_ -> NoOp) (API.saveColors apiConfig colorPalette)
 
 
-savePrototypes : API.Config -> List Prototype -> Cmd Msg
-savePrototypes apiConfig prototypes =
-  performAPI (\_ -> NoOp) (API.savePrototypes apiConfig prototypes)
+savePrototype : API.Config -> Prototype -> Cmd Msg
+savePrototype apiConfig prototype =
+  performAPI (\_ -> NoOp) (API.savePrototype apiConfig prototype)
