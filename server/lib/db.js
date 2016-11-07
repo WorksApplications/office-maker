@@ -188,36 +188,34 @@ function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
 }
 
 function publishFloor(conn, tenantId, floorId, updateBy) {
-  return getFloor(conn, tenantId, true, floorId).then((floor) => {
+  return getFloorWithObjects(conn, tenantId, true, floorId).then((floor) => {
     if(!floor) {
       return Promise.reject('floor not found: ' + floorId);
     }
-    var baseVersion = floor.version;//TODO it lacks?
-    var oldFloorVersion = floor.version;
-    floor.version = floor.version + 1;
+    var sqls = [];
+
+    // 最新のフロアをpublicにする
     floor.public = true;
     floor.updateBy = updateBy;
     floor.updateAt = new Date().getTime();
-    var sqls = [
-      sql.replace('floors', schema.floorKeyValues(tenantId, floor)),
-      sql.delete('floors', sql.whereList([['id', floor.id], ['tenantId', tenantId]]) + ' and public=0')
-    ];
+    sqls.push(sql.replace('floors', schema.floorKeyValues(tenantId, floor)));
+
+    // コピーしてprivate（編集中）のフロアを作る
+    floor.version = floor.version + 1;
+    floor.public = false;
+    floor.updateBy = null;
+    floor.updateAt = null;
+    sqls.push(sql.replace('floors', schema.floorKeyValues(tenantId, floor)));
+    
+    // オブジェクトもコピーして最新の編集中フロアを参照させる
+    floor.objects.forEach(o => {
+      o.floorVersion = floor.version;
+    });
+    sqls = sqls.concat(floor.objects.map((object) => {
+      return sql.insert('objects', schema.objectKeyValues2(object));
+    }));
     return rdb.batch(conn, sqls).then(() => {
-      return saveObjects(conn, {
-        floorId: floorId,
-        baseFloorVersion: baseVersion,
-        oldFloorVersion: oldFloorVersion,
-        newFloorVersion: floor.version,
-        lastPublicFloorVersion: floor.version,
-        added: [],
-        modified: [],
-        deleted: []
-      }).then((objects) => {
-        return deleteUnrelatedObjects(conn).then(() => {
-          floor.objects = objects;
-          return Promise.resolve(floor);
-        });
-      });
+      return Promise.resolve(floor);
     });
   });
 }
