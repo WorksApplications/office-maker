@@ -334,21 +334,6 @@ function isValidFloor(floor) {
   return true;
 }
 
-app.post('/api/1/floors', inTransaction((conn, req, res) => {
-  return getSelf(conn, getAuthToken(req)).then((user) => {
-    if(!user) {
-      return Promise.reject(403);
-    }
-    // TODO admin or not
-    var updateBy = user.id;
-    return db.createFloor(conn, user.tenantId, updateBy).then((floor) => {
-      log.system.debug('created floor: ' + floor.id);
-      return Promise.resolve(floor);
-    });
-  });
-}));
-
-
 app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {
@@ -364,7 +349,7 @@ app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
     var updateBy = user.id;
     return db.saveFloorWithObjects(conn, user.tenantId, newFloor, updateBy).then((floor) => {
       log.system.debug('saved floor: ' + floor.id);
-      return Promise.resolve(floor);
+      return Promise.resolve();
     });
   });
 }));

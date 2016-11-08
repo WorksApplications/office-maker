@@ -24,7 +24,7 @@ function saveObjects(conn, added, modified, deleted) {
     return modified.reduce((memo, object) => {
       return memo.then(objects => {
         var query = sql.update('objects', schema.objectKeyValues(object),
-          sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]])// TODO , ['updateAt', object.updateAt]
+          sql.whereList([['id', object.id], ['floorVersion', object.floorVersion], ['updateAt', object.updateAt]])
         );
         return rdb.exec(conn, query).then((okPacket) => {
           if(!okPacket.affectedRows) {
@@ -37,7 +37,7 @@ function saveObjects(conn, added, modified, deleted) {
     }, Promise.resolve(objects));
   }).then(objects => {
     return deleted.reduce((memo, object) => {
-      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]]));// TODO , ['updateAt', object.updateAt]
+      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['floorVersion', object.floorVersion], ['updateAt', object.updateAt]]));
       return memo.then(objects => {
         return rdb.exec(conn, sql).then(() => {
           if(!okPacket.affectedRows) {
@@ -195,13 +195,7 @@ function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
     var deleted = newFloor.deleted.map((object) => {
       return object;
     });
-    return saveObjects(conn, added, modified, deleted).then((objects) => {
-      delete newFloor.added;
-      delete newFloor.modified;
-      delete newFloor.deleted;
-      newFloor.objects = objects;
-      return Promise.resolve(newFloor);
-    });
+    return saveObjects(conn, added, modified, deleted);
   });
 }
 

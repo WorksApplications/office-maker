@@ -315,32 +315,22 @@ update removeToken setSelectionStart msg model =
           dict
             |> Dict.values
             |> List.foldl (\(floor, wasPublish) (model, cmd) ->
-              case (wasPublish, model.floor) of
-                (False, Just editingFloor) ->
-                  -- TODO if id is same
-                  ({ model |
-                    floor = Just (EditingFloor.changeFloorAfterSave floor editingFloor)
-                  }, cmd)
+              if wasPublish then
+                let
+                  message =
+                    Success ("Successfully published " ++ floor.name)
 
-                (True, Just editingFloor) ->
-                  let
-                    message =
-                      Success ("Successfully published " ++ floor.name)
+                  -- TODO update FloorInfo
+                in
+                  { model |
+                    floor = Maybe.map (\_ -> EditingFloor.init floor) model.floor
+                  , error = message
+                  } !
+                    [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+                    ]
 
-                    newFloor =
-                      EditingFloor.changeFloorAfterSave floor editingFloor
-
-                    -- TODO update FloorInfo
-                  in
-                    { model |
-                      floor = Just newFloor
-                    , error = message
-                    } !
-                      [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-                      ]
-
-                _ ->
-                  (model, cmd)
+              else
+                (model, cmd)
               ) (model, Cmd.none)
       in
         newModel ! [ cmd ]
@@ -1362,8 +1352,10 @@ update removeToken setSelectionStart msg model =
               case x of
                 FloorInfo.Public floor ->
                   floor.ord
+
                 FloorInfo.PublicWithEdit publicFloor editingFloor ->
                   editingFloor.ord
+
                 FloorInfo.Private floor ->
                   floor.ord
 
@@ -1372,7 +1364,7 @@ update removeToken setSelectionStart msg model =
 
         cmd =
           performAPI
-            (FloorLoaded << Just)
+            (\_ -> NoOp)
             (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
         newModel =
@@ -1393,7 +1385,7 @@ update removeToken setSelectionStart msg model =
 
         saveCmd =
           performAPI
-            (FloorLoaded << Just)
+            (\_ -> NoOp)
             (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
 
         newModel =
@@ -2050,7 +2042,7 @@ savePrototypesCmd apiConfig prototypes =
 
 requestSaveFloorCmd : EditingFloor -> EditingFloor -> Cmd Msg
 requestSaveFloorCmd efloor oldFloor =
-  requestCmd (SaveFloor efloor.version (EditingFloor.present efloor) (EditingFloor.present oldFloor))
+  requestCmd (SaveFloor (EditingFloor.present efloor) (EditingFloor.present oldFloor))
 
 
 requestPublishFloorCmd : String -> Cmd Msg
@@ -2071,9 +2063,9 @@ batchSaveFloor apiConfig requests =
         let
           task =
             case req of
-              SaveFloorOpt floor version change ->
-                API.saveEditingFloor apiConfig { floor | version = version } change
-                  |> Task.map (\floor -> (floor, False))
+              SaveFloorOpt floor change ->
+                API.saveEditingFloor apiConfig floor change
+                  |> Task.map (\_ -> (floor, False))
 
               PublishFloorOpt id ->
                 API.publishEditingFloor apiConfig id

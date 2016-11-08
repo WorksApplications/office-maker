@@ -7,12 +7,12 @@ import Model.FloorDiff as FloorDiff
 type alias Id = String
 
 type SaveRequest
-  = SaveFloor Int Floor Floor
+  = SaveFloor Floor Floor
   | PublishFloor Id
 
 
 type SaveRequestOpt
-  = SaveFloorOpt Floor Int ObjectsChange
+  = SaveFloorOpt Floor ObjectsChange
   | PublishFloorOpt Id
 
 
@@ -24,7 +24,7 @@ reduceRequest list =
 reduceRequestHelp : SaveRequest -> (List SaveRequestOpt, Maybe Floor) -> (List SaveRequestOpt, Maybe Floor)
 reduceRequestHelp req (list, maybeBaseFloor) =
   case req of
-    SaveFloor version floor oldFloor ->
+    SaveFloor floor oldFloor ->
       let
         baseFloor =
           case maybeBaseFloor of
@@ -56,7 +56,7 @@ reduceRequestHelp req (list, maybeBaseFloor) =
                 _ ->
                   list
           in
-            (SaveFloorOpt floor version objectsChange :: tail, Just baseFloor)
+            (SaveFloorOpt floor objectsChange :: tail, Just baseFloor)
         else
           (list, maybeBaseFloor)
 

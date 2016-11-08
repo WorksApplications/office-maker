@@ -57,10 +57,3 @@ redo efloor =
 present : EditingFloor -> Floor
 present efloor =
   efloor.undoList.present
-
-
-changeFloorAfterSave : Floor -> EditingFloor -> EditingFloor
-changeFloorAfterSave newFloor efloor =
-  { efloor |
-    version = newFloor.version
-  }

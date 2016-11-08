@@ -59,10 +59,9 @@ type alias Config =
 
 -- createNewFloor : Task Error Int
 
-saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error Floor
+saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error ()
 saveEditingFloor config floor change =
-  putJson
-    decodeFloor
+  putJsonNoResponse
     (config.apiRoot ++ "/1/floors/" ++ floor.id)
     (authorization config.token)
     (Http.string <| serializeFloor floor change)
