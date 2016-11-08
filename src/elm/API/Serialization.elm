@@ -58,6 +58,8 @@ encodeObject object =
     E.object
       [ ("id", E.string (Object.idOf object))
       , ("floorId", E.string (Object.floorIdOf object))
+      , ("floorVersion", Object.floorVersionOf object |> Maybe.map E.int |> Maybe.withDefault E.null)
+      , ("updateAt", Object.updateAtOf object |> Maybe.map E.float |> Maybe.withDefault E.null)
       , ("type", E.string (if Object.isDesk object then "desk" else "label"))
       , ("x", E.int x)
       , ("y", E.int y)
@@ -161,11 +163,11 @@ decodePerson =
 decodeObject : Decoder Object
 decodeObject =
   decode
-    (\id floorId tipe x y width height backgroundColor name personId fontSize color shape ->
+    (\id floorId floorVersion updateAt tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
-        Object.initDesk id floorId (x, y, width, height) backgroundColor name fontSize personId
+        Object.initDesk id floorId (Just floorVersion) (x, y, width, height) backgroundColor name fontSize (Just updateAt) personId
       else
-        Object.initLabel id floorId (x, y, width, height) backgroundColor name fontSize color
+        Object.initLabel id floorId (Just floorVersion) (x, y, width, height) backgroundColor name fontSize (Just updateAt) color
           (if shape == "rectangle" then
             Object.Rectangle
           else
@@ -174,6 +176,8 @@ decodeObject =
     )
     |> required "id" D.string
     |> required "floorId" D.string
+    |> required "floorVersion" D.int
+    |> required "updateAt" D.float
     |> required "type" D.string
     |> required "x" D.int
     |> required "y" D.int

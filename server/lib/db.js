@@ -14,7 +14,7 @@ function saveObjects(conn, added, modified, deleted) {
       var query = sql.insert('objects', schema.objectKeyValues(object));
       return rdb.exec(conn, query).then((okPacket) => {
         if(!okPacket.affectedRows) {
-          console.log(`didn't update by ` + query);
+          throw `didn't update by ` + query;
         }
         objects.push(object);
         return Promise.resolve(objects);
@@ -24,13 +24,12 @@ function saveObjects(conn, added, modified, deleted) {
     return modified.reduce((memo, object) => {
       return memo.then(objects => {
         var query = sql.update('objects', schema.objectKeyValues(object),
-          sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]])// TODO ['updateAt', object.updateAt]
+          sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]])// TODO , ['updateAt', object.updateAt]
         );
         return rdb.exec(conn, query).then((okPacket) => {
           if(!okPacket.affectedRows) {
-            console.log(`didn't update by ` + query);
+            throw `didn't update by ` + query;
           }
-          // TODO detect conflict here
           objects.push(object);
           return Promise.resolve(objects);
         });
@@ -38,13 +37,12 @@ function saveObjects(conn, added, modified, deleted) {
     }, Promise.resolve(objects));
   }).then(objects => {
     return deleted.reduce((memo, object) => {
-      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]]));// TODO ['updateAt', object.updateAt]
+      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]]));// TODO , ['updateAt', object.updateAt]
       return memo.then(objects => {
         return rdb.exec(conn, sql).then(() => {
           if(!okPacket.affectedRows) {
-            console.log(`didn't update by ` + query);
+            throw `didn't update by ` + query;
           }
-          // TODO detect conflict here
           return Promise.resolve(objects);
         });
       });
@@ -192,11 +190,9 @@ function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
     });
     var modified = newFloor.modified.map((mod) => {
       var object = mod.new;
-      object.floorVersion = floor.version;
       return object;
     });
     var deleted = newFloor.deleted.map((object) => {
-      object.floorVersion = floor.version;
       return object;
     });
     return saveObjects(conn, added, modified, deleted).then((objects) => {

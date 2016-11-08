@@ -1,9 +1,12 @@
 module Model.Object exposing (..)
 
+import Time exposing (Time)
+
 import Model.Person as Person
 
 type alias Id = String
 type alias FloorId = String
+type alias FloorVersion = Int
 
 
 type Shape
@@ -15,11 +18,12 @@ type Object =
   Object
     { id : Id
     , floorId : FloorId
-    -- , updateAt
+    , floorVersion : Maybe FloorVersion
     , rect : (Int, Int, Int, Int) -- (x, y, width, height)
     , backgroundColor : String
     , name : String
     , fontSize : Float
+    , updateAt : Maybe Time
     , extension : ObjectExtension
     }
 
@@ -49,28 +53,32 @@ isLabel (Object object) =
       False
 
 
-initDesk : Id -> FloorId -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Person.Id -> Object
-initDesk id floorId rect backgroundColor name fontSize personId =
+initDesk : Id -> FloorId -> Maybe FloorVersion -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Time -> Maybe Person.Id -> Object
+initDesk id floorId floorVersion rect backgroundColor name fontSize updateAt personId =
   Object
     { id = id
     , floorId = floorId
+    , floorVersion = floorVersion
     , rect = rect
     , backgroundColor = backgroundColor
     , name = name
     , fontSize = fontSize
+    , updateAt = updateAt
     , extension = Desk personId
     }
 
 
-initLabel : Id -> FloorId -> (Int, Int, Int, Int) -> String -> String -> Float -> String -> Shape -> Object
-initLabel id floorId rect backgroundColor name fontSize color shape =
+initLabel : Id -> FloorId -> Maybe FloorVersion -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Time -> String -> Shape -> Object
+initLabel id floorId floorVersion rect backgroundColor name fontSize updateAt color shape =
   Object
     { id = id
     , floorId = floorId
+    , floorVersion = floorVersion
     , rect = rect
     , backgroundColor = backgroundColor
     , name = name
     , fontSize = fontSize
+    , updateAt = updateAt
     , extension = Label color shape
     }
 
@@ -163,9 +171,19 @@ idOf (Object object) =
   object.id
 
 
-floorIdOf : Object -> Id
+floorIdOf : Object -> FloorId
 floorIdOf (Object object) =
   object.floorId
+
+
+floorVersionOf : Object -> Maybe FloorVersion
+floorVersionOf (Object object) =
+  object.floorVersion
+
+
+updateAtOf : Object -> Maybe Time
+updateAtOf (Object object) =
+  object.updateAt
 
 
 nameOf : Object -> String

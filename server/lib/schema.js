@@ -46,7 +46,7 @@ function objectKeyValues(object) {
     ["personId", object.personId],
     ["floorId", object.floorId],
     ["floorVersion", object.floorVersion],
-    ["updateAt", new Date().getTime()]
+    ["updateAt", Date.now()]
   ];
 }
 

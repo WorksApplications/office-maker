@@ -1640,10 +1640,12 @@ updateOnFinishStamp_ prototypes model floor =
           Object.initDesk
             newId
             (EditingFloor.present floor).id
+            Nothing
             (x, y, prototype.width, prototype.height)
             prototype.backgroundColor
             prototype.name
             prototype.fontSize
+            Nothing
             prototype.personId
         )
         candidatesWithNewIds
@@ -1674,9 +1676,21 @@ updateOnFinishPen (x, y) model =
         (newId, newSeed) =
           IdGenerator.new model.seed
 
+        newObject =
+          Object.initDesk
+            newId
+            (EditingFloor.present floor).id
+            Nothing
+            (left, top, width, height)
+            color
+            name
+            Object.defaultFontSize
+            Nothing
+            Nothing
+
         newFloor =
           EditingFloor.update
-            (Floor.addObjects [ Object.initDesk newId (EditingFloor.present floor).id (left, top, width, height) color name Object.defaultFontSize Nothing ])
+            (Floor.addObjects [ newObject ])
             floor
 
         saveCmd =
@@ -1732,9 +1746,22 @@ updateOnFinishLabel model =
         (newId, newSeed) =
           IdGenerator.new model.seed
 
+        newObject =
+          Object.initLabel
+            newId
+            (EditingFloor.present newFloor).id
+            Nothing
+            (left, top, width, height)
+            bgColor
+            name
+            fontSize
+            Nothing
+            color
+            Object.Rectangle
+
         newFloor =
           EditingFloor.update
-            (Floor.addObjects [ Object.initLabel newId (EditingFloor.present newFloor).id (left, top, width, height) bgColor name fontSize color Object.Rectangle])
+            (Floor.addObjects [ newObject ])
             floor
 
         saveCmd =
