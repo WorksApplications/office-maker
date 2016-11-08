@@ -8,41 +8,47 @@ var filestorage = require('./filestorage.js');
 var profileService = require('./profile-service.js');
 
 
-function saveObjects(conn, data) {
-  return getObjects(conn, data.floorId, data.oldFloorVersion).then((objects) => {
-    var deleted = {};
-    var modified = {};
-    data.deleted.forEach((e) => {
-      deleted[e.id] = true;
+function saveObjects(conn, added, modified, deleted) {
+  return added.reduce((memo, object) => {
+    return memo.then(objects => {
+      var query = sql.insert('objects', schema.objectKeyValues(object));
+      return rdb.exec(conn, query).then((okPacket) => {
+        if(!okPacket.affectedRows) {
+          console.log(`didn't update by ` + query);
+        }
+        objects.push(object);
+        return Promise.resolve(objects);
+      });
     });
-    data.modified.forEach((mod) => {
-      mod.new.modifiedVersion = data.newFloorVersion;
-      modified[mod.new.id] = mod.new;
-    });
-    data.added.forEach((mod) => {
-      mod.modifiedVersion = data.newFloorVersion;
-    });
-    var conflict = false;
-    objects.forEach((e) => {
-      if((deleted[e.id] || modified[e.id]) && data.baseFloorVersion < e.modifiedVersion) {
-        conflict = true;
-      }
-    });
-    if(conflict) {
-      return Promise.reject(409);
-    }
-    var toBeInserted = objects.concat(data.added).filter((e) => {
-      return !deleted[e.id];
-    }).map((object) => {
-      return modified[object.id] || object;
-    });
-    var sqls = toBeInserted.map((object) => {
-      return sql.insert('objects', schema.objectKeyValues(data.floorId, data.newFloorVersion, object));
-    });
-    sqls.unshift(`delete from objects where floorId = "${data.floorId}" and floorVersion < ${data.newFloorVersion} and floorVersion > ${data.lastPublicFloorVersion}`);
-    return rdb.batch(conn, sqls).then(() => {
-      return Promise.resolve(toBeInserted);
-    });
+  }, Promise.resolve([])).then(objects => {
+    return modified.reduce((memo, object) => {
+      return memo.then(objects => {
+        var query = sql.update('objects', schema.objectKeyValues(object),
+          sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]])// TODO ['updateAt', object.updateAt]
+        );
+        return rdb.exec(conn, query).then((okPacket) => {
+          if(!okPacket.affectedRows) {
+            console.log(`didn't update by ` + query);
+          }
+          // TODO detect conflict here
+          objects.push(object);
+          return Promise.resolve(objects);
+        });
+      });
+    }, Promise.resolve(objects));
+  }).then(objects => {
+    return deleted.reduce((memo, object) => {
+      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['floorVersion', object.floorVersion]]));// TODO ['updateAt', object.updateAt]
+      return memo.then(objects => {
+        return rdb.exec(conn, sql).then(() => {
+          if(!okPacket.affectedRows) {
+            console.log(`didn't update by ` + query);
+          }
+          // TODO detect conflict here
+          return Promise.resolve(objects);
+        });
+      });
+    }, Promise.resolve(objects));
   });
 }
 
@@ -149,43 +155,63 @@ function getFloorsInfo(conn, tenantId) {
   });
 }
 
+function saveOrCreateFloor(conn, tenantId, newFloor) {
+  return getFloor(conn, tenantId, true, newFloor.id).then((floor) => {
+    if(floor) {
+      if(floor.public) {
+        throw "illeagal";
+      }
+      newFloor.version = floor.version;
+      return rdb.exec(
+        conn,
+        sql.update('floors', schema.floorKeyValues(tenantId, newFloor),
+          sql.whereList([['id', newFloor.id], ['tenantId', tenantId], ['version', floor.version]])
+        )
+      ).then(() => {
+        return Promise.resolve(newFloor);
+      });
+    } else {
+      return rdb.exec(
+        conn,
+        sql.insert('floors', schema.floorKeyValues(tenantId, newFloor))
+      ).then(() => {
+        return Promise.resolve(newFloor);
+      });
+    }
+  });
+}
+
 function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
   newFloor.public = false;
   newFloor.updateBy = updateBy;
   newFloor.updateAt = new Date().getTime();
-
-  return getFloor(conn, tenantId, false, newFloor.id).then((lastPublicFloor) => {
-    return Promise.resolve(lastPublicFloor ? lastPublicFloor.version : -1);
-  }).then(lastPublicFloorVersion => {
-    return getFloor(conn, tenantId, true, newFloor.id).then((floor) => {
-      var baseVersion = newFloor.version;//TODO
-      var oldFloorVersion = floor ? floor.version : -1;
-      newFloor.version = oldFloorVersion + 1;
-      var sqls = [
-        sql.insert('floors', schema.floorKeyValues(tenantId, newFloor))
-      ];
-      return rdb.batch(conn, sqls).then(() => {
-        return saveObjects(conn, {
-          floorId: newFloor.id,
-          baseFloorVersion: baseVersion,
-          oldFloorVersion: oldFloorVersion,
-          newFloorVersion: newFloor.version,
-          lastPublicFloorVersion: lastPublicFloorVersion,
-          added: newFloor.added,
-          modified: newFloor.modified,
-          deleted: newFloor.deleted
-        }).then((objects) => {
-          delete newFloor.added;
-          delete newFloor.modified;
-          delete newFloor.deleted;
-          newFloor.objects = objects;
-          return Promise.resolve(newFloor);
-        });
-      });
+  return saveOrCreateFloor(conn, tenantId, newFloor).then((floor) => {
+    var added = newFloor.added.map((object) => {
+      object.floorId = floor.id
+      object.floorVersion = floor.version;
+      return object;
+    });
+    var modified = newFloor.modified.map((mod) => {
+      var object = mod.new;
+      object.floorId = floor.id
+      object.floorVersion = floor.version;
+      return object;
+    });
+    var deleted = newFloor.deleted.map((object) => {
+      object.floorId = floor.id
+      object.floorVersion = floor.version;
+      return object;
+    });
+    return saveObjects(conn, added, modified, deleted).then((objects) => {
+      delete newFloor.added;
+      delete newFloor.modified;
+      delete newFloor.deleted;
+      newFloor.objects = objects;
+      return Promise.resolve(newFloor);
     });
   });
-
 }
+
 
 function publishFloor(conn, tenantId, floorId, updateBy) {
   return getFloorWithObjects(conn, tenantId, true, floorId).then((floor) => {
@@ -206,13 +232,13 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
     floor.updateBy = null;
     floor.updateAt = null;
     sqls.push(sql.replace('floors', schema.floorKeyValues(tenantId, floor)));
-    
+
     // オブジェクトもコピーして最新の編集中フロアを参照させる
     floor.objects.forEach(o => {
       o.floorVersion = floor.version;
     });
     sqls = sqls.concat(floor.objects.map((object) => {
-      return sql.insert('objects', schema.objectKeyValues2(object));
+      return sql.insert('objects', schema.objectKeyValues(object));
     }));
     return rdb.batch(conn, sqls).then(() => {
       return Promise.resolve(floor);

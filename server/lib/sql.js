@@ -8,7 +8,7 @@ function select(table, where) {
 function insert(table, keyValues) {
   var columns = [];
   var values = [];
-  keyValues.forEach(function(keyValue) {
+  keyValues.forEach((keyValue) => {
     columns.push(keyValue[0]);
     values.push(esc(keyValue[1]));
   });
@@ -19,7 +19,7 @@ function insert(table, keyValues) {
 function replace(table, keyValues) {
   var columns = [];
   var values = [];
-  keyValues.forEach(function(keyValue) {
+  keyValues.forEach((keyValue) => {
     columns.push(keyValue[0]);
     values.push(esc(keyValue[1]));
   });
@@ -28,17 +28,17 @@ function replace(table, keyValues) {
   return `REPLACE INTO ${table} ${columnsStr} ${valuesStr}`;
 }
 function update(table, keyValues, where) {
-  var sets = keyValues.map(function(keyValue) {
+  var sets = keyValues.map((keyValue) => {
     return `${ keyValue[0] }=${ esc(keyValue[1]) }`;
   });
   var str = `SET ${ sets.join(',') }`;
-  return `UPDATE ${ table } ${ str } WHERE ${ where }`;
+  return `UPDATE ${ table } ${ str } ${ where }`;
 }
 function where(key, value) {
   return `WHERE ${key}=${esc(value)}`;
 }
 function whereList(keyValues) {
-  return `WHERE ` + keyValues.map(function(keyValue) {
+  return `WHERE ` + keyValues.map((keyValue) => {
     return `${keyValue[0]}=${esc(keyValue[1])}`;
   }).join(' AND ');
 }

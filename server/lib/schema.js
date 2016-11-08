@@ -30,27 +30,7 @@ function prototypeKeyValues(tenantId, proto) {
   ];
 }
 
-function objectKeyValues(floorId, floorVersion, object) {
-  return [
-    ["id", object.id],
-    ["name", object.name],
-    ["type", object.type],
-    ["x", object.x],
-    ["y", object.y],
-    ["width", object.width],
-    ["height", object.height],
-    ["backgroundColor", object.backgroundColor],
-    ["fontSize", object.fontSize],
-    ["color", object.color],
-    ["shape", object.shape],
-    ["personId", object.personId],
-    ["floorId", floorId],
-    ["floorVersion", floorVersion],
-    ["modifiedVersion", object.modifiedVersion]
-  ];
-}
-
-function objectKeyValues2(object) {
+function objectKeyValues(object) {
   return [
     ["id", object.id],
     ["name", object.name],
@@ -66,7 +46,7 @@ function objectKeyValues2(object) {
     ["personId", object.personId],
     ["floorId", object.floorId],
     ["floorVersion", object.floorVersion],
-    ["modifiedVersion", object.modifiedVersion]
+    ["updateAt", new Date().getTime()]
   ];
 }
 
@@ -84,6 +64,5 @@ module.exports = {
   floorKeyValues: floorKeyValues,
   prototypeKeyValues: prototypeKeyValues,
   objectKeyValues: objectKeyValues,
-  objectKeyValues2: objectKeyValues2,
   colorKeyValues: colorKeyValues
 };
