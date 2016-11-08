@@ -165,9 +165,9 @@ decodeObject =
   decode
     (\id floorId floorVersion updateAt tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
-        Object.initDesk id floorId (Just floorVersion) (x, y, width, height) backgroundColor name fontSize (Just updateAt) personId
+        Object.initDesk id floorId floorVersion (x, y, width, height) backgroundColor name fontSize (Just updateAt) personId
       else
-        Object.initLabel id floorId (Just floorVersion) (x, y, width, height) backgroundColor name fontSize (Just updateAt) color
+        Object.initLabel id floorId floorVersion (x, y, width, height) backgroundColor name fontSize (Just updateAt) color
           (if shape == "rectangle" then
             Object.Rectangle
           else
@@ -176,7 +176,7 @@ decodeObject =
     )
     |> required "id" D.string
     |> required "floorId" D.string
-    |> required "floorVersion" D.int
+    |> optional' "floorVersion" D.int
     |> required "updateAt" D.float
     |> required "type" D.string
     |> required "x" D.int

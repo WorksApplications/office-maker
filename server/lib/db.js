@@ -24,7 +24,7 @@ function saveObjects(conn, added, modified, deleted) {
     return modified.reduce((memo, object) => {
       return memo.then(objects => {
         var query = sql.update('objects', schema.objectKeyValues(object),
-          sql.whereList([['id', object.id], ['floorVersion', object.floorVersion], ['updateAt', object.updateAt]])
+          sql.whereList([['id', object.id], ['updateAt', object.updateAt]]) + ' AND floorVersion IS NULL'
         );
         return rdb.exec(conn, query).then((okPacket) => {
           if(!okPacket.affectedRows) {
@@ -37,7 +37,7 @@ function saveObjects(conn, added, modified, deleted) {
     }, Promise.resolve(objects));
   }).then(objects => {
     return deleted.reduce((memo, object) => {
-      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['floorVersion', object.floorVersion], ['updateAt', object.updateAt]]));
+      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['updateAt', object.updateAt]]) + ' AND floorVersion IS NULL');
       return memo.then(objects => {
         return rdb.exec(conn, sql).then(() => {
           if(!okPacket.affectedRows) {
@@ -185,14 +185,16 @@ function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
   newFloor.updateAt = new Date().getTime();
   return saveOrCreateFloor(conn, tenantId, newFloor).then((floor) => {
     var added = newFloor.added.map((object) => {
-      object.floorVersion = floor.version;
+      object.floorVersion = null;
       return object;
     });
     var modified = newFloor.modified.map((mod) => {
       var object = mod.new;
+      object.floorVersion = null;
       return object;
     });
     var deleted = newFloor.deleted.map((object) => {
+      object.floorVersion = null;
       return object;
     });
     return saveObjects(conn, added, modified, deleted);
@@ -222,7 +224,7 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
 
     // オブジェクトもコピーして最新の編集中フロアを参照させる
     floor.objects.forEach(o => {
-      o.floorVersion = floor.version;
+      o.floorVersion = null;
     });
     sqls = sqls.concat(floor.objects.map((object) => {
       return sql.insert('objects', schema.objectKeyValues(object));

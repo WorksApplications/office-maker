@@ -822,7 +822,7 @@ update removeToken setSelectionStart msg model =
                 ( API.getPeopleByFloorAndPost
                     model.apiConfig
                     floor.id
-                    editingFloor.version
+                    floor.version
                     postName
                 )
 

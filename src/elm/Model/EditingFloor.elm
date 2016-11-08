@@ -1,5 +1,7 @@
 module Model.EditingFloor exposing (..)
 
+import Dict exposing (Dict)
+
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
@@ -8,14 +10,14 @@ import Util.UndoList as UndoList exposing (UndoList)
 
 
 type alias EditingFloor =
-  { version : Int
+  { synchronizedFloor : Floor
   , undoList : UndoList Floor
   }
 
 
 init : Floor -> EditingFloor
 init floor =
-  { version = floor.version
+  { synchronizedFloor = floor
   , undoList = UndoList.init floor
   }
 
