@@ -57,6 +57,7 @@ encodeObject object =
   in
     E.object
       [ ("id", E.string (Object.idOf object))
+      , ("floorId", E.string (Object.floorIdOf object))
       , ("type", E.string (if Object.isDesk object then "desk" else "label"))
       , ("x", E.int x)
       , ("y", E.int y)
@@ -160,11 +161,11 @@ decodePerson =
 decodeObject : Decoder Object
 decodeObject =
   decode
-    (\id tipe x y width height backgroundColor name personId fontSize color shape ->
+    (\id floorId tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
-        Object.initDesk id (x, y, width, height) backgroundColor name fontSize personId
+        Object.initDesk id floorId (x, y, width, height) backgroundColor name fontSize personId
       else
-        Object.initLabel id (x, y, width, height) backgroundColor name fontSize color
+        Object.initLabel id floorId (x, y, width, height) backgroundColor name fontSize color
           (if shape == "rectangle" then
             Object.Rectangle
           else
@@ -172,6 +173,7 @@ decodeObject =
           )
     )
     |> required "id" D.string
+    |> required "floorId" D.string
     |> required "type" D.string
     |> required "x" D.int
     |> required "y" D.int

@@ -1639,6 +1639,7 @@ updateOnFinishStamp_ prototypes model floor =
         (\((prototype, (x, y)), newId) ->
           Object.initDesk
             newId
+            (EditingFloor.present floor).id
             (x, y, prototype.width, prototype.height)
             prototype.backgroundColor
             prototype.name
@@ -1675,7 +1676,7 @@ updateOnFinishPen (x, y) model =
 
         newFloor =
           EditingFloor.update
-            (Floor.addObjects [ Object.initDesk newId (left, top, width, height) color name Object.defaultFontSize Nothing ])
+            (Floor.addObjects [ Object.initDesk newId (EditingFloor.present floor).id (left, top, width, height) color name Object.defaultFontSize Nothing ])
             floor
 
         saveCmd =
@@ -1733,7 +1734,7 @@ updateOnFinishLabel model =
 
         newFloor =
           EditingFloor.update
-            (Floor.addObjects [ Object.initLabel newId (left, top, width, height) bgColor name fontSize color Object.Rectangle])
+            (Floor.addObjects [ Object.initLabel newId (EditingFloor.present newFloor).id (left, top, width, height) bgColor name fontSize color Object.Rectangle])
             floor
 
         saveCmd =

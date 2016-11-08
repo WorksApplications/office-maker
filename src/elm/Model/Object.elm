@@ -3,6 +3,8 @@ module Model.Object exposing (..)
 import Model.Person as Person
 
 type alias Id = String
+type alias FloorId = String
+
 
 type Shape
   = Rectangle
@@ -12,6 +14,8 @@ type Shape
 type Object =
   Object
     { id : Id
+    , floorId : FloorId
+    -- , updateAt
     , rect : (Int, Int, Int, Int) -- (x, y, width, height)
     , backgroundColor : String
     , name : String
@@ -45,10 +49,11 @@ isLabel (Object object) =
       False
 
 
-initDesk : Id -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Person.Id -> Object
-initDesk id rect backgroundColor name fontSize personId =
+initDesk : Id -> FloorId -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Person.Id -> Object
+initDesk id floorId rect backgroundColor name fontSize personId =
   Object
     { id = id
+    , floorId = floorId
     , rect = rect
     , backgroundColor = backgroundColor
     , name = name
@@ -57,10 +62,11 @@ initDesk id rect backgroundColor name fontSize personId =
     }
 
 
-initLabel : Id -> (Int, Int, Int, Int) -> String -> String -> Float -> String -> Shape -> Object
-initLabel id rect backgroundColor name fontSize color shape =
+initLabel : Id -> FloorId -> (Int, Int, Int, Int) -> String -> String -> Float -> String -> Shape -> Object
+initLabel id floorId rect backgroundColor name fontSize color shape =
   Object
     { id = id
+    , floorId = floorId
     , rect = rect
     , backgroundColor = backgroundColor
     , name = name
@@ -155,6 +161,11 @@ changeFontSize fontSize (Object object) =
 idOf : Object -> Id
 idOf (Object object) =
   object.id
+
+
+floorIdOf : Object -> Id
+floorIdOf (Object object) =
+  object.floorId
 
 
 nameOf : Object -> String

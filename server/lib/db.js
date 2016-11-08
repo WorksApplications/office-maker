@@ -187,18 +187,15 @@ function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
   newFloor.updateAt = new Date().getTime();
   return saveOrCreateFloor(conn, tenantId, newFloor).then((floor) => {
     var added = newFloor.added.map((object) => {
-      object.floorId = floor.id
       object.floorVersion = floor.version;
       return object;
     });
     var modified = newFloor.modified.map((mod) => {
       var object = mod.new;
-      object.floorId = floor.id
       object.floorVersion = floor.version;
       return object;
     });
     var deleted = newFloor.deleted.map((object) => {
-      object.floorId = floor.id
       object.floorVersion = floor.version;
       return object;
     });
