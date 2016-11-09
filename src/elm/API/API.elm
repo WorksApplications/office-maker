@@ -2,6 +2,7 @@ module API.API exposing (
       getAuth
     , search
     , saveEditingFloor
+    , saveObjects
     , publishEditingFloor
     , deleteEditingFloor
     , getEditingFloor
@@ -57,7 +58,13 @@ type alias Config =
   }
 
 
--- createNewFloor : Task Error Int
+saveObjects : Config -> ObjectsChange -> Task Error ()
+saveObjects config change =
+  patchJsonNoResponse
+    (config.apiRoot ++ "/1/objects")
+    (authorization config.token)
+    (Http.string <| serializeObjectsChange change)
+
 
 saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error ()
 saveEditingFloor config floor change =

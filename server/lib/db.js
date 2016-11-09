@@ -8,14 +8,10 @@ var filestorage = require('./filestorage.js');
 var profileService = require('./profile-service.js');
 
 
-function saveObjects(conn, added, modified, deleted) {
+function saveObjects(conn, added, modified, deleted, updateAt) {
   return added.reduce((memo, object) => {
     return memo.then(objects => {
-      var query = sql.insert('objects', schema.objectKeyValues(object));
-      return rdb.exec(conn, query).then((okPacket) => {
-        if(!okPacket.affectedRows) {
-          throw `didn't update by ` + query;
-        }
+      return addObject(conn, object, updateAt).then(object => {
         objects.push(object);
         return Promise.resolve(objects);
       });
@@ -23,13 +19,7 @@ function saveObjects(conn, added, modified, deleted) {
   }, Promise.resolve([])).then(objects => {
     return modified.reduce((memo, object) => {
       return memo.then(objects => {
-        var query = sql.update('objects', schema.objectKeyValues(object),
-          sql.whereList([['id', object.id], ['updateAt', object.updateAt]]) + ' AND floorVersion IS NULL'
-        );
-        return rdb.exec(conn, query).then((okPacket) => {
-          if(!okPacket.affectedRows) {
-            throw `didn't update by ` + query;
-          }
+        return updateObject(conn, object, updateAt).then(object => {
           objects.push(object);
           return Promise.resolve(objects);
         });
@@ -37,16 +27,54 @@ function saveObjects(conn, added, modified, deleted) {
     }, Promise.resolve(objects));
   }).then(objects => {
     return deleted.reduce((memo, object) => {
-      var sql = sql.delete('objects', sql.whereList([['id', object.id], ['updateAt', object.updateAt]]) + ' AND floorVersion IS NULL');
-      return memo.then(objects => {
-        return rdb.exec(conn, sql).then(() => {
-          if(!okPacket.affectedRows) {
-            throw `didn't update by ` + query;
-          }
-          return Promise.resolve(objects);
-        });
+      return deleteObject(conn, object).then(() => {
+        return Promise.resolve(objects);
       });
     }, Promise.resolve(objects));
+  });
+}
+
+function addObject(conn, object, updateAt) {
+  var query = sql.insert('objects', schema.objectKeyValues(object, updateAt));
+  return rdb.exec(conn, query).then((okPacket) => {
+    if(!okPacket.affectedRows) {
+      console.log(`didn't update by ` + query);
+      return Promise.reject(object);
+    } else {
+      object.updateAt = updateAt;
+      return Promise.resolve(object);
+    }
+  });
+}
+
+function updateObject(conn, object, updateAt) {
+  var oldUpdateAt = object.updateAt;
+  var query = sql.update('objects', schema.objectKeyValues(object, updateAt),
+    sql.whereList([['id', object.id], ['updateAt', oldUpdateAt]]) + ' AND floorVersion = -1'
+  );
+  return rdb.exec(conn, query).then((okPacket) => {
+    if(!okPacket.affectedRows) {
+      console.log(`didn't update by ` + query);
+      return Promise.reject(object);
+    } else {
+      object.updateAt = updateAt;
+      return Promise.resolve(object);
+    }
+  });
+}
+
+function deleteObject(conn, object) {
+  var oldUpdateAt = object.updateAt;
+  var query = sql.delete('objects',
+    sql.whereList([['id', object.id], ['updateAt', object.updateAt]]) + ' AND floorVersion = -1'
+  );
+  return rdb.exec(conn, query).then((okPacket) => {
+    if(!okPacket.affectedRows) {
+      console.log(`didn't update by ` + query);
+      return Promise.reject(object);
+    } else {
+      return Promise.resolve();
+    }
   });
 }
 
@@ -55,11 +83,17 @@ function getObjects(conn, floorId, floorVersion) {
   return rdb.exec(conn, q);
 }
 
-function getFloorWithObjects(conn, tenantId, withPrivate, id) {
-  return getFloor(conn, tenantId, withPrivate, id).then((floor) => {
-    if(!floor) {
-      return Promise.resolve(null);
-    }
+function getPublicFloorWithObjects(conn, tenantId, id) {
+  return getPublicFloor(conn, tenantId, id).then((floor) => {
+    return getObjects(conn, floor.id, floor.version).then((objects) => {
+      floor.objects = objects;
+      return Promise.resolve(floor);
+    });
+  });
+}
+
+function getEditingFloorWithObjects(conn, tenantId, id) {
+  return getEditingFloor(conn, tenantId, id).then((floor) => {
     return getObjects(conn, floor.id, floor.version).then((objects) => {
       floor.objects = objects;
       return Promise.resolve(floor);
@@ -84,30 +118,30 @@ function getFloorOfVersion(conn, tenantId, id, version) {
   return rdb.one(conn, q);
 }
 
-function getFloor(conn, tenantId, withPrivate, id) {
-  var q = sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId]]));
-  return rdb.exec(conn, q).then((floors) => {
-    var _floor = null;
-    floors.forEach((floor) => {
-      if(!_floor || _floor.version < floor.version) {
-        if(floor.public || withPrivate) {
-          _floor = floor;
-        }
-      }
-    });
-    return Promise.resolve(_floor);
+function getPublicFloor(conn, tenantId, id) {
+  return rdb.exec(conn,
+    sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId], ['public', 1]]) + ' ORDER BY version DESC LIMIT 1')
+  ).then((floors) => {
+    return Promise.resolve(floors[0]);
   });
 }
 
-function getFloors(conn, tenantId, withPrivate) {
-  var sql_ = sql.select('floors', sql.where('tenantId', tenantId));
-  return rdb.exec(conn, sql_).then((floors) => {
+function getEditingFloor(conn, tenantId, id) {
+  return rdb.exec(conn,
+    sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId], ['version', -1]]))
+  ).then((floors) => {
+    return Promise.resolve(floors[0]);
+  });
+}
+
+function getPublicFloors(conn, tenantId) {
+  return rdb.exec(conn,
+    sql.select('floors', sql.whereList([['tenantId', tenantId], ['public', 1]]))
+  ).then((floors) => {
     var results = {};
     floors.forEach((floor) => {
       if(!results[floor.id] || results[floor.id].version < floor.version) {
-        if(floor.public || withPrivate) {
-          results[floor.id] = floor;
-        }
+        results[floor.id] = floor;
       }
     });
     var ret = Object.keys(results).map((id) => {
@@ -117,8 +151,15 @@ function getFloors(conn, tenantId, withPrivate) {
   });
 }
 
+function getEditingFloors(conn, tenantId) {
+  return rdb.exec(conn,
+    sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1]]))
+  );
+}
+
 function getFloorsWithObjects(conn, tenantId, withPrivate) {
-  return getFloors(conn, tenantId, withPrivate).then((floors) => {
+  var getFloors = withPrivate ? getEditingFloors(conn, tenantId) : getPublicFloors(conn, tenantId);
+  return getFloors.then((floors) => {
     var promises = floors.map((floor) => {
       return getObjects(conn, floor.id, floor.version).then((objects) => {
         floor.objects = objects;
@@ -130,8 +171,8 @@ function getFloorsWithObjects(conn, tenantId, withPrivate) {
 }
 
 function getFloorsInfo(conn, tenantId) {
-  return getFloors(conn, tenantId, false).then((floorsNotIncludingLastPrivate) => {
-    return getFloors(conn, tenantId, true).then((floorsIncludingLastPrivate) => {
+  return getEditingFloors(conn, tenantId).then((floorsNotIncludingLastPrivate) => {
+    return getPublicFloors(conn, tenantId).then((floorsIncludingLastPrivate) => {
       var floorInfos = {};
       floorsNotIncludingLastPrivate.forEach((floor) => {
         floorInfos[floor.id] = floorInfos[floor.id] || [];
@@ -141,6 +182,7 @@ function getFloorsInfo(conn, tenantId) {
         floorInfos[floor.id] = floorInfos[floor.id] || [];
         floorInfos[floor.id][1] = floor;
       });
+      // console.log(floorInfos);
       var values = Object.keys(floorInfos).map((key) => {
         return floorInfos[key];
       });
@@ -154,83 +196,99 @@ function getFloorsInfo(conn, tenantId) {
 }
 
 function saveOrCreateFloor(conn, tenantId, newFloor) {
-  return getFloor(conn, tenantId, true, newFloor.id).then((floor) => {
+  var oldUpdateAt = newFloor.updateAt;
+  var updateAt = Date.now();
+  return getEditingFloor(conn, tenantId, newFloor.id).then((floor) => {
     if(floor) {
-      if(floor.public) {
-        throw "illeagal";
-      }
-      newFloor.version = floor.version;
-      return rdb.exec(
-        conn,
-        sql.update('floors', schema.floorKeyValues(tenantId, newFloor),
-          sql.whereList([['id', newFloor.id], ['tenantId', tenantId], ['version', floor.version]])
-        )
-      ).then(() => {
-        return Promise.resolve(newFloor);
-      });
+      return updateEditingFloor(conn, tenantId, newFloor, updateAt);
     } else {
-      return rdb.exec(
-        conn,
-        sql.insert('floors', schema.floorKeyValues(tenantId, newFloor))
-      ).then(() => {
-        return Promise.resolve(newFloor);
-      });
+      return createEditingFloor(conn, tenantId, newFloor, updateAt);
     }
+  });
+}
+
+function updateEditingFloor(conn, tenantId, newFloor, updateAt) {
+  newFloor.version = -1;
+  newFloor.public = false;
+  return rdb.exec(
+    conn,
+    sql.update('floors', schema.floorKeyValues(tenantId, newFloor, updateAt),
+      sql.whereList([['id', newFloor.id], ['tenantId', tenantId], ['version', floor.version]])
+    )
+  ).then(() => {
+    newFloor.updateAt = updateAt;
+    return Promise.resolve(newFloor);
+  });
+}
+
+function createEditingFloor(conn, tenantId, newFloor, updateAt) {
+  newFloor.version = -1;
+  newFloor.public = false;
+  return rdb.exec(
+    conn,
+    sql.insert('floors', schema.floorKeyValues(tenantId, newFloor, updateAt))
+  ).then(() => {
+    newFloor.updateAt = updateAt;
+    return Promise.resolve(newFloor);
   });
 }
 
 function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
+  var updateAt = Date.now();
+  newFloor.version = -1;
   newFloor.public = false;
   newFloor.updateBy = updateBy;
-  newFloor.updateAt = new Date().getTime();
+  newFloor.updateAt = updateAt;
   return saveOrCreateFloor(conn, tenantId, newFloor).then((floor) => {
-    var added = newFloor.added.map((object) => {
-      object.floorVersion = null;
-      return object;
-    });
-    var modified = newFloor.modified.map((mod) => {
-      var object = mod.new;
-      object.floorVersion = null;
-      return object;
-    });
-    var deleted = newFloor.deleted.map((object) => {
-      object.floorVersion = null;
-      return object;
-    });
-    return saveObjects(conn, added, modified, deleted);
+    return saveObjectsChange(conn, newFloor, updateAt);
   });
+}
+
+function saveObjectsChange(conn, objectsChange, updateAt) {
+  var added = objectsChange.added.map((object) => {
+    object.floorVersion = -1;
+    return object;
+  });
+  var modified = objectsChange.modified.map((mod) => {
+    var object = mod.new;
+    object.floorVersion = -1;
+    return object;
+  });
+  var deleted = objectsChange.deleted.map((object) => {
+    object.floorVersion = -1;
+    return object;
+  });
+  return saveObjects(conn, added, modified, deleted, updateAt);
 }
 
 
 function publishFloor(conn, tenantId, floorId, updateBy) {
-  return getFloorWithObjects(conn, tenantId, true, floorId).then((floor) => {
-    if(!floor) {
-      return Promise.reject('floor not found: ' + floorId);
+  return getEditingFloorWithObjects(conn, tenantId, floorId).then((editingFloor) => {
+    if(!editingFloor) {
+      return Promise.reject('Editing floor not found: ' + floorId);
     }
-    var sqls = [];
+    return getPublicFloor(conn, tenantId, floorId).then((lastFloor) => {
+      if(!lastFloor) {
+        return Promise.reject('Public floor not found: ' + floorId);
+      }
+      var updateAt = Date.now();
+      var newFloorVersion = floor.version + 1;// たぶん +1 であるという前提はおかないほうがベター
 
-    // 最新のフロアをpublicにする
-    floor.public = true;
-    floor.updateBy = updateBy;
-    floor.updateAt = new Date().getTime();
-    sqls.push(sql.replace('floors', schema.floorKeyValues(tenantId, floor)));
+      var sqls = [];
+      editingFloor.public = true;
+      editingFloor.updateBy = updateBy;
+      editingFloor.version = newFloorVersion;
+      sqls.push(sql.insert('floors', schema.floorKeyValues(tenantId, editingFloor, updateAt)));
 
-    // コピーしてprivate（編集中）のフロアを作る
-    floor.version = floor.version + 1;
-    floor.public = false;
-    floor.updateBy = null;
-    floor.updateAt = null;
-    sqls.push(sql.replace('floors', schema.floorKeyValues(tenantId, floor)));
+      floor.objects.forEach((object) => {
+        object.floorVersion = newFloorVersion;
+        sqls.push(sql.insert('objects', schema.objectKeyValues(object)));
+      });
 
-    // オブジェクトもコピーして最新の編集中フロアを参照させる
-    floor.objects.forEach(o => {
-      o.floorVersion = null;
-    });
-    sqls = sqls.concat(floor.objects.map((object) => {
-      return sql.insert('objects', schema.objectKeyValues(object));
-    }));
-    return rdb.batch(conn, sqls).then(() => {
-      return Promise.resolve(floor);
+      return rdb.batch(conn, sqls).then(() => {
+        editingFloor.updateAt = updateAt;
+        return Promise.resolve(editingFloor);
+      });
     });
   });
 }
@@ -383,10 +441,13 @@ module.exports = {
   savePrototypes: savePrototypes,
   getColors: getColors,
   saveColors: saveColors,
-  getFloorWithObjects: getFloorWithObjects,
+  getEditingFloorWithObjects: getEditingFloorWithObjects,
+  getPublicFloorWithObjects: getPublicFloorWithObjects,
   getFloorOfVersionWithObjects: getFloorOfVersionWithObjects,
   getFloorsInfo: getFloorsInfo,
   saveFloorWithObjects: saveFloorWithObjects,
+  saveObjectsChange: saveObjectsChange,
+  // saveObject: updateObject,//TODO currently, only UPDATE is supported
   publishFloor: publishFloor,
   deleteFloor: deleteFloor,
   deleteFloorWithObjects: deleteFloorWithObjects,

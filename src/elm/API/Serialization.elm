@@ -99,20 +99,30 @@ encodeObjectModification mod =
 encodeFloor : Floor -> ObjectsChange -> Value
 encodeFloor floor change =
   E.object
-    [ ("id", E.string floor.id)
+    ([ ("id", E.string floor.id)
     , ("version", E.int floor.version)
     , ("name", E.string floor.name)
     , ("ord", E.int floor.ord)
-    , ("added", E.list (List.map encodeObject change.added))
-    , ("modified", E.list (List.map encodeObjectModification change.modified))
-    , ("deleted", E.list (List.map encodeObject change.deleted))
     , ("width", E.int floor.width)
     , ("height", E.int floor.height)
     , ("realWidth", Maybe.withDefault E.null <| Maybe.map (E.int << fst) floor.realSize)
     , ("realHeight", Maybe.withDefault E.null <| Maybe.map (E.int << snd) floor.realSize)
     , ("image", Maybe.withDefault E.null <| Maybe.map E.string floor.image)
     , ("public", E.bool floor.public)
-    ]
+    ] ++ encodeObjectsChange_ change)
+
+
+encodeObjectsChange : ObjectsChange -> Value
+encodeObjectsChange change =
+  E.object (encodeObjectsChange_ change)
+
+
+encodeObjectsChange_ : ObjectsChange -> List (String, Value)
+encodeObjectsChange_ change =
+  [ ("added", E.list (List.map encodeObject change.added))
+  , ("modified", E.list (List.map encodeObjectModification change.modified))
+  , ("deleted", E.list (List.map encodeObject change.deleted))
+  ]
 
 
 encodeLogin : String -> String -> Value
@@ -349,6 +359,11 @@ serializeColorPalette colorPalette =
 serializeFloor : Floor -> ObjectsChange -> String
 serializeFloor floor change =
     E.encode 0 (encodeFloor floor change)
+
+
+serializeObjectsChange : ObjectsChange -> String
+serializeObjectsChange change =
+    E.encode 0 (encodeObjectsChange change)
 
 
 serializeLogin : String -> String -> String

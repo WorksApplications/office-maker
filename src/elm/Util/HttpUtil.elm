@@ -131,6 +131,10 @@ patchJson : Decoder value -> String -> List (String, String) -> Http.Body -> Tas
 patchJson = sendJson "PATCH"
 
 
+patchJsonNoResponse : String -> List (String, String) -> Http.Body -> Task Http.Error ()
+patchJsonNoResponse = sendJsonNoResponse "PATCH"
+
+
 deleteJson : Decoder value -> String -> List (String, String) -> Http.Body -> Task Http.Error value
 deleteJson = sendJson "DELETE"
 

@@ -305,7 +305,10 @@ app.get('/api/1/floors/:id', inTransaction((conn, req, res) => {
     var tenantId = user ? user.tenantId : '';
     var id = req.params.id;
     log.system.debug('get: ' + id);
-    return db.getFloorWithObjects(conn, tenantId, options.all, id).then((floor) => {
+    var getFloorWithObjects = options.all ?
+      db.getEditingFloorWithObjects(conn, tenantId, id) :
+      db.getPublicFloorWithObjects(conn, tenantId, id);
+    return getFloorWithObjects.then((floor) => {
       if(!floor) {
         return Promise.reject(404);
       }
@@ -377,13 +380,43 @@ app.delete('/api/1/floors/:id', inTransaction((conn, req, res) => {
       return Promise.reject(403);
     }
     var id = req.params.id;
-    var updateBy = user.id;
     return db.deleteFloor(conn, user.tenantId, id).then(() => {
       log.system.info('deleted floor');
       return Promise.resolve();
     });
   });
 }));
+
+app.patch('/api/1/objects', inTransaction((conn, req, res) => {
+  return getSelf(conn, getAuthToken(req)).then((user) => {
+    if(!user) {
+      return Promise.reject(403);
+    }
+    var objectsChange = req.body;
+    var updateAt = Date.now();
+    return db.saveObjectsChange(conn, objectsChange, updateAt).then(() => {
+      log.system.debug('saved objects');
+      return Promise.resolve();
+    });
+  });
+}));
+
+// app.put('/api/1/objects/:id', inTransaction((conn, req, res) => {
+//   return getSelf(conn, getAuthToken(req)).then((user) => {
+//     if(!user) {
+//       return Promise.reject(403);
+//     }
+//     var newObject = req.body;
+//     if(newObject.id && req.params.id !== newObject.id) {
+//       return Promise.reject(400);
+//     }
+//     var updateAt = Date.now();
+//     return db.saveObject(conn, newObject, updateAt).then((object) => {
+//       log.system.debug('saved object: ' + object.id);
+//       return Promise.resolve(object);
+//     });
+//   });
+// }));
 
 app.put('/api/1/images/:id', inTransaction((conn, req, res) => {
   return new Promise((resolve, reject) => {

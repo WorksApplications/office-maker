@@ -2064,7 +2064,8 @@ batchSaveFloor apiConfig requests =
           task =
             case req of
               SaveFloorOpt floor change ->
-                API.saveEditingFloor apiConfig floor change
+                -- API.saveEditingFloor apiConfig floor change
+                API.saveObjects apiConfig change
                   |> Task.map (\_ -> (floor, False))
 
               PublishFloorOpt id ->

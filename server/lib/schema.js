@@ -1,4 +1,4 @@
-function floorKeyValues(tenantId, floor) {
+function floorKeyValues(tenantId, floor, updateAt) {
   return [
     ["id", floor.id],
     ["version", floor.version],
@@ -12,7 +12,7 @@ function floorKeyValues(tenantId, floor) {
     ["realHeight", floor.realHeight],
     ["public", floor.public],
     ["updateBy", floor.updateBy],
-    ["updateAt", floor.updateAt]
+    ["updateAt", updateAt]
   ];
 }
 
@@ -30,7 +30,7 @@ function prototypeKeyValues(tenantId, proto) {
   ];
 }
 
-function objectKeyValues(object) {
+function objectKeyValues(object, updateAt) {
   return [
     ["id", object.id],
     ["name", object.name],
@@ -46,7 +46,7 @@ function objectKeyValues(object) {
     ["personId", object.personId],
     ["floorId", object.floorId],
     ["floorVersion", object.floorVersion],
-    ["updateAt", Date.now()]
+    ["updateAt", updateAt]
   ];
 }
 
