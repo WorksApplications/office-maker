@@ -2092,32 +2092,31 @@ updateByKeyEvent event model =
       } ! []
 
     (Just floor, True, ShortCut.V) ->
-      let
-        base =
-          case model.selectorRect of
-            Just (x, y, w, h) ->
-              (x, y)
+      case model.selectorRect of
+        Just (x, y, w, h) ->
+          let
+            base = (x, y)
+            (copiedIdsWithNewIds, newSeed) =
+              IdGenerator.zipWithNewIds model.seed model.copiedObjects
 
-            Nothing -> (0, 0) --TODO
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds base) floor
 
-        (copiedIdsWithNewIds, newSeed) =
-          IdGenerator.zipWithNewIds model.seed model.copiedObjects
-
-        (newFloor, objectsChange) =
-          EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds base) floor
-
-        saveCmd =
-          requestSaveObjectsCmd objectsChange
-      in
-        { model |
-          floor = Just newFloor
-        , seed = newSeed
-        , selectedObjects =
-          case List.map snd copiedIdsWithNewIds of
-            [] -> model.selectedObjects -- for pasting from spreadsheet
-            x -> x
-        , selectorRect = Nothing
-        } ! [ saveCmd ]
+            saveCmd =
+              requestSaveObjectsCmd objectsChange
+          in
+            { model |
+              floor = Just newFloor
+            , seed = newSeed
+            , selectedObjects =
+              case List.map snd copiedIdsWithNewIds of
+                [] -> model.selectedObjects -- for pasting from spreadsheet
+                x -> x
+            , selectorRect = Nothing
+            } ! [ saveCmd ]
+            
+        Nothing ->
+          model ! []
 
     (Just floor, True, ShortCut.X) ->
       let
