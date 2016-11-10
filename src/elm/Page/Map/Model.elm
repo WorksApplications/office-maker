@@ -27,7 +27,7 @@ import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.EditMode as EditMode exposing (EditMode(..))
-import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
+import Model.SaveRequest as SaveRequest exposing (SaveRequest(..))
 
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)

@@ -29,11 +29,11 @@ import Model.Scale as Scale
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (Prototypes, PositionedPrototype)
 import Model.Floor as Floor exposing (Floor)
-import Model.FloorDiff as FloorDiff
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
+import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
-import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
+import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), ReducedSaveRequest)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ClipboardData as ClipboardData
 import Model.SearchResult as SearchResult
@@ -267,13 +267,13 @@ update removeToken setSelectionStart msg model =
 
         Just floor ->
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, rawFloor) =
+              EditingFloor.updateFloor
                 (Floor.setImage url width height)
                 floor
 
             saveCmd =
-              requestSaveFloorCmd newFloor floor
+              requestSaveFloorCmd rawFloor
           in
             { model | floor = Just newFloor } ! [ saveCmd ]
 
@@ -292,11 +292,9 @@ update removeToken setSelectionStart msg model =
     SaveFloorDebounceMsg msg ->
       let
         save head tail =
-          let
-            reducedRequests =
-              SaveRequest.reduceRequest (head :: tail)
-          in
-            performAPI FloorSaved (batchSaveFloor model.apiConfig reducedRequests)
+          batchSave
+            model.apiConfig
+            (SaveRequest.reduceRequest (head :: tail))
 
         (saveFloorDebounce, cmd) =
           Debounce.update
@@ -309,31 +307,24 @@ update removeToken setSelectionStart msg model =
           saveFloorDebounce = saveFloorDebounce
         } ! [cmd]
 
-    FloorSaved dict ->
+    ObjectsSaved _ ->
+      model ! []
+
+    FloorSaved _ ->
+      model ! []
+
+    FloorPublished floor ->
       let
-        (newModel, cmd) =
-          dict
-            |> Dict.values
-            |> List.foldl (\(floor, wasPublish) (model, cmd) ->
-              if wasPublish then
-                let
-                  message =
-                    Success ("Successfully published " ++ floor.name)
-
-                  -- TODO update FloorInfo
-                in
-                  { model |
-                    floor = Maybe.map (\_ -> EditingFloor.init floor) model.floor
-                  , error = message
-                  } !
-                    [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-                    ]
-
-              else
-                (model, cmd)
-              ) (model, Cmd.none)
+        message =
+          Success ("Successfully published " ++ floor.name)
+        -- TODO update FloorInfo
       in
-        newModel ! [ cmd ]
+        { model |
+          floor = Maybe.map (\_ -> EditingFloor.init floor) model.floor
+        , error = message
+        } !
+          [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+          ]
 
     FloorDeleted floor ->
       let
@@ -560,13 +551,13 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.changeObjectBackgroundColor model.selectedObjects color)
                 editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor
@@ -579,13 +570,13 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.changeObjectColor model.selectedObjects color)
                 editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor
@@ -598,13 +589,13 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.changeObjectShape model.selectedObjects shape)
                 editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor
@@ -617,13 +608,13 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.changeObjectFontSize model.selectedObjects fontSize)
                 editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor
@@ -661,13 +652,13 @@ update removeToken setSelectionStart msg model =
 
               Just editingFloor ->
                 let
-                  newFloor =
-                    EditingFloor.update
+                  (newFloor, objectsChange) =
+                    EditingFloor.updateObjects
                       (Floor.unsetPerson objectId)
                       editingFloor
 
                   saveCmd =
-                    requestSaveFloorCmd newFloor editingFloor
+                    requestSaveObjectsCmd objectsChange
                 in
                   { model' |
                     floor = Just newFloor
@@ -731,13 +722,13 @@ update removeToken setSelectionStart msg model =
                     Nothing
                 ) pairs
 
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.setPeople matchedPairs)
                 editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
 
             allPeople =
               List.concatMap snd pairs
@@ -1062,13 +1053,13 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.rotateObject id)
                 editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor
@@ -1082,13 +1073,13 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.toFirstNameOnly ids)
                 editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor
@@ -1102,11 +1093,11 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            newFloor =
-              EditingFloor.update (Floor.removeSpaces ids) editingFloor
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects (Floor.removeSpaces ids) editingFloor
 
             saveCmd =
-              requestSaveFloorCmd newFloor editingFloor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor
@@ -1275,13 +1266,13 @@ update removeToken setSelectionStart msg model =
           case personIds of
             head :: [] ->
               let
-                newFloor =
-                  EditingFloor.update
+                (newFloor, objectsChange) =
+                  EditingFloor.updateObjects
                     (Floor.setPerson objectId head)
                     editingFloor
 
                 saveCmd =
-                  requestSaveFloorCmd newFloor editingFloor
+                  requestSaveObjectsCmd objectsChange
               in
                 { model |
                   floor = Just newFloor
@@ -1365,7 +1356,7 @@ update removeToken setSelectionStart msg model =
         cmd =
           performAPI
             (\_ -> NoOp)
-            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
+            (API.saveFloor model.apiConfig newFloor)
 
         newModel =
           { model | seed = newSeed }
@@ -1386,7 +1377,9 @@ update removeToken setSelectionStart msg model =
         saveCmd =
           performAPI
             (\_ -> NoOp)
-            (API.saveEditingFloor model.apiConfig newFloor (snd <| FloorDiff.diff newFloor Nothing))
+            ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
+              API.saveObjects model.apiConfig (ObjectsChange.added newFloor.objects)
+            )
 
         newModel =
           { model |
@@ -1428,34 +1421,36 @@ update removeToken setSelectionStart msg model =
       } ! []
 
     Undo ->
-      case model.floor of
-        Nothing ->
-          model ! []
-
-        Just floor ->
-          let
-            newFloor =
-              EditingFloor.undo floor
-
-            saveCmd =
-              requestSaveFloorCmd newFloor floor
-          in
-            { model | floor = Just newFloor } ! [ saveCmd ]
+      model ! [] -- FIXME
+      -- case model.floor of
+      --   Nothing ->
+      --     model ! []
+      --
+      --   Just floor ->
+      --     let
+      --       newFloor =
+      --         EditingFloor.undo floor
+      --
+      --       saveCmd =
+      --         requestSaveFloorCmd newFloor floor
+      --     in
+      --       { model | floor = Just newFloor } ! [ saveCmd ]
 
     Redo ->
-      case model.floor of
-        Nothing ->
-          model ! []
-
-        Just floor ->
-          let
-            newFloor =
-              EditingFloor.redo floor
-
-            saveCmd =
-              requestSaveFloorCmd newFloor floor
-          in
-            { model | floor = Just newFloor } ! [ saveCmd ]
+      model ! [] -- FIXME
+      -- case model.floor of
+      --   Nothing ->
+      --     model ! []
+      --
+      --   Just floor ->
+      --     let
+      --       newFloor =
+      --         EditingFloor.redo floor
+      --
+      --       saveCmd =
+      --         requestSaveFloorCmd newFloor floor
+      --     in
+      --       { model | floor = Just newFloor } ! [ saveCmd ]
 
     Focused ->
       model ! [ setSelectionStart {} ]
@@ -1584,8 +1579,8 @@ updateOnSelectCandidate objectId personId model =
   case (model.floor, Dict.get personId model.personInfo) of
     (Just floor, Just person) ->
       let
-        newFloor =
-          EditingFloor.update
+        (newFloor, objectsChange) =
+          EditingFloor.updateObjects
             (Floor.setPerson objectId personId)
             floor
       in
@@ -1642,11 +1637,11 @@ updateOnFinishStamp_ prototypes model floor =
         )
         candidatesWithNewIds
 
-    newFloor =
-      EditingFloor.update (Floor.addObjects newObjects) floor
+    (newFloor, objectsChange) =
+      EditingFloor.updateObjects (Floor.addObjects newObjects) floor
 
     saveCmd =
-      requestSaveFloorCmd newFloor floor
+      requestSaveObjectsCmd objectsChange
 
     searchResult =
       model.searchResult
@@ -1680,13 +1675,13 @@ updateOnFinishPen (x, y) model =
             Nothing
             Nothing
 
-        newFloor =
-          EditingFloor.update
+        (newFloor, objectsChange) =
+          EditingFloor.updateObjects
             (Floor.addObjects [ newObject ])
             floor
 
         saveCmd =
-          requestSaveFloorCmd newFloor floor
+          requestSaveObjectsCmd objectsChange
       in
         { model |
           seed = newSeed
@@ -1704,11 +1699,11 @@ updateOnFinishResize id (x, y) model =
     |> (flip Maybe.andThen) (\e -> Model.temporaryResizeRect model (x, y) (rect e)
     |> Maybe.map (\(_, _, width, height) ->
         let
-          newFloor =
-            EditingFloor.update (Floor.resizeObject id (width, height)) editingFloor
+          (newFloor, objectsChange) =
+            EditingFloor.updateObjects (Floor.resizeObject id (width, height)) editingFloor
 
           saveCmd =
-            requestSaveFloorCmd newFloor editingFloor
+            requestSaveObjectsCmd objectsChange
         in
           { model | floor = Just newFloor } ! [ saveCmd ]
       )))
@@ -1751,13 +1746,13 @@ updateOnFinishLabel model =
             color
             Object.Rectangle
 
-        newFloor =
-          EditingFloor.update
+        (newFloor, objectsChange) =
+          EditingFloor.updateObjects
             (Floor.addObjects [ newObject ])
             floor
 
         saveCmd =
-          requestSaveFloorCmd newFloor floor
+          requestSaveObjectsCmd objectsChange
 
         model' =
           { model |
@@ -1840,31 +1835,31 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
 
     FloorProperty.OnNameChange name ->
       let
-        newFloor =
-          EditingFloor.update (Floor.changeName name) efloor
+        (newFloor, rawFloor) =
+          EditingFloor.updateFloor (Floor.changeName name) efloor
 
         saveCmd =
-          requestSaveFloorCmd newFloor efloor
+          requestSaveFloorCmd rawFloor
       in
         (newFloor, seed) ! [ saveCmd ]
 
     FloorProperty.OnOrdChange ord ->
       let
-        newFloor =
-          EditingFloor.update (Floor.changeOrd ord) efloor
+        (newFloor, rawFloor) =
+          EditingFloor.updateFloor (Floor.changeOrd ord) efloor
 
         saveCmd =
-          requestSaveFloorCmd newFloor efloor
+          requestSaveFloorCmd rawFloor
       in
         (newFloor, seed) ! [ saveCmd ]
 
     FloorProperty.OnRealSizeChange (w, h) ->
       let
-        newFloor =
-          EditingFloor.update (Floor.changeRealSize (w, h)) efloor
+        (newFloor, rawFloor) =
+          EditingFloor.updateFloor (Floor.changeRealSize (w, h)) efloor
 
         saveCmd =
-          requestSaveFloorCmd newFloor efloor
+          requestSaveFloorCmd rawFloor
       in
         (newFloor, seed) ! [ saveCmd ]
 
@@ -1981,13 +1976,13 @@ updateOnFinishNameInput continueEditing id name model =
             Nothing ->
               []
 
-        newFloor =
-          EditingFloor.update
+        (newFloor, objectsChange) =
+          EditingFloor.updateObjects
             (Floor.changeObjectName [id] name)
             floor
 
         saveCmd =
-          requestSaveFloorCmd newFloor floor
+          requestSaveObjectsCmd objectsChange
 
         newModel =
           { model |
@@ -2040,9 +2035,14 @@ savePrototypesCmd apiConfig prototypes =
     (API.savePrototypes apiConfig prototypes)
 
 
-requestSaveFloorCmd : EditingFloor -> EditingFloor -> Cmd Msg
-requestSaveFloorCmd efloor oldFloor =
-  requestCmd (SaveFloor (EditingFloor.present efloor) (EditingFloor.present oldFloor))
+requestSaveObjectsCmd : ObjectsChange -> Cmd Msg
+requestSaveObjectsCmd objectsChange =
+  requestCmd (SaveObjects objectsChange)
+
+
+requestSaveFloorCmd : Floor -> Cmd Msg
+requestSaveFloorCmd floor =
+  requestCmd (SaveFloor floor)
 
 
 requestPublishFloorCmd : String -> Cmd Msg
@@ -2055,26 +2055,26 @@ requestCmd req =
   Task.perform identity identity (Task.succeed (RequestSave req))
 
 
-batchSaveFloor : API.Config -> List SaveRequestOpt -> Task Http.Error (Dict String (Floor, Bool))
-batchSaveFloor apiConfig requests =
-  List.foldr
-    (\req prevTask ->
-      prevTask `Task.andThen` \prevFloors ->
-        let
-          task =
-            case req of
-              SaveFloorOpt floor change ->
-                -- API.saveEditingFloor apiConfig floor change
-                API.saveObjects apiConfig change
-                  |> Task.map (\_ -> (floor, False))
+batchSave : API.Config -> ReducedSaveRequest -> Cmd Msg
+batchSave apiConfig request =
+  let
+    publishFloorCmd =
+      request.publish
+        |> Maybe.map (API.publishFloor apiConfig)
+        |> Maybe.map (performAPI FloorPublished)
+        |> Maybe.withDefault Cmd.none
 
-              PublishFloorOpt id ->
-                API.publishEditingFloor apiConfig id
-                  |> Task.map (\floor -> (floor, True))
-        in
-          task
-            |> Task.map (\(floor, wasPublish) -> Dict.insert floor.id (floor, wasPublish) prevFloors)
-      ) (Task.succeed Dict.empty) requests
+    saveFloorCmd =
+      request.floor
+        |> Maybe.map (API.saveFloor apiConfig)
+        |> Maybe.map (performAPI FloorSaved)
+        |> Maybe.withDefault Cmd.none
+
+    saveObjectsCmd =
+      API.saveObjects apiConfig request.objects
+        |> (performAPI ObjectsSaved)
+  in
+    Cmd.batch [ saveFloorCmd, saveObjectsCmd ]
 
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
@@ -2103,11 +2103,11 @@ updateByKeyEvent event model =
         (copiedIdsWithNewIds, newSeed) =
           IdGenerator.zipWithNewIds model.seed model.copiedObjects
 
-        newFloor =
-          EditingFloor.update (Floor.paste copiedIdsWithNewIds base) floor
+        (newFloor, objectsChange) =
+          EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds base) floor
 
         saveCmd =
-          requestSaveFloorCmd newFloor floor
+          requestSaveObjectsCmd objectsChange
       in
         { model |
           floor = Just newFloor
@@ -2121,11 +2121,11 @@ updateByKeyEvent event model =
 
     (Just floor, True, ShortCut.X) ->
       let
-        newFloor =
-          EditingFloor.update (Floor.delete model.selectedObjects) floor
+        (newFloor, objectsChange) =
+          EditingFloor.updateObjects (Floor.delete model.selectedObjects) floor
 
         saveCmd =
-          requestSaveFloorCmd newFloor floor
+          requestSaveObjectsCmd objectsChange
       in
         { model |
           floor = Just newFloor
@@ -2147,11 +2147,11 @@ updateByKeyEvent event model =
 
     (Just floor, _, ShortCut.Del) ->
       let
-        newFloor =
-          EditingFloor.update (Floor.delete model.selectedObjects) floor
+        (newFloor, objectsChange) =
+          EditingFloor.updateObjects (Floor.delete model.selectedObjects) floor
 
         saveCmd =
-          requestSaveFloorCmd newFloor floor
+          requestSaveObjectsCmd objectsChange
       in
         { model |
           floor = Just newFloor
@@ -2170,13 +2170,13 @@ moveSelectionToward direction model editingFloor =
     shift =
       Direction.shiftTowards direction model.gridSize
 
-    newFloor =
-      EditingFloor.update
+    (newFloor, objectsChange) =
+      EditingFloor.updateObjects
         (Floor.move model.selectedObjects model.gridSize shift)
         editingFloor
 
     saveCmd =
-      requestSaveFloorCmd newFloor editingFloor
+      requestSaveObjectsCmd objectsChange
   in
     { model |
       floor = Just newFloor
@@ -2196,13 +2196,13 @@ updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
       in
         if shift /= (0, 0) then
           let
-            newFloor =
-              EditingFloor.update
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
                 (Floor.move model.selectedObjects model.gridSize shift)
                 floor
 
             saveCmd =
-              requestSaveFloorCmd newFloor floor
+              requestSaveObjectsCmd objectsChange
           in
             { model |
               floor = Just newFloor

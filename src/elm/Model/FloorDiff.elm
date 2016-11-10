@@ -19,7 +19,7 @@ type alias PropChanges =
   List (String, String, String)
 
 
-diff : Floor -> Maybe Floor -> (PropChanges, ObjectsChange)
+diff : Floor -> Maybe Floor -> (PropChanges, DetailedObjectsChange)
 diff current prev =
   let
     newObjects =
@@ -90,11 +90,9 @@ propertyChangesHelp current prev =
     nameChange ++ ordChange ++ sizeChange ++ imageChange
 
 
-diffObjects : List Object -> List Object -> ObjectsChange
+diffObjects : List Object -> List Object -> DetailedObjectsChange
 diffObjects newObjects oldObjects =
   let
-    -- _ = Debug.log "newObjects oldObjects" (newObjects, oldObjects)
-
     oldDict =
       Dict.fromList (List.map (\obj -> (idOf obj, obj)) oldObjects)
 
@@ -110,16 +108,17 @@ diffObjects newObjects oldObjects =
         Nothing ->
           (dict, new :: add, modify)
 
-    (ramainingOldDict, add, modify) =
+    (ramainingOldDict, added, modified) =
       List.foldl f (oldDict, [], []) newObjects
 
-    delete =
+    deleted =
       Dict.values ramainingOldDict
   in
-    { added = add
-    , modified = modify
-    , deleted = delete
-    }
+    ( List.map (\object -> (Object.idOf object, ObjectsChange.Added object)) added ++
+      List.map (\mod -> (Object.idOf mod.new, ObjectsChange.Modified mod)) modified ++
+      List.map (\object -> (Object.idOf object, ObjectsChange.Deleted object)) deleted
+    )
+      |> Dict.fromList
 
 
 -- TODO separate model and view

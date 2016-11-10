@@ -1,7 +1,5 @@
 module Model.EditingFloor exposing (..)
 
-import Dict exposing (Dict)
-
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
@@ -10,20 +8,18 @@ import Util.UndoList as UndoList exposing (UndoList)
 
 
 type alias EditingFloor =
-  { synchronizedFloor : Floor
-  , undoList : UndoList Floor
+  { undoList : UndoList Floor
   }
 
 
 init : Floor -> EditingFloor
 init floor =
-  { synchronizedFloor = floor
-  , undoList = UndoList.init floor
+  { undoList = UndoList.init floor
   }
 
 
-update : (Floor -> Floor) -> EditingFloor -> EditingFloor
-update f efloor =
+updateFloor : (Floor -> Floor) -> EditingFloor -> (EditingFloor, Floor)
+updateFloor f efloor =
   let
     floor =
       efloor.undoList.present
@@ -31,11 +27,11 @@ update f efloor =
     newFloor =
       f floor
 
-    (propChanged, objectsChange) =
-      FloorDiff.diff newFloor (Just floor)
+    propChanged =
+      FloorDiff.diffPropertyChanges newFloor (Just floor)
 
     changed =
-      propChanged /= [] || objectsChange /= ObjectsChange.empty
+      propChanged /= []
 
     newUndoList =
       if changed then
@@ -43,7 +39,33 @@ update f efloor =
       else
         efloor.undoList
   in
-    { efloor | undoList = newUndoList }
+    ( { efloor | undoList = newUndoList }
+    , newFloor
+    )
+
+
+updateObjects : (Floor -> Floor) -> EditingFloor -> (EditingFloor, ObjectsChange)
+updateObjects f efloor =
+  let
+    floor =
+      efloor.undoList.present
+
+    newFloor =
+      f floor
+
+    objectsChange =
+      FloorDiff.diffObjects newFloor.objects floor.objects |> ObjectsChange.simplify
+
+    changed =
+      not <| ObjectsChange.isEmpty objectsChange
+
+    newUndoList =
+      if changed then
+        UndoList.new newFloor efloor.undoList
+      else
+        efloor.undoList
+  in
+    ({ efloor | undoList = newUndoList }, objectsChange)
 
 
 undo : EditingFloor -> EditingFloor

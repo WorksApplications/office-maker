@@ -4,7 +4,6 @@ import Maybe
 import Dict exposing (Dict)
 import Date exposing (Date)
 import Html exposing (..)
-import Json.Decode as Decode
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
@@ -14,6 +13,7 @@ import View.Styles as Styles
 import View.DialogView as DialogView
 
 import Model.Object as Object exposing (..)
+import Model.ObjectsChange as ObjectsChange
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.Person exposing (Person)
@@ -31,8 +31,11 @@ view lang visitDate personInfo options (current, prev) =
     header =
       headerView lang visitDate current prev
 
-    (propertyChanges, { added, modified, deleted }) =
+    (propertyChanges, objectsChange) =
       FloorDiff.diff current prev
+
+    { added, modified, deleted } =
+      ObjectsChange.separate objectsChange
 
     body =
       div [ style Styles.diffPopupBody ]

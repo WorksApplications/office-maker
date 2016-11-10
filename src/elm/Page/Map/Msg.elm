@@ -16,7 +16,7 @@ import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
 import Model.SearchResult as SearchResult exposing (SearchResult)
-import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
+import Model.SaveRequest as SaveRequest exposing (SaveRequest(..))
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
 import API.Cache as Cache exposing (Cache, UserState)
@@ -37,7 +37,9 @@ type Msg
   | ImageSaved String Int Int
   | RequestSave SaveRequest
   | SaveFloorDebounceMsg Debounce.Msg
-  | FloorSaved (Dict String (Floor, Bool))
+  | ObjectsSaved ()
+  | FloorSaved ()
+  | FloorPublished Floor
   | FloorDeleted Floor
   | MoveOnCanvas (Int, Int)
   | EnterCanvas

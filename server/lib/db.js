@@ -249,8 +249,7 @@ function saveObjectsChange(conn, objectsChange, updateAt) {
     object.floorVersion = -1;
     return object;
   });
-  var modified = objectsChange.modified.map((mod) => {
-    var object = mod.new;
+  var modified = objectsChange.modified.map((object) => {
     object.floorVersion = -1;
     return object;
   });

@@ -1,26 +1,89 @@
 module Model.ObjectsChange exposing(..)
 
-import Maybe
 import Dict exposing (Dict)
 
 import Model.Object as Object exposing (..)
-import Model.Floor as Floor exposing (Floor)
 
 
-type alias Id = String
+type alias ObjectId = String
 
 
 type alias ObjectModification =
   { new : Object, old : Object, changes : List String }
 
 
-type alias ObjectsChange =
-  { added : List Object
-  , modified : List ObjectModification
-  , deleted : List Object
-  }
+type ObjectChange a
+  = Added Object
+  | Modified a
+  | Deleted Object
+
+
+type alias ObjectsChange_ a =
+  Dict ObjectId (ObjectChange a)
+
+
+type alias ObjectsChange = ObjectsChange_ Object
+type alias DetailedObjectsChange = ObjectsChange_ ObjectModification
+
+
+added : List Object -> ObjectsChange_ a
+added objects =
+  objects
+    |> List.map (\object -> (Object.idOf object, Added object))
+    |> Dict.fromList
 
 
 empty : ObjectsChange
 empty =
-  { added = [], modified = [], deleted = [] }
+  Dict.empty
+
+
+isEmpty : ObjectsChange_ a -> Bool
+isEmpty change =
+  Dict.isEmpty change
+
+
+merge : ObjectsChange -> ObjectsChange -> ObjectsChange
+merge new old =
+  Dict.union new old
+
+
+separate : ObjectsChange_ a -> { added : List Object, modified : List a, deleted : List Object }
+separate change =
+  let
+    (added, modified, deleted) =
+      Dict.foldl
+        (\_ value (added, modified, deleted) ->
+          case value of
+            Added object ->
+              (object :: added, modified, deleted)
+
+            Modified a ->
+              (added, a :: modified, deleted)
+
+            Deleted object ->
+              (added, modified, object :: deleted)
+
+        ) ([], [], []) change
+  in
+    { added = added
+    , modified = modified
+    , deleted = deleted
+    }
+
+
+simplify : DetailedObjectsChange -> ObjectsChange
+simplify change =
+  change
+    |> Dict.map
+      (\id value ->
+        case value of
+          Added object ->
+            Added object
+
+          Modified mod ->
+            Modified mod.new
+
+          Deleted object ->
+            Deleted object
+      )

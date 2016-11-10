@@ -1,9 +1,9 @@
 module API.API exposing (
       getAuth
     , search
-    , saveEditingFloor
+    , saveFloor
     , saveObjects
-    , publishEditingFloor
+    , publishFloor
     , deleteEditingFloor
     , getEditingFloor
     , getFloor
@@ -66,16 +66,16 @@ saveObjects config change =
     (Http.string <| serializeObjectsChange change)
 
 
-saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error ()
-saveEditingFloor config floor change =
+saveFloor : Config -> Floor -> Task Error ()
+saveFloor config floor =
   putJsonNoResponse
     (config.apiRoot ++ "/1/floors/" ++ floor.id)
     (authorization config.token)
-    (Http.string <| serializeFloor floor change)
+    (Http.string <| serializeFloor floor)
 
 
-publishEditingFloor : Config -> String -> Task Error Floor
-publishEditingFloor config id =
+publishFloor : Config -> String -> Task Error Floor
+publishFloor config id =
   putJson
     decodeFloor
     (config.apiRoot ++ "/1/floors/" ++ id ++ "/public")

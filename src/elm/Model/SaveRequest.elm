@@ -2,63 +2,49 @@ module Model.SaveRequest exposing (..)
 
 import Model.Floor exposing (Floor)
 import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
-import Model.FloorDiff as FloorDiff
 
-type alias Id = String
+type alias FloorId = String
 
 type SaveRequest
-  = SaveFloor Floor Floor
-  | PublishFloor Id
+  = SaveFloor Floor
+  | PublishFloor FloorId
+  | SaveObjects ObjectsChange
 
 
-type SaveRequestOpt
-  = SaveFloorOpt Floor ObjectsChange
-  | PublishFloorOpt Id
+type alias ReducedSaveRequest =
+  { floor : Maybe Floor
+  , publish : Maybe FloorId
+  , objects : ObjectsChange
+  }
 
 
-reduceRequest : List SaveRequest -> List SaveRequestOpt
+emptyReducedSaveRequest : ReducedSaveRequest
+emptyReducedSaveRequest =
+  { floor = Nothing
+  , publish = Nothing
+  , objects = ObjectsChange.empty
+  }
+
+
+reduceRequest : List SaveRequest -> ReducedSaveRequest
 reduceRequest list =
-  fst <| List.foldr reduceRequestHelp ([], Nothing) list
+  List.foldr reduceRequestHelp emptyReducedSaveRequest list
 
 
-reduceRequestHelp : SaveRequest -> (List SaveRequestOpt, Maybe Floor) -> (List SaveRequestOpt, Maybe Floor)
-reduceRequestHelp req (list, maybeBaseFloor) =
+reduceRequestHelp : SaveRequest -> ReducedSaveRequest -> ReducedSaveRequest
+reduceRequestHelp req reducedSaveRequest =
   case req of
-    SaveFloor floor oldFloor ->
-      let
-        baseFloor =
-          case maybeBaseFloor of
-            Just baseFloor ->
-              if floor.id == baseFloor.id then
-                baseFloor
-              else
-                oldFloor
+    SaveFloor floor ->
+      { reducedSaveRequest |
+        floor = Just floor
+      }
 
-            _ ->
-              oldFloor
+    PublishFloor floorId ->
+      { reducedSaveRequest |
+        publish = Just floorId
+      }
 
-        (propChanged, objectsChange) =
-          FloorDiff.diff floor (Just baseFloor)
-
-        changed =
-          propChanged /= [] || objectsChange /= ObjectsChange.empty
-      in
-        if changed then
-          let
-            tail =
-              case (maybeBaseFloor, list) of
-                (Just baseFloor, _ :: rest) ->
-                  if floor.id == baseFloor.id then
-                    rest
-                  else
-                    list
-
-                _ ->
-                  list
-          in
-            (SaveFloorOpt floor objectsChange :: tail, Just baseFloor)
-        else
-          (list, maybeBaseFloor)
-
-    PublishFloor id ->
-      (PublishFloorOpt id :: list, Nothing)
+    SaveObjects objectsChange ->
+      { reducedSaveRequest |
+        objects = ObjectsChange.merge objectsChange reducedSaveRequest.objects
+      }
