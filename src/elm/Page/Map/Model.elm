@@ -80,14 +80,14 @@ type alias Model =
   }
 
 
-type ContextMenu =
-    NoContextMenu
+type ContextMenu
+  = NoContextMenu
   | Object (Int, Int) Id
   | FloorInfo (Int, Int) Id
 
 
-type DraggingContext =
-    NoDragging
+type DraggingContext
+  = NoDragging
   | MoveObject Id (Int, Int)
   | Selector
   | ShiftOffset
@@ -100,6 +100,7 @@ type DraggingContext =
 
 type Tab =
   SearchTab | EditTab
+  
 
 init : API.Config -> String -> (Int, Int) -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
 init apiConfig title initialSize randomSeed visitDate editMode query scale offset lang =

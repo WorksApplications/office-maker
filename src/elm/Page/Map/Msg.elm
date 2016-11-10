@@ -1,8 +1,7 @@
 module Page.Map.Msg exposing (..)
 
 import Maybe
-import Dict exposing (Dict)
-import Time exposing (Time, second)
+import Time exposing (Time)
 import Debounce exposing (Debounce)
 
 import Model.EditMode as EditMode exposing (EditMode(..))

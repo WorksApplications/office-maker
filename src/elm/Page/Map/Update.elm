@@ -2052,7 +2052,7 @@ requestPublishFloorCmd id =
 
 requestCmd : SaveRequest -> Cmd Msg
 requestCmd req =
-  Task.perform identity identity (Task.succeed (RequestSave req))
+  Task.perform identity RequestSave (Task.succeed req)
 
 
 batchSave : API.Config -> ReducedSaveRequest -> Cmd Msg
