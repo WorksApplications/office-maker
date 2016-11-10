@@ -95,12 +95,12 @@ type DraggingContext
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
   | MoveFromSearchResult Prototype String
-  | MoveExistingObjectFromSearchResult Prototype Id
+  | MoveExistingObjectFromSearchResult Id Prototype Id
 
 
 type Tab =
   SearchTab | EditTab
-  
+
 
 init : API.Config -> String -> (Int, Int) -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
 init apiConfig title initialSize randomSeed visitDate editMode query scale offset lang =
@@ -353,7 +353,7 @@ getPositionedPrototype model =
         in
           [ (prototype, (left, top)) ]
 
-      (_, MoveExistingObjectFromSearchResult prototype _) ->
+      (_, MoveExistingObjectFromSearchResult floorId prototype _) ->
         let
           (left, top) =
             fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)

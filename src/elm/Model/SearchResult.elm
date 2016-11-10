@@ -91,30 +91,49 @@ reorderResults thisFloorId results =
 
 mergeObjectInfo : String -> List Object -> List SearchResult -> List SearchResult
 mergeObjectInfo currentFloorId objects results =
-    List.concatMap (\result ->
-      case result of
-        Object object floorId ->
-          if floorId == currentFloorId then
-            case List.filter (\o -> Object.idOf object == Object.idOf o) objects of
-              [] ->
-                case Object.relatedPerson object of
-                  Just personId ->
-                    [ MissingPerson personId ]
+  List.concatMap (\result ->
+    case result of
+      Object object floorId ->
+        if floorId == currentFloorId then
+          case List.filter (\o -> Object.idOf object == Object.idOf o) objects of
+            [] ->
+              case Object.relatedPerson object of
+                Just personId ->
+                  [ MissingPerson personId ]
 
-                  Nothing ->
-                    []
+                Nothing ->
+                  []
 
-              _ ->
-                [ result ]
-          else
+            _ ->
+              [ result ]
+        else
+          [ result ]
+
+      MissingPerson personId ->
+        case List.filter (\object -> Object.relatedPerson object == Just personId) objects of
+          [] ->
             [ result ]
 
-        MissingPerson personId ->
-          case List.filter (\object -> Object.relatedPerson object == Just personId) objects of
-            [] ->
-              [ result ]
+          objects ->
+            List.map (\object -> Object object currentFloorId) objects
+  ) results
 
-            objects ->
-              List.map (\object -> Object object currentFloorId) objects
-            
-    ) results
+
+moveObject : String -> List Object -> List SearchResult -> List SearchResult
+moveObject oldFloorId newObjects results =
+  List.map (\result ->
+    case result of
+      Object object floorId ->
+        if floorId == oldFloorId then
+          case List.filter (\o -> Object.idOf object == Object.idOf o) newObjects of
+            newObject :: _ ->
+              Object newObject (Object.floorIdOf newObject)
+
+            _ ->
+              result
+        else
+          result
+
+      MissingPerson personId ->
+        result
+  ) results

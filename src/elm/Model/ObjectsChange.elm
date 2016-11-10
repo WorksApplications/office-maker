@@ -33,6 +33,13 @@ added objects =
     |> Dict.fromList
 
 
+modified : List (ObjectId, a) -> ObjectsChange_ a
+modified idRelatedList =
+  idRelatedList
+    |> List.map (\(id, a) -> (id, Modified a))
+    |> Dict.fromList
+
+
 empty : ObjectsChange
 empty =
   Dict.empty

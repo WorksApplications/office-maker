@@ -27,10 +27,14 @@ view : Model -> Html Msg
 view model =
   case model.searchResult of
     Nothing ->
-      div [ style S.searchResult ] [ text "" ]
+      div
+        [ style S.searchResult ]
+        [ text "" ]
 
     Just [] ->
-      div [ style S.searchResult ] [ text (I18n.nothingFound model.lang) ]
+      div
+        [ style S.searchResult ]
+        [ text (I18n.nothingFound model.lang) ]
 
     Just results ->
       let
@@ -40,7 +44,9 @@ view model =
             model.personInfo
             results
       in
-        div [ style S.searchResult ] ( List.map (viewListForOnePost model) grouped )
+        div
+          [ style S.searchResult ]
+          ( List.map (viewListForOnePost model) grouped )
 
 
 viewListForOnePost : Model -> (Maybe String, List SearchResult) -> Html Msg
@@ -61,6 +67,10 @@ viewListForOnePost model (maybePostName, results) =
           case toItemViewModel model.lang floorsInfoDict model.personInfo model.selectedResult result of
             Just item ->
               let
+                thisFloorId =
+                  model.floor
+                    |> Maybe.map (\floor -> (EditingFloor.present floor).id )
+
                 onSelectResultMsg =
                   SelectSearchResult result
 
@@ -71,12 +81,19 @@ viewListForOnePost model (maybePostName, results) =
                     Nothing
 
                 onStartDraggingExistingObjectMsg =
-                  -- if EditMode.isEditMode model.editMode then
-                  --   Just StartDraggingFromExistingObject
-                  -- else
+                  if EditMode.isEditMode model.editMode then
+                    Just StartDraggingFromExistingObject
+                  else
                     Nothing
               in
-                Just <| SearchResultItemView.view onSelectResultMsg onStartDraggingMsg onStartDraggingExistingObjectMsg model.lang item
+                Just <|
+                  SearchResultItemView.view
+                    thisFloorId
+                    onSelectResultMsg
+                    onStartDraggingMsg
+                    onStartDraggingExistingObjectMsg
+                    model.lang
+                    item
 
             Nothing ->
               Nothing
@@ -116,10 +133,15 @@ toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
               Object.relatedPerson object
                 |> (flip Maybe.andThen) (\personId -> Dict.get personId personInfo)
                 |> (flip Maybe.andThen) (\person -> Just person.name)
-
-            _ = Debug.log "Object" ((idOf object), (nameOf object), info.name)
           in
-            Just (SearchResultItemView.Object (idOf object) (nameOf object) info.name maybePersonName objectIsFocused)
+            Just <|
+              SearchResultItemView.Object
+                (idOf object)
+                (nameOf object)
+                floorId
+                info.name
+                maybePersonName
+                objectIsFocused
 
         _ ->
           Nothing

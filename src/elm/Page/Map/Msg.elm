@@ -84,7 +84,7 @@ type Msg
   | GotSearchResult (List SearchResult)
   | SelectSearchResult SearchResult
   | StartDraggingFromMissingPerson String String
-  | StartDraggingFromExistingObject Id String (Maybe String)
+  | StartDraggingFromExistingObject Id String (Maybe String) String
   | RegisterPeople (List Person)
   | RequestCandidate Id String
   | SearchCandidateDebounceMsg Debounce.Msg

@@ -1238,7 +1238,7 @@ update removeToken setSelectionStart msg model =
               personId
         } ! []
 
-    StartDraggingFromExistingObject objectId name personId ->
+    StartDraggingFromExistingObject objectId name personId floorId ->
       let
         prototype =
           Prototypes.selectedPrototype model.prototypes
@@ -1247,6 +1247,7 @@ update removeToken setSelectionStart msg model =
           contextMenu = NoContextMenu
         , draggingContext =
             MoveExistingObjectFromSearchResult
+              floorId
               { prototype
               | name = name
               , personId = personId
@@ -1560,8 +1561,37 @@ updateOnMouseUp model =
         MoveFromSearchResult prototype personId ->
           updateOnFinishStamp model
 
-        MoveExistingObjectFromSearchResult prototype objectId ->
-          model ! []
+        MoveExistingObjectFromSearchResult oldFloorId _ objectId ->
+          case model.floor of
+            Just editingFloor ->
+              let
+                (newSeed, newFloor, newObjects, _) =
+                  updateOnFinishStampWithoutEffects
+                    (Just objectId)
+                    (Model.getPositionedPrototype model)
+                    model
+                    editingFloor
+
+                objectsChange =
+                  ObjectsChange.modified
+                    (List.map (\object -> (Object.idOf object, object)) newObjects)
+
+                saveCmd =
+                  requestSaveObjectsCmd objectsChange
+
+                searchResult =
+                  model.searchResult
+                    |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (EditingFloor.present newFloor).objects)
+                    |> Maybe.map (SearchResult.moveObject oldFloorId newObjects)
+              in
+                { model
+                  | seed = newSeed
+                  , floor = Just newFloor
+                  , searchResult = searchResult
+                } ! [ saveCmd ]
+
+            _ ->
+              model ! []
 
         _ ->
           model ! []
@@ -1618,41 +1648,55 @@ updateOnFinishStamp model =
 updateOnFinishStamp_ : List PositionedPrototype -> Model -> EditingFloor -> ((Model, Cmd Msg), List Object)
 updateOnFinishStamp_ prototypes model floor =
   let
+    (newSeed, newFloor, newObjects, objectsChange) =
+      updateOnFinishStampWithoutEffects Nothing prototypes model floor
+
+    searchResult =
+      model.searchResult
+        |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (EditingFloor.present newFloor).objects)
+
+    saveCmd =
+      requestSaveObjectsCmd objectsChange
+  in
+    ( ( { model
+          | seed = newSeed
+          , floor = Just newFloor
+          , searchResult = searchResult
+          , editMode = Select
+        }
+        , saveCmd
+      )
+    , newObjects
+    )
+
+-- TODO Need a hard refactor around here
+
+updateOnFinishStampWithoutEffects : Maybe String -> List PositionedPrototype -> Model -> EditingFloor -> (Seed, EditingFloor, List Object, ObjectsChange)
+updateOnFinishStampWithoutEffects maybeObjectId prototypes model floor =
+  let
     (candidatesWithNewIds, newSeed) =
       IdGenerator.zipWithNewIds model.seed prototypes
 
     newObjects =
       List.map
         (\((prototype, (x, y)), newId) ->
-          Object.initDesk
-            newId
-            (EditingFloor.present floor).id
-            Nothing
-            (x, y, prototype.width, prototype.height)
-            prototype.backgroundColor
-            prototype.name
-            prototype.fontSize
-            Nothing
-            prototype.personId
+            Object.initDesk
+              (Maybe.withDefault newId maybeObjectId)
+              (EditingFloor.present floor).id
+              Nothing
+              (x, y, prototype.width, prototype.height)
+              prototype.backgroundColor
+              prototype.name
+              prototype.fontSize
+              Nothing
+              prototype.personId
         )
         candidatesWithNewIds
 
     (newFloor, objectsChange) =
       EditingFloor.updateObjects (Floor.addObjects newObjects) floor
-
-    saveCmd =
-      requestSaveObjectsCmd objectsChange
-
-    searchResult =
-      model.searchResult
-        |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (EditingFloor.present newFloor).objects)
   in
-    (({ model |
-      seed = newSeed
-    , floor = Just newFloor
-    , editMode = Select -- maybe selecting stamped desks would be better?
-    , searchResult = searchResult
-    }, saveCmd), newObjects)
+    (newSeed, newFloor, newObjects, objectsChange)
 
 
 updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
@@ -2096,6 +2140,7 @@ updateByKeyEvent event model =
         Just (x, y, w, h) ->
           let
             base = (x, y)
+
             (copiedIdsWithNewIds, newSeed) =
               IdGenerator.zipWithNewIds model.seed model.copiedObjects
 
@@ -2114,7 +2159,7 @@ updateByKeyEvent event model =
                 x -> x
             , selectorRect = Nothing
             } ! [ saveCmd ]
-            
+
         Nothing ->
           model ! []
 

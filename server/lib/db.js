@@ -50,7 +50,7 @@ function addObject(conn, object, updateAt) {
 function updateObject(conn, object, updateAt) {
   var oldUpdateAt = object.updateAt;
   var query = sql.update('objects', schema.objectKeyValues(object, updateAt),
-    sql.whereList([['id', object.id], ['updateAt', oldUpdateAt]]) + ' AND floorVersion = -1'
+    sql.whereList([['id', object.id]/* TODO recover, ['updateAt', oldUpdateAt]*/]) + ' AND floorVersion = -1'
   );
   return rdb.exec(conn, query).then((okPacket) => {
     if(!okPacket.affectedRows) {
@@ -66,7 +66,7 @@ function updateObject(conn, object, updateAt) {
 function deleteObject(conn, object) {
   var oldUpdateAt = object.updateAt;
   var query = sql.delete('objects',
-    sql.whereList([['id', object.id], ['updateAt', object.updateAt]]) + ' AND floorVersion = -1'
+    sql.whereList([['id', object.id]/* TODO recover, ['updateAt', object.updateAt]*/]) + ' AND floorVersion = -1'
   );
   return rdb.exec(conn, query).then((okPacket) => {
     if(!okPacket.affectedRows) {
