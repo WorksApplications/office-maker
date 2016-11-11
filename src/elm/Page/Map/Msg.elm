@@ -10,7 +10,7 @@ import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
-import Model.Floor as Floor exposing (Floor)
+import Model.Floor as Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
 import Model.I18n as I18n exposing (Language(..))
@@ -37,7 +37,7 @@ type Msg
   | RequestSave SaveRequest
   | SaveFloorDebounceMsg Debounce.Msg
   | ObjectsSaved ()
-  | FloorSaved ()
+  | FloorSaved FloorBase
   | FloorPublished Floor
   | FloorDeleted Floor
   | MoveOnCanvas (Int, Int)

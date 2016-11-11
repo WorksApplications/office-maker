@@ -191,6 +191,7 @@ function getFloorsInfo(conn, tenantId) {
 }
 
 function saveOrCreateFloor(conn, tenantId, newFloor) {
+  validateFloor(newFloor);
   var oldUpdateAt = newFloor.updateAt;
   var updateAt = Date.now();
   return getEditingFloor(conn, tenantId, newFloor.id).then((floor) => {
@@ -202,13 +203,31 @@ function saveOrCreateFloor(conn, tenantId, newFloor) {
   });
 }
 
+function validateFloor(newFloor) {
+  if((typeof newFloor.id) !== 'string') {
+    throw "invalid!";
+  }
+  if(newFloor.id.length !== 36) {
+    throw "invalid!";
+  }
+  if((typeof newFloor.name) !== 'string') {
+    throw "invalid!";
+  }
+  if(!newFloor.name.trim()) {
+    throw "invalid!";
+  }
+  if((typeof newFloor.ord) !== 'number') {
+    throw "invalid!";
+  }
+}
+
 function updateEditingFloor(conn, tenantId, newFloor, updateAt) {
   newFloor.version = -1;
   newFloor.public = false;
   return rdb.exec(
     conn,
     sql.update('floors', schema.floorKeyValues(tenantId, newFloor, updateAt),
-      sql.whereList([['id', newFloor.id], ['tenantId', tenantId], ['version', floor.version]])
+      sql.whereList([['id', newFloor.id], ['tenantId', tenantId], ['version', newFloor.version]])
     )
   ).then(() => {
     newFloor.updateAt = updateAt;

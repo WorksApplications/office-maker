@@ -301,8 +301,10 @@ update removeToken setSelectionStart msg model =
     ObjectsSaved _ ->
       model ! []
 
-    FloorSaved _ ->
-      model ! []
+    FloorSaved floorBase ->
+      { model
+      | floorsInfo = FloorInfo.addNewFloor floorBase model.floorsInfo
+      } ! []
 
     FloorPublished floor ->
       { model |
@@ -1834,7 +1836,7 @@ updateOnFloorLoaded maybeFloor model =
         newModel =
           Model.adjustOffset
             { model |
-              floorsInfo = FloorInfo.addNewFloor (Floor.baseOf floor) model.floorsInfo -- TODO ?
+              floorsInfo = FloorInfo.addNewFloor (Floor.baseOf floor) model.floorsInfo
             , floor = Just (EditingFloor.init floor)
             , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
             }

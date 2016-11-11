@@ -350,9 +350,9 @@ app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
       return Promise.reject(400);
     }
     var updateBy = user.id;
-    return db.saveFloor(conn, user.tenantId, newFloor, updateBy).then((floor) => {
+    return db.saveFloor(conn, user.tenantId, newFloor, updateBy).then(floor => {
       log.system.debug('saved floor: ' + floor.id);
-      return Promise.resolve();
+      return Promise.resolve(floor);
     });
   });
 }));

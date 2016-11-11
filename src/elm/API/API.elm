@@ -35,7 +35,7 @@ import Task exposing (Task)
 import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
-import Model.Floor as Floor exposing (Floor)
+import Model.Floor as Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
@@ -66,9 +66,10 @@ saveObjects config change =
     (Http.string <| serializeObjectsChange change)
 
 
-saveFloor : Config -> Floor -> Task Error ()
+saveFloor : Config -> Floor -> Task Error FloorBase
 saveFloor config floor =
-  putJsonNoResponse
+  putJson
+    decodeFloorBase
     (config.apiRoot ++ "/1/floors/" ++ floor.id)
     (authorization config.token)
     (Http.string <| serializeFloor floor)
