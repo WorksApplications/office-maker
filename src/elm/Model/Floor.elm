@@ -67,14 +67,15 @@ initWithOrder id ord =
     }
 
 
-copy : Id -> Floor -> Floor
-copy id floor =
+copy : Bool -> Id -> Floor -> Floor
+copy withEmptyObjects id floor =
   { floor |
     id = id
   , version = 0
   , name = "Copy of " ++ floor.name
   , public = False
   , update = Nothing
+  , objects = if withEmptyObjects then [] else [] -- TODO
   }
 
 

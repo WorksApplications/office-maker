@@ -98,7 +98,7 @@ type Msg
   | ClosePopup
   | ShowDetailForObject Id
   | CreateNewFloor
-  | CopyFloor String
+  | CopyFloor FloorId Bool
   | EmulateClick Id Bool Time
   | TokenRemoved
   | Undo

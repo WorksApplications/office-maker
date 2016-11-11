@@ -52,9 +52,14 @@ view model =
       in
         ContextMenu.view items model.windowSize (x, y)
 
-    FloorInfo (x, y) id ->
-      let
-        items =
-          [(CopyFloor id, I18n.copyFloor model.lang, Nothing)]
-      in
-        ContextMenu.view items model.windowSize (x, y)
+    FloorInfo (x, y) floorId ->
+      if Maybe.map (\efloor -> (EditingFloor.present efloor).id) model.floor == Just floorId then
+        let
+          items =
+            [ (CopyFloor floorId False, I18n.copyFloor model.lang, Nothing)
+            -- , (CopyFloor floorId True, I18n.copyFloorWithEmptyDesks model.lang, Nothing)
+            ]
+        in
+          ContextMenu.view items model.windowSize (x, y)
+      else
+        text ""

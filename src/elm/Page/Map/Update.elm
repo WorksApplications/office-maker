@@ -1341,34 +1341,46 @@ update removeToken setSelectionStart msg model =
           , Navigation.modifyUrl (URL.serialize newModel)
           ]
 
-    CopyFloor id ->
-      let
-        (newFloorId, newSeed) =
-          IdGenerator.new model.seed
+    CopyFloor floorId withEmptyObjects ->
+      case model.floor of
+        Nothing ->
+          model ! []
 
-        newFloor =
-          Floor.copy newFloorId (Model.getEditingFloorOrDummy model)
+        Just editingFloor ->
+          let
+            floor =
+              EditingFloor.present editingFloor
 
-        saveCmd =
-          performAPI
-            FloorsInfoLoaded
-            ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
-              API.saveObjects model.apiConfig (ObjectsChange.added newFloor.objects) `andThen` \_ ->
-              API.getFloorsInfo model.apiConfig
-            )
+            (newFloorId, newSeed) =
+              IdGenerator.new model.seed
 
-        newModel =
-          { model |
-            seed = newSeed
-          , floor = Just (EditingFloor.init newFloor)
-          , contextMenu = NoContextMenu
-          }
+            newFloor =
+              Floor.copy withEmptyObjects newFloorId floor
 
-      in
-        newModel !
-          [ saveCmd
-          , Navigation.modifyUrl (URL.serialize newModel)
-          ]
+            saveCmd =
+              performAPI
+                FloorsInfoLoaded
+                ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
+                  ( if withEmptyObjects then
+                      API.saveObjects model.apiConfig (ObjectsChange.added newFloor.objects)
+                    else
+                      Task.succeed ()
+                  ) `andThen` \_ ->
+                  API.getFloorsInfo model.apiConfig
+                )
+
+            newModel =
+              { model |
+                seed = newSeed
+              , floor = Just (EditingFloor.init newFloor)
+              , contextMenu = NoContextMenu
+              }
+
+          in
+            newModel !
+              [ saveCmd
+              , Navigation.modifyUrl (URL.serialize newModel)
+              ]
 
     EmulateClick id down time ->
       let
