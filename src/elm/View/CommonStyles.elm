@@ -1,7 +1,6 @@
 module View.CommonStyles exposing (..)
 
 import Util.StyleUtil exposing (..)
-import String
 
 type alias S = List (String, String)
 

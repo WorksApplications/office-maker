@@ -8,7 +8,6 @@ import View.ObjectView as ObjectView
 
 import Model.Scale as Scale exposing (Scale)
 import Model.Prototype exposing (Prototype)
-import Model.Object as Object exposing (..)
 
 
 view : Int -> Int -> Int -> List Prototype -> Html msg

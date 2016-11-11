@@ -1,10 +1,8 @@
 module Model.ObjectsOperation exposing (..)
 
-{- this module does not know Model or Floor -}
 
 import Model.Direction exposing (..)
 import Model.Object as Object exposing (..)
-import Util.ListUtil exposing (..)
 
 
 rectFloat : Object -> (Float, Float, Float, Float)
@@ -334,39 +332,6 @@ minBoundsOf positions =
   List.foldl (\(x, y) (minX, minY) ->
     (Basics.min minX x, Basics.min minY y)
   ) (99999, 99999) positions
-
-
-partiallyChange : (Object -> Object) -> List Id -> List Object -> List Object
-partiallyChange f ids objects =
-  List.map (\e ->
-    if List.member (idOf e) ids then f e else e
-  ) objects
-
-
-moveObjects : Int -> (Int, Int) -> List Id -> List Object -> List Object
-moveObjects gridSize (dx, dy) ids objects =
-  partiallyChange (\e ->
-    let
-      (x, y, _, _) =
-        rect e
-
-      (newX, newY) =
-        fitPositionToGrid gridSize (x + dx, y + dy)
-    in
-      Object.move (newX, newY) e
-  ) ids objects
-
-
-moveObjectToPosition : Int -> Id -> (Int, Int) -> List Object -> List Object
-moveObjectToPosition gridSize id (newX, newY) objects =
-  partiallyChange (\e ->
-    Object.move (fitPositionToGrid gridSize (newX, newY)) e
-  ) [id] objects
-
-
-findObjectById : List Object -> Id -> Maybe Object
-findObjectById objects id =
-  findBy (\object -> id == (idOf object)) objects
 
 
 fitPositionToGrid : Int -> (Int, Int) -> (Int, Int)

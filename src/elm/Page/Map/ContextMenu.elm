@@ -6,9 +6,9 @@ import Html exposing (..)
 
 import View.ContextMenu as ContextMenu
 import Model.Object as Object
-import Model.ObjectsOperation as ObjectsOperation
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n
+import Model.Floor as Floor
 
 import Page.Map.Msg exposing (..)
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
@@ -23,7 +23,7 @@ view model =
       let
         itemsForPerson =
           model.floor `Maybe.andThen` \eFloor ->
-          ObjectsOperation.findObjectById (EditingFloor.present eFloor).objects id `Maybe.andThen` \obj ->
+          Floor.getObject id (EditingFloor.present eFloor) `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
           Dict.get personId model.personInfo `Maybe.andThen` \person ->
             Just <|

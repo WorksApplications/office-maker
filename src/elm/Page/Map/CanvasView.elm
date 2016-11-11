@@ -146,28 +146,28 @@ view model =
 profilePopupView : Model -> Floor -> Html Msg
 profilePopupView model floor =
   Maybe.withDefault (text "") <|
-  model.selectedResult `Maybe.andThen` \id ->
-  findObjectById floor.objects id `Maybe.andThen` \e ->
-    case Object.relatedPerson e of
+  model.selectedResult `Maybe.andThen` \objectId ->
+  Floor.getObject objectId floor `Maybe.andThen` \object ->
+    case Object.relatedPerson object of
       Just personId ->
         Dict.get personId model.personInfo `Maybe.andThen` \person ->
-        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e (Just person))
+        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object (Just person))
 
       Nothing ->
-        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset e Nothing)
+        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object Nothing)
 
 
 canvasView : Model -> Floor -> Html Msg
 canvasView model floor =
   let
-    deskInfoOf scale personInfo id =
+    deskInfoOf scale personInfo objectId =
       Maybe.map
-        (\e ->
-          ( Scale.imageToScreenForRect scale (Object.rect e)
-          , relatedPerson e `Maybe.andThen` (\id -> Dict.get id personInfo)
+        (\object ->
+          ( Scale.imageToScreenForRect scale (Object.rect object)
+          , relatedPerson object `Maybe.andThen` (\personId -> Dict.get personId personInfo)
           )
         )
-        (findObjectById floor.objects id)
+        (Floor.getObject objectId floor)
 
     nameInput =
       App.map ObjectNameInputMsg <|
@@ -226,6 +226,9 @@ objectsView model floor =
   case model.draggingContext of
     MoveObject _ from ->
       let
+        objectList =
+          Floor.objects floor
+
         isSelected object =
           List.member (idOf object) model.selectedObjects
 
@@ -245,7 +248,7 @@ objectsView model floor =
                   }
               )
             )
-            (List.filter isSelected floor.objects)
+            (List.filter isSelected objectList)
 
         adjustRect object (left, top, width, height) =
           if isSelected object then
@@ -279,12 +282,15 @@ objectsView model floor =
                   }
               )
             )
-            floor.objects
+            objectList
       in
         (ghostsView ++ normalView)
 
     ResizeFromScreenPos id from ->
       let
+        objectList =
+          Floor.objects floor
+
         isSelected object =
           List.member (idOf object) model.selectedObjects
 
@@ -307,7 +313,7 @@ objectsView model floor =
                 }
               )
             )
-            (List.filter isResizing floor.objects)
+            (List.filter isResizing objectList)
 
         adjustRect object (left, top, width, height) =
           if isResizing object then
@@ -333,7 +339,7 @@ objectsView model floor =
                 }
               )
             )
-            floor.objects
+            objectList
       in
         (normalView ++ ghostsView)
 
@@ -353,7 +359,7 @@ objectsView model floor =
             }
           )
         )
-        floor.objects
+        (Floor.objects floor)
 
 
 canvasImage : Floor -> Html msg

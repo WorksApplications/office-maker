@@ -49,6 +49,11 @@ import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
 
+
+type alias ObjectId = String
+type alias PersonId = String
+
+
 type alias Flags =
   { apiRoot : String
   , accountServiceRoot : String
@@ -353,8 +358,11 @@ update removeToken setSelectionStart msg model =
       { model |
         draggingContext =
           case model.draggingContext of
-            ShiftOffset -> NoDragging
-            _ -> model.draggingContext
+            ShiftOffset ->
+              NoDragging
+
+            _ ->
+              model.draggingContext
       } ! []
 
     MouseDownOnObject lastTouchedId (clientX, clientY') ->
@@ -387,15 +395,17 @@ update removeToken setSelectionStart msg model =
                 else lastTouchedId :: model.selectedObjects
               else if model.keys.shift then
                 let
-                  allObjects =
-                    (Model.getEditingFloorOrDummy model).objects
+                  floor =
+                    (Model.getEditingFloorOrDummy model)
+
                   objectsExcept target =
-                    List.filter (\e -> idOf e /= idOf target) allObjects
+                    List.filter (\e -> idOf e /= idOf target) (Floor.objects floor)
                 in
-                  case (findObjectById allObjects lastTouchedId, Model.primarySelectedObject model) of
-                    (Just e, Just primary) ->
+                  case (Floor.getObject lastTouchedId floor, Model.primarySelectedObject model) of
+                    (Just object, Just primary) ->
                       List.map idOf <|
-                        primary :: (withinRange (primary, e) (objectsExcept primary)) --keep primary
+                        primary :: (withinRange (primary, object) (objectsExcept primary)) --keep primary
+
                     _ -> [lastTouchedId]
               else
                 if List.member lastTouchedId model.selectedObjects
@@ -506,29 +516,26 @@ update removeToken setSelectionStart msg model =
       in
         newModel ! [ cmd ]
 
-    StartEditObject id ->
-      case findObjectById (Model.getEditingFloorOrDummy model).objects id of
-        Just e ->
-          let
-            (id, name) = (idOf e, nameOf e)
-
-            model' =
-              { model |
-                selectedResult = Nothing
-              , contextMenu = NoContextMenu
-              }
-
-            newModel =
-              Model.startEdit e model
-          in
-            newModel !
-              [ requestCandidate id name
-              -- , Task.perform identity identity (Task.succeed MouseUpOnCanvas) -- TODO get rid of this hack
-              , focusCmd
-              ]
-
-        Nothing ->
-          model ! [] -- [ Task.perform identity identity (Task.succeed MouseUpOnCanvas) ] -- TODO get rid of this hack
+    StartEditObject objectId ->
+      model.floor
+        |> (flip Maybe.andThen) (\efloor ->
+          Floor.getObject objectId (EditingFloor.present efloor)
+            |> Maybe.map (\object ->
+              let
+                newModel =
+                  Model.startEdit object
+                    { model |
+                      selectedResult = Nothing
+                    , contextMenu = NoContextMenu
+                    }
+              in
+                newModel !
+                  [ requestCandidate (idOf object) (nameOf object)
+                  , focusCmd
+                  ]
+            )
+        )
+        |> Maybe.withDefault (model ! [])
 
     SelectBackgroundColor color ->
       case model.floor of
@@ -727,17 +734,17 @@ update removeToken setSelectionStart msg model =
             , personInfo = personInfo
             } ! [ saveCmd ]
 
-    ShowContextMenuOnObject id ->
+    ShowContextMenuOnObject objectId ->
       let
         selectedObjects =
-          if List.member id model.selectedObjects then
+          if List.member objectId model.selectedObjects then
             model.selectedObjects
           else
-            [id]
+            [objectId]
 
         maybeLoadPersonCmd =
           model.floor `Maybe.andThen` \eFloor ->
-          ObjectsOperation.findObjectById (EditingFloor.present eFloor).objects id `Maybe.andThen` \obj ->
+          Floor.getObject objectId (EditingFloor.present eFloor) `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
           Just (getAndCachePersonIfNotCached personId model)
 
@@ -745,7 +752,7 @@ update removeToken setSelectionStart msg model =
           Maybe.withDefault Cmd.none maybeLoadPersonCmd
       in
         { model |
-          contextMenu = Model.Object model.pos id
+          contextMenu = Model.Object model.pos objectId
         , selectedObjects = selectedObjects
         } ! [ cmd ]
 
@@ -847,7 +854,7 @@ update removeToken setSelectionStart msg model =
 
               Nothing ->
                 Nothing
-          ) (Model.getEditingFloorOrDummy model).objects
+          ) (Floor.objects <| Model.getEditingFloorOrDummy model)
 
         newModel =
           { model |
@@ -864,13 +871,13 @@ update removeToken setSelectionStart msg model =
               EditingFloor.present editingFloor
 
             newModel =
-              case findObjectById floor.objects id of
+              case Floor.getObject id floor of
                 Just object ->
                   let
                     island' =
                       island
                         [object]
-                        (List.filter (\e -> (idOf e) /= id) floor.objects)
+                        (List.filter (\e -> (idOf e) /= id) (Floor.objects floor))
                   in
                     { model |
                       selectedObjects = List.map idOf island'
@@ -885,34 +892,28 @@ update removeToken setSelectionStart msg model =
         Nothing ->
           model ! []
 
-    SelectSameColor id ->
-      case model.floor of
-        Just editingFloor ->
-          let
-            floor =
-              EditingFloor.present editingFloor
+    SelectSameColor objectId ->
+      model.floor
+        |> Maybe.map EditingFloor.present
+        |> (flip Maybe.andThen) (\floor ->
+          Floor.getObject objectId floor
+            |> Maybe.map (\object ->
+              let
+                backgroundColor =
+                  Object.backgroundColorOf object
 
-            newModel =
-              case findObjectById floor.objects id of
-                Just object ->
-                  let
-                    target =
-                      List.filter
-                        (\e -> (backgroundColorOf e) == (backgroundColorOf object))
-                        floor.objects
-                  in
-                    { model |
-                      selectedObjects = List.map idOf target
-                    , contextMenu = NoContextMenu
-                    }
-
-                Nothing ->
-                  model
-          in
-            newModel ! []
-
-        Nothing ->
-          model ! []
+                target =
+                  List.filter
+                    (\e -> (backgroundColorOf e) == backgroundColor)
+                    (Floor.objects floor)
+              in
+                { model |
+                  selectedObjects = List.map Object.idOf target
+                , contextMenu = NoContextMenu
+                } ! []
+            )
+          )
+        |> Maybe.withDefault (model ! [])
 
     KeyCodeMsg isDown keyCode ->
       let
@@ -984,10 +985,11 @@ update removeToken setSelectionStart msg model =
       in
         newModel ! []
 
-    RegisterPrototype id ->
+    RegisterPrototype objectId ->
       let
         object =
-          findObjectById (Model.getEditingFloorOrDummy model).objects id
+          model.floor
+            |> (flip Maybe.andThen) (\floor -> Floor.getObject objectId (EditingFloor.present floor))
 
         model' =
           { model |
@@ -1310,28 +1312,26 @@ update removeToken setSelectionStart msg model =
     ClosePopup ->
       { model | selectedResult = Nothing } ! []
 
-    ShowDetailForObject id ->
-      let
-        allObjects =
-          (Model.getEditingFloorOrDummy model).objects
+    ShowDetailForObject objectId ->
+      case model.floor of
+        Nothing ->
+          model ! []
 
-        personId =
-          case findObjectById allObjects id of
-            Just e ->
-              relatedPerson e
+        Just floor ->
+          let
+            maybePersonId =
+              Floor.getObject objectId (EditingFloor.present floor)
+                |> (flip Maybe.andThen) Object.relatedPerson
 
-            Nothing ->
-              Nothing
-
-        cmd =
-          case personId of
-            Just id -> regesterPerson model.apiConfig id
-            Nothing -> Cmd.none
-      in
-        ({ model |
-          selectedResult = Just id
-        } |> Model.adjustOffset
-        ) ! [ cmd ]
+            cmd =
+              case maybePersonId of
+                Just personId -> regesterPerson model.apiConfig personId
+                Nothing -> Cmd.none
+          in
+            ({ model |
+              selectedResult = Just objectId
+            } |> Model.adjustOffset
+            ) ! [ cmd ]
 
     CreateNewFloor ->
       let
@@ -1382,7 +1382,7 @@ update removeToken setSelectionStart msg model =
                 FloorsInfoLoaded
                 ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
                   ( if withEmptyObjects then
-                      API.saveObjects model.apiConfig (ObjectsChange.added newFloor.objects)
+                      API.saveObjects model.apiConfig (ObjectsChange.added (Floor.objects newFloor))
                     else
                       Task.succeed ObjectsChange.empty
                   ) `andThen` \_ ->
@@ -1588,7 +1588,7 @@ updateOnMouseUp model =
 
                 searchResult =
                   model.searchResult
-                    |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (EditingFloor.present newFloor).objects)
+                    |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (Floor.objects <| EditingFloor.present newFloor))
                     |> Maybe.map (SearchResult.moveObject oldFloorId newObjects)
               in
                 { model
@@ -1611,7 +1611,7 @@ updateOnMouseUp model =
     newModel ! [ cmd ]
 
 
-updateOnSelectCandidate : Id -> String -> Model -> (Model, Cmd Msg)
+updateOnSelectCandidate : ObjectId -> PersonId -> Model -> (Model, Cmd Msg)
 updateOnSelectCandidate objectId personId model =
   case (model.floor, Dict.get personId model.personInfo) of
     (Just floor, Just person) ->
@@ -1660,7 +1660,7 @@ updateOnFinishStamp_ prototypes model floor =
 
     searchResult =
       model.searchResult
-        |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (EditingFloor.present newFloor).objects)
+        |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (Floor.objects <| EditingFloor.present newFloor))
 
     saveCmd =
       requestSaveObjectsCmd objectsChange
@@ -1743,15 +1743,15 @@ updateOnFinishPen (x, y) model =
       model ! []
 
 
-updateOnFinishResize : Id -> (Int, Int) -> Model -> (Model, Cmd Msg)
-updateOnFinishResize id (x, y) model =
+updateOnFinishResize : ObjectId -> (Int, Int) -> Model -> (Model, Cmd Msg)
+updateOnFinishResize objectId (x, y) model =
   model.floor
-    |> (flip Maybe.andThen) (\editingFloor -> findObjectById (EditingFloor.present editingFloor).objects id
+    |> (flip Maybe.andThen) (\editingFloor -> Floor.getObject objectId (EditingFloor.present editingFloor)
     |> (flip Maybe.andThen) (\e -> Model.temporaryResizeRect model (x, y) (rect e)
     |> Maybe.map (\(_, _, width, height) ->
         let
           (newFloor, objectsChange) =
-            EditingFloor.updateObjects (Floor.resizeObject id (width, height)) editingFloor
+            EditingFloor.updateObjects (Floor.resizeObject objectId (width, height)) editingFloor
 
           saveCmd =
             requestSaveObjectsCmd objectsChange
@@ -1812,7 +1812,7 @@ updateOnFinishLabel model =
           , floor = Just newFloor
           }
       in
-        case findObjectById (EditingFloor.present newFloor).objects newId of
+        case Floor.getObject newId (EditingFloor.present newFloor) of
           Just e ->
             let
               newModel =
@@ -1861,7 +1861,7 @@ updateOnFloorLoaded maybeFloor model =
         newModel ! [ Navigation.modifyUrl (URL.serialize newModel) ]
 
 
-getAndCachePersonIfNotCached : String -> Model -> Cmd Msg
+getAndCachePersonIfNotCached : PersonId -> Model -> Cmd Msg
 getAndCachePersonIfNotCached personId model =
   case Dict.get personId model.personInfo of
     Just _ ->
@@ -1966,14 +1966,14 @@ regesterPersonOfObject apiConfig e =
       Cmd.none
 
 
-regesterPerson : API.Config -> String -> Cmd Msg
+regesterPerson : API.Config -> PersonId -> Cmd Msg
 regesterPerson apiConfig personId =
   performAPI identity <|
     API.getPerson apiConfig personId `andThen` \person ->
       Task.succeed (RegisterPeople [person])
 
 
-regesterPersonIfNotCached : API.Config -> Dict String Person -> String -> Cmd Msg
+regesterPersonIfNotCached : API.Config -> Dict PersonId Person -> PersonId -> Cmd Msg
 regesterPersonIfNotCached apiConfig personInfo personId =
   if Dict.member personId personInfo then
     Cmd.none
@@ -1981,21 +1981,22 @@ regesterPersonIfNotCached apiConfig personInfo personId =
     regesterPerson apiConfig personId
 
 
-updateOnFinishNameInput : Bool -> String -> String -> Model -> (Model, Cmd Msg)
-updateOnFinishNameInput continueEditing id name model =
+updateOnFinishNameInput : Bool -> ObjectId -> String -> Model -> (Model, Cmd Msg)
+updateOnFinishNameInput continueEditing objectId name model =
   case model.floor of
     Nothing ->
       model ! []
 
-    Just floor ->
+    Just efloor ->
       let
-        allObjects = (EditingFloor.present floor).objects
+        floor =
+          EditingFloor.present efloor
 
         (objectNameInput, requestCandidateCmd) =
-          case findObjectById allObjects id of
+          case Floor.getObject objectId floor of
             Just object ->
               if continueEditing then
-                case nextObjectToInput object allObjects of
+                case nextObjectToInput object (Floor.objects floor) of
                   Just e ->
                     ( ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
                     , requestCandidate (idOf e) (nameOf e)
@@ -2003,7 +2004,7 @@ updateOnFinishNameInput continueEditing id name model =
 
                   Nothing ->
                     ( model.objectNameInput
-                    , requestCandidate id name
+                    , requestCandidate objectId name
                     )
               else
                 (model.objectNameInput, Cmd.none)
@@ -2012,7 +2013,7 @@ updateOnFinishNameInput continueEditing id name model =
               (model.objectNameInput, Cmd.none)
 
         registerPersonDetailCmd =
-          case findObjectById allObjects id of
+          case Floor.getObject objectId floor of
             Just object ->
               registerPersonDetailIfAPersonIsNotRelatedTo model.apiConfig object
 
@@ -2029,8 +2030,8 @@ updateOnFinishNameInput continueEditing id name model =
 
         (newFloor, objectsChange) =
           EditingFloor.updateObjects
-            (Floor.changeObjectName [id] name)
-            floor
+            (Floor.changeObjectName [objectId] name)
+            efloor
 
         saveCmd =
           requestSaveObjectsCmd objectsChange

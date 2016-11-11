@@ -1,6 +1,7 @@
 module API.Serialization exposing (..)
 
 import Date
+import Dict exposing (Dict)
 
 import Json.Encode as E exposing (Value)
 import Json.Decode as D exposing ((:=), Decoder)
@@ -269,14 +270,15 @@ decodeFloor =
       , version = version
       , name = name
       , ord = ord
-      , objects = objects
+      , objects = Dict.empty
       , width = width
       , height = height
       , image = image
       , realSize = Maybe.map2 (,) realWidth realHeight
       , public = public
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
-      })
+      } |> Floor.addObjects objects
+    )
     |> required "id" D.string
     |> required "version" D.int
     |> required "name" D.string
