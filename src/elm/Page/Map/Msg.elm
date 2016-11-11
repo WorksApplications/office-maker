@@ -8,6 +8,7 @@ import Model.EditMode as EditMode exposing (EditMode(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
+import Model.ObjectsChange exposing (ObjectsChange)
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
 import Model.Floor as Floor exposing (Floor, FloorBase)
@@ -36,7 +37,7 @@ type Msg
   | ImageSaved String Int Int
   | RequestSave SaveRequest
   | SaveFloorDebounceMsg Debounce.Msg
-  | ObjectsSaved ()
+  | ObjectsSaved ObjectsChange
   | FloorSaved FloorBase
   | FloorPublished Floor
   | FloorDeleted Floor

@@ -393,9 +393,9 @@ app.patch('/api/1/objects', inTransaction((conn, req, res) => {
       return Promise.reject(403);
     }
     var objectsChange = req.body;
-    return db.saveObjectsChange(conn, objectsChange).then(() => {
+    return db.saveObjectsChange(conn, objectsChange).then(objectsChange => {
       log.system.debug('saved objects');
-      return Promise.resolve();
+      return Promise.resolve(objectsChange);
     });
   });
 }));

@@ -55,6 +55,16 @@ merge new old =
   Dict.union new old
 
 
+fromList : List (ObjectId, ObjectChange a) -> ObjectsChange_ a
+fromList list =
+  Dict.fromList list
+
+
+toList : ObjectsChange_ a -> List (ObjectChange a)
+toList change =
+  List.map snd (Dict.toList change)
+
+
 separate : ObjectsChange_ a -> { added : List Object, modified : List a, deleted : List Object }
 separate change =
   let

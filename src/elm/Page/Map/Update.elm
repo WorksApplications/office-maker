@@ -1382,7 +1382,7 @@ update removeToken setSelectionStart msg model =
                   ( if withEmptyObjects then
                       API.saveObjects model.apiConfig (ObjectsChange.added newFloor.objects)
                     else
-                      Task.succeed ()
+                      Task.succeed ObjectsChange.empty
                   ) `andThen` \_ ->
                   API.getFloorsInfo model.apiConfig
                 )

@@ -58,9 +58,10 @@ type alias Config =
   }
 
 
-saveObjects : Config -> ObjectsChange -> Task Error ()
+saveObjects : Config -> ObjectsChange -> Task Error ObjectsChange
 saveObjects config change =
-  patchJsonNoResponse
+  patchJson
+    decodeObjectsChange
     (config.apiRoot ++ "/1/objects")
     (authorization config.token)
     (Http.string <| serializeObjectsChange change)

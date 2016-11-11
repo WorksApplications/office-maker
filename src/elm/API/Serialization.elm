@@ -114,15 +114,52 @@ encodeFloor floor =
 
 encodeObjectsChange : ObjectsChange -> Value
 encodeObjectsChange change =
-  let
-    separated =
-      ObjectsChange.separate change
-  in
-    E.object
-      [ ("added", E.list (List.map encodeObject separated.added))
-      , ("modified", E.list (List.map encodeObject separated.modified))
-      , ("deleted", E.list (List.map encodeObject separated.deleted))
-      ]
+  change
+    |> ObjectsChange.toList
+    |> List.map encodeObjectChange
+    |> E.list
+
+
+encodeObjectChange : ObjectChange Object -> Value
+encodeObjectChange change =
+  case change of
+    ObjectsChange.Added object ->
+      E.object
+        [ ("flag", E.string "added")
+        , ("object", encodeObject object)
+        ]
+
+    ObjectsChange.Modified object ->
+      E.object
+        [ ("flag", E.string "modified")
+        , ("object", encodeObject object)
+        ]
+
+    ObjectsChange.Deleted object ->
+      E.object
+        [ ("flag", E.string "deleted")
+        , ("object", encodeObject object)
+        ]
+
+
+decodeObjectsChange : Decoder ObjectsChange
+decodeObjectsChange =
+  (D.list decodeObjectChange)
+    |> D.map ObjectsChange.fromList
+
+
+decodeObjectChange : Decoder (ObjectId, ObjectChange Object)
+decodeObjectChange =
+  D.object2 (\flag object ->
+    if flag == "added" then
+      (Object.idOf object, ObjectsChange.Added object)
+    else if flag == "modified" then
+      (Object.idOf object, ObjectsChange.Modified object)
+    else
+      (Object.idOf object, ObjectsChange.Deleted object)
+  )
+  ("flag" := D.string)
+  ("object" := decodeObject)
 
 
 encodeLogin : String -> String -> Value

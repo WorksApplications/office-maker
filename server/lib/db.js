@@ -8,30 +8,34 @@ var filestorage = require('./filestorage.js');
 var profileService = require('./profile-service.js');
 
 
-function saveObjects(conn, added, modified, deleted, updateAt) {
-  return added.reduce((memo, object) => {
-    return memo.then(objects => {
-      return addObject(conn, object, updateAt).then(object => {
-        objects.push(object);
-        return Promise.resolve(objects);
-      });
-    });
-  }, Promise.resolve([])).then(objects => {
-    return modified.reduce((memo, object) => {
-      return memo.then(objects => {
-        return updateObject(conn, object, updateAt).then(object => {
-          objects.push(object);
-          return Promise.resolve(objects);
+function saveObjectsChange(conn, changes) {
+  var updateAt = Date.now();
+  return changes.reduce((memo, change) => {
+    return memo.then(changes => {
+      change.object.floorVersion = -1;
+      if(change.flag == 'added') {
+        return addObject(conn, change.object, updateAt).then(object => {
+          change.object = object;
+          changes.push(change);
+          return Promise.resolve(changes);
         });
-      });
-    }, Promise.resolve(objects));
-  }).then(objects => {
-    return deleted.reduce((memo, object) => {
-      return deleteObject(conn, object).then(() => {
-        return Promise.resolve(objects);
-      });
-    }, Promise.resolve(objects));
-  });
+      } else if(change.flag == 'modified') {
+        return updateObject(conn, change.object, updateAt).then(object => {
+          change.object = object;
+          changes.push(change);
+          return Promise.resolve(changes);
+        });
+      } else if(change.flag == 'deleted') {
+        return deleteObject(conn, change.object).then(() => {
+          change.object = null;
+          changes.push(change);
+          return Promise.resolve(changes);
+        });
+      } else {
+        throw "valid flag is not set";
+      }
+    });
+  }, Promise.resolve([]));
 }
 
 function addObject(conn, object, updateAt) {
@@ -50,7 +54,7 @@ function addObject(conn, object, updateAt) {
 function updateObject(conn, object, updateAt) {
   var oldUpdateAt = object.updateAt;
   var query = sql.update('objects', schema.objectKeyValues(object, updateAt),
-    sql.whereList([['id', object.id]/* TODO recover, ['updateAt', oldUpdateAt]*/]) + ' AND floorVersion = -1'
+    sql.whereList([['id', object.id], ['updateAt', oldUpdateAt]]) + ' AND floorVersion = -1'
   );
   return rdb.exec(conn, query).then((okPacket) => {
     if(!okPacket.affectedRows) {
@@ -66,7 +70,7 @@ function updateObject(conn, object, updateAt) {
 function deleteObject(conn, object) {
   var oldUpdateAt = object.updateAt;
   var query = sql.delete('objects',
-    sql.whereList([['id', object.id]/* TODO recover, ['updateAt', object.updateAt]*/]) + ' AND floorVersion = -1'
+    sql.whereList([['id', object.id], ['updateAt', oldUpdateAt]]) + ' AND floorVersion = -1'
   );
   return rdb.exec(conn, query).then((okPacket) => {
     if(!okPacket.affectedRows) {
@@ -255,24 +259,6 @@ function saveFloor(conn, tenantId, newFloor, updateBy) {
   newFloor.updateAt = updateAt;
   return saveOrCreateFloor(conn, tenantId, newFloor);
 }
-
-function saveObjectsChange(conn, objectsChange) {
-  var updateAt = Date.now();
-  var added = objectsChange.added.map((object) => {
-    object.floorVersion = -1;
-    return object;
-  });
-  var modified = objectsChange.modified.map((object) => {
-    object.floorVersion = -1;
-    return object;
-  });
-  var deleted = objectsChange.deleted.map((object) => {
-    object.floorVersion = -1;
-    return object;
-  });
-  return saveObjects(conn, added, modified, deleted, updateAt);
-}
-
 
 function publishFloor(conn, tenantId, floorId, updateBy) {
   return getEditingFloorWithObjects(conn, tenantId, floorId).then((editingFloor) => {
