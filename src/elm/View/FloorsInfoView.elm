@@ -1,5 +1,8 @@
 module View.FloorsInfoView exposing(view)
 
+import String
+import Json.Decode as Decode
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -10,8 +13,6 @@ import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 
 import Util.HtmlUtil exposing (..)
-
-import Json.Decode as Decode
 
 import InlineHover exposing (hover)
 
@@ -71,18 +72,21 @@ createButton msg =
     [ text "+" ]
 
 
-view : (String -> msg) -> ((Int, Int) -> msg) -> (String -> Bool -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> List FloorInfo -> Html msg
+view : (String -> msg) -> ((Int, Int) -> msg) -> (Maybe (String, Bool) -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> List FloorInfo -> Html msg
 view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorInfoList =
   let
     requestPrivate =
       (not (User.isGuest user)) && isEditMode
 
-    onClickMsg' id =
-      onClickMsg id requestPrivate
+    onClickMsg_ floorId =
+      if String.length floorId > 0 then
+        onClickMsg (Just (floorId, requestPrivate))
+      else
+        onClickMsg Nothing
 
     floorList =
       List.filterMap
-        (eachView onContextMenu onClickMsg' disableContextmenu user isEditMode currentFloorId)
+        (eachView onContextMenu onClickMsg_ disableContextmenu user isEditMode currentFloorId)
         (List.sortBy (getOrd isEditMode) floorInfoList)
 
     create =

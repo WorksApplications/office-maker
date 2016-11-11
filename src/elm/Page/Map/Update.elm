@@ -760,24 +760,37 @@ update removeToken setSelectionStart msg model =
         Nothing ->
           model ! []
 
-
-    GoToFloor floorId requestLastEdit ->
+    GoToFloor maybeNextFloor ->
       let
         loadCmd =
-          if String.length floorId > 0 then
-            performAPI FloorLoaded (loadFloor model.apiConfig requestLastEdit floorId)
-          else
-            Cmd.none
+          maybeNextFloor
+            |> (flip Maybe.andThen)
+              (\(floorId, requestLastEdit) ->
+                let
+                  load =
+                    performAPI FloorLoaded (loadFloor model.apiConfig requestLastEdit floorId)
+                in
+                  case model.floor of
+                    Just efloor ->
+                      if (EditingFloor.present efloor).id == floorId then
+                        Nothing
+                      else
+                        Just load
+
+                    Nothing ->
+                      Just load
+              )
+            |> Maybe.withDefault Cmd.none
 
         newModel =
           { model |
             contextMenu = NoContextMenu
           }
-    in
-      newModel !
-        [ loadCmd
-        , Navigation.modifyUrl (URL.serialize newModel)
-        ]
+      in
+        newModel !
+          [ loadCmd
+          , Navigation.modifyUrl (URL.serialize newModel)
+          ]
 
     SelectSamePost postName ->
       case model.floor of
@@ -1180,19 +1193,22 @@ update removeToken setSelectionStart msg model =
           case result of
             SearchResult.Object object floorId ->
               let
-                model' =
+                model_ =
                   Model.adjustOffset
                     { model |
                       selectedResult = Just (idOf object)
                     }
 
                 requestPrivateFloors =
-                  EditMode.isEditMode model'.editMode && not (User.isGuest model'.user)
+                  EditMode.isEditMode model_.editMode && not (User.isGuest model_.user)
+
+                goToFloor =
+                  Task.perform
+                    identity
+                    GoToFloor
+                    (Task.succeed (Just (floorId, requestPrivateFloors)))
               in
-                model' !
-                  [ performAPI FloorLoaded (loadFloor model'.apiConfig requestPrivateFloors floorId)
-                  , Navigation.modifyUrl (URL.serialize model')
-                  ]
+                model_ ! [ goToFloor ]
 
             _ ->
               (model, Cmd.none)

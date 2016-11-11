@@ -57,7 +57,7 @@ type Msg
   | ObjectNameInputMsg ObjectNameInput.Msg
   | ShowContextMenuOnObject Id
   | ShowContextMenuOnFloorInfo Id
-  | GoToFloor String Bool
+  | GoToFloor (Maybe (String, Bool))
   | SelectSamePost String
   | SearchByPost String
   | GotSamePostPeople (List Person)
