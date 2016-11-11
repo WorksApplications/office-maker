@@ -306,26 +306,34 @@ expandOrShrink direction primary current all =
       restOfMaximumPartsOf (opposite direction) current
 
 
-pasteObjects : (Int, Int) -> List (Object, Id) -> List Object -> List Object
-pasteObjects (baseX, baseY) copiedWithNewIds allObjects =
+pasteObjects : FloorId -> (Int, Int) -> List (Object, Id) -> List Object
+pasteObjects floorId (baseX, baseY) copiedWithNewIds =
   let
     (minX, minY) =
-      List.foldl (\(object, newId) (minX, minY) ->
-        let
-          (x, y) = Object.position object
-        in
-          (Basics.min minX x, Basics.min minY y)
-    ) (99999, 99999) copiedWithNewIds
+      copiedWithNewIds
+        |> List.map (\(object, newId) -> Object.position object)
+        |> minBoundsOf
 
     newObjects =
       List.map (\(object, newId) ->
         let
           (x, y) = Object.position object
+          pos = (baseX + (x - minX), baseY + (y - minY))
         in
-          Object.copy newId (baseX + (x - minX), baseY + (y - minY)) object
+          object
+            |> move pos
+            |> changeId newId
+            |> changeFloorId floorId
     ) copiedWithNewIds
   in
     newObjects
+
+
+minBoundsOf : List (Int, Int) -> (Int, Int)
+minBoundsOf positions =
+  List.foldl (\(x, y) (minX, minY) ->
+    (Basics.min minX x, Basics.min minY y)
+  ) (99999, 99999) positions
 
 
 partiallyChange : (Object -> Object) -> List Id -> List Object -> List Object

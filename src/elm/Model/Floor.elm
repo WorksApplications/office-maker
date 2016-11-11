@@ -97,8 +97,8 @@ overrideObject gridSize newObject floor =
 
 paste : List (Object, Id) -> (Int, Int) -> Floor -> Floor
 paste copiedWithNewIds (baseX, baseY) floor =
-  setObjects
-    (floor.objects ++ (pasteObjects (baseX, baseY) copiedWithNewIds (objects floor)))
+  addObjects
+    (pasteObjects floor.id (baseX, baseY) copiedWithNewIds)
     floor
 
 

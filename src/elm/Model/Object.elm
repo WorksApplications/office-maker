@@ -83,11 +83,6 @@ initLabel id floorId floorVersion rect backgroundColor name fontSize updateAt co
     }
 
 
-copy : Id -> (Int, Int) -> Object -> Object
-copy newId pos object =
-  (changeId newId << move pos) object
-
-
 position : Object -> (Int, Int)
 position (Object object) =
   case object.rect of
@@ -95,9 +90,14 @@ position (Object object) =
       (x, y)
 
 
-changeId : String -> Object -> Object
+changeId : Id -> Object -> Object
 changeId id (Object object) =
   Object { object | id = id }
+
+
+changeFloorId : FloorId -> Object -> Object
+changeFloorId floorId (Object object) =
+  Object { object | floorId = floorId }
 
 
 changeBackgroundColor : String -> Object -> Object
