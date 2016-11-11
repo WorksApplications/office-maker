@@ -305,31 +305,22 @@ update removeToken setSelectionStart msg model =
       model ! []
 
     FloorPublished floor ->
-      let
-        message =
-          Success ("Successfully published " ++ floor.name)
-        -- TODO update FloorInfo
-      in
-        { model |
-          floor = Maybe.map (\_ -> EditingFloor.init floor) model.floor
-        , error = message
-        } !
-          [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-          ]
+      { model |
+        floor = Maybe.map (\_ -> EditingFloor.init floor) model.floor
+      , error = Success ("Successfully published " ++ floor.name)
+      } !
+        [ performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
+        , Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+        ]
 
     FloorDeleted floor ->
-      let
-        message =
-          Success ("Successfully deleted " ++ floor.name)
-
-        -- TODO update FloorInfo
-      in
-        { model |
-          floor = Nothing
-        , error = message
-        } !
-          [ Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
-          ]
+      { model |
+        floor = Nothing
+      , error = Success ("Successfully deleted " ++ floor.name)
+      } !
+        [ performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
+        , Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+        ]
 
     MoveOnCanvas (clientX, clientY) ->
       let
@@ -1328,30 +1319,22 @@ update removeToken setSelectionStart msg model =
           IdGenerator.new model.seed
 
         lastFloorOrder =
-          case List.drop (List.length model.floorsInfo - 1) model.floorsInfo of
-            [] ->
-              0
-            x :: _ ->
-              case x of
-                FloorInfo.Public floor ->
-                  floor.ord
-
-                FloorInfo.PublicWithEdit publicFloor editingFloor ->
-                  editingFloor.ord
-
-                FloorInfo.Private floor ->
-                  floor.ord
+          FloorInfo.lastFloorOrder model.floorsInfo
 
         newFloor =
           Floor.initWithOrder newFloorId lastFloorOrder
 
         cmd =
           performAPI
-            (\_ -> NoOp)
-            (API.saveFloor model.apiConfig newFloor)
+            FloorsInfoLoaded
+            ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
+              API.getFloorsInfo model.apiConfig
+            )
 
         newModel =
-          { model | seed = newSeed }
+          { model | seed = newSeed
+          , floor = Just (EditingFloor.init newFloor)
+          }
       in
         newModel !
           [ cmd
@@ -1368,9 +1351,10 @@ update removeToken setSelectionStart msg model =
 
         saveCmd =
           performAPI
-            (\_ -> NoOp)
+            FloorsInfoLoaded
             ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
-              API.saveObjects model.apiConfig (ObjectsChange.added newFloor.objects)
+              API.saveObjects model.apiConfig (ObjectsChange.added newFloor.objects) `andThen` \_ ->
+              API.getFloorsInfo model.apiConfig
             )
 
         newModel =

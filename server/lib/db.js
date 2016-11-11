@@ -228,18 +228,17 @@ function createEditingFloor(conn, tenantId, newFloor, updateAt) {
   });
 }
 
-function saveFloorWithObjects(conn, tenantId, newFloor, updateBy) {
+function saveFloor(conn, tenantId, newFloor, updateBy) {
   var updateAt = Date.now();
   newFloor.version = -1;
   newFloor.public = false;
   newFloor.updateBy = updateBy;
   newFloor.updateAt = updateAt;
-  return saveOrCreateFloor(conn, tenantId, newFloor).then((floor) => {
-    return saveObjectsChange(conn, newFloor, updateAt);
-  });
+  return saveOrCreateFloor(conn, tenantId, newFloor);
 }
 
-function saveObjectsChange(conn, objectsChange, updateAt) {
+function saveObjectsChange(conn, objectsChange) {
+  var updateAt = Date.now();
   var added = objectsChange.added.map((object) => {
     object.floorVersion = -1;
     return object;
@@ -439,7 +438,7 @@ module.exports = {
   getPublicFloorWithObjects: getPublicFloorWithObjects,
   getFloorOfVersionWithObjects: getFloorOfVersionWithObjects,
   getFloorsInfo: getFloorsInfo,
-  saveFloorWithObjects: saveFloorWithObjects,
+  saveFloor: saveFloor,
   saveObjectsChange: saveObjectsChange,
   // saveObject: updateObject,//TODO currently, only UPDATE is supported
   publishFloor: publishFloor,

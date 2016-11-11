@@ -350,7 +350,7 @@ app.put('/api/1/floors/:id', inTransaction((conn, req, res) => {
       return Promise.reject(400);
     }
     var updateBy = user.id;
-    return db.saveFloorWithObjects(conn, user.tenantId, newFloor, updateBy).then((floor) => {
+    return db.saveFloor(conn, user.tenantId, newFloor, updateBy).then((floor) => {
       log.system.debug('saved floor: ' + floor.id);
       return Promise.resolve();
     });
@@ -393,8 +393,7 @@ app.patch('/api/1/objects', inTransaction((conn, req, res) => {
       return Promise.reject(403);
     }
     var objectsChange = req.body;
-    var updateAt = Date.now();
-    return db.saveObjectsChange(conn, objectsChange, updateAt).then(() => {
+    return db.saveObjectsChange(conn, objectsChange).then(() => {
       log.system.debug('saved objects');
       return Promise.resolve();
     });
