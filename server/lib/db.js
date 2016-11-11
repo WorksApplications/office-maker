@@ -26,8 +26,8 @@ function saveObjectsChange(conn, changes) {
           return Promise.resolve(changes);
         });
       } else if(change.flag == 'deleted') {
-        return deleteObject(conn, change.object).then(() => {
-          change.object = null;
+        return deleteObject(conn, change.object).then(object => {
+          change.object = object;
           changes.push(change);
           return Promise.resolve(changes);
         });
@@ -77,7 +77,7 @@ function deleteObject(conn, object) {
       console.log(`didn't update by ` + query);
       return Promise.reject(object);
     } else {
-      return Promise.resolve();
+      return Promise.resolve(object);
     }
   });
 }
