@@ -38,27 +38,25 @@ eachView : (String -> msg) -> (String -> msg) -> Bool -> User -> Bool -> Maybe S
 eachView contextmenuMsg onClickMsg disableContextmenu user isEditMode currentFloorId floorInfo =
   Maybe.map
     (\floor ->
-      eachView'
+      eachView_
         (if not disableContextmenu && (not (User.isGuest user)) && isEditMode then Just (contextmenuMsg floor.id) else Nothing)
         (onClickMsg floor.id)
         (currentFloorId == Just floor.id)
         (markAsPrivate floorInfo)
-        (markAsModified isEditMode floorInfo)
         floor
     )
     (getFloor isEditMode floorInfo)
 
 
-eachView' : Maybe msg -> msg -> Bool -> Bool -> Bool -> FloorBase -> Html msg
-eachView' contextmenuMsg onClickMsg selected markAsPrivate markAsModified floor =
+eachView_ : Maybe msg -> msg -> Bool -> Bool -> FloorBase -> Html msg
+eachView_ contextmenuMsg onClickMsg selected markAsPrivate floor =
   linkBox
     contextmenuMsg
     onClickMsg
     (Styles.floorsInfoViewItem selected markAsPrivate)
     (Styles.floorsInfoViewItemHover markAsPrivate)
     Styles.floorsInfoViewItemLink
-    [ text (floor.name ++ (if markAsModified then "*" else ""))
-    ]
+    [ text floor.name ]
 
 
 createButton : msg -> Html msg
@@ -134,11 +132,3 @@ markAsPrivate floorInfo =
     Public _ -> False
     PublicWithEdit _ _ -> False
     Private _ -> True
-
-
-markAsModified : Bool -> FloorInfo -> Bool
-markAsModified isEditMode floorInfo =
-  case floorInfo of
-    Public _ -> False
-    PublicWithEdit _ _ -> if isEditMode then True else False
-    Private _ -> False
