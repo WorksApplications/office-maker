@@ -84,25 +84,19 @@ function getObjects(conn, floorId, floorVersion) {
 }
 
 function getPublicFloorWithObjects(conn, tenantId, id) {
-  return getPublicFloor(conn, tenantId, id).then((floor) => {
-    return getObjects(conn, floor.id, floor.version).then((objects) => {
-      floor.objects = objects;
-      return Promise.resolve(floor);
-    });
-  });
+  return getFloorWithObjects(conn, getPublicFloor(conn, tenantId, id));
 }
 
 function getEditingFloorWithObjects(conn, tenantId, id) {
-  return getEditingFloor(conn, tenantId, id).then((floor) => {
-    return getObjects(conn, floor.id, floor.version).then((objects) => {
-      floor.objects = objects;
-      return Promise.resolve(floor);
-    });
-  });
+  return getFloorWithObjects(conn, getEditingFloor(conn, tenantId, id));
 }
 
 function getFloorOfVersionWithObjects(conn, tenantId, id, version) {
-  return getFloorOfVersion(conn, tenantId, id, version).then((floor) => {
+  return getFloorWithObjects(conn, getFloorOfVersion(conn, tenantId, id, version));
+}
+
+function getFloorWithObjects(conn, getFloor) {
+  return getFloor.then((floor) => {
     if(!floor) {
       return Promise.resolve(null);
     }
@@ -112,6 +106,7 @@ function getFloorOfVersionWithObjects(conn, tenantId, id, version) {
     });
   });
 }
+
 
 function getFloorOfVersion(conn, tenantId, id, version) {
   var q = sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId], ['version', version]]));

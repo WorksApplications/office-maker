@@ -171,16 +171,7 @@ urlUpdate : Result String URL -> Model -> (Model, Cmd Msg)
 urlUpdate result model =
   case result of
     Ok newURL ->
-      let
-        _ =
-          case newURL.floorId of
-            Just id ->
-              Debug.log ("node server/commands deleteFloor " ++ id) ""
-
-            Nothing ->
-              ""
-      in
-        model ! []
+      model ! []
 
     Err _ ->
       model ! [ Navigation.modifyUrl (URL.stringify "/" URL.init) ]
@@ -967,13 +958,13 @@ update removeToken setSelectionStart msg model =
         newModel ! [ saveUserStateCmd, cmd ]
 
     ScaleEnd ->
-        { model | scaling = False } ! []
+      { model | scaling = False } ! []
 
     WindowSize (w, h) ->
-        { model | windowSize = (w, h) } ! []
+      { model | windowSize = (w, h) } ! []
 
     ChangeMode mode ->
-        { model | editMode = mode } ! []
+      { model | editMode = mode } ! []
 
     PrototypesMsg msg ->
       let
