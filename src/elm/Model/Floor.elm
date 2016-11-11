@@ -5,6 +5,7 @@ import Regex
 import Date exposing (Date)
 import Model.Object as Object exposing (Object)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
+import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 
 type alias Id = String
 
@@ -86,13 +87,22 @@ move ids gridSize (dx, dy) floor =
     floor
 
 
-overrideObject : Int -> Object -> Floor -> Floor
-overrideObject gridSize newObject floor =
-  let
-    remainingObjects =
-      List.filter (\object -> (Object.idOf object) /= (Object.idOf newObject)) (objects floor)
-  in
-    setObjects ( remainingObjects ++ [ newObject ] ) floor
+overrideObjects : List Object -> Floor -> Floor
+overrideObjects newObjects floor =
+  newObjects
+    |> List.foldl (\object memo -> overrideObject object memo) floor
+
+
+overrideObject : Object -> Floor -> Floor
+overrideObject newObject floor =
+  if Object.floorIdOf newObject == floor.id then
+    let
+      remainingObjects =
+        List.filter (\object -> (Object.idOf object) /= (Object.idOf newObject)) (objects floor)
+    in
+      setObjects ( newObject :: remainingObjects ) floor
+  else
+    floor
 
 
 paste : List (Object, Id) -> (Int, Int) -> Floor -> Floor
@@ -147,6 +157,15 @@ changeObjectFontSize ids fontSize floor =
 changeObjects : (Object -> Object) -> List Id -> Floor -> Floor
 changeObjects f ids floor =
   setObjects (partiallyChange f ids (objects floor)) floor
+
+
+changeObjectsByChanges : ObjectsChange -> Floor -> Floor
+changeObjectsByChanges change floor =
+  let
+    separated =
+      ObjectsChange.separate change
+  in
+    overrideObjects (separated.added ++ separated.modified) floor
 
 
 toFirstNameOnly : List Id -> Floor -> Floor

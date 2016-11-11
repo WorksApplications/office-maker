@@ -68,6 +68,21 @@ updateObjects f efloor =
     ({ efloor | undoList = newUndoList }, objectsChange)
 
 
+syncObjects : ObjectsChange -> EditingFloor -> EditingFloor
+syncObjects change efloor =
+  let
+    undoList =
+      efloor.undoList
+
+    -- Unsafe operation!
+    newUndoList =
+      { undoList
+      | present = Floor.changeObjectsByChanges change undoList.present
+      }
+  in
+    { efloor | undoList = newUndoList }
+
+
 undo : EditingFloor -> EditingFloor
 undo efloor =
   { efloor | undoList = UndoList.undo efloor.undoList }

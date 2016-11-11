@@ -298,8 +298,10 @@ update removeToken setSelectionStart msg model =
           saveFloorDebounce = saveFloorDebounce
         } ! [cmd]
 
-    ObjectsSaved _ ->
-      model ! []
+    ObjectsSaved change ->
+      { model |
+        floor = Maybe.map (EditingFloor.syncObjects change) model.floor
+      }  ! []
 
     FloorSaved floorBase ->
       { model
