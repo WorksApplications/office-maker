@@ -6,10 +6,11 @@ import Model.Object as Object exposing (..)
 
 
 type alias ObjectId = String
+type alias PersonId = String
 
 
 type alias ObjectModification =
-  { new : Object, old : Object, changes : List String }
+  { new : Object, old : Object, changes : List ObjectPropertyChange }
 
 
 type ObjectChange a

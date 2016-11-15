@@ -2,10 +2,9 @@ module Model.Object exposing (..)
 
 import Time exposing (Time)
 
-import Model.Person as Person
-
 type alias Id = String
 type alias FloorId = String
+type alias PersonId = String
 type alias FloorVersion = Int
 
 
@@ -29,8 +28,58 @@ type Object =
 
 
 type ObjectExtension
-  = Desk (Maybe Person.Id)
+  = Desk (Maybe PersonId)
   | Label String Shape
+
+
+type ObjectPropertyChange
+  = Name String String
+  | Size (Int, Int) (Int, Int)
+  | Position (Int, Int) (Int, Int)
+  | BackgroundColor String String
+  | Color String String
+  | FontSize Float Float
+  | Shape Shape Shape
+  | Person (Maybe PersonId) (Maybe PersonId)
+
+
+modifyAll : List ObjectPropertyChange -> Object -> Object
+modifyAll changes object =
+  changes
+    |> List.foldl modify object
+
+
+modify : ObjectPropertyChange -> Object -> Object
+modify change object =
+  case change of
+    Name new old ->
+      changeName new object
+
+    Size new old ->
+      changeSize new object
+
+    Position new old ->
+      move new object
+
+    BackgroundColor new old ->
+      changeBackgroundColor new object
+
+    Color new old ->
+      changeColor new object
+
+    FontSize new old ->
+      changeFontSize new object
+
+    Shape new old ->
+      changeShape new object
+
+    Person new old ->
+      setPerson new object
+
+
+copyUpdateAt : Object -> Object -> Object
+copyUpdateAt (Object old) (Object new) =
+  Object { new | updateAt = old.updateAt }
 
 
 isDesk : Object -> Bool
@@ -53,7 +102,7 @@ isLabel (Object object) =
       False
 
 
-initDesk : Id -> FloorId -> Maybe FloorVersion -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Time -> Maybe Person.Id -> Object
+initDesk : Id -> FloorId -> Maybe FloorVersion -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Time -> Maybe PersonId -> Object
 initDesk id floorId floorVersion rect backgroundColor name fontSize updateAt personId =
   Object
     { id = id
@@ -151,7 +200,7 @@ rotate (Object object) =
       Object { object | rect = (x, y, h, w) }
 
 
-setPerson : Maybe Person.Id -> Object -> Object
+setPerson : Maybe PersonId -> Object -> Object
 setPerson personId (Object object) =
   case object.extension of
     Desk _ ->
@@ -230,7 +279,25 @@ rect (Object object) =
   object.rect
 
 
-relatedPerson : Object -> Maybe Person.Id
+sizeOf : Object -> (Int, Int)
+sizeOf object =
+  let
+    (x, y, w, h) =
+      rect object
+  in
+    (w, h)
+
+
+positionOf : Object -> (Int, Int)
+positionOf object =
+  let
+    (x, y, w, h) =
+      rect object
+  in
+    (x, y)
+
+
+relatedPerson : Object -> Maybe PersonId
 relatedPerson (Object object) =
   case object.extension of
     Desk personId ->

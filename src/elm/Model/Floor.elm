@@ -6,7 +6,7 @@ import Regex
 import Date exposing (Date)
 import Model.Object as Object exposing (Object)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
-import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
+import Model.ObjectsChange as ObjectsChange exposing (DetailedObjectsChange, ObjectModification)
 
 
 type alias ObjectId = String
@@ -220,14 +220,15 @@ changeObjectFontSize ids fontSize floor =
   partiallyChangeObjects (Object.changeFontSize fontSize) ids floor
 
 
-changeObjectsByChanges : ObjectsChange -> Floor -> Floor
+changeObjectsByChanges : DetailedObjectsChange -> Floor -> Floor
 changeObjectsByChanges change floor =
   let
     separated =
       ObjectsChange.separate change
   in
     floor
-      |> addObjects (separated.added ++ separated.modified)
+      |> addObjects separated.added
+      |> modifyObjects separated.modified
       |> removeObjects (List.map Object.idOf separated.deleted)
 
 
@@ -327,6 +328,22 @@ addObjects objects floor =
       objects
         |> filterObjectsInFloor floor.id
         |> List.foldl (\object -> Dict.insert (Object.idOf object) object) floor.objects
+  }
+
+
+modifyObjects : List ObjectModification -> Floor -> Floor
+modifyObjects list floor =
+  { floor |
+    objects =
+      list
+        |> List.foldl
+          (\mod dict ->
+            Dict.update
+              (Object.idOf mod.new)
+              (Maybe.map (Object.copyUpdateAt mod.old << Object.modifyAll mod.changes))
+              dict
+          )
+          floor.objects
   }
 
 

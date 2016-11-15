@@ -43,7 +43,7 @@ view lang visitDate personInfo options (current, prev) =
         , if List.isEmpty added then text "" else h3 [] [ text ((toString (List.length added)) ++ " Additions") ]
         , if List.isEmpty added then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) added)
         , if List.isEmpty modified then text "" else h3 [] [ text ((toString (List.length modified)) ++ " Modifications") ]
-        , if List.isEmpty modified then text "" else ul [] (List.map (\mod -> li [] [ text (toString mod.changes) ] ) modified)
+        , if List.isEmpty modified then text "" else ul [] (List.map (\mod -> li [] [ text (toString (List.map viewObjectPropertyChange mod.changes)) ] ) modified)
         , if List.isEmpty deleted then text "" else h3 [] [ text ((toString (List.length deleted)) ++ " Deletions") ]
         , if List.isEmpty deleted then text "" else ul [] (List.map (\old -> li [] [ text (idOf old) ] ) deleted)
         ]
@@ -54,6 +54,34 @@ view lang visitDate personInfo options (current, prev) =
       , body
       , buttons lang options.onClose options.onConfirm
       ]
+
+
+viewObjectPropertyChange : ObjectPropertyChange -> String
+viewObjectPropertyChange change =
+  case change of
+    Name new old ->
+      "name chaged: " ++ old ++ " -> " ++ new
+
+    Size new old ->
+      "size chaged: " ++ toString old ++ " -> " ++ toString new
+
+    Position new old ->
+      "position chaged: " ++ toString old ++ " -> " ++ toString new
+
+    BackgroundColor new old ->
+      "background color chaged: " ++ old ++ " -> " ++ new
+
+    Color new old ->
+      "color chaged: " ++ old ++ " -> " ++ new
+
+    FontSize new old ->
+      "font size chaged: " ++ toString old ++ " -> " ++ toString new
+
+    Shape new old ->
+      "shape chaged: " ++ toString old ++ " -> " ++ toString new
+
+    Person new old ->
+      "person chaged: " ++ toString old ++ " -> " ++ toString new
 
 
 headerView : Language -> Date -> Floor -> Maybe Floor -> Html msg

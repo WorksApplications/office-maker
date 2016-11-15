@@ -75,10 +75,13 @@ syncObjects change efloor =
     undoList =
       efloor.undoList
 
+    separated =
+      ObjectsChange.separate change
+
     -- Unsafe operation!
     newUndoList =
       { undoList
-      | present = Floor.changeObjectsByChanges change undoList.present
+      | present = Floor.addObjects (separated.added ++ separated.modified) undoList.present
       }
   in
     { efloor | undoList = newUndoList }
@@ -94,10 +97,9 @@ undo efloor =
           let
             objectsChange =
               FloorDiff.diffObjects prev.objects current.objects
-                |> ObjectsChange.simplify
           in
-            ( Floor.changeObjectsByChanges objectsChange prev
-            , objectsChange
+            ( Floor.changeObjectsByChanges objectsChange current
+            , objectsChange |> ObjectsChange.simplify
             )
         )
         efloor.undoList
@@ -115,10 +117,9 @@ redo efloor =
           let
             objectsChange =
               FloorDiff.diffObjects next.objects current.objects
-                |> ObjectsChange.simplify
           in
-            ( Floor.changeObjectsByChanges objectsChange next
-            , objectsChange
+            ( Floor.changeObjectsByChanges objectsChange current
+            , objectsChange |> ObjectsChange.simplify
             )
         )
         efloor.undoList

@@ -88,72 +88,40 @@ diffObjects newObjects oldObjects =
   Dict.merge
     (\id new dict -> Dict.insert id (ObjectsChange.Added new) dict)
     (\id new old dict ->
-      case diffObject new old of
+      case diffObjectProperty new old of
         [] -> dict
-        list -> Dict.insert id (ObjectsChange.Modified { new = new, old = old, changes = list }) dict)
+        list -> Dict.insert id (ObjectsChange.Modified { new = (Object.copyUpdateAt old new), old = old, changes = list }) dict)
     (\id old dict -> Dict.insert id (ObjectsChange.Deleted old) dict)
     newObjects
     oldObjects
     Dict.empty
 
 
--- TODO separate model and view
-diffObject : Object -> Object -> List String
-diffObject new old =
+objectPropertyChange : (a -> a -> b) -> (Object -> a) -> Object -> Object -> Maybe b
+objectPropertyChange f toProperty new old =
   let
-    nameChange =
-      if nameOf new /= nameOf old then
-        Just ("name chaged: " ++ nameOf old ++ " -> " ++ nameOf new)
-      else
-        Nothing
-
-    sizeChange =
-      if rect new /= rect old then
-        Just ("position/size chaged: " ++ toString (rect old) ++ " -> " ++ toString (rect new))
-      else
-        Nothing
-
-    bgColorChange =
-      if backgroundColorOf new /= backgroundColorOf old then
-        Just ("background color chaged: " ++ backgroundColorOf old ++ " -> " ++ backgroundColorOf new)
-      else
-        Nothing
-
-    colorChange =
-      if colorOf new /= colorOf old then
-        Just ("color chaged: " ++ colorOf old ++ " -> " ++ colorOf new)
-      else
-        Nothing
-
-    fontSizeChange =
-      if fontSizeOf new /= fontSizeOf old then
-        Just ("font size chaged: " ++ (toString (fontSizeOf old)) ++ " -> " ++ (toString (fontSizeOf new)))
-      else
-        Nothing
-
-    shapeChange =
-      if shapeOf new /= shapeOf old then
-        Just ("shape chaged: " ++ (toString (shapeOf old)) ++ " -> " ++ (toString (shapeOf new)))
-      else
-        Nothing
-
-    relatedPersonChange =
-      if relatedPerson new /= relatedPerson old then
-        Just ("person chaged: " ++ (toString (relatedPerson old)) ++ " -> " ++ (toString (relatedPerson new)))
-      else
-        Nothing
+    newProp = toProperty new
+    oldProp = toProperty old
   in
-    List.filterMap
-      identity
-      [ nameChange
-      , sizeChange
-      , bgColorChange
-      , colorChange
-      , fontSizeChange
-      , shapeChange
-      , relatedPersonChange
-      ]
+    if newProp /= oldProp then
+      Just (f newProp oldProp)
+    else
+      Nothing
 
+
+diffObjectProperty : Object -> Object -> List ObjectPropertyChange
+diffObjectProperty new old =
+  List.filterMap
+    identity
+    [ objectPropertyChange Name Object.nameOf new old
+    , objectPropertyChange Size Object.sizeOf new old
+    , objectPropertyChange Position Object.positionOf new old
+    , objectPropertyChange BackgroundColor Object.backgroundColorOf new old
+    , objectPropertyChange Color Object.colorOf new old
+    , objectPropertyChange FontSize Object.fontSizeOf new old
+    , objectPropertyChange Shape Object.shapeOf new old
+    , objectPropertyChange Person Object.relatedPerson new old
+    ]
 
 
 --
