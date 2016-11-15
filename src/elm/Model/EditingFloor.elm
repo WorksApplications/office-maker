@@ -54,7 +54,7 @@ updateObjects f efloor =
       f floor
 
     objectsChange =
-      FloorDiff.diffObjects (Floor.objects newFloor) (Floor.objects floor)
+      FloorDiff.diffObjects newFloor.objects floor.objects
         |> ObjectsChange.simplify
 
     changed =

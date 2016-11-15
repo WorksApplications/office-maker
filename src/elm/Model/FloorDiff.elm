@@ -20,18 +20,10 @@ type alias PropChanges =
 
 
 diff : Floor -> Maybe Floor -> (PropChanges, DetailedObjectsChange)
-diff current prev =
-  let
-    newObjects =
-      Floor.objects current
-
-    oldObjects =
-      Maybe.withDefault [] <| Maybe.map Floor.objects prev
-
-  in
-    ( diffPropertyChanges current prev
-    , diffObjects newObjects oldObjects
-    )
+diff new old =
+  ( diffPropertyChanges new old
+  , diffObjects new.objects ( Maybe.withDefault Dict.empty (Maybe.map .objects old))
+  )
 
 
 diffPropertyChanges : Floor -> Maybe Floor -> List (String, String, String)
@@ -40,6 +32,7 @@ diffPropertyChanges current prev =
     Just prev ->
       propertyChangesHelp current prev
 
+    -- FIXME completely wrong
     Nothing ->
       (if Floor.name current /= "" then [ ("Name", Floor.name current, "") ] else []) ++
       (case current.realSize of
@@ -90,35 +83,18 @@ propertyChangesHelp current prev =
     nameChange ++ ordChange ++ sizeChange ++ imageChange
 
 
-diffObjects : List Object -> List Object -> DetailedObjectsChange
+diffObjects : Dict ObjectId Object -> Dict ObjectId Object -> DetailedObjectsChange
 diffObjects newObjects oldObjects =
-  let
-    oldDict =
-      Dict.fromList (List.map (\obj -> (idOf obj, obj)) oldObjects)
-
-    f new (dict, add, modify) =
-      case Dict.get (idOf new) dict of
-        Just old ->
-          ( Dict.remove (idOf new) dict, add,
-            case diffObject new old of
-              [] -> modify
-              list -> { new = new, old = old, changes = list } :: modify
-          )
-
-        Nothing ->
-          (dict, new :: add, modify)
-
-    (ramainingOldDict, added, modified) =
-      List.foldl f (oldDict, [], []) newObjects
-
-    deleted =
-      Dict.values ramainingOldDict
-  in
-    ( List.map (\object -> (Object.idOf object, ObjectsChange.Added object)) added ++
-      List.map (\mod -> (Object.idOf mod.new, ObjectsChange.Modified mod)) modified ++
-      List.map (\object -> (Object.idOf object, ObjectsChange.Deleted object)) deleted
-    )
-      |> Dict.fromList
+  Dict.merge
+    (\id new dict -> Dict.insert id (ObjectsChange.Added new) dict)
+    (\id new old dict ->
+      case diffObject new old of
+        [] -> dict
+        list -> Dict.insert id (ObjectsChange.Modified { new = new, old = old, changes = list }) dict)
+    (\id old dict -> Dict.insert id (ObjectsChange.Deleted old) dict)
+    newObjects
+    oldObjects
+    Dict.empty
 
 
 -- TODO separate model and view
