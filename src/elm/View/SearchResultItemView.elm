@@ -23,7 +23,7 @@ type alias FloorName = String
 
 type Item
   = Post PostName
-  | Object ObjectId ObjectName FloorId FloorName (Maybe PersonName) Time Bool
+  | Object ObjectId ObjectName FloorId FloorName (Maybe (PersonId, PersonName)) Time Bool
   | MissingPerson PersonId PersonName
 
 
@@ -35,7 +35,7 @@ view currentFloorId onSelect onStartDragMissing onStartDragExisting lang item =
       itemViewCommon postIcon <|
         div [] [ itemViewLabel (Just onSelect) False postName ]
 
-    Object objectId _ floorId floorName (Just personName) updateAt focused ->
+    Object objectId _ floorId floorName (Just (personId, personName)) updateAt focused ->
       let
         wrap =
           case onStartDragExisting of
@@ -43,7 +43,7 @@ view currentFloorId onSelect onStartDragMissing onStartDragExisting lang item =
               if currentFloorId == Just floorId then
                 identity
               else
-                wrapForDrag (onStartDragExisting objectId personName (Just personName) floorId updateAt)
+                wrapForDrag (onStartDragExisting objectId personName (Just personId) floorId updateAt)
 
             Nothing ->
               identity

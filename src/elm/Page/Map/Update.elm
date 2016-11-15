@@ -1593,12 +1593,19 @@ updateOnMouseUp model =
                   model.searchResult
                     |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (Floor.objects <| EditingFloor.present newFloor))
                     |> Maybe.map (SearchResult.moveObject oldFloorId newObjects)
+
+                registerPersonCmd =
+                  newObjects
+                    |> List.filterMap Object.relatedPerson
+                    |> List.head
+                    |> Maybe.map (\personId -> getAndCachePersonIfNotCached personId model)
+                    |> Maybe.withDefault Cmd.none
               in
                 { model
                   | seed = newSeed
                   , floor = Just newFloor
                   , searchResult = searchResult
-                } ! [ saveCmd ]
+                } ! [ saveCmd, registerPersonCmd ]
 
             _ ->
               model ! []

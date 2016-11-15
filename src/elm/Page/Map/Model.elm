@@ -37,6 +37,9 @@ import Component.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Component.Header as Header
 
 
+type alias ObjectId = String
+
+
 type alias Model =
   { apiConfig : API.Config
   , title : String
@@ -95,7 +98,7 @@ type DraggingContext
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
   | MoveFromSearchResult Prototype String
-  | MoveExistingObjectFromSearchResult Id Time Prototype Id
+  | MoveExistingObjectFromSearchResult FloorId Time Prototype ObjectId
 
 
 type Tab =
@@ -354,6 +357,8 @@ getPositionedPrototype model =
 
       (_, MoveExistingObjectFromSearchResult floorId _ prototype _) ->
         let
+          _ = Debug.log "prototype" prototype
+          
           (left, top) =
             fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in
