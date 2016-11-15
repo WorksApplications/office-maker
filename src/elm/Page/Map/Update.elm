@@ -1429,36 +1429,34 @@ update removeToken setSelectionStart msg model =
       } ! []
 
     Undo ->
-      model ! [] -- FIXME
-      -- case model.floor of
-      --   Nothing ->
-      --     model ! []
-      --
-      --   Just floor ->
-      --     let
-      --       newFloor =
-      --         EditingFloor.undo floor
-      --
-      --       saveCmd =
-      --         requestSaveFloorCmd newFloor floor
-      --     in
-      --       { model | floor = Just newFloor } ! [ saveCmd ]
+      case model.floor of
+        Nothing ->
+          model ! []
+
+        Just floor ->
+          let
+            (newFloor, objectsChange) =
+              EditingFloor.undo floor
+
+            saveCmd =
+              requestSaveObjectsCmd objectsChange
+          in
+            { model | floor = Just newFloor } ! [ saveCmd ]
 
     Redo ->
-      model ! [] -- FIXME
-      -- case model.floor of
-      --   Nothing ->
-      --     model ! []
-      --
-      --   Just floor ->
-      --     let
-      --       newFloor =
-      --         EditingFloor.redo floor
-      --
-      --       saveCmd =
-      --         requestSaveFloorCmd newFloor floor
-      --     in
-      --       { model | floor = Just newFloor } ! [ saveCmd ]
+      case model.floor of
+        Nothing ->
+          model ! []
+
+        Just floor ->
+          let
+            (newFloor, objectsChange) =
+              EditingFloor.redo floor
+
+            saveCmd =
+              requestSaveObjectsCmd objectsChange
+          in
+            { model | floor = Just newFloor } ! [ saveCmd ]
 
     Focused ->
       model ! [ setSelectionStart {} ]

@@ -1,4 +1,4 @@
-module Util.UndoList exposing (UndoList, init, undo, redo, new)
+module Util.UndoList exposing (UndoList, init, undo, undoReplace, redo, redoReplace, new)
 
 
 type alias UndoList a =
@@ -17,37 +17,73 @@ init data =
 
 
 undo : UndoList a -> UndoList a
-undo model =
-  case model.past of
+undo undoList =
+  case undoList.past of
     x :: xs ->
-      { model |
+      { undoList |
         past = xs
       , present = x
-      , future = model.present :: model.future
+      , future = undoList.present :: undoList.future
       }
 
     _ ->
-      model
+      undoList
+
+
+undoReplace : b -> (a -> a -> (a, b)) -> UndoList a -> (UndoList a, b)
+undoReplace default f undoList =
+  case undoList.past of
+    x :: xs ->
+      let
+        (newPresent, b) =
+          f x undoList.present
+      in
+        ({ undoList |
+          past = xs
+        , present = newPresent
+        , future = undoList.present :: undoList.future
+        }, b)
+
+    _ ->
+      (undoList, default)
 
 
 redo : UndoList a -> UndoList a
-redo model =
-  case model.future of
+redo undoList =
+  case undoList.future of
     x :: xs ->
-      { model |
-        past = model.present :: model.past
+      { undoList |
+        past = undoList.present :: undoList.past
       , present = x
       , future = xs
       }
 
     _ ->
-      model
+      undoList
+
+
+redoReplace : b -> (a -> a -> (a, b)) -> UndoList a -> (UndoList a, b)
+redoReplace default f undoList =
+  case undoList.future of
+    x :: xs ->
+      let
+        (newPresent, b) =
+          f x undoList.present
+      in
+        ({ undoList |
+          past = undoList.present :: undoList.past
+        , present = newPresent
+        , future = xs
+        }, b)
+
+    _ ->
+      (undoList, default)
 
 
 new : a -> UndoList a -> UndoList a
-new a model =
-  { model |
-    past = model.present :: model.past
+new a undoList =
+  { undoList |
+    past = undoList.present :: undoList.past
   , present = a
   , future = []
   }

@@ -84,14 +84,46 @@ syncObjects change efloor =
     { efloor | undoList = newUndoList }
 
 
-undo : EditingFloor -> EditingFloor
+undo : EditingFloor -> (EditingFloor, ObjectsChange)
 undo efloor =
-  { efloor | undoList = UndoList.undo efloor.undoList }
+  let
+    (undoList, objectsChange) =
+      UndoList.undoReplace
+        ObjectsChange.empty
+        (\prev current ->
+          let
+            objectsChange =
+              FloorDiff.diffObjects prev.objects current.objects
+                |> ObjectsChange.simplify
+          in
+            ( Floor.changeObjectsByChanges objectsChange prev
+            , objectsChange
+            )
+        )
+        efloor.undoList
+  in
+    ({ efloor | undoList = undoList }, objectsChange)
 
 
-redo : EditingFloor -> EditingFloor
+redo : EditingFloor -> (EditingFloor, ObjectsChange)
 redo efloor =
-  { efloor | undoList = UndoList.redo efloor.undoList }
+  let
+    (undoList, objectsChange) =
+      UndoList.redoReplace
+        ObjectsChange.empty
+        (\next current ->
+          let
+            objectsChange =
+              FloorDiff.diffObjects next.objects current.objects
+                |> ObjectsChange.simplify
+          in
+            ( Floor.changeObjectsByChanges objectsChange next
+            , objectsChange
+            )
+        )
+        efloor.undoList
+  in
+    ({ efloor | undoList = undoList }, objectsChange)
 
 
 present : EditingFloor -> Floor
