@@ -1,5 +1,6 @@
 module View.SearchResultItemView exposing (Item(..), view)
 
+import Time exposing (Time)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -22,11 +23,11 @@ type alias FloorName = String
 
 type Item
   = Post PostName
-  | Object ObjectId ObjectName FloorId FloorName (Maybe PersonName) Bool
+  | Object ObjectId ObjectName FloorId FloorName (Maybe PersonName) Time Bool
   | MissingPerson PersonId PersonName
 
 
-view : Maybe FloorId -> msg -> Maybe (PersonId -> PersonName -> msg) -> Maybe (ObjectId -> String -> (Maybe PersonId) -> FloorId -> msg) -> Language -> Item -> Html msg
+view : Maybe FloorId -> msg -> Maybe (PersonId -> PersonName -> msg) -> Maybe (ObjectId -> String -> (Maybe PersonId) -> FloorId -> Time -> msg) -> Language -> Item -> Html msg
 view currentFloorId onSelect onStartDragMissing onStartDragExisting lang item =
   case item of
     Post postName ->
@@ -34,7 +35,7 @@ view currentFloorId onSelect onStartDragMissing onStartDragExisting lang item =
       itemViewCommon postIcon <|
         div [] [ itemViewLabel (Just onSelect) False postName ]
 
-    Object objectId _ floorId floorName (Just personName) focused ->
+    Object objectId _ floorId floorName (Just personName) updateAt focused ->
       let
         wrap =
           case onStartDragExisting of
@@ -42,7 +43,7 @@ view currentFloorId onSelect onStartDragMissing onStartDragExisting lang item =
               if currentFloorId == Just floorId then
                 identity
               else
-                wrapForDrag (onStartDragExisting objectId personName (Just personName) floorId)
+                wrapForDrag (onStartDragExisting objectId personName (Just personName) floorId updateAt)
 
             Nothing ->
               identity
@@ -51,12 +52,12 @@ view currentFloorId onSelect onStartDragMissing onStartDragExisting lang item =
         itemViewCommon personIcon <|
           div [] [ itemViewLabel (Just onSelect) focused (personName ++ "(" ++ floorName ++ ")") ]
 
-    Object objectId objectName floorId floorName Nothing focused ->
+    Object objectId objectName floorId floorName Nothing updateAt focused ->
       let
         wrap =
           case onStartDragExisting of
             Just onStartDragExisting ->
-              wrapForDrag (onStartDragExisting objectId objectName Nothing floorId)
+              wrapForDrag (onStartDragExisting objectId objectName Nothing floorId updateAt)
 
             Nothing ->
               identity

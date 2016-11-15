@@ -82,6 +82,11 @@ copyUpdateAt (Object old) (Object new) =
   Object { new | updateAt = old.updateAt }
 
 
+setUpdateAt : Time -> Object -> Object
+setUpdateAt updateAt (Object object) =
+  Object { object | updateAt = Just updateAt }
+
+
 isDesk : Object -> Bool
 isDesk (Object object) =
   case object.extension of

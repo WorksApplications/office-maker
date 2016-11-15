@@ -1242,7 +1242,7 @@ update removeToken setSelectionStart msg model =
               personId
         } ! []
 
-    StartDraggingFromExistingObject objectId name personId floorId ->
+    StartDraggingFromExistingObject objectId name personId floorId updateAt ->
       let
         prototype =
           Prototypes.selectedPrototype model.prototypes
@@ -1252,6 +1252,7 @@ update removeToken setSelectionStart msg model =
         , draggingContext =
             MoveExistingObjectFromSearchResult
               floorId
+              updateAt
               { prototype
               | name = name
               , personId = personId
@@ -1566,16 +1567,20 @@ updateOnMouseUp model =
         MoveFromSearchResult prototype personId ->
           updateOnFinishStamp model
 
-        MoveExistingObjectFromSearchResult oldFloorId _ objectId ->
+        MoveExistingObjectFromSearchResult oldFloorId updateAt _ objectId ->
           case model.floor of
             Just editingFloor ->
               let
-                (newSeed, newFloor, newObjects, _) =
+                (newSeed, newFloor, newObjects_, _) =
                   updateOnFinishStampWithoutEffects
                     (Just objectId)
                     (Model.getPositionedPrototype model)
                     model
                     editingFloor
+
+                -- currently, only one desk is made
+                newObjects =
+                  List.map (Object.setUpdateAt updateAt) newObjects_
 
                 objectsChange =
                   ObjectsChange.modified

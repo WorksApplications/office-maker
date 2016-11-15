@@ -95,7 +95,7 @@ type DraggingContext
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
   | MoveFromSearchResult Prototype String
-  | MoveExistingObjectFromSearchResult Id Prototype Id
+  | MoveExistingObjectFromSearchResult Id Time Prototype Id
 
 
 type Tab =
@@ -352,7 +352,7 @@ getPositionedPrototype model =
         in
           [ (prototype, (left, top)) ]
 
-      (_, MoveExistingObjectFromSearchResult floorId prototype _) ->
+      (_, MoveExistingObjectFromSearchResult floorId _ prototype _) ->
         let
           (left, top) =
             fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)

@@ -123,11 +123,11 @@ toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> May
 toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
   case result of
     SearchResult.Object object floorId ->
-      case Dict.get floorId floorsInfo of
-        Just info ->
+      case (Dict.get floorId floorsInfo, Object.updateAtOf object) of
+        (Just info, Just updateAt) ->
           let
             objectIsFocused =
-              Just (idOf object) == currentlyFocusedObjectId
+              Just (Object.idOf object) == currentlyFocusedObjectId
 
             maybePersonName =
               Object.relatedPerson object
@@ -136,11 +136,12 @@ toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
           in
             Just <|
               SearchResultItemView.Object
-                (idOf object)
-                (nameOf object)
+                (Object.idOf object)
+                (Object.nameOf object)
                 floorId
                 info.name
                 maybePersonName
+                updateAt
                 objectIsFocused
 
         _ ->
