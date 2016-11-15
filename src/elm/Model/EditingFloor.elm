@@ -8,20 +8,18 @@ import Util.UndoList as UndoList exposing (UndoList)
 
 
 type alias EditingFloor =
-  { version : Int
-  , undoList : UndoList Floor
+  { undoList : UndoList Floor
   }
 
 
 init : Floor -> EditingFloor
 init floor =
-  { version = floor.version
-  , undoList = UndoList.init floor
+  { undoList = UndoList.init floor
   }
 
 
-update : (Floor -> Floor) -> EditingFloor -> EditingFloor
-update f efloor =
+updateFloor : (Floor -> Floor) -> EditingFloor -> (EditingFloor, Floor)
+updateFloor f efloor =
   let
     floor =
       efloor.undoList.present
@@ -29,11 +27,11 @@ update f efloor =
     newFloor =
       f floor
 
-    (propChanged, objectsChange) =
-      FloorDiff.diff newFloor (Just floor)
+    propChanged =
+      FloorDiff.diffPropertyChanges newFloor (Just floor)
 
     changed =
-      propChanged /= [] || objectsChange /= ObjectsChange.empty
+      propChanged /= []
 
     newUndoList =
       if changed then
@@ -41,26 +39,94 @@ update f efloor =
       else
         efloor.undoList
   in
+    ( { efloor | undoList = newUndoList }
+    , newFloor
+    )
+
+
+updateObjects : (Floor -> Floor) -> EditingFloor -> (EditingFloor, ObjectsChange)
+updateObjects f efloor =
+  let
+    floor =
+      efloor.undoList.present
+
+    newFloor =
+      f floor
+
+    objectsChange =
+      FloorDiff.diffObjects newFloor.objects floor.objects
+        |> ObjectsChange.simplify
+
+    changed =
+      not <| ObjectsChange.isEmpty objectsChange
+
+    newUndoList =
+      if changed then
+        UndoList.new newFloor efloor.undoList
+      else
+        efloor.undoList
+  in
+    ({ efloor | undoList = newUndoList }, objectsChange)
+
+
+syncObjects : ObjectsChange -> EditingFloor -> EditingFloor
+syncObjects change efloor =
+  let
+    undoList =
+      efloor.undoList
+
+    separated =
+      ObjectsChange.separate change
+
+    -- Unsafe operation!
+    newUndoList =
+      { undoList
+      | present = Floor.addObjects (separated.added ++ separated.modified) undoList.present
+      }
+  in
     { efloor | undoList = newUndoList }
 
 
-undo : EditingFloor -> EditingFloor
+undo : EditingFloor -> (EditingFloor, ObjectsChange)
 undo efloor =
-  { efloor | undoList = UndoList.undo efloor.undoList }
+  let
+    (undoList, objectsChange) =
+      UndoList.undoReplace
+        ObjectsChange.empty
+        (\prev current ->
+          let
+            objectsChange =
+              FloorDiff.diffObjects prev.objects current.objects
+          in
+            ( Floor.changeObjectsByChanges objectsChange current
+            , objectsChange |> ObjectsChange.simplify
+            )
+        )
+        efloor.undoList
+  in
+    ({ efloor | undoList = undoList }, objectsChange)
 
 
-redo : EditingFloor -> EditingFloor
+redo : EditingFloor -> (EditingFloor, ObjectsChange)
 redo efloor =
-  { efloor | undoList = UndoList.redo efloor.undoList }
+  let
+    (undoList, objectsChange) =
+      UndoList.redoReplace
+        ObjectsChange.empty
+        (\next current ->
+          let
+            objectsChange =
+              FloorDiff.diffObjects next.objects current.objects
+          in
+            ( Floor.changeObjectsByChanges objectsChange current
+            , objectsChange |> ObjectsChange.simplify
+            )
+        )
+        efloor.undoList
+  in
+    ({ efloor | undoList = undoList }, objectsChange)
 
 
 present : EditingFloor -> Floor
 present efloor =
   efloor.undoList.present
-
-
-changeFloorAfterSave : Floor -> EditingFloor -> EditingFloor
-changeFloorAfterSave newFloor efloor =
-  { efloor |
-    version = newFloor.version
-  }

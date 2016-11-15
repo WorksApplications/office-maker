@@ -1,8 +1,9 @@
 module API.API exposing (
       getAuth
     , search
-    , saveEditingFloor
-    , publishEditingFloor
+    , saveFloor
+    , saveObjects
+    , publishFloor
     , deleteEditingFloor
     , getEditingFloor
     , getFloor
@@ -34,7 +35,7 @@ import Task exposing (Task)
 import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
-import Model.Floor as Floor exposing (Floor)
+import Model.Floor as Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
@@ -57,19 +58,26 @@ type alias Config =
   }
 
 
--- createNewFloor : Task Error Int
+saveObjects : Config -> ObjectsChange -> Task Error ObjectsChange
+saveObjects config change =
+  patchJson
+    decodeObjectsChange
+    (config.apiRoot ++ "/1/objects")
+    (authorization config.token)
+    (Http.string <| serializeObjectsChange change)
 
-saveEditingFloor : Config -> Floor -> ObjectsChange -> Task Error Floor
-saveEditingFloor config floor change =
+
+saveFloor : Config -> Floor -> Task Error FloorBase
+saveFloor config floor =
   putJson
-    decodeFloor
+    decodeFloorBase
     (config.apiRoot ++ "/1/floors/" ++ floor.id)
     (authorization config.token)
-    (Http.string <| serializeFloor floor change)
+    (Http.string <| serializeFloor floor)
 
 
-publishEditingFloor : Config -> String -> Task Error Floor
-publishEditingFloor config id =
+publishFloor : Config -> String -> Task Error Floor
+publishFloor config id =
   putJson
     decodeFloor
     (config.apiRoot ++ "/1/floors/" ++ id ++ "/public")

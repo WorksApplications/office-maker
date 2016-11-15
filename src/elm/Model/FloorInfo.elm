@@ -106,3 +106,26 @@ addNewFloor newFloor list =
 
       else
         head :: addNewFloor newFloor tail
+
+
+lastFloorOrder : List FloorInfo -> Int
+lastFloorOrder floorsInfo =
+  case List.drop (List.length floorsInfo - 1) floorsInfo of
+    [] ->
+      0
+
+    floorInfo :: _ ->
+      order floorInfo
+
+
+order : FloorInfo -> Int
+order floorInfo =
+  case floorInfo of
+    Public floor ->
+      floor.ord
+
+    PublicWithEdit publicFloor editingFloor ->
+      editingFloor.ord
+
+    Private floor ->
+      floor.ord

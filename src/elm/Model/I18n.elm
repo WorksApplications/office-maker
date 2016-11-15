@@ -67,6 +67,13 @@ copyFloor lang =
     EN -> "Copy floor"
 
 
+copyFloorWithEmptyDesks : Language -> String
+copyFloorWithEmptyDesks lang =
+  case lang of
+    JA -> "フロアと空の机を複製する"
+    EN -> "Copy floor and empty desks"
+
+
 ----
 
 pasteFromSpreadsheet : Language -> String

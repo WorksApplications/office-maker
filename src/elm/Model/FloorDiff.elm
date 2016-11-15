@@ -19,19 +19,11 @@ type alias PropChanges =
   List (String, String, String)
 
 
-diff : Floor -> Maybe Floor -> (PropChanges, ObjectsChange)
-diff current prev =
-  let
-    newObjects =
-      Floor.objects current
-
-    oldObjects =
-      Maybe.withDefault [] <| Maybe.map Floor.objects prev
-
-  in
-    ( diffPropertyChanges current prev
-    , diffObjects newObjects oldObjects
-    )
+diff : Floor -> Maybe Floor -> (PropChanges, DetailedObjectsChange)
+diff new old =
+  ( diffPropertyChanges new old
+  , diffObjects new.objects ( Maybe.withDefault Dict.empty (Maybe.map .objects old))
+  )
 
 
 diffPropertyChanges : Floor -> Maybe Floor -> List (String, String, String)
@@ -40,6 +32,7 @@ diffPropertyChanges current prev =
     Just prev ->
       propertyChangesHelp current prev
 
+    -- FIXME completely wrong
     Nothing ->
       (if Floor.name current /= "" then [ ("Name", Floor.name current, "") ] else []) ++
       (case current.realSize of
@@ -90,95 +83,45 @@ propertyChangesHelp current prev =
     nameChange ++ ordChange ++ sizeChange ++ imageChange
 
 
-diffObjects : List Object -> List Object -> ObjectsChange
+diffObjects : Dict ObjectId Object -> Dict ObjectId Object -> DetailedObjectsChange
 diffObjects newObjects oldObjects =
+  Dict.merge
+    (\id new dict -> Dict.insert id (ObjectsChange.Added new) dict)
+    (\id new old dict ->
+      case diffObjectProperty new old of
+        [] -> dict
+        list -> Dict.insert id (ObjectsChange.Modified { new = (Object.copyUpdateAt old new), old = old, changes = list }) dict)
+    (\id old dict -> Dict.insert id (ObjectsChange.Deleted old) dict)
+    newObjects
+    oldObjects
+    Dict.empty
+
+
+objectPropertyChange : (a -> a -> b) -> (Object -> a) -> Object -> Object -> Maybe b
+objectPropertyChange f toProperty new old =
   let
-    -- _ = Debug.log "newObjects oldObjects" (newObjects, oldObjects)
-
-    oldDict =
-      Dict.fromList (List.map (\obj -> (idOf obj, obj)) oldObjects)
-
-    f new (dict, add, modify) =
-      case Dict.get (idOf new) dict of
-        Just old ->
-          ( Dict.remove (idOf new) dict, add,
-            case diffObject new old of
-              [] -> modify
-              list -> { new = new, old = old, changes = list } :: modify
-          )
-
-        Nothing ->
-          (dict, new :: add, modify)
-
-    (ramainingOldDict, add, modify) =
-      List.foldl f (oldDict, [], []) newObjects
-
-    delete =
-      Dict.values ramainingOldDict
+    newProp = toProperty new
+    oldProp = toProperty old
   in
-    { added = add
-    , modified = modify
-    , deleted = delete
-    }
+    if newProp /= oldProp then
+      Just (f newProp oldProp)
+    else
+      Nothing
 
 
--- TODO separate model and view
-diffObject : Object -> Object -> List String
-diffObject new old =
-  let
-    nameChange =
-      if nameOf new /= nameOf old then
-        Just ("name chaged: " ++ nameOf old ++ " -> " ++ nameOf new)
-      else
-        Nothing
-
-    sizeChange =
-      if rect new /= rect old then
-        Just ("position/size chaged: " ++ toString (rect old) ++ " -> " ++ toString (rect new))
-      else
-        Nothing
-
-    bgColorChange =
-      if backgroundColorOf new /= backgroundColorOf old then
-        Just ("background color chaged: " ++ backgroundColorOf old ++ " -> " ++ backgroundColorOf new)
-      else
-        Nothing
-
-    colorChange =
-      if colorOf new /= colorOf old then
-        Just ("color chaged: " ++ colorOf old ++ " -> " ++ colorOf new)
-      else
-        Nothing
-
-    fontSizeChange =
-      if fontSizeOf new /= fontSizeOf old then
-        Just ("font size chaged: " ++ (toString (fontSizeOf old)) ++ " -> " ++ (toString (fontSizeOf new)))
-      else
-        Nothing
-
-    shapeChange =
-      if shapeOf new /= shapeOf old then
-        Just ("shape chaged: " ++ (toString (shapeOf old)) ++ " -> " ++ (toString (shapeOf new)))
-      else
-        Nothing
-
-    relatedPersonChange =
-      if relatedPerson new /= relatedPerson old then
-        Just ("person chaged: " ++ (toString (relatedPerson old)) ++ " -> " ++ (toString (relatedPerson new)))
-      else
-        Nothing
-  in
-    List.filterMap
-      identity
-      [ nameChange
-      , sizeChange
-      , bgColorChange
-      , colorChange
-      , fontSizeChange
-      , shapeChange
-      , relatedPersonChange
-      ]
-
+diffObjectProperty : Object -> Object -> List ObjectPropertyChange
+diffObjectProperty new old =
+  List.filterMap
+    identity
+    [ objectPropertyChange Name Object.nameOf new old
+    , objectPropertyChange Size Object.sizeOf new old
+    , objectPropertyChange Position Object.positionOf new old
+    , objectPropertyChange BackgroundColor Object.backgroundColorOf new old
+    , objectPropertyChange Color Object.colorOf new old
+    , objectPropertyChange FontSize Object.fontSizeOf new old
+    , objectPropertyChange Shape Object.shapeOf new old
+    , objectPropertyChange Person Object.relatedPerson new old
+    ]
 
 
 --

@@ -6,9 +6,9 @@ import Html exposing (..)
 
 import View.ContextMenu as ContextMenu
 import Model.Object as Object
-import Model.ObjectsOperation as ObjectsOperation
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n
+import Model.Floor as Floor
 
 import Page.Map.Msg exposing (..)
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
@@ -23,7 +23,7 @@ view model =
       let
         itemsForPerson =
           model.floor `Maybe.andThen` \eFloor ->
-          ObjectsOperation.findObjectById (EditingFloor.present eFloor).objects id `Maybe.andThen` \obj ->
+          Floor.getObject id (EditingFloor.present eFloor) `Maybe.andThen` \obj ->
           Object.relatedPerson obj `Maybe.andThen` \personId ->
           Dict.get personId model.personInfo `Maybe.andThen` \person ->
             Just <|
@@ -52,9 +52,14 @@ view model =
       in
         ContextMenu.view items model.windowSize (x, y)
 
-    FloorInfo (x, y) id ->
-      let
-        items =
-          [(CopyFloor id, I18n.copyFloor model.lang, Nothing)]
-      in
-        ContextMenu.view items model.windowSize (x, y)
+    FloorInfo (x, y) floorId ->
+      if Maybe.map (\efloor -> (EditingFloor.present efloor).id) model.floor == Just floorId then
+        let
+          items =
+            [ (CopyFloor floorId False, I18n.copyFloor model.lang, Nothing)
+            -- , (CopyFloor floorId True, I18n.copyFloorWithEmptyDesks model.lang, Nothing)
+            ]
+        in
+          ContextMenu.view items model.windowSize (x, y)
+      else
+        text ""

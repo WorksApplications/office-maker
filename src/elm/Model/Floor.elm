@@ -1,16 +1,21 @@
 module Model.Floor exposing (..)
 
 import String
+import Dict exposing (Dict)
 import Regex
 import Date exposing (Date)
 import Model.Object as Object exposing (Object)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
+import Model.ObjectsChange as ObjectsChange exposing (DetailedObjectsChange, ObjectModification)
 
-type alias Id = String
+
+type alias ObjectId = String
+type alias PersonId = String
+type alias FloorId = String
 
 
 type alias FloorBase =
-  { id : Id
+  { id : FloorId
   , version : Int
   , name : String
   , ord : Int
@@ -24,21 +29,21 @@ type alias Detailed a =
   , height : Int
   , realSize : Maybe (Int, Int)
   , image : Maybe String
-  , update : Maybe { by : Id, at : Date }
-  , objects: List Object
+  , update : Maybe { by : PersonId, at : Date }
+  , objects: Dict ObjectId Object
   }
 
 
 type alias Floor = Detailed FloorBase
 
 
-init : Id -> Floor
+init : FloorId -> Floor
 init id =
   { id = id
   , version = 0
   , name = "New Floor"
   , ord = 0
-  , objects = []
+  , objects = Dict.empty
   , width = 800
   , height = 600
   , realSize = Nothing
@@ -57,7 +62,7 @@ baseOf { id, version, name, ord, public } =
   FloorBase id version name ord public
 
 
-initWithOrder : Id -> Int -> Floor
+initWithOrder : FloorId -> Int -> Floor
 initWithOrder id ord =
   let
     floor = init id
@@ -65,118 +70,6 @@ initWithOrder id ord =
     { floor |
       ord = ord
     }
-
-
-copy : Id -> Floor -> Floor
-copy id floor =
-  { floor |
-    id = id
-  , version = 0
-  , name = "Copy of " ++ floor.name
-  , public = False
-  , update = Nothing
-  }
-
-
-move : List Id -> Int -> (Int, Int) -> Floor -> Floor
-move ids gridSize (dx, dy) floor =
-  setObjects
-    (moveObjects gridSize (dx, dy) ids (objects floor))
-    floor
-
-
-overrideObject : Int -> Object -> Floor -> Floor
-overrideObject gridSize newObject floor =
-  let
-    remainingObjects =
-      List.filter (\object -> (Object.idOf object) /= (Object.idOf newObject)) (objects floor)
-  in
-    setObjects ( remainingObjects ++ [ newObject ] ) floor
-
-
-paste : List (Object, Id) -> (Int, Int) -> Floor -> Floor
-paste copiedWithNewIds (baseX, baseY) floor =
-  setObjects
-    (floor.objects ++ (pasteObjects (baseX, baseY) copiedWithNewIds (objects floor)))
-    floor
-
-
-delete : List Id -> Floor -> Floor
-delete ids floor =
-  setObjects
-    (List.filter (\object -> not (List.member (Object.idOf object) ids)) (objects floor))
-    floor
-
-
-rotateObject : Id -> Floor -> Floor
-rotateObject id floor =
-  changeObjects (Object.rotate) [id] floor
-
-
-changeId : Id -> Floor -> Floor
-changeId id floor =
-  { floor | id = id }
-
-
-changeObjectColor : List Id -> String -> Floor -> Floor
-changeObjectColor ids color floor =
-  changeObjects (Object.changeColor color) ids floor
-
-
-changeObjectBackgroundColor : List Id -> String -> Floor -> Floor
-changeObjectBackgroundColor ids color floor =
-  changeObjects (Object.changeBackgroundColor color) ids floor
-
-
-changeObjectShape : List Id -> Object.Shape -> Floor -> Floor
-changeObjectShape ids shape floor =
-  changeObjects (Object.changeShape shape) ids floor
-
-
-changeObjectName : List Id -> String -> Floor -> Floor
-changeObjectName ids name floor =
-  changeObjects (Object.changeName name) ids floor
-
-
-changeObjectFontSize : List Id -> Float -> Floor -> Floor
-changeObjectFontSize ids fontSize floor =
-  changeObjects (Object.changeFontSize fontSize) ids floor
-
-
-changeObjects : (Object -> Object) -> List Id -> Floor -> Floor
-changeObjects f ids floor =
-  setObjects (partiallyChange f ids (objects floor)) floor
-
-
-toFirstNameOnly : List Id -> Floor -> Floor
-toFirstNameOnly ids floor =
-  let
-    change name =
-      case String.words name of
-        [] -> ""
-        x :: _ -> x
-
-    newObjects =
-      partiallyChange (\e -> (flip Object.changeName) e <| change <| Object.nameOf e) ids (objects floor)
-  in
-    setObjects newObjects floor
-
-
-removeSpaces : List Id -> Floor -> Floor
-removeSpaces ids floor =
-  let
-    change name =
-      (Regex.replace Regex.All (Regex.regex "[ \r\n　]") (\_ -> "")) name
-
-    newObjects =
-      partiallyChange (\e -> (flip Object.changeName) e <| change <| Object.nameOf e) ids (objects floor)
-  in
-    setObjects newObjects floor
-
-
-resizeObject : Id -> (Int, Int) -> Floor -> Floor
-resizeObject id size floor =
-  changeObjects (Object.changeSize size) [id] floor
 
 
 changeName : String -> Floor -> Floor
@@ -203,28 +96,6 @@ changeRealSize (width, height) floor =
   { floor |
     realSize = Just (width, height)
   }
-
-
-setPerson : String -> String -> Floor -> Floor
-setPerson objectId personId floor =
-  changeObjects (Object.setPerson (Just personId)) [objectId] floor
-
-
-setPeople : List (String, String) -> Floor -> Floor
-setPeople pairs floor =
-  let
-    f (objectId, personId) objects =
-      partiallyChange (Object.setPerson (Just personId)) [objectId] objects
-
-    newObjects =
-      List.foldl f (objects floor) pairs
-  in
-    setObjects newObjects floor
-
-
-unsetPerson : String -> Floor -> Floor
-unsetPerson objectId floor =
-  changeObjects (Object.setPerson Nothing) [objectId] floor
 
 
 {- 10cm -> 8px -}
@@ -265,25 +136,234 @@ realSize floor =
     Nothing -> (pixelToReal floor.width, pixelToReal floor.height)
 
 
-objects : Floor -> List Object
-objects floor =
-  floor.objects
-
-
-setObjects : List Object -> Floor -> Floor
-setObjects objects floor =
-  { floor |
-    objects = objects
-  }
-
-
-addObjects : List Object -> Floor -> Floor
-addObjects objects floor =
-  setObjects (floor.objects ++ objects) floor
-
-
 src : Floor -> Maybe String
 src floor =
   case floor.image of
     Just src -> Just ("/images/floors/" ++ src)
     Nothing -> Nothing
+
+
+changeId : FloorId -> Floor -> Floor
+changeId id floor =
+  { floor | id = id }
+
+
+copy : Bool -> FloorId -> Floor -> Floor
+copy withEmptyObjects id floor =
+  { floor |
+    id = id
+  , version = 0
+  , name = "Copy of " ++ floor.name
+  , public = False
+  , update = Nothing
+  , objects = if withEmptyObjects then Dict.empty else Dict.empty -- TODO
+  }
+
+
+-- OBJECT OPERATIONS
+
+
+move : List ObjectId -> Int -> (Int, Int) -> Floor -> Floor
+move ids gridSize (dx, dy) floor =
+  partiallyChangeObjects
+    (moveObjects gridSize (dx, dy))
+    ids
+    floor
+
+
+moveObjects : Int -> (Int, Int) -> Object -> Object
+moveObjects gridSize (dx, dy) object =
+  let
+    (x, y, _, _) =
+      Object.rect object
+
+    (newX, newY) =
+      fitPositionToGrid gridSize (x + dx, y + dy)
+  in
+    Object.move (newX, newY) object
+
+
+paste : List (Object, ObjectId) -> (Int, Int) -> Floor -> Floor
+paste copiedWithNewIds (baseX, baseY) floor =
+  addObjects
+    (pasteObjects floor.id (baseX, baseY) copiedWithNewIds)
+    floor
+
+
+rotateObject : ObjectId -> Floor -> Floor
+rotateObject id floor =
+  partiallyChangeObjects (Object.rotate) [id] floor
+
+
+changeObjectColor : List ObjectId -> String -> Floor -> Floor
+changeObjectColor ids color floor =
+  partiallyChangeObjects (Object.changeColor color) ids floor
+
+
+changeObjectBackgroundColor : List ObjectId -> String -> Floor -> Floor
+changeObjectBackgroundColor ids color floor =
+  partiallyChangeObjects (Object.changeBackgroundColor color) ids floor
+
+
+changeObjectShape : List ObjectId -> Object.Shape -> Floor -> Floor
+changeObjectShape ids shape floor =
+  partiallyChangeObjects (Object.changeShape shape) ids floor
+
+
+changeObjectName : List ObjectId -> String -> Floor -> Floor
+changeObjectName ids name floor =
+  partiallyChangeObjects (Object.changeName name) ids floor
+
+
+changeObjectFontSize : List ObjectId -> Float -> Floor -> Floor
+changeObjectFontSize ids fontSize floor =
+  partiallyChangeObjects (Object.changeFontSize fontSize) ids floor
+
+
+changeObjectsByChanges : DetailedObjectsChange -> Floor -> Floor
+changeObjectsByChanges change floor =
+  let
+    separated =
+      ObjectsChange.separate change
+  in
+    floor
+      |> addObjects separated.added
+      |> modifyObjects separated.modified
+      |> removeObjects (List.map Object.idOf separated.deleted)
+
+
+toFirstNameOnly : List ObjectId -> Floor -> Floor
+toFirstNameOnly ids floor =
+  let
+    change name =
+      case String.words name of
+        [] -> ""
+        x :: _ -> x
+
+    f object =
+      Object.changeName (change (Object.nameOf object)) object
+  in
+    partiallyChangeObjects f ids floor
+
+
+partiallyChangeObjects : (Object -> Object) -> List ObjectId -> Floor -> Floor
+partiallyChangeObjects f ids floor =
+  { floor
+    | objects =
+        ids
+          |> List.foldl
+              (\objectId dict -> Dict.update objectId (Maybe.map f) dict)
+              floor.objects
+  }
+
+
+removeSpaces : List ObjectId -> Floor -> Floor
+removeSpaces ids floor =
+  let
+    change name =
+      (Regex.replace Regex.All (Regex.regex "[ \r\n　]") (\_ -> "")) name
+
+    f object =
+      Object.changeName (change <| Object.nameOf object) object
+  in
+    partiallyChangeObjects f ids floor
+
+
+resizeObject : ObjectId -> (Int, Int) -> Floor -> Floor
+resizeObject id size floor =
+  partiallyChangeObjects (Object.changeSize size) [id] floor
+
+
+setPerson : ObjectId -> PersonId -> Floor -> Floor
+setPerson objectId personId floor =
+  setPeople [(objectId, personId)] floor
+
+
+unsetPerson : ObjectId -> Floor -> Floor
+unsetPerson objectId floor =
+  partiallyChangeObjects (Object.setPerson Nothing) [objectId] floor
+
+
+setPeople : List (ObjectId, PersonId) -> Floor -> Floor
+setPeople pairs floor =
+  let
+    f (objectId, personId) dict =
+      dict
+        |> Dict.update objectId (Maybe.map (Object.setPerson (Just personId)))
+
+    newObjects =
+      List.foldl f (floor.objects) pairs
+  in
+    { floor | objects = newObjects }
+
+
+objects : Floor -> List Object
+objects floor =
+  Dict.values floor.objects
+
+
+getObject : ObjectId -> Floor -> Maybe Object
+getObject objectId floor =
+  Dict.get objectId floor.objects
+
+
+getObjects : List ObjectId -> Floor -> List Object
+getObjects ids floor =
+  ids
+    |> List.filterMap (\id -> getObject id floor)
+
+
+setObjects : List Object -> Floor -> Floor
+setObjects objects floor =
+  { floor |
+    objects =
+      objectsDictFromList floor.id objects
+  }
+
+
+addObjects : List Object -> Floor -> Floor
+addObjects objects floor =
+  { floor |
+    objects =
+      objects
+        |> filterObjectsInFloor floor.id
+        |> List.foldl (\object -> Dict.insert (Object.idOf object) object) floor.objects
+  }
+
+
+modifyObjects : List ObjectModification -> Floor -> Floor
+modifyObjects list floor =
+  { floor |
+    objects =
+      list
+        |> List.foldl
+          (\mod dict ->
+            Dict.update
+              (Object.idOf mod.new)
+              (Maybe.map (Object.copyUpdateAt mod.old << Object.modifyAll mod.changes))
+              dict
+          )
+          floor.objects
+  }
+
+
+removeObjects : List ObjectId -> Floor -> Floor
+removeObjects objectIds floor =
+  { floor |
+    objects =
+      List.foldl Dict.remove floor.objects objectIds
+  }
+
+
+objectsDictFromList : FloorId -> List Object -> Dict ObjectId Object
+objectsDictFromList floorId objects =
+  objects
+    |> filterObjectsInFloor floorId
+    |> List.map (\object -> (Object.idOf object, object))
+    |> Dict.fromList
+
+
+filterObjectsInFloor : FloorId -> List Object -> List Object
+filterObjectsInFloor floorId objects =
+  objects
+    |> List.filter (\object -> Object.floorIdOf object == floorId)

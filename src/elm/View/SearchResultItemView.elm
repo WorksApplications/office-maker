@@ -15,31 +15,34 @@ type alias ObjectId = String
 type alias ObjectName = String
 type alias PersonId = String
 type alias PersonName = String
+type alias FloorId = String
 type alias FloorName = String
-
 
 -- View Model
 
 type Item
   = Post PostName
-  | Object ObjectId ObjectName FloorName (Maybe PersonName) Bool
+  | Object ObjectId ObjectName FloorId FloorName (Maybe PersonName) Bool
   | MissingPerson PersonId PersonName
 
 
-view : msg -> Maybe (PersonId -> PersonName -> msg) -> Maybe (ObjectId -> String -> (Maybe PersonId) -> msg) -> Language -> Item -> Html msg
-view onSelect onStartDragMissing onStartDragExisting lang item =
+view : Maybe FloorId -> msg -> Maybe (PersonId -> PersonName -> msg) -> Maybe (ObjectId -> String -> (Maybe PersonId) -> FloorId -> msg) -> Language -> Item -> Html msg
+view currentFloorId onSelect onStartDragMissing onStartDragExisting lang item =
   case item of
     Post postName ->
       wrapForNonDrag <|
       itemViewCommon postIcon <|
         div [] [ itemViewLabel (Just onSelect) False postName ]
 
-    Object objectId _ floorName (Just personName) focused ->
+    Object objectId _ floorId floorName (Just personName) focused ->
       let
         wrap =
           case onStartDragExisting of
             Just onStartDragExisting ->
-              wrapForDrag (onStartDragExisting objectId personName (Just personName))
+              if currentFloorId == Just floorId then
+                identity
+              else
+                wrapForDrag (onStartDragExisting objectId personName (Just personName) floorId)
 
             Nothing ->
               identity
@@ -48,12 +51,12 @@ view onSelect onStartDragMissing onStartDragExisting lang item =
         itemViewCommon personIcon <|
           div [] [ itemViewLabel (Just onSelect) focused (personName ++ "(" ++ floorName ++ ")") ]
 
-    Object objectId objectName floorName Nothing focused ->
+    Object objectId objectName floorId floorName Nothing focused ->
       let
         wrap =
           case onStartDragExisting of
             Just onStartDragExisting ->
-              wrapForDrag (onStartDragExisting objectId objectName Nothing)
+              wrapForDrag (onStartDragExisting objectId objectName Nothing floorId)
 
             Nothing ->
               identity

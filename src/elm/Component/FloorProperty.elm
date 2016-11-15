@@ -1,6 +1,7 @@
 module Component.FloorProperty exposing(..)
 
 import String
+import Dict
 import Date exposing (Date)
 import Maybe
 import Html exposing (..)
@@ -289,7 +290,7 @@ publishButtonView lang user =
 
 deleteButtonView : Language -> User -> Floor -> Html Msg
 deleteButtonView lang user floor =
-  if User.isAdmin user && List.isEmpty floor.objects then
+  if User.isAdmin user && Dict.isEmpty floor.objects then
     hover Styles.deleteFloorButtonHover
     button
       [ onClick' SelectDeleteFloor
@@ -335,4 +336,3 @@ view lang visitDate user floor model =
         "delete this floor?"
         model.deleteFloorDialog
     ]
-    

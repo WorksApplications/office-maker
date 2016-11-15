@@ -27,7 +27,7 @@ import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.EditMode as EditMode exposing (EditMode(..))
-import Model.SaveRequest as SaveRequest exposing (SaveRequest(..), SaveRequestOpt(..))
+import Model.SaveRequest as SaveRequest exposing (SaveRequest(..))
 
 import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
@@ -80,14 +80,14 @@ type alias Model =
   }
 
 
-type ContextMenu =
-    NoContextMenu
+type ContextMenu
+  = NoContextMenu
   | Object (Int, Int) Id
   | FloorInfo (Int, Int) Id
 
 
-type DraggingContext =
-    NoDragging
+type DraggingContext
+  = NoDragging
   | MoveObject Id (Int, Int)
   | Selector
   | ShiftOffset
@@ -95,11 +95,12 @@ type DraggingContext =
   | StampFromScreenPos (Int, Int)
   | ResizeFromScreenPos Id (Int, Int)
   | MoveFromSearchResult Prototype String
-  | MoveExistingObjectFromSearchResult Prototype Id
+  | MoveExistingObjectFromSearchResult Id Prototype Id
 
 
 type Tab =
   SearchTab | EditTab
+
 
 init : API.Config -> String -> (Int, Int) -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
 init apiConfig title initialSize randomSeed visitDate editMode query scale offset lang =
@@ -175,19 +176,19 @@ syncSelectedByRect : Model -> Model
 syncSelectedByRect model =
   { model |
     selectedObjects =
-      case model.selectorRect of
-        Just (left, top, width, height) ->
+      case (model.selectorRect, model.floor) of
+        (Just (left, top, width, height), Just efloor) ->
           let
             floor =
-              getEditingFloorOrDummy model
+              EditingFloor.present efloor
 
             objects =
               withinRect
                 (toFloat left, toFloat top)
                 (toFloat (left + width), toFloat (top + height))
-                floor.objects
+                (Floor.objects floor)
           in
-            List.map idOf objects
+            List.map Object.idOf objects
 
         _ ->
           model.selectedObjects
@@ -227,7 +228,8 @@ adjustOffset model =
   let
     maybeShiftedOffset =
       model.selectedResult `Maybe.andThen` \id ->
-      findObjectById (getEditingFloorOrDummy model).objects id `Maybe.andThen` \obj ->
+      model.floor `Maybe.andThen` \efloor ->
+      Floor.getObject id (EditingFloor.present efloor) `Maybe.andThen` \obj ->
       relatedPerson obj `Maybe.andThen` \personId ->
       Just <|
         let
@@ -284,9 +286,9 @@ shiftSelectionToward direction model =
           toBeSelected =
             if model.keys.shift then
               List.map idOf <|
-                expandOrShrink direction primary selected floor.objects
+                expandOrShrink direction primary selected (Floor.objects floor)
             else
-              case nearest direction primary floor.objects of
+              case nearest direction primary (Floor.objects floor) of
                 Just e ->
                   let
                     newObjects = [e]
@@ -310,17 +312,15 @@ isSelected model object =
 
 primarySelectedObject : Model -> Maybe Object
 primarySelectedObject model =
-  case model.selectedObjects of
-    head :: _ ->
-      findObjectById (Floor.objects <| (getEditingFloorOrDummy model)) head
-    _ -> Nothing
+  List.head (selectedObjects model)
 
 
 selectedObjects : Model -> List Object
 selectedObjects model =
-  List.filterMap (\id ->
-    findObjectById (getEditingFloorOrDummy model).objects id
-  ) model.selectedObjects
+  model.floor
+    |> Maybe.map EditingFloor.present
+    |> Maybe.map (Floor.getObjects model.selectedObjects)
+    |> Maybe.withDefault []
 
 
 screenToImageWithOffset : Scale -> (Int, Int) -> (Int, Int) -> (Int, Int)
@@ -352,7 +352,7 @@ getPositionedPrototype model =
         in
           [ (prototype, (left, top)) ]
 
-      (_, MoveExistingObjectFromSearchResult prototype _) ->
+      (_, MoveExistingObjectFromSearchResult floorId prototype _) ->
         let
           (left, top) =
             fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)

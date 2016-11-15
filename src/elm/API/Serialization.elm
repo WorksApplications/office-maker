@@ -1,6 +1,7 @@
 module API.Serialization exposing (..)
 
 import Date
+import Dict exposing (Dict)
 
 import Json.Encode as E exposing (Value)
 import Json.Decode as D exposing ((:=), Decoder)
@@ -57,6 +58,9 @@ encodeObject object =
   in
     E.object
       [ ("id", E.string (Object.idOf object))
+      , ("floorId", E.string (Object.floorIdOf object))
+      , ("floorVersion", Object.floorVersionOf object |> Maybe.map E.int |> Maybe.withDefault E.null)
+      , ("updateAt", Object.updateAtOf object |> Maybe.map E.float |> Maybe.withDefault E.null)
       , ("type", E.string (if Object.isDesk object then "desk" else "label"))
       , ("x", E.int x)
       , ("y", E.int y)
@@ -93,16 +97,13 @@ encodeObjectModification mod =
     ]
 
 
-encodeFloor : Floor -> ObjectsChange -> Value
-encodeFloor floor change =
+encodeFloor : Floor -> Value
+encodeFloor floor =
   E.object
     [ ("id", E.string floor.id)
     , ("version", E.int floor.version)
     , ("name", E.string floor.name)
     , ("ord", E.int floor.ord)
-    , ("added", E.list (List.map encodeObject change.added))
-    , ("modified", E.list (List.map encodeObjectModification change.modified))
-    , ("deleted", E.list (List.map encodeObject change.deleted))
     , ("width", E.int floor.width)
     , ("height", E.int floor.height)
     , ("realWidth", Maybe.withDefault E.null <| Maybe.map (E.int << fst) floor.realSize)
@@ -110,6 +111,56 @@ encodeFloor floor change =
     , ("image", Maybe.withDefault E.null <| Maybe.map E.string floor.image)
     , ("public", E.bool floor.public)
     ]
+
+
+encodeObjectsChange : ObjectsChange -> Value
+encodeObjectsChange change =
+  change
+    |> ObjectsChange.toList
+    |> List.map encodeObjectChange
+    |> E.list
+
+
+encodeObjectChange : ObjectChange Object -> Value
+encodeObjectChange change =
+  case change of
+    ObjectsChange.Added object ->
+      E.object
+        [ ("flag", E.string "added")
+        , ("object", encodeObject object)
+        ]
+
+    ObjectsChange.Modified object ->
+      E.object
+        [ ("flag", E.string "modified")
+        , ("object", encodeObject object)
+        ]
+
+    ObjectsChange.Deleted object ->
+      E.object
+        [ ("flag", E.string "deleted")
+        , ("object", encodeObject object)
+        ]
+
+
+decodeObjectsChange : Decoder ObjectsChange
+decodeObjectsChange =
+  (D.list decodeObjectChange)
+    |> D.map ObjectsChange.fromList
+
+
+decodeObjectChange : Decoder (ObjectId, ObjectChange Object)
+decodeObjectChange =
+  D.object2 (\flag object ->
+    if flag == "added" then
+      (Object.idOf object, ObjectsChange.Added object)
+    else if flag == "modified" then
+      (Object.idOf object, ObjectsChange.Modified object)
+    else
+      (Object.idOf object, ObjectsChange.Deleted object)
+  )
+  ("flag" := D.string)
+  ("object" := decodeObject)
 
 
 encodeLogin : String -> String -> Value
@@ -160,11 +211,11 @@ decodePerson =
 decodeObject : Decoder Object
 decodeObject =
   decode
-    (\id tipe x y width height backgroundColor name personId fontSize color shape ->
+    (\id floorId floorVersion updateAt tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
-        Object.initDesk id (x, y, width, height) backgroundColor name fontSize personId
+        Object.initDesk id floorId floorVersion (x, y, width, height) backgroundColor name fontSize (Just updateAt) personId
       else
-        Object.initLabel id (x, y, width, height) backgroundColor name fontSize color
+        Object.initLabel id floorId floorVersion (x, y, width, height) backgroundColor name fontSize (Just updateAt) color
           (if shape == "rectangle" then
             Object.Rectangle
           else
@@ -172,6 +223,9 @@ decodeObject =
           )
     )
     |> required "id" D.string
+    |> required "floorId" D.string
+    |> optional' "floorVersion" D.int
+    |> required "updateAt" D.float
     |> required "type" D.string
     |> required "x" D.int
     |> required "y" D.int
@@ -216,14 +270,15 @@ decodeFloor =
       , version = version
       , name = name
       , ord = ord
-      , objects = objects
+      , objects = Dict.empty
       , width = width
       , height = height
       , image = image
       , realSize = Maybe.map2 (,) realWidth realHeight
       , public = public
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
-      })
+      } |> Floor.addObjects objects
+    )
     |> required "id" D.string
     |> required "version" D.int
     |> required "name" D.string
@@ -340,9 +395,14 @@ serializeColorPalette colorPalette =
   E.encode 0 (encodeColorPalette colorPalette)
 
 
-serializeFloor : Floor -> ObjectsChange -> String
-serializeFloor floor change =
-    E.encode 0 (encodeFloor floor change)
+serializeFloor : Floor -> String
+serializeFloor floor =
+    E.encode 0 (encodeFloor floor)
+
+
+serializeObjectsChange : ObjectsChange -> String
+serializeObjectsChange change =
+    E.encode 0 (encodeObjectsChange change)
 
 
 serializeLogin : String -> String -> String

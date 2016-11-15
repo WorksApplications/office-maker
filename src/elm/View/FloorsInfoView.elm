@@ -1,5 +1,8 @@
 module View.FloorsInfoView exposing(view)
 
+import String
+import Json.Decode as Decode
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -10,8 +13,6 @@ import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 
 import Util.HtmlUtil exposing (..)
-
-import Json.Decode as Decode
 
 import InlineHover exposing (hover)
 
@@ -37,27 +38,25 @@ eachView : (String -> msg) -> (String -> msg) -> Bool -> User -> Bool -> Maybe S
 eachView contextmenuMsg onClickMsg disableContextmenu user isEditMode currentFloorId floorInfo =
   Maybe.map
     (\floor ->
-      eachView'
+      eachView_
         (if not disableContextmenu && (not (User.isGuest user)) && isEditMode then Just (contextmenuMsg floor.id) else Nothing)
         (onClickMsg floor.id)
         (currentFloorId == Just floor.id)
         (markAsPrivate floorInfo)
-        (markAsModified isEditMode floorInfo)
         floor
     )
     (getFloor isEditMode floorInfo)
 
 
-eachView' : Maybe msg -> msg -> Bool -> Bool -> Bool -> FloorBase -> Html msg
-eachView' contextmenuMsg onClickMsg selected markAsPrivate markAsModified floor =
+eachView_ : Maybe msg -> msg -> Bool -> Bool -> FloorBase -> Html msg
+eachView_ contextmenuMsg onClickMsg selected markAsPrivate floor =
   linkBox
     contextmenuMsg
     onClickMsg
     (Styles.floorsInfoViewItem selected markAsPrivate)
     (Styles.floorsInfoViewItemHover markAsPrivate)
     Styles.floorsInfoViewItemLink
-    [ text (floor.name ++ (if markAsModified then "*" else ""))
-    ]
+    [ text floor.name ]
 
 
 createButton : msg -> Html msg
@@ -71,18 +70,21 @@ createButton msg =
     [ text "+" ]
 
 
-view : (String -> msg) -> ((Int, Int) -> msg) -> (String -> Bool -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> List FloorInfo -> Html msg
+view : (String -> msg) -> ((Int, Int) -> msg) -> (Maybe (String, Bool) -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> List FloorInfo -> Html msg
 view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorInfoList =
   let
     requestPrivate =
       (not (User.isGuest user)) && isEditMode
 
-    onClickMsg' id =
-      onClickMsg id requestPrivate
+    onClickMsg_ floorId =
+      if String.length floorId > 0 then
+        onClickMsg (Just (floorId, requestPrivate))
+      else
+        onClickMsg Nothing
 
     floorList =
       List.filterMap
-        (eachView onContextMenu onClickMsg' disableContextmenu user isEditMode currentFloorId)
+        (eachView onContextMenu onClickMsg_ disableContextmenu user isEditMode currentFloorId)
         (List.sortBy (getOrd isEditMode) floorInfoList)
 
     create =
@@ -130,11 +132,3 @@ markAsPrivate floorInfo =
     Public _ -> False
     PublicWithEdit _ _ -> False
     Private _ -> True
-
-
-markAsModified : Bool -> FloorInfo -> Bool
-markAsModified isEditMode floorInfo =
-  case floorInfo of
-    Public _ -> False
-    PublicWithEdit _ _ -> if isEditMode then True else False
-    Private _ -> False
