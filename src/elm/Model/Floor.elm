@@ -183,35 +183,10 @@ moveObjects gridSize (dx, dy) object =
     Object.move (newX, newY) object
 
 
-overrideObjects : List Object -> Floor -> Floor
-overrideObjects newObjects floor =
-  newObjects
-    |> List.foldl (\object memo -> overrideObject object memo) floor
-
-
-overrideObject : Object -> Floor -> Floor
-overrideObject newObject floor =
-  if Object.floorIdOf newObject == floor.id then
-    let
-      remainingObjects =
-        List.filter (\object -> (Object.idOf object) /= (Object.idOf newObject)) (objects floor)
-    in
-      setObjects ( newObject :: remainingObjects ) floor
-  else
-    floor
-
-
 paste : List (Object, ObjectId) -> (Int, Int) -> Floor -> Floor
 paste copiedWithNewIds (baseX, baseY) floor =
   addObjects
     (pasteObjects floor.id (baseX, baseY) copiedWithNewIds)
-    floor
-
-
-delete : List ObjectId -> Floor -> Floor
-delete ids floor =
-  setObjects
-    (List.filter (\object -> not (List.member (Object.idOf object) ids)) (objects floor))
     floor
 
 
@@ -251,7 +226,9 @@ changeObjectsByChanges change floor =
     separated =
       ObjectsChange.separate change
   in
-    overrideObjects (separated.added ++ separated.modified) floor
+    floor
+      |> addObjects (separated.added ++ separated.modified)
+      |> removeObjects (List.map Object.idOf separated.deleted)
 
 
 toFirstNameOnly : List ObjectId -> Floor -> Floor
@@ -350,6 +327,14 @@ addObjects objects floor =
       objects
         |> filterObjectsInFloor floor.id
         |> List.foldl (\object -> Dict.insert (Object.idOf object) object) floor.objects
+  }
+
+
+removeObjects : List ObjectId -> Floor -> Floor
+removeObjects objectIds floor =
+  { floor |
+    objects =
+      List.foldl Dict.remove floor.objects objectIds
   }
 
 

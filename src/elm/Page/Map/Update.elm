@@ -2174,7 +2174,7 @@ updateByKeyEvent event model =
     (Just floor, True, ShortCut.X) ->
       let
         (newFloor, objectsChange) =
-          EditingFloor.updateObjects (Floor.delete model.selectedObjects) floor
+          EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
 
         saveCmd =
           requestSaveObjectsCmd objectsChange
@@ -2200,7 +2200,7 @@ updateByKeyEvent event model =
     (Just floor, _, ShortCut.Del) ->
       let
         (newFloor, objectsChange) =
-          EditingFloor.updateObjects (Floor.delete model.selectedObjects) floor
+          EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
 
         saveCmd =
           requestSaveObjectsCmd objectsChange
