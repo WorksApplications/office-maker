@@ -357,8 +357,6 @@ getPositionedPrototype model =
 
       (_, MoveExistingObjectFromSearchResult floorId _ prototype _) ->
         let
-          _ = Debug.log "prototype" prototype
-          
           (left, top) =
             fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in

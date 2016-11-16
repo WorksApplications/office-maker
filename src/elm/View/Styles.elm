@@ -1174,6 +1174,7 @@ searchResultItem draggable =
         , ("padding", "5px")
         , ("border", "solid 1px #aaa")
         , ("cursor", "move")
+        , ("user-select", "none")
         ]
       else
         []

@@ -361,6 +361,12 @@ update removeToken setSelectionStart msg model =
             ShiftOffset ->
               NoDragging
 
+            MoveFromSearchResult _ _ ->
+              NoDragging
+
+            MoveExistingObjectFromSearchResult _ _ _ _ ->
+              NoDragging
+
             _ ->
               model.draggingContext
       } ! []
