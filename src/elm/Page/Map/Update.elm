@@ -2147,19 +2147,19 @@ batchSave apiConfig request =
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEvent event model =
-  case (model.floor, model.keys.ctrl, event) of
-    (Just floor, True, ShortCut.A) ->
+  case (model.floor, model.keys.ctrl, model.keys.shift, event) of
+    (Just floor, True, _, ShortCut.A) ->
       { model |
         selectedObjects =
           List.map idOf <| Floor.objects (Model.getEditingFloorOrDummy model)
       } ! []
 
-    (Just floor, True, ShortCut.C) ->
+    (Just floor, True, _, ShortCut.C) ->
       { model |
         copiedObjects = Model.selectedObjects model
       } ! []
 
-    (Just floor, True, ShortCut.V) ->
+    (Just floor, True, _, ShortCut.V) ->
       case model.selectorRect of
         Just (x, y, w, h) ->
           let
@@ -2187,7 +2187,7 @@ updateByKeyEvent event model =
         Nothing ->
           model ! []
 
-    (Just floor, True, ShortCut.X) ->
+    (Just floor, True, _, ShortCut.X) ->
       let
         (newFloor, objectsChange) =
           EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
@@ -2201,19 +2201,31 @@ updateByKeyEvent event model =
         , selectedObjects = []
         } ! [ saveCmd ]
 
-    (Just floor, _, ShortCut.UpArrow) ->
+    (Just floor, _, True, ShortCut.UpArrow) ->
+      Model.expandOrShrinkToward Up model ! []
+
+    (Just floor, _, True, ShortCut.DownArrow) ->
+      Model.expandOrShrinkToward Down model ! []
+
+    (Just floor, _, True, ShortCut.LeftArrow) ->
+      Model.expandOrShrinkToward Left model ! []
+
+    (Just floor, _, True, ShortCut.RightArrow) ->
+      Model.expandOrShrinkToward Right model ! []
+
+    (Just floor, _, False, ShortCut.UpArrow) ->
       moveSelectionToward Up model floor
 
-    (Just floor, _, ShortCut.DownArrow) ->
+    (Just floor, _, False, ShortCut.DownArrow) ->
       moveSelectionToward Down model floor
 
-    (Just floor, _, ShortCut.LeftArrow) ->
+    (Just floor, _, False, ShortCut.LeftArrow) ->
       moveSelectionToward Left model floor
 
-    (Just floor, _, ShortCut.RightArrow) ->
+    (Just floor, _, False, ShortCut.RightArrow) ->
       moveSelectionToward Right model floor
 
-    (Just floor, _, ShortCut.Del) ->
+    (Just floor, _, _, ShortCut.Del) ->
       let
         (newFloor, objectsChange) =
           EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
@@ -2225,7 +2237,7 @@ updateByKeyEvent event model =
           floor = Just newFloor
         } ! [ saveCmd ]
 
-    (Just floor, _, ShortCut.Other 9) ->
+    (Just floor, _, _, ShortCut.Other 9) ->
       Model.shiftSelectionToward Right model ! []
 
     _ ->

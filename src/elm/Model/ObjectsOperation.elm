@@ -2,13 +2,17 @@ module Model.ObjectsOperation exposing (..)
 
 
 import Model.Direction exposing (..)
-import Model.Object as Object exposing (..)
+import Model.Object as Object exposing (Object)
+
+
+type alias FloorId = String
+type alias ObjectId = String
 
 
 rectFloat : Object -> (Float, Float, Float, Float)
 rectFloat e =
   let
-    (x, y, w, h) = rect e
+    (x, y, w, h) = Object.rect e
   in
     (toFloat x, toFloat y, toFloat w, toFloat h)
 
@@ -29,7 +33,7 @@ linked (x1, y1, w1, h1) (x2, y2, w2, h2) =
 linkedByAnyOf : List Object -> Object -> Bool
 linkedByAnyOf list newObject =
   List.any (\e ->
-    linked (rect e) (rect newObject)
+    linked (Object.rect e) (Object.rect newObject)
   ) list
 
 
@@ -86,16 +90,16 @@ greaterBy direction from new =
 minimumBy : Direction -> List Object -> Maybe Object
 minimumBy direction list =
   let
-    f e1 memo =
+    f o1 memo =
       case memo of
-        Just e ->
-          if lessBy direction e e1 then
-            Just e1
+        Just o ->
+          if lessBy direction o o1 then
+            Just o1
           else
-            Just e
+            Just o
 
         Nothing ->
-          Just e1
+          Just o1
   in
     List.foldl f Nothing list
 
@@ -104,7 +108,7 @@ minimumBy direction list =
 -}
 filterCandidate : Direction -> Object -> Object -> Bool
 filterCandidate direction from new =
-    greaterBy direction from new
+  greaterBy direction from new
 
 
 {-| Returns the next object toward given direction.
@@ -160,7 +164,7 @@ bounds list =
   let
     f e1 memo =
       let
-        (x1, y1, w1, h1) = rect e1
+        (x1, y1, w1, h1) = Object.rect e1
 
         right1 = x1 + w1
 
@@ -179,7 +183,7 @@ bounds list =
 bound : Direction -> Object -> Int
 bound direction object =
   let
-    (left, top, w, h) = rect object
+    (left, top, w, h) = Object.rect object
 
     right = left + w
 
@@ -195,13 +199,13 @@ bound direction object =
 compareBoundBy : Direction -> Object -> Object -> Order
 compareBoundBy direction e1 e2 =
   let
-    (left1, top1, w1, h1) = rect e1
+    (left1, top1, w1, h1) = Object.rect e1
 
     right1 = left1 + w1
 
     bottom1 = top1 + h1
 
-    (left2, top2, w2, h2) = rect e2
+    (left2, top2, w2, h2) = Object.rect e2
 
     right2 = left2 + w2
 
@@ -217,15 +221,15 @@ compareBoundBy direction e1 e2 =
 minimumPartsOf : Direction -> List Object -> List Object
 minimumPartsOf direction list =
   let
-    f e memo =
+    f o memo =
       case memo of
         head :: _ ->
-          case compareBoundBy direction e head of
-            LT -> [e]
-            EQ -> e :: memo
+          case compareBoundBy direction o head of
+            LT -> [o]
+            EQ -> o :: memo
             GT -> memo
 
-        _ -> [e]
+        _ -> [o]
   in
     List.foldl f [] list
 
@@ -233,15 +237,15 @@ minimumPartsOf direction list =
 maximumPartsOf : Direction -> List Object -> List Object
 maximumPartsOf direction list =
   let
-    f e memo =
+    f o memo =
       case memo of
         head :: _ ->
-          case compareBoundBy direction e head of
+          case compareBoundBy direction o head of
             LT -> memo
-            EQ -> e :: memo
-            GT -> [e]
+            EQ -> o :: memo
+            GT -> [o]
 
-        _ -> [e]
+        _ -> [o]
   in
     List.foldl f [] list
 
@@ -251,7 +255,7 @@ restOfMinimumPartsOf direction list =
   let
     minimumParts = minimumPartsOf direction list
   in
-    List.filter (\e -> not (List.member e minimumParts)) list
+    List.filter (\o -> not (List.member o minimumParts)) list
 
 
 restOfMaximumPartsOf : Direction -> List Object -> List Object
@@ -259,13 +263,13 @@ restOfMaximumPartsOf direction list =
   let
     maximumParts = maximumPartsOf direction list
   in
-    List.filter (\e -> not (List.member e maximumParts)) list
+    List.filter (\o -> not (List.member o maximumParts)) list
 
 
-expandOrShrink : Direction -> Object -> List Object -> List Object -> List Object
-expandOrShrink direction primary current all =
+expandOrShrinkToward : Direction -> Object -> List Object -> List Object -> List Object
+expandOrShrinkToward direction primary current all =
   let
-    (left0, top0, w0, h0) = rect primary
+    (left0, top0, w0, h0) = Object.rect primary
 
     right0 = left0 + w0
 
@@ -287,7 +291,7 @@ expandOrShrink direction primary current all =
       let
         filter e1 =
           let
-            (left1, top1, w1, h1) = rect e1
+            (left1, top1, w1, h1) = Object.rect e1
             right1 = left1 + w1
             bottom1 = top1 + h1
           in
@@ -304,7 +308,7 @@ expandOrShrink direction primary current all =
       restOfMaximumPartsOf (opposite direction) current
 
 
-pasteObjects : FloorId -> (Int, Int) -> List (Object, Id) -> List Object
+pasteObjects : FloorId -> (Int, Int) -> List (Object, ObjectId) -> List Object
 pasteObjects floorId (baseX, baseY) copiedWithNewIds =
   let
     (minX, minY) =
@@ -319,10 +323,10 @@ pasteObjects floorId (baseX, baseY) copiedWithNewIds =
           pos = (baseX + (x - minX), baseY + (y - minY))
         in
           object
-            |> move pos
-            |> changeId newId
-            |> changeFloorId floorId
-    ) copiedWithNewIds
+            |> Object.move pos
+            |> Object.changeId newId
+            |> Object.changeFloorId floorId
+      ) copiedWithNewIds
   in
     newObjects
 
@@ -346,27 +350,27 @@ fitSizeToGrid gridSize (x, y) =
 
 backgroundColorProperty : List Object -> Maybe String
 backgroundColorProperty selectedObjects =
-  collectSameProperty backgroundColorOf selectedObjects
+  collectSameProperty Object.backgroundColorOf selectedObjects
 
 
 colorProperty : List Object -> Maybe String
 colorProperty selectedObjects =
-  collectSameProperty colorOf selectedObjects
+  collectSameProperty Object.colorOf selectedObjects
 
 
 shapeProperty : List Object -> Maybe Object.Shape
 shapeProperty selectedObjects =
-  collectSameProperty shapeOf selectedObjects
+  collectSameProperty Object.shapeOf selectedObjects
 
 
 nameProperty : List Object -> Maybe String
 nameProperty selectedObjects =
-  collectSameProperty nameOf selectedObjects
+  collectSameProperty Object.nameOf selectedObjects
 
 
 fontSizeProperty : List Object -> Maybe Float
 fontSizeProperty selectedObjects =
-  collectSameProperty fontSizeOf selectedObjects
+  collectSameProperty Object.fontSizeOf selectedObjects
 
 
 -- [red, green, green] -> Nothing

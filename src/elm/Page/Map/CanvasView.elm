@@ -351,7 +351,7 @@ objectsView model floor =
             { editMode = model.editMode
             , scale = model.scale
             , rect = (rect object)
-            , selected = Model.isSelected model object --TODO seems not selected?
+            , selected = EditMode.isEditMode model.editMode && List.member (idOf object) model.selectedObjects
             , isGhost = False
             , object = object
             , contextMenuDisabled = model.keys.ctrl
@@ -360,7 +360,7 @@ objectsView model floor =
           )
         )
         (Floor.objects floor)
-
+        
 
 canvasImage : Floor -> Html msg
 canvasImage floor =

@@ -38,6 +38,7 @@ import Component.Header as Header
 
 
 type alias ObjectId = String
+type alias FloorId = String
 
 
 type alias Model =
@@ -48,7 +49,7 @@ type alias Model =
   , user : User
   , pos : (Int, Int)
   , draggingContext : DraggingContext
-  , selectedObjects : List Id
+  , selectedObjects : List ObjectId
   , copiedObjects : List Object
   , objectNameInput : ObjectNameInput
   , gridSize : Int
@@ -68,12 +69,12 @@ type alias Model =
   , floorProperty : FloorProperty
   , searchQuery : String
   , searchResult : Maybe (List SearchResult)
-  , selectedResult : Maybe Id
+  , selectedResult : Maybe ObjectId
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
   , candidates : List Id
   , tab : Tab
-  , clickEmulator : List (Id, Bool, Time)
+  , clickEmulator : List (ObjectId, Bool, Time)
   , searchCandidateDebounce : Debounce (Id, String)
   , personPopupSize : (Int, Int)
   , lang : Language
@@ -256,17 +257,18 @@ adjustOffset model =
 nextObjectToInput : Object -> List Object -> Maybe Object
 nextObjectToInput object allObjects =
   let
-    island' =
+    island_ =
       island
         [object]
-        (List.filter (\e -> (idOf e) /= (idOf object)) allObjects)
+        (List.filter (\o -> (Object.idOf o) /= (Object.idOf object)) allObjects)
   in
-    case ObjectsOperation.nearest Down object island' of
-      Just e ->
-        if idOf object == idOf e then
+    case ObjectsOperation.nearest Down object island_ of
+      Just o ->
+        if Object.idOf object == Object.idOf o then
           Nothing
         else
-          Just e
+          Just o
+
       _ ->
         Nothing
 
@@ -278,39 +280,41 @@ candidatesOf model =
 
 shiftSelectionToward : Direction -> Model -> Model
 shiftSelectionToward direction model =
-  let
-    floor = getEditingFloorOrDummy model
+  model.floor
+    |> (Maybe.map) EditingFloor.present
+    |> (flip Maybe.andThen) (\floor -> List.head (selectedObjects model)
+    |> (flip Maybe.andThen) (\primarySelected ->
+      nearest direction primarySelected (Floor.objects floor)
+    |> Maybe.map (\object ->
+      { model |
+        selectedObjects =
+          List.map Object.idOf [object]
+      }
+      )))
+    |> Maybe.withDefault model
 
-    selected = selectedObjects model
-  in
-    case selected of
-      primary :: tail ->
-        let
-          toBeSelected =
-            if model.keys.shift then
-              List.map idOf <|
-                expandOrShrink direction primary selected (Floor.objects floor)
-            else
-              case nearest direction primary (Floor.objects floor) of
-                Just e ->
-                  let
-                    newObjects = [e]
-                  in
-                    List.map idOf newObjects
 
-                _ ->
-                  model.selectedObjects
-        in
+expandOrShrinkToward : Direction -> Model -> Model
+expandOrShrinkToward direction model =
+  model.floor
+    |> (Maybe.map) EditingFloor.present
+    |> (Maybe.map) (\floor ->
+      case selectedObjects model of
+        primarySelected :: _ ->
           { model |
-            selectedObjects = toBeSelected
+            selectedObjects =
+              List.map Object.idOf <|
+                ObjectsOperation.expandOrShrinkToward
+                  direction
+                  primarySelected
+                  (Floor.getObjects model.selectedObjects floor)
+                  (Floor.objects floor)
           }
-      _ -> model
 
-
--- TODO bad naming
-isSelected : Model -> Object -> Bool
-isSelected model object =
-  EditMode.isEditMode model.editMode && List.member (idOf object) model.selectedObjects
+        _ ->
+          model
+    )
+    |> Maybe.withDefault model
 
 
 primarySelectedObject : Model -> Maybe Object
