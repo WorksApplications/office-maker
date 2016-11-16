@@ -86,7 +86,7 @@ subView model =
           subViewForSearch model
 
     tabs =
-      if model.floor /= Nothing && (not <| User.isGuest model.user) && Mode.isEditMode model.mode then
+      if model.floor /= Nothing && (not <| User.isGuest model.user) then
         case model.mode of
           Editing tab _ ->
             [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (tab == SearchTab)

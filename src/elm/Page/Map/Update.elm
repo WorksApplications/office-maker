@@ -24,7 +24,7 @@ import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
-import Model.ObjectsOperation as ObjectsOperation exposing (..)
+import Model.ObjectsOperation as ObjectsOperation
 import Model.Scale as Scale
 import Model.Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (Prototypes, PositionedPrototype)
@@ -403,7 +403,7 @@ update removeToken setSelectionStart msg model =
                   case (Floor.getObject lastTouchedId floor, Model.primarySelectedObject model) of
                     (Just object, Just primary) ->
                       List.map idOf <|
-                        primary :: (withinRange (primary, object) (objectsExcept primary)) --keep primary
+                        primary :: ObjectsOperation.withinRange (primary, object) (objectsExcept primary) --keep primary
 
                     _ -> [lastTouchedId]
               else
@@ -440,8 +440,9 @@ update removeToken setSelectionStart msg model =
         selectorRect =
           if Mode.isSelectMode model.mode then
             let
-              (x, y) = fitPositionToGrid model.gridSize <|
-                Model.screenToImageWithOffset model.scale (clientX, clientY) model.offset
+              (x, y) =
+                ObjectsOperation.fitPositionToGrid model.gridSize <|
+                  Model.screenToImageWithOffset model.scale (clientX, clientY) model.offset
             in
               Just (x, y, model.gridSize, model.gridSize)
 
@@ -873,13 +874,13 @@ update removeToken setSelectionStart msg model =
               case Floor.getObject id floor of
                 Just object ->
                   let
-                    island' =
-                      island
+                    island =
+                      ObjectsOperation.island
                         [object]
-                        (List.filter (\e -> (idOf e) /= id) (Floor.objects floor))
+                        (List.filter (\e -> (Object.idOf e) /= id) (Floor.objects floor))
                   in
                     { model |
-                      selectedObjects = List.map idOf island'
+                      selectedObjects = List.map Object.idOf island
                     , contextMenu = NoContextMenu
                     }
 
@@ -1768,11 +1769,11 @@ updateOnFinishLabel model =
     Just floor ->
       let
         (left, top) =
-          fitPositionToGrid model.gridSize <|
+          ObjectsOperation.fitPositionToGrid model.gridSize <|
             Model.screenToImageWithOffset model.scale model.pos model.offset
 
         (width, height) =
-          fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
+          ObjectsOperation.fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
 
         bgColor = "transparent" -- TODO configure?
 
@@ -2065,12 +2066,12 @@ registerPersonDetailIfAPersonIsNotRelatedTo apiConfig object =
 nextObjectToInput : Object -> List Object -> Maybe Object
 nextObjectToInput object allObjects =
   let
-    island' =
-      island
+    island =
+      ObjectsOperation.island
         [object]
         (List.filter (\e -> (idOf e) /= (idOf object)) allObjects)
   in
-    case ObjectsOperation.nearest Down object island' of
+    case ObjectsOperation.nearest Down object island of
       Just e ->
         if idOf object == idOf e then
           Nothing

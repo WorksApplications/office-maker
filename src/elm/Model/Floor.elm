@@ -5,7 +5,7 @@ import Dict exposing (Dict)
 import Regex
 import Date exposing (Date)
 import Model.Object as Object exposing (Object)
-import Model.ObjectsOperation as ObjectsOperation exposing (..)
+import Model.ObjectsOperation as ObjectsOperation
 import Model.ObjectsChange as ObjectsChange exposing (DetailedObjectsChange, ObjectModification)
 
 
@@ -178,7 +178,7 @@ moveObjects gridSize (dx, dy) object =
       Object.rect object
 
     (newX, newY) =
-      fitPositionToGrid gridSize (x + dx, y + dy)
+      ObjectsOperation.fitPositionToGrid gridSize (x + dx, y + dy)
   in
     Object.move (newX, newY) object
 
@@ -186,7 +186,7 @@ moveObjects gridSize (dx, dy) object =
 paste : List (Object, ObjectId) -> (Int, Int) -> Floor -> Floor
 paste copiedWithNewIds (baseX, baseY) floor =
   addObjects
-    (pasteObjects floor.id (baseX, baseY) copiedWithNewIds)
+    (ObjectsOperation.pasteObjects floor.id (baseX, baseY) copiedWithNewIds)
     floor
 
 

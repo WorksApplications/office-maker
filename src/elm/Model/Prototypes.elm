@@ -1,7 +1,7 @@
 module Model.Prototypes exposing (..)
 
 import Model.Prototype exposing (Prototype)
-import Model.ObjectsOperation as ObjectsOperation exposing (..)
+import Model.ObjectsOperation as ObjectsOperation
 
 import Util.ListUtil exposing (..)
 
@@ -142,7 +142,7 @@ positionedPrototypesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePo
       stampIndices horizontal (deskWidth, deskHeight) (x1, y1) (x2, y2)
 
     (centerLeft, centerTop) =
-      fitPositionToGrid gridSize (x1 - fst deskSize // 2, y1 - snd deskSize // 2)
+      ObjectsOperation.fitPositionToGrid gridSize (x1 - fst deskSize // 2, y1 - snd deskSize // 2)
 
     all =
       generateAllCandidatePosition

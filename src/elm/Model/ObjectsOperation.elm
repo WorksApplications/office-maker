@@ -32,9 +32,13 @@ linked (x1, y1, w1, h1) (x2, y2, w2, h2) =
 
 linkedByAnyOf : List Object -> Object -> Bool
 linkedByAnyOf list newObject =
-  List.any (\e ->
-    linked (Object.rect e) (Object.rect newObject)
-  ) list
+  let
+    newRect =
+      Object.rect newObject
+  in
+    List.any (\e ->
+      linked (Object.rect e) newRect
+    ) list
 
 
 island : List Object -> List Object -> List Object
@@ -56,7 +60,7 @@ compareBy direction from new =
 
     (newCenterX, newCenterY) = center new
   in
-    if (centerX, centerY) == (newCenterX, newCenterY) then
+    if centerX == newCenterX && centerY == newCenterY then
       EQ
     else
       let
@@ -116,7 +120,8 @@ filterCandidate direction from new =
 nearest : Direction -> Object -> List Object -> Maybe Object
 nearest direction from list =
   let
-    filtered = List.filter (filterCandidate direction from) list
+    filtered =
+      List.filter (filterCandidate direction from) list
   in
     if List.isEmpty filtered then
       minimumBy direction list
@@ -146,76 +151,51 @@ withinRange range list =
 
 withinRect : (Float, Float) -> (Float, Float) -> List Object -> List Object
 withinRect (left, top) (right, bottom) list =
-  let
-    isContained e =
-      let
-        (centerX, centerY) = center e
-      in
-        centerX >= left &&
-        centerX <= right &&
-        centerY >= top &&
-        centerY <= bottom
-  in
-    List.filter isContained list
+  List.filter (\object -> isInRect (left, top, right, bottom) (center object)) list
+
+
+isInRect : (comparable, comparable', comparable, comparable') -> (comparable, comparable') -> Bool
+isInRect (left, top, right, bottom) (x, y) =
+  x >= left &&
+  x <= right &&
+  y >= top &&
+  y <= bottom
 
 
 bounds : List Object -> Maybe (Int, Int, Int, Int)
 bounds list =
-  let
-    f e1 memo =
+  case list of
+    head :: tail ->
       let
-        (x1, y1, w1, h1) = Object.rect e1
-
-        right1 = x1 + w1
-
-        bottom1 = y1 + h1
+        f o (x, y, right, bottom) =
+          ( min x (Object.left o)
+          , min y (Object.top o)
+          , max right (Object.right o)
+          , max bottom (Object.bottom o)
+          )
       in
-        case memo of
-          Just (x, y, right, bottom) ->
-            Just (min x x1, min y y1, max right right1, max bottom bottom1)
+        Just <| List.foldl f (Object.left head, Object.top head, Object.right head, Object.bottom head) tail
 
-          Nothing ->
-            Just (x1, y1, right1, bottom1)
-  in
-    List.foldl f Nothing list
+    [] ->
+      Nothing
 
 
 bound : Direction -> Object -> Int
 bound direction object =
-  let
-    (left, top, w, h) = Object.rect object
-
-    right = left + w
-
-    bottom = top + h
-  in
-    case direction of
-      Up -> top
-      Down -> bottom
-      Left -> left
-      Right -> right
+  case direction of
+    Up -> Object.top object
+    Down -> Object.bottom object
+    Left -> Object.left object
+    Right -> Object.right object
 
 
 compareBoundBy : Direction -> Object -> Object -> Order
-compareBoundBy direction e1 e2 =
-  let
-    (left1, top1, w1, h1) = Object.rect e1
-
-    right1 = left1 + w1
-
-    bottom1 = top1 + h1
-
-    (left2, top2, w2, h2) = Object.rect e2
-
-    right2 = left2 + w2
-
-    bottom2 = top2 + h2
-  in
-    case direction of
-      Up -> if top1 == top2 then EQ else if top1 < top2 then GT else LT
-      Down -> if bottom1 == bottom2 then EQ else if bottom1 > bottom2 then GT else LT
-      Left -> if left1 == left2 then EQ else if left1 < left2 then GT else LT
-      Right -> if right1 == right2 then EQ else if right1 > right2 then GT else LT
+compareBoundBy direction o1 o2 =
+  case direction of
+    Up -> if Object.top o1 == Object.top o2 then EQ else if Object.top o1 < Object.top o2 then GT else LT
+    Down -> if Object.bottom o1 == Object.bottom o2 then EQ else if Object.bottom o1 > Object.bottom o2 then GT else LT
+    Left -> if Object.left o1 == Object.left o2 then EQ else if Object.left o1 < Object.left o2 then GT else LT
+    Right -> if Object.right o1 == Object.right o2 then EQ else if Object.right o1 > Object.right o2 then GT else LT
 
 
 minimumPartsOf : Direction -> List Object -> List Object
@@ -269,11 +249,10 @@ restOfMaximumPartsOf direction list =
 expandOrShrinkToward : Direction -> Object -> List Object -> List Object -> List Object
 expandOrShrinkToward direction primary current all =
   let
-    (left0, top0, w0, h0) = Object.rect primary
-
-    right0 = left0 + w0
-
-    bottom0 = top0 + h0
+    left0 = Object.left primary
+    top0 = Object.top primary
+    right0 = Object.right primary
+    bottom0 = Object.bottom primary
 
     (left, top, right, bottom) =
       Maybe.withDefault
@@ -289,21 +268,17 @@ expandOrShrinkToward direction primary current all =
   in
     if isExpand then
       let
-        filter e1 =
-          let
-            (left1, top1, w1, h1) = Object.rect e1
-            right1 = left1 + w1
-            bottom1 = top1 + h1
-          in
-            case direction of
-              Up -> left1 >= left && right1 <= right && top1 < top
-              Down -> left1 >= left && right1 <= right && bottom1 > bottom
-              Left -> top1 >= top && bottom1 <= bottom && left1 < left
-              Right -> top1 >= top && bottom1 <= bottom && right1 > right
+        filter o1 =
+          case direction of
+            Up -> Object.left o1 >= left && Object.right o1 <= right && Object.top o1 < top
+            Down -> Object.left o1 >= left && Object.right o1 <= right && Object.bottom o1 > bottom
+            Left -> Object.top o1 >= top && Object.bottom o1 <= bottom && Object.left o1 < left
+            Right -> Object.top o1 >= top && Object.bottom o1 <= bottom && Object.right o1 > right
 
-        filtered = List.filter filter all
+        filtered =
+          List.filter filter all
       in
-        current ++ (minimumPartsOf direction filtered)
+        current ++ minimumPartsOf direction filtered
     else
       restOfMaximumPartsOf (opposite direction) current
 

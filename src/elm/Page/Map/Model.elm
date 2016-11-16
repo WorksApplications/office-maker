@@ -14,7 +14,7 @@ import Model.Direction exposing (..)
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
-import Model.ObjectsOperation as ObjectsOperation exposing (..)
+import Model.ObjectsOperation as ObjectsOperation
 import Model.Scale as Scale exposing (Scale)
 import Model.Prototype as Prototype exposing (Prototype)
 import Model.Prototypes as Prototypes exposing (..)
@@ -181,7 +181,7 @@ syncSelectedByRect model =
               EditingFloor.present efloor
 
             objects =
-              withinRect
+              ObjectsOperation.withinRect
                 (toFloat left, toFloat top)
                 (toFloat (left + width), toFloat (top + height))
                 (Floor.objects floor)
@@ -229,19 +229,19 @@ adjustOffset model =
       model.floor `Maybe.andThen` \efloor ->
       Floor.getObject id (EditingFloor.present efloor) `Maybe.andThen` \obj ->
       relatedPerson obj `Maybe.andThen` \personId ->
-      Just <|
-        let
-          (windowWidth, windowHeight) =
-            model.windowSize
-          containerWidth = windowWidth - 320 --TODO
-          containerHeight = windowHeight - 37 --TODO
-        in
-          ProfilePopupLogic.adjustOffset
-            (containerWidth, containerHeight)
-            model.personPopupSize
-            model.scale
-            model.offset
-            obj
+        Just <|
+          let
+            (windowWidth, windowHeight) =
+              model.windowSize
+            containerWidth = windowWidth - 320 --TODO
+            containerHeight = windowHeight - 37 --TODO
+          in
+            ProfilePopupLogic.adjustOffset
+              (containerWidth, containerHeight)
+              model.personPopupSize
+              model.scale
+              model.offset
+              obj
   in
     { model |
       offset = Maybe.withDefault model.offset maybeShiftedOffset
@@ -251,12 +251,12 @@ adjustOffset model =
 nextObjectToInput : Object -> List Object -> Maybe Object
 nextObjectToInput object allObjects =
   let
-    island_ =
-      island
+    island =
+      ObjectsOperation.island
         [object]
         (List.filter (\o -> (Object.idOf o) /= (Object.idOf object)) allObjects)
   in
-    case ObjectsOperation.nearest Down object island_ of
+    case ObjectsOperation.nearest Down object island of
       Just o ->
         if Object.idOf object == Object.idOf o then
           Nothing
@@ -278,7 +278,7 @@ shiftSelectionToward direction model =
     |> (Maybe.map) EditingFloor.present
     |> (flip Maybe.andThen) (\floor -> List.head (selectedObjects model)
     |> (flip Maybe.andThen) (\primarySelected ->
-      nearest direction primarySelected (Floor.objects floor)
+      ObjectsOperation.nearest direction primarySelected (Floor.objects floor)
     |> Maybe.map (\object ->
       { model |
         selectedObjects =
@@ -349,14 +349,14 @@ getPositionedPrototype model =
       (_, MoveFromSearchResult prototype _) ->
         let
           (left, top) =
-            fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
+            ObjectsOperation.fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in
           [ (prototype, (left, top)) ]
 
       (_, MoveExistingObjectFromSearchResult floorId _ prototype _) ->
         let
           (left, top) =
-            fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
+            ObjectsOperation.fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in
           [ (prototype, (left, top)) ]
 
@@ -370,7 +370,7 @@ getPositionedPrototype model =
       (True, _) ->
         let
           (left, top) =
-            fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
+            ObjectsOperation.fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
         in
           [ (prototype, (left, top)) ]
 
@@ -388,11 +388,11 @@ temporaryPenRect : Model -> (Int, Int) -> Maybe (Int, Int, Int, Int)
 temporaryPenRect model from =
   let
     (left, top) =
-      fitPositionToGrid model.gridSize <|
+      ObjectsOperation.fitPositionToGrid model.gridSize <|
         screenToImageWithOffset model.scale from model.offset
 
     (right, bottom) =
-      fitPositionToGrid model.gridSize <|
+      ObjectsOperation.fitPositionToGrid model.gridSize <|
         screenToImageWithOffset model.scale model.pos model.offset
   in
     validateRect (left, top, right, bottom)
@@ -408,7 +408,7 @@ temporaryResizeRect model (fromScreenX, fromScreenY) (objLeft, objTop, objWidth,
       (toScreenX - fromScreenX, toScreenY - fromScreenY)
 
     (right, bottom) =
-      fitPositionToGrid model.gridSize <|
+      ObjectsOperation.fitPositionToGrid model.gridSize <|
         ( objLeft + objWidth + Scale.screenToImage model.scale dx
         , objTop + objHeight + Scale.screenToImage model.scale dy
         )

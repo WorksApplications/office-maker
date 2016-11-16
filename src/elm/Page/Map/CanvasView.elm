@@ -23,7 +23,7 @@ import Model.Mode as Mode exposing (Mode(..))
 import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale exposing (Scale)
-import Model.ObjectsOperation as ObjectsOperation exposing (..)
+import Model.ObjectsOperation as ObjectsOperation
 import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
@@ -35,7 +35,7 @@ adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, 
     (dx, dy) =
       Scale.screenToImageForPosition scale ((x - startX), (y - startY))
   in
-    fitPositionToGrid gridSize (left + dx, top + dy)
+    ObjectsOperation.fitPositionToGrid gridSize (left + dx, top + dy)
 
 
 type alias ObjectViewOption =

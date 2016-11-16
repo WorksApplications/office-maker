@@ -302,6 +302,40 @@ positionOf object =
     (x, y)
 
 
+left : Object -> Int
+left object =
+  fst <| positionOf object
+
+
+top : Object -> Int
+top object =
+  snd <| positionOf object
+
+
+right : Object -> Int
+right object =
+  let
+    (x, y) =
+      positionOf object
+
+    (w, h) =
+      sizeOf object
+  in
+    x + w
+
+
+bottom : Object -> Int
+bottom object =
+  let
+    (x, y) =
+      positionOf object
+
+    (w, h) =
+      sizeOf object
+  in
+    y + h
+
+
 relatedPerson : Object -> Maybe PersonId
 relatedPerson (Object object) =
   case object.extension of
