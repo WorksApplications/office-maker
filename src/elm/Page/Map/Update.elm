@@ -2133,19 +2133,31 @@ batchSave apiConfig request =
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEvent event model =
-  case (model.floor, model.keys.ctrl, model.keys.shift, event) of
-    (Just floor, True, _, ShortCut.A) ->
+  -- Patterns are separated because of the worst-case performance of pattern match.
+  -- https://github.com/elm-lang/elm-compiler/issues/1362
+  if model.keys.ctrl then
+    updateByKeyEventWithCtrl event model
+  else if model.keys.shift then
+    updateByKeyEventWithShift event model
+  else
+    updateByKeyEventWithNoControlKeys event model
+
+
+updateByKeyEventWithCtrl : ShortCut.Event -> Model -> (Model, Cmd Msg)
+updateByKeyEventWithCtrl event model =
+  case (model.floor, event) of
+    (Just floor, ShortCut.A) ->
       { model |
         selectedObjects =
           List.map idOf <| Floor.objects (Model.getEditingFloorOrDummy model)
       } ! []
 
-    (Just floor, True, _, ShortCut.C) ->
+    (Just floor, ShortCut.C) ->
       { model |
         copiedObjects = Model.selectedObjects model
       } ! []
 
-    (Just floor, True, _, ShortCut.V) ->
+    (Just floor, ShortCut.V) ->
       case model.selectorRect of
         Just (x, y, w, h) ->
           let
@@ -2173,7 +2185,7 @@ updateByKeyEvent event model =
         Nothing ->
           model ! []
 
-    (Just floor, True, _, ShortCut.X) ->
+    (Just floor, ShortCut.X) ->
       let
         (newFloor, objectsChange) =
           EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
@@ -2187,31 +2199,33 @@ updateByKeyEvent event model =
         , selectedObjects = []
         } ! [ saveCmd ]
 
-    (Just floor, _, True, ShortCut.UpArrow) ->
+    _ ->
+      model ! []
+
+
+updateByKeyEventWithShift : ShortCut.Event -> Model -> (Model, Cmd Msg)
+updateByKeyEventWithShift event model =
+  case (model.floor, event) of
+    (Just floor, ShortCut.UpArrow) ->
       Model.expandOrShrinkToward Up model ! []
 
-    (Just floor, _, True, ShortCut.DownArrow) ->
+    (Just floor, ShortCut.DownArrow) ->
       Model.expandOrShrinkToward Down model ! []
 
-    (Just floor, _, True, ShortCut.LeftArrow) ->
+    (Just floor, ShortCut.LeftArrow) ->
       Model.expandOrShrinkToward Left model ! []
 
-    (Just floor, _, True, ShortCut.RightArrow) ->
+    (Just floor, ShortCut.RightArrow) ->
       Model.expandOrShrinkToward Right model ! []
 
-    (Just floor, _, False, ShortCut.UpArrow) ->
-      moveSelecedObjectsToward Up model floor
+    _ ->
+      model ! []
 
-    (Just floor, _, False, ShortCut.DownArrow) ->
-      moveSelecedObjectsToward Down model floor
 
-    (Just floor, _, False, ShortCut.LeftArrow) ->
-      moveSelecedObjectsToward Left model floor
-
-    (Just floor, _, False, ShortCut.RightArrow) ->
-      moveSelecedObjectsToward Right model floor
-
-    (Just floor, _, _, ShortCut.Del) ->
+updateByKeyEventWithNoControlKeys : ShortCut.Event -> Model -> (Model, Cmd Msg)
+updateByKeyEventWithNoControlKeys event model =
+  case (model.floor, event) of
+    (Just floor, ShortCut.Del) ->
       let
         (newFloor, objectsChange) =
           EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
@@ -2223,11 +2237,12 @@ updateByKeyEvent event model =
           floor = Just newFloor
         } ! [ saveCmd ]
 
-    (Just floor, _, _, ShortCut.Other 9) ->
+    (Just floor, ShortCut.Other 9) ->
       Model.shiftSelectionToward Right model ! []
 
     _ ->
       model ! []
+
 
 
 moveSelecedObjectsToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg)
