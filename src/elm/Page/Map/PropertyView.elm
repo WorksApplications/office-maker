@@ -14,7 +14,7 @@ import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 
 import Page.Map.Msg exposing (..)
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
 
 view : Model -> List (Html Msg)
 view model =

@@ -21,13 +21,13 @@ import Component.Header as Header
 
 import Util.HtmlUtil exposing (..)
 
-import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
 import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 import Model.User as User
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.CanvasView as CanvasView
 import Page.Map.PropertyView as PropertyView
@@ -41,7 +41,7 @@ mainView model =
     (_, windowHeight) = model.windowSize
 
     sub =
-      if EditMode.isPrintMode model.editMode then
+      if Mode.isPrintMode model.mode then
         text ""
       else
         subView model
@@ -59,7 +59,7 @@ mainView model =
 
 floorInfoView : Model -> Html Msg
 floorInfoView model =
-  if EditMode.isPrintMode model.editMode then
+  if Mode.isPrintMode model.mode then
     text ""
   else
     FloorsInfoView.view
@@ -69,7 +69,7 @@ floorInfoView model =
       CreateNewFloor
       model.keys.ctrl
       model.user
-      (EditMode.isEditMode model.editMode)
+      (Mode.isEditMode model.mode)
       (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
       model.floorsInfo
 
@@ -78,31 +78,31 @@ subView : Model -> Html Msg
 subView model =
   let
     pane =
-      if model.tab == SearchTab || model.floor == Nothing then
-        subViewForSearch model
-      else
-        subViewForEdit model
+      case model.mode of
+        Editing EditTab editingMode ->
+          subViewForEdit model editingMode
+
+        _ ->
+          subViewForSearch model
 
     tabs =
-      if model.floor == Nothing then
-        []
-      else
-        case (model.editMode, User.isGuest model.user) of
-          (Viewing _, _) -> []
-          (_, True) -> []
-          (_, _) ->
-            [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (model.tab == SearchTab)
-            , subViewTab (ChangeTab EditTab) 1 Icons.editTab (model.tab == EditTab)
+      if model.floor /= Nothing && (not <| User.isGuest model.user) && Mode.isEditMode model.mode then
+        case model.mode of
+          Editing tab _ ->
+            [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (tab == SearchTab)
+            , subViewTab (ChangeTab EditTab) 1 Icons.editTab (tab == EditTab)
             ]
+
+          _ ->
+            []
+      else
+        []
   in
-    div
-      [ style (S.subView)
-      ]
-      (pane ++ tabs)
+    div [ style (S.subView) ] (pane ++ tabs)
 
 
-subViewForEdit : Model -> List (Html Msg)
-subViewForEdit model =
+subViewForEdit : Model -> EditingMode -> List (Html Msg)
+subViewForEdit model editingMode =
   let
     floorView =
       List.map
@@ -120,7 +120,7 @@ subViewForEdit model =
             []
         )
   in
-    [ card Nothing <| penView model
+    [ card Nothing <| drawingView model editingMode
     , card Nothing <| PropertyView.view model
     , card Nothing <| floorView
     ]
@@ -142,14 +142,14 @@ subViewTab msg index icon active =
     [ icon ]
 
 
-penView : Model -> List (Html Msg)
-penView model =
+drawingView : Model -> EditingMode -> List (Html Msg)
+drawingView model editingMode =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
   in
-    [ modeSelectionView model
-    , case model.editMode of
+    [ modeSelectionView editingMode
+    , case editingMode of
         Select ->
           input
             [ id "paste-from-spreadsheet"
@@ -165,18 +165,18 @@ penView model =
     ]
 
 
-modeSelectionView : Model -> Html Msg
-modeSelectionView model =
+modeSelectionView : EditingMode -> Html Msg
+modeSelectionView editingMode =
   div
     [ style S.modeSelectionView ]
-    [ modeSelectionViewEach Icons.selectMode model.editMode Select
-    , modeSelectionViewEach Icons.penMode model.editMode Pen
-    , modeSelectionViewEach Icons.stampMode model.editMode Stamp
-    , modeSelectionViewEach Icons.labelMode model.editMode LabelMode
+    [ modeSelectionViewEach Icons.selectMode editingMode Select
+    , modeSelectionViewEach Icons.penMode editingMode Pen
+    , modeSelectionViewEach Icons.stampMode editingMode Stamp
+    , modeSelectionViewEach Icons.labelMode editingMode Label
     ]
 
 
-modeSelectionViewEach : (Bool -> Html Msg) -> EditMode -> EditMode -> Html Msg
+modeSelectionViewEach : (Bool -> Html Msg) -> EditingMode -> EditingMode -> Html Msg
 modeSelectionViewEach viewIcon currentEditMode targetEditMode =
   let
     selected =
@@ -192,29 +192,26 @@ modeSelectionViewEach viewIcon currentEditMode targetEditMode =
 view : Model -> Html Msg
 view model =
   let
-    (title, printMode, editing) =
-      case (model.floor, model.editMode) of
+    (title, printMode) =
+      case (model.floor, model.mode) of
         (Just floor, Viewing True) ->
-          ((EditingFloor.present floor).name, True, False)
-
-        (_, Viewing False) ->
-          (model.title, False, False)
+          ((EditingFloor.present floor).name, True)
 
         _ ->
-          (model.title, False, True)
+          (model.title, False)
 
     header =
       Header.view
         { onSignInClicked = SignIn
         , onSignOutClicked = SignOut
         , onToggleEditing = ToggleEditing
-        , onTogglePrintView = TogglePrintView model.editMode
+        , onTogglePrintView = TogglePrintView
         , onSelectLang = SelectLang
         , onUpdate = UpdateHeaderState
         , title = title
         , lang = model.lang
         , user = Just model.user
-        , editing = editing
+        , editing = Mode.isEditMode model.mode
         , printMode = printMode
         }
         model.headerState

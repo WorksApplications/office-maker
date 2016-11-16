@@ -4,7 +4,7 @@ import Maybe
 import Time exposing (Time)
 import Debounce exposing (Debounce)
 
-import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
@@ -24,8 +24,6 @@ import API.Cache as Cache exposing (Cache, UserState)
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
-
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
 
 type Msg
   = NoOp
@@ -66,7 +64,7 @@ type Msg
   | SelectSameColor Id
   | WindowSize (Int, Int)
   | MouseWheel Float
-  | ChangeMode EditMode
+  | ChangeMode EditingMode
   | ScaleEnd
   | PrototypesMsg Prototypes.Msg
   | RegisterPrototype Id
@@ -78,7 +76,7 @@ type Msg
   | SignIn
   | SignOut
   | ToggleEditing
-  | TogglePrintView EditMode
+  | TogglePrintView
   | SelectLang Language
   | UpdateSearchQuery String
   | SubmitSearch

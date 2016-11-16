@@ -379,13 +379,13 @@ fontSizeProperty selectedObjects =
 collectSameProperty : (Object -> a) -> List Object -> Maybe a
 collectSameProperty getProp selectedObjects =
   case List.head selectedObjects of
-    Just e ->
+    Just object ->
       let
-        firstProp = getProp e
+        firstProp = getProp object
       in
-        List.foldl (\e maybeProp ->
+        List.foldl (\object maybeProp ->
           let
-            prop = getProp e
+            prop = getProp object
           in
             case maybeProp of
               Just prop_ ->

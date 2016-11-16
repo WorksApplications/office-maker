@@ -19,14 +19,14 @@ import Page.Map.GridLayer as GridLayer
 
 import Util.HtmlUtil exposing (..)
 
-import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Mode as Mode exposing (Mode(..))
 import Model.Floor as Floor exposing (Floor)
 import Model.Object as Object exposing (..)
 import Model.Scale as Scale exposing (Scale)
 import Model.ObjectsOperation as ObjectsOperation exposing (..)
 import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
 import Page.Map.Msg exposing (..)
 
 adjustImagePositionOfMovingObject : Int -> Scale -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
@@ -39,7 +39,7 @@ adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, 
 
 
 type alias ObjectViewOption =
-  { editMode: EditMode
+  { mode: Mode
   , scale: Scale
   , selected: Bool
   , isGhost: Bool
@@ -51,7 +51,7 @@ type alias ObjectViewOption =
 
 
 objectView : ObjectViewOption -> Html Msg
-objectView {editMode, scale, selected, isGhost, object, rect, contextMenuDisabled, disableTransition} =
+objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, disableTransition} =
   let
     id =
       idOf object
@@ -60,26 +60,24 @@ objectView {editMode, scale, selected, isGhost, object, rect, contextMenuDisable
       rect
 
     eventOptions =
-      case editMode of
-        Viewing _ ->
-          let
-            noEvents = ObjectView.noEvents
-          in
-            { noEvents |
-              onMouseDown = Just (always (ShowDetailForObject id))
-            }
-
-        _ ->
-          { onContextMenu =
-              if contextMenuDisabled then
-                Nothing
-              else
-                Just (ShowContextMenuOnObject id)
-          , onMouseDown = Just (MouseDownOnObject id)
-          , onMouseUp = Just (MouseUpOnObject id)
-          , onStartEditingName = Nothing -- Just (StartEditObject id)
-          , onStartResize = Just (MouseDownOnResizeGrip id)
+      if Mode.isViewMode mode then
+        let
+          noEvents = ObjectView.noEvents
+        in
+          { noEvents |
+            onMouseDown = Just (always (ShowDetailForObject id))
           }
+      else
+        { onContextMenu =
+            if contextMenuDisabled then
+              Nothing
+            else
+              Just (ShowContextMenuOnObject id)
+        , onMouseDown = Just (MouseDownOnObject id)
+        , onMouseUp = Just (MouseUpOnObject id)
+        , onStartEditingName = Nothing -- Just (StartEditObject id)
+        , onStartResize = Just (MouseDownOnResizeGrip id)
+        }
 
     personMatched =
       Object.relatedPerson object /= Nothing
@@ -95,13 +93,13 @@ objectView {editMode, scale, selected, isGhost, object, rect, contextMenuDisable
         (shapeOf object == Object.Ellipse)
         selected
         isGhost
-        (editMode /= Viewing True && editMode /= Viewing False) -- rectVisible
+        (Mode.isEditMode mode)
         scale
         disableTransition
     else
       ObjectView.viewDesk
         eventOptions
-        (editMode /= Viewing True && editMode /= Viewing False)
+        (Mode.isEditMode mode)
         (x, y, width, height)
         (backgroundColorOf object)
         (nameOf object)
@@ -124,10 +122,10 @@ view model =
     Just floor ->
       let
         isRangeSelectMode =
-          model.editMode == Select && model.keys.ctrl
+          Mode.isSelectMode model.mode && model.keys.ctrl
       in
         div
-          [ style (S.canvasContainer (EditMode.isPrintMode model.editMode) isRangeSelectMode)
+          [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
           , onMouseMove' MoveOnCanvas
           , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
@@ -139,7 +137,7 @@ view model =
 
     Nothing ->
       div
-        [ style (S.canvasContainer (model.editMode == Viewing True) False)
+        [ style (S.canvasContainer (Mode.isPrintMode model.mode) False)
         ] []
 
 
@@ -178,7 +176,7 @@ canvasView model floor =
           model.objectNameInput
 
     gridLayer =
-      if EditMode.isEditMode model.editMode then
+      if Mode.isEditMode model.mode then
         GridLayer.view model floor
       else
         text ""
@@ -203,11 +201,6 @@ canvasView model floor =
 canvasViewStyles : Model -> Floor -> List (String, String)
 canvasViewStyles model floor =
   let
-    (isViewing, isPrintMode) =
-      case model.editMode of
-        Viewing print -> (True, print)
-        _ -> (False, False)
-
     (offsetX, offsetY) = model.offset
 
     rect =
@@ -215,10 +208,10 @@ canvasViewStyles model floor =
         model.scale
         (offsetX, offsetY, Floor.width floor, Floor.height floor)
   in
-    if isPrintMode then
+    if (Mode.isPrintMode model.mode) then
       S.canvasViewForPrint model.windowSize rect
     else
-      S.canvasView isViewing (transitionDisabled model) rect
+      S.canvasView (Mode.isViewMode model.mode) (transitionDisabled model) rect
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)
@@ -237,7 +230,7 @@ objectsView model floor =
             (\object ->
               ( idOf object ++ "ghost"
               , lazy objectView
-                  { editMode = model.editMode
+                  { mode = model.mode
                   , scale = model.scale
                   , rect = rect object
                   , selected = True
@@ -271,7 +264,7 @@ objectsView model floor =
               ( idOf object
               , lazy
                 objectView
-                  { editMode = model.editMode
+                  { mode = model.mode
                   , scale = model.scale
                   , rect = adjustRect object (rect object)
                   , selected = isSelected object
@@ -302,7 +295,7 @@ objectsView model floor =
             (\object ->
               ( idOf object ++ "ghost"
               , lazy objectView
-                { editMode = model.editMode
+                { mode = model.mode
                 , scale = model.scale
                 , rect = rect object
                 , selected = True
@@ -328,7 +321,7 @@ objectsView model floor =
             (\object ->
               ( idOf object
               , lazy objectView
-                { editMode = model.editMode
+                { mode = model.mode
                 , scale = model.scale
                 , rect = adjustRect object (rect object)
                 , selected = isResizing object --TODO seems not selected?
@@ -348,10 +341,10 @@ objectsView model floor =
         (\object ->
           ( idOf object
           , lazy objectView
-            { editMode = model.editMode
+            { mode = model.mode
             , scale = model.scale
             , rect = (rect object)
-            , selected = EditMode.isEditMode model.editMode && List.member (idOf object) model.selectedObjects
+            , selected = Mode.isEditMode model.mode && List.member (idOf object) model.selectedObjects
             , isGhost = False
             , object = object
             , contextMenuDisabled = model.keys.ctrl
@@ -360,7 +353,7 @@ objectsView model floor =
           )
         )
         (Floor.objects floor)
-        
+
 
 canvasImage : Floor -> Html msg
 canvasImage floor =
@@ -422,8 +415,8 @@ temporaryPenView model =
 
 selectorRectView : Model -> Html msg
 selectorRectView model =
-  case (model.editMode, model.selectorRect) of
-    (Select, Just rect) ->
+  case (Mode.isSelectMode model.mode, model.selectorRect) of
+    (True, Just rect) ->
       div
         [ style (S.selectorRect (transitionDisabled model) (Scale.imageToScreenForRect model.scale rect) )
         ]

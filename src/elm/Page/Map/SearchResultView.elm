@@ -11,7 +11,7 @@ import Model.Object as Object exposing (..)
 import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 import Model.Person exposing (Person)
-import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Mode as Mode exposing (Mode(..))
 import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
@@ -19,7 +19,7 @@ import Model.I18n as I18n exposing (Language)
 import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
 import View.Styles as S
 
-import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 
 
@@ -75,13 +75,13 @@ viewListForOnePost model (maybePostName, results) =
                   SelectSearchResult result
 
                 onStartDraggingMsg =
-                  if EditMode.isEditMode model.editMode then
+                  if Mode.isEditMode model.mode then
                     Just StartDraggingFromMissingPerson
                   else
                     Nothing
 
                 onStartDraggingExistingObjectMsg =
-                  if EditMode.isEditMode model.editMode then
+                  if Mode.isEditMode model.mode then
                     Just StartDraggingFromExistingObject
                   else
                     Nothing

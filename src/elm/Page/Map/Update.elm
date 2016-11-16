@@ -20,7 +20,7 @@ import Util.DictUtil as DictUtil
 import Util.File exposing (..)
 
 import Model.Direction as Direction exposing (..)
-import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
@@ -45,7 +45,7 @@ import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ObjectNameInput as ObjectNameInput
 
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
 
@@ -191,7 +191,7 @@ update removeToken setSelectionStart msg model =
     Initialized selectedFloor needsEditMode userState user ->
       let
         requestPrivateFloors =
-          EditMode.isEditMode model.editMode && not (User.isGuest user)
+          Mode.isEditMode model.mode && not (User.isGuest user)
 
         searchCmd =
           if String.trim model.searchQuery == "" then
@@ -218,25 +218,18 @@ update removeToken setSelectionStart msg model =
               , performAPI PrototypesLoaded (API.getPrototypes model.apiConfig)
               ]
 
-        editMode =
+        mode =
           if not (User.isGuest user) then
-            if needsEditMode then Select else Viewing False
+            if needsEditMode then Editing EditTab Select else Viewing False
           else
             Viewing False
-
-        tab =
-          if needsEditMode && not (User.isGuest user) then
-            EditTab
-          else
-            SearchTab
       in
         { model |
           user = user
         , scale = userState.scale
         , offset = userState.offset
         , lang = userState.lang
-        , editMode = editMode
-        , tab = tab
+        , mode = mode
         }
         ! [ searchCmd
           , performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
@@ -445,28 +438,28 @@ update removeToken setSelectionStart msg model =
         clientY = clientY' - 37
 
         selectorRect =
-          case model.editMode of
-            Select ->
-              let
-                (x, y) = fitPositionToGrid model.gridSize <|
-                  Model.screenToImageWithOffset model.scale (clientX, clientY) model.offset
-              in
-                Just (x, y, model.gridSize, model.gridSize)
+          if Mode.isSelectMode model.mode then
+            let
+              (x, y) = fitPositionToGrid model.gridSize <|
+                Model.screenToImageWithOffset model.scale (clientX, clientY) model.offset
+            in
+              Just (x, y, model.gridSize, model.gridSize)
 
-            _ -> model.selectorRect
+          else
+            model.selectorRect
 
         draggingContext =
-          case model.editMode of
-            LabelMode ->
+          case model.mode of
+            Editing _ Mode.Label ->
               NoDragging
 
-            Stamp ->
+            Editing _ Stamp ->
               StampFromScreenPos (clientX, clientY)
 
-            Pen ->
+            Editing _ Pen ->
               PenFromScreenPos (clientX, clientY)
 
-            Select ->
+            Editing _ Select ->
               if model.keys.ctrl then
                 Selector
               else
@@ -484,7 +477,7 @@ update removeToken setSelectionStart msg model =
               { model | objectNameInput = objectNameInput } ! []
 
         (model'', cmd2) =
-          if model.editMode == LabelMode then
+          if Mode.isLabelMode model.mode then
             updateOnFinishLabel model
           else
             (model', Cmd.none)
@@ -840,7 +833,7 @@ update removeToken setSelectionStart msg model =
       submitSearch
         { model
         | searchQuery = postName
-        , tab = SearchTab
+        , mode = Mode.showSearchTab model.mode
         , contextMenu = NoContextMenu
         }
 
@@ -978,15 +971,15 @@ update removeToken setSelectionStart msg model =
     WindowSize (w, h) ->
       { model | windowSize = (w, h) } ! []
 
-    ChangeMode mode ->
-      { model | editMode = mode } ! []
+    ChangeMode editingMode ->
+      { model | mode = Mode.changeEditingMode editingMode model.mode } ! []
 
     PrototypesMsg msg ->
       let
         newModel =
           { model |
             prototypes = Prototypes.update msg model.prototypes
-          , editMode = Stamp -- TODO if event == select
+          , mode = Mode.toStampMode model.mode -- TODO if event == select
           }
       in
         newModel ! []
@@ -1124,19 +1117,12 @@ update removeToken setSelectionStart msg model =
       let
         newModel =
           { model |
-            editMode =
-              case model.editMode of
-                Viewing _ -> Select
-                _ -> Viewing False
-
-          , tab =
-              case model.editMode of
-                Viewing _ -> EditTab
-                _ -> SearchTab
+            mode =
+              Mode.toggleEditing model.mode
           }
 
         withPrivate =
-          EditMode.isEditMode newModel.editMode && not (User.isGuest newModel.user)
+          Mode.isEditMode newModel.mode && not (User.isGuest newModel.user)
 
         loadFloorCmd =
           case model.floor of
@@ -1155,9 +1141,9 @@ update removeToken setSelectionStart msg model =
           , Navigation.modifyUrl (URL.serialize newModel)
           ]
 
-    TogglePrintView prevEditMode ->
+    TogglePrintView ->
       { model |
-        editMode = prevEditMode
+        mode = Mode.togglePrintView model.mode
       } ! []
 
     SelectLang lang ->
@@ -1212,7 +1198,7 @@ update removeToken setSelectionStart msg model =
                     }
 
                 requestPrivateFloors =
-                  EditMode.isEditMode model_.editMode && not (User.isGuest model_.user)
+                  Mode.isEditMode model_.mode && not (User.isGuest model_.user)
 
                 goToFloor =
                   Task.perform
@@ -1314,7 +1300,7 @@ update removeToken setSelectionStart msg model =
             } ! [ cmd ]
 
     ChangeTab tab ->
-      { model | tab = tab } ! []
+      { model | mode = Mode.changeTab tab model.mode } ! []
 
     ClosePopup ->
       { model | selectedResult = Nothing } ! []
@@ -1431,8 +1417,7 @@ update removeToken setSelectionStart msg model =
     TokenRemoved ->
       { model |
         user = User.guest
-      , tab = SearchTab
-      , editMode = Viewing False
+      , mode = Viewing False
       } ! []
 
     Undo ->
@@ -1505,7 +1490,7 @@ update removeToken setSelectionStart msg model =
         Just editingFloor ->
           let
             requestPrivateFloors =
-              EditMode.isEditMode model.editMode && not (User.isGuest model.user)
+              Mode.isEditMode model.mode && not (User.isGuest model.user)
 
             floorId =
               (EditingFloor.present editingFloor).id
@@ -1685,7 +1670,7 @@ updateOnFinishStamp_ prototypes model floor =
           | seed = newSeed
           , floor = Just newFloor
           , searchResult = searchResult
-          , editMode = Select
+          , mode = Mode.toSelectMode model.mode
         }
         , saveCmd
       )
@@ -1824,7 +1809,7 @@ updateOnFinishLabel model =
         model' =
           { model |
             seed = newSeed
-          , editMode = Select
+          , mode = Mode.toSelectMode model.mode
           , floor = Just newFloor
           }
       in
@@ -2214,16 +2199,16 @@ updateByKeyEvent event model =
       Model.expandOrShrinkToward Right model ! []
 
     (Just floor, _, False, ShortCut.UpArrow) ->
-      moveSelectionToward Up model floor
+      moveSelecedObjectsToward Up model floor
 
     (Just floor, _, False, ShortCut.DownArrow) ->
-      moveSelectionToward Down model floor
+      moveSelecedObjectsToward Down model floor
 
     (Just floor, _, False, ShortCut.LeftArrow) ->
-      moveSelectionToward Left model floor
+      moveSelecedObjectsToward Left model floor
 
     (Just floor, _, False, ShortCut.RightArrow) ->
-      moveSelectionToward Right model floor
+      moveSelecedObjectsToward Right model floor
 
     (Just floor, _, _, ShortCut.Del) ->
       let
@@ -2244,8 +2229,8 @@ updateByKeyEvent event model =
       model ! []
 
 
-moveSelectionToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg)
-moveSelectionToward direction model editingFloor =
+moveSelecedObjectsToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg)
+moveSelecedObjectsToward direction model editingFloor =
   let
     shift =
       Direction.shiftTowards direction model.gridSize

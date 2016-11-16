@@ -6,7 +6,7 @@ import String
 import Navigation
 
 import Model.EditingFloor as EditingFloor
-import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Mode as Mode exposing (Mode(..))
 import Util.UrlParser as UrlParser
 
 import Page.Map.Model as Model exposing (Model)
@@ -98,9 +98,7 @@ fromModel model =
       else
         Just model.searchQuery
   , editMode =
-      case model.editMode of
-        Viewing _ -> False
-        _ -> True
+      Mode.isEditMode model.mode
   }
 
 

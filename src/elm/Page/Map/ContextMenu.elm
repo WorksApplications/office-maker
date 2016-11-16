@@ -11,7 +11,7 @@ import Model.I18n as I18n
 import Model.Floor as Floor
 
 import Page.Map.Msg exposing (..)
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..), Tab(..))
+import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
 
 view : Model -> Html Msg
 view model =

@@ -26,7 +26,7 @@ import Model.SearchResult as SearchResult exposing (SearchResult, SearchResultsF
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
-import Model.EditMode as EditMode exposing (EditMode(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..))
 
 import API.API as API
@@ -55,7 +55,7 @@ type alias Model =
   , gridSize : Int
   , selectorRect : Maybe (Int, Int, Int, Int)
   , keys : ShortCut.Model
-  , editMode : EditMode
+  , mode : Mode
   , colorPalette : ColorPalette
   , contextMenu : ContextMenu
   , floor : Maybe EditingFloor
@@ -73,7 +73,6 @@ type alias Model =
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
   , candidates : List Id
-  , tab : Tab
   , clickEmulator : List (ObjectId, Bool, Time)
   , searchCandidateDebounce : Debounce (Id, String)
   , personPopupSize : (Int, Int)
@@ -102,12 +101,8 @@ type DraggingContext
   | MoveExistingObjectFromSearchResult FloorId Time Prototype ObjectId
 
 
-type Tab =
-  SearchTab | EditTab
-
-
 init : API.Config -> String -> (Int, Int) -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
-init apiConfig title initialSize randomSeed visitDate editMode query scale offset lang =
+init apiConfig title initialSize randomSeed visitDate isEditMode query scale offset lang =
   let
     initialFloor =
       Floor.empty
@@ -127,7 +122,7 @@ init apiConfig title initialSize randomSeed visitDate editMode query scale offse
     , gridSize = gridSize
     , selectorRect = Nothing
     , keys = ShortCut.init
-    , editMode = if editMode then Select else Viewing False
+    , mode = if isEditMode then Editing EditTab Select else Viewing False
     , colorPalette = ColorPalette.empty
     , contextMenu = NoContextMenu
     , floorsInfo = []
@@ -145,7 +140,6 @@ init apiConfig title initialSize randomSeed visitDate editMode query scale offse
     , candidates = []
     , searchQuery = query
     , searchResult = Nothing
-    , tab = if editMode then EditTab else SearchTab
     , clickEmulator = []
     , searchCandidateDebounce = Debounce.init
     , personPopupSize = (300, 160)
@@ -351,7 +345,7 @@ getPositionedPrototype model =
     (x2', y2') =
       screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
   in
-    case (model.editMode, model.draggingContext) of
+    case (Mode.isStampMode model.mode, model.draggingContext) of
       (_, MoveFromSearchResult prototype _) ->
         let
           (left, top) =
@@ -366,14 +360,14 @@ getPositionedPrototype model =
         in
           [ (prototype, (left, top)) ]
 
-      (Stamp, StampFromScreenPos (x1, y1)) ->
+      (True, StampFromScreenPos (x1, y1)) ->
         let
           (x1', y1') =
             screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
         in
           positionedPrototypesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
 
-      (Stamp, _) ->
+      (True, _) ->
         let
           (left, top) =
             fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)

@@ -8,7 +8,6 @@ import Html.Events exposing (..)
 import Component.Header as Header
 
 import Model.I18n as I18n exposing (Language(..))
-import Model.Prototype exposing (Prototype)
 
 import View.Common exposing (..)
 import View.MessageBar as MessageBar
