@@ -42,7 +42,7 @@ decodeFloors =
 
 decodeFloorInfoList : Decoder (List FloorInfo)
 decodeFloorInfoList =
-  D.list decodeFloorInfo
+  D.list decodeFloorInfo |> D.map (Debug.log "info")
 
 
 decodePeople : Decoder (List Person)
@@ -312,14 +312,8 @@ decodeFloorBase =
 
 
 decodeFloorInfo : Decoder FloorInfo
-decodeFloorInfo = D.map (\(lastFloor, lastFloorWithEdit) ->
-  if lastFloorWithEdit.public then
-    FloorInfo.Public lastFloorWithEdit
-  else if lastFloor.public then
-    FloorInfo.PublicWithEdit lastFloor lastFloorWithEdit
-  else
-    FloorInfo.Private lastFloorWithEdit
-  ) (D.tuple2 (,) decodeFloorBase decodeFloorBase)
+decodeFloorInfo =
+  D.tuple2 FloorInfo.init decodeFloorBase decodeFloorBase
 
 
 decodePrototype : Decoder Prototype

@@ -136,16 +136,10 @@ getFloorMaybe config id =
 
 getFloorsInfo : Config -> Task Error (List FloorInfo)
 getFloorsInfo config =
-  let
-    url =
-      Http.url
-        (config.apiRoot ++ "/1/floors")
-        []
-  in
-    getWithoutCache
-      decodeFloorInfoList
-      url
-      (authorization config.token)
+  getWithoutCache
+    decodeFloorInfoList
+    (Http.url (config.apiRoot ++ "/1/floors") [])
+    (authorization config.token)
 
 
 getPrototypes : Config -> Task Error (List Prototype)

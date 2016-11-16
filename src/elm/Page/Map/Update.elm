@@ -2128,7 +2128,7 @@ batchSave apiConfig request =
       API.saveObjects apiConfig request.objects
         |> (performAPI ObjectsSaved)
   in
-    Cmd.batch [ saveFloorCmd, saveObjectsCmd ]
+    Cmd.batch [ publishFloorCmd, saveFloorCmd, saveObjectsCmd ]
 
 
 updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
@@ -2149,7 +2149,7 @@ updateByKeyEventWithCtrl event model =
     (Just floor, ShortCut.A) ->
       { model |
         selectedObjects =
-          List.map idOf <| Floor.objects (Model.getEditingFloorOrDummy model)
+          List.map idOf <| Floor.objects (EditingFloor.present floor)
       } ! []
 
     (Just floor, ShortCut.C) ->

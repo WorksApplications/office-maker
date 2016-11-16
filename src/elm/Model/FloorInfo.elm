@@ -11,6 +11,11 @@ type FloorInfo
   | Private FloorBase
 
 
+init : FloorBase -> FloorBase -> FloorInfo
+init lastFloor editingFloor =
+  PublicWithEdit lastFloor editingFloor
+
+
 idOf : FloorInfo -> String
 idOf info =
   case info of
