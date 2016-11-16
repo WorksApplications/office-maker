@@ -5,6 +5,10 @@ import Model.Floor exposing (FloorBase)
 
 -- TODO List FloorInfo => Dict String FloorInfo
 
+
+type alias FloorId = String
+
+
 type FloorInfo
   = Public FloorBase
   | PublicWithEdit FloorBase FloorBase
@@ -16,7 +20,7 @@ init lastFloor editingFloor =
   PublicWithEdit lastFloor editingFloor
 
 
-idOf : FloorInfo -> String
+idOf : FloorInfo -> FloorId
 idOf info =
   case info of
     Public floor ->
@@ -29,7 +33,7 @@ idOf info =
       floor.id
 
 
-findViewingFloor : String -> List FloorInfo -> Maybe FloorBase
+findViewingFloor : FloorId -> List FloorInfo -> Maybe FloorBase
 findViewingFloor floorId list =
   case List.filter (\info -> idOf info == floorId) list of
     x :: _ ->
@@ -46,7 +50,7 @@ findViewingFloor floorId list =
       Nothing
 
 
-findFloor : String -> Int -> List FloorInfo -> Maybe FloorBase
+findFloor : FloorId -> Int -> List FloorInfo -> Maybe FloorBase
 findFloor floorId version list =
   case List.filter (\info -> idOf info == floorId) list of
     x :: _ ->

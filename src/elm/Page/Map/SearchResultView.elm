@@ -23,6 +23,10 @@ import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 
 
+type alias FloorId = String
+type alias PersonId = String
+
+
 view : Model -> Html Msg
 view model =
   case model.searchResult of
@@ -119,7 +123,7 @@ viewListForOnePost model (maybePostName, results) =
       ]
 
 
-toItemViewModel : Language -> Dict String FloorBase -> Dict String Person -> Maybe Id -> SearchResult -> Maybe Item
+toItemViewModel : Language -> Dict FloorId FloorBase -> Dict PersonId Person -> Maybe Id -> SearchResult -> Maybe Item
 toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
   case result of
     SearchResult.Object object floorId ->
