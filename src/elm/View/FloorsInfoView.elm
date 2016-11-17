@@ -63,7 +63,7 @@ viewPublicFloors goToFloorMsg currentFloorId floorsInfo =
   let
     floorList =
       floorsInfo
-        |> FloorInfo.toEditingList
+        |> FloorInfo.toPublicList
         |> List.map
           (\floor ->
             eachView
