@@ -1,7 +1,5 @@
 module Page.Map.PropertyView exposing (view)
 
-import Maybe
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -81,7 +79,7 @@ paletteViewEach : (String -> Msg) -> (String -> Bool) -> String -> Html Msg
 paletteViewEach toMsg match color =
   li
     [ style (S.colorProperty color (match color))
-    , onMouseDown' (toMsg color)
+    , onMouseDown_ (toMsg color)
     ]
     []
 
@@ -114,7 +112,7 @@ shapeViewEach : (Object.Shape -> Msg) -> (Object.Shape -> Bool) -> (Object.Shape
 shapeViewEach toMsg match toIcon shape =
   li
     [ style (S.shapeProperty (match shape))
-    , onMouseDown' (toMsg shape)
+    , onMouseDown_ (toMsg shape)
     ]
     [ toIcon shape ]
 
@@ -144,6 +142,6 @@ fontSizeViewEach : (Float -> Msg) -> (Float -> Bool) -> Float -> Html Msg
 fontSizeViewEach toMsg match size =
   li
     [ style (S.colorProperty "" (match size))
-    , onMouseDown' (toMsg size)
+    , onMouseDown_ (toMsg size)
     ]
     [ text (toString size) ]

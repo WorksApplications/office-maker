@@ -3,15 +3,13 @@ module Page.Map.Update exposing (..)
 import Maybe
 import Task exposing (Task, andThen, onError)
 import Window
-import String
+
 import Process
 import Keyboard
 import Dict exposing (Dict)
-import Navigation
+import Navigation exposing (Location)
 import Time exposing (Time, second)
-import Http
 import Dom
-import Basics.Extra exposing (never)
 import Mouse exposing (Position)
 import Debounce exposing (Debounce)
 
@@ -19,6 +17,7 @@ import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
 import Util.File exposing (..)
+import Util.HttpUtil as HttpUtil
 
 import Model.Direction as Direction exposing (..)
 import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
@@ -88,9 +87,17 @@ subscriptions tokenRemoved undo redo clipboard model =
     ]
 
 
-init : Flags -> (Result String URL) -> (Model, Cmd Msg)
-init flags urlResult =
+parseURL : Location -> Msg
+parseURL location =
+  URL.parse location |> UrlUpdate
+
+
+init : Flags -> Location -> (Model, Cmd Msg)
+init flags location =
   let
+    urlResult =
+      URL.parse location
+
     apiConfig =
       { apiRoot = flags.apiRoot
       , accountServiceRoot = flags.accountServiceRoot
@@ -136,9 +143,10 @@ initCmd : API.Config -> Bool -> UserState -> Maybe String -> Cmd Msg
 initCmd apiConfig needsEditMode defaultUserState selectedFloor =
   performAPI
     (\(userState, user) -> Initialized selectedFloor needsEditMode userState user)
-    ( Cache.getWithDefault Cache.cache defaultUserState `Task.andThen` \userState ->
-        API.getAuth apiConfig `Task.andThen` \user ->
-        Task.succeed (userState, user)
+    ( Cache.getWithDefault Cache.cache defaultUserState
+        |> Task.andThen (\userState -> API.getAuth apiConfig
+        |> Task.map (\user -> (userState, user))
+        )
     )
 
 
@@ -158,7 +166,10 @@ debugMsg msg =
 
 performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
 performAPI tagger task =
-  Task.perform (Error << APIError) tagger task
+  task
+    |> Task.map tagger
+    |> Task.onError (\e -> Task.succeed (Error (APIError e)))
+    |> Task.perform identity
 
 
 saveFloorDebounceConfig : Debounce.Config Msg
@@ -175,21 +186,19 @@ searchCandidateDebounceConfig =
   }
 
 
-urlUpdate : Result String URL -> Model -> (Model, Cmd Msg)
-urlUpdate result model =
-  case result of
-    Ok newURL ->
-      model ! []
-
-    Err _ ->
-      model ! [ Navigation.modifyUrl (URL.stringify "/" URL.init) ]
-
-
 update : ({} -> Cmd Msg) -> ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
 update removeToken setSelectionStart msg model =
   case debugMsg msg of
     NoOp ->
       model ! []
+
+    UrlUpdate result ->
+      case result of
+        Ok newURL ->
+          model ! []
+
+        Err _ ->
+          model ! [ Navigation.modifyUrl (URL.stringify "/" URL.init) ]
 
     MouseMove position ->
       let
@@ -351,7 +360,8 @@ update removeToken setSelectionStart msg model =
       , error = Success ("Successfully published " ++ floor.name)
       } !
         [ performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
-        , Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+        , Process.sleep 3000.0
+            |> Task.perform (\_ -> Error NoError)
         ]
 
     FloorDeleted floor ->
@@ -360,7 +370,8 @@ update removeToken setSelectionStart msg model =
       , error = Success ("Successfully deleted " ++ floor.name)
       } !
         [ performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
-        , Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
+        , Process.sleep 3000.0
+            |> Task.perform (\_ -> Error NoError)
         ]
 
     EnterCanvas ->
@@ -388,7 +399,7 @@ update removeToken setSelectionStart msg model =
         canvasPosition =
           Model.canvasPosition model
 
-        (model', cmd) =
+        (model_, cmd) =
           if ObjectNameInput.isEditing model.objectNameInput then
             let
               (objectNameInput, ev) =
@@ -433,7 +444,7 @@ update removeToken setSelectionStart msg model =
           , selectorRect = Nothing
           }
       in
-        help model' ! [ cmd, emulateClick lastTouchedId True ]
+        help model_ ! [ cmd, emulateClick lastTouchedId True ]
 
     MouseUpOnObject lastTouchedId ->
       let
@@ -448,7 +459,7 @@ update removeToken setSelectionStart msg model =
           updateOnMouseUp model
 
         cmd2 =
-          Task.perform never (always NoOp) (putUserState newModel)
+          Task.perform (always NoOp) (putUserState newModel)
       in
         newModel ! [ cmd1, cmd2 ]
 
@@ -488,7 +499,7 @@ update removeToken setSelectionStart msg model =
             Viewing _ ->
               ShiftOffset
 
-        (model', cmd) =
+        (model_, cmd) =
           case ObjectNameInput.forceFinish model.objectNameInput of
             (objectNameInput, Just (id, name)) ->
               updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
@@ -496,14 +507,14 @@ update removeToken setSelectionStart msg model =
             (objectNameInput, _) ->
               { model | objectNameInput = objectNameInput } ! []
 
-        (model'', cmd2) =
+        (model__, cmd2) =
           if Mode.isLabelMode model.mode then
             updateOnFinishLabel model
           else
-            (model', Cmd.none)
+            (model_, Cmd.none)
 
         newModel =
-          { model''
+          { model__
           | selectorRect = selectorRect
           --  selectedObjects = []
           , contextMenu = NoContextMenu
@@ -514,7 +525,7 @@ update removeToken setSelectionStart msg model =
 
     MouseDownOnResizeGrip id ->
       let
-        (model', cmd) =
+        (model_, cmd) =
           case ObjectNameInput.forceFinish model.objectNameInput of
             (objectNameInput, Just (id, name)) ->
               updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
@@ -523,7 +534,7 @@ update removeToken setSelectionStart msg model =
               { model | objectNameInput = objectNameInput } ! []
 
         newModel =
-          { model' |
+          { model_ |
             selectedObjects = []
           , contextMenu = NoContextMenu
           , draggingContext = ResizeFromScreenPos id (Model.canvasPosition model)
@@ -533,7 +544,7 @@ update removeToken setSelectionStart msg model =
 
     StartEditObject objectId ->
       model.floor
-        |> (flip Maybe.andThen) (\efloor ->
+        |> Maybe.andThen (\efloor ->
           Floor.getObject objectId (EditingFloor.present efloor)
             |> Maybe.map (\object ->
               let
@@ -633,30 +644,30 @@ update removeToken setSelectionStart msg model =
         (objectNameInput, event) =
           ObjectNameInput.update message model.objectNameInput
 
-        model' =
+        model_ =
           { model |
             objectNameInput = objectNameInput
           }
       in
         case event of
           ObjectNameInput.OnInput id name ->
-            model' ! [ requestCandidate id name ]
+            model_ ! [ requestCandidate id name ]
 
           ObjectNameInput.OnFinish objectId name candidateId ->
             case candidateId of
               Just personId ->
-                updateOnSelectCandidate objectId personId model'
+                updateOnSelectCandidate objectId personId model_
 
               Nothing ->
-                updateOnFinishNameInput True objectId name model'
+                updateOnFinishNameInput True objectId name model_
 
           ObjectNameInput.OnSelectCandidate objectId personId ->
-            updateOnSelectCandidate objectId personId model'
+            updateOnSelectCandidate objectId personId model_
 
           ObjectNameInput.OnUnsetPerson objectId ->
-            case model'.floor of
+            case model_.floor of
               Nothing ->
-                model' ! []
+                model_ ! []
 
               Just editingFloor ->
                 let
@@ -668,12 +679,12 @@ update removeToken setSelectionStart msg model =
                   saveCmd =
                     requestSaveObjectsCmd objectsChange
                 in
-                  { model' |
+                  { model_ |
                     floor = Just newFloor
                   } ! [ saveCmd ]
 
           ObjectNameInput.None ->
-            model' ! []
+            model_ ! []
 
     RequestCandidate objectId name ->
       let
@@ -739,7 +750,7 @@ update removeToken setSelectionStart msg model =
               requestSaveObjectsCmd objectsChange
 
             allPeople =
-              List.concatMap snd pairs
+              List.concatMap Tuple.second pairs
 
             personInfo =
               DictUtil.addAll (.id) allPeople model.personInfo
@@ -757,19 +768,18 @@ update removeToken setSelectionStart msg model =
           else
             [objectId]
 
-        maybeLoadPersonCmd =
-          model.floor `Maybe.andThen` \eFloor ->
-          Floor.getObject objectId (EditingFloor.present eFloor) `Maybe.andThen` \obj ->
-          Object.relatedPerson obj `Maybe.andThen` \personId ->
-          Just (getAndCachePersonIfNotCached personId model)
-
-        cmd =
-          Maybe.withDefault Cmd.none maybeLoadPersonCmd
+        loadPersonCmd =
+          model.floor
+            |> Maybe.andThen (\eFloor -> Floor.getObject objectId (EditingFloor.present eFloor)
+            |> Maybe.andThen (\obj -> Object.relatedPerson obj
+            |> Maybe.map (\personId -> getAndCachePersonIfNotCached personId model)
+            ))
+            |> Maybe.withDefault Cmd.none
       in
         { model |
           contextMenu = Model.Object model.mousePosition objectId
         , selectedObjects = selectedObjects
-        } ! [ cmd ]
+        } ! [ loadPersonCmd ]
 
     ShowContextMenuOnFloorInfo id ->
       case model.floor of
@@ -790,7 +800,7 @@ update removeToken setSelectionStart msg model =
       let
         loadCmd =
           maybeNextFloor
-            |> (flip Maybe.andThen)
+            |> Maybe.andThen
               (\(floorId, requestLastEdit) ->
                 let
                   load =
@@ -910,7 +920,7 @@ update removeToken setSelectionStart msg model =
     SelectSameColor objectId ->
       model.floor
         |> Maybe.map EditingFloor.present
-        |> (flip Maybe.andThen) (\floor ->
+        |> Maybe.andThen (\floor ->
           Floor.getObject objectId floor
             |> Maybe.map (\object ->
               let
@@ -935,10 +945,10 @@ update removeToken setSelectionStart msg model =
         (keys, event) =
           ShortCut.update isDown keyCode model.keys
 
-        model' =
+        model_ =
           { model | keys = keys }
       in
-        updateByKeyEvent event model'
+        updateByKeyEvent event model_
 
     MouseWheel value ->
       let
@@ -971,12 +981,12 @@ update removeToken setSelectionStart msg model =
           }
 
         saveUserStateCmd =
-          Task.perform never (always NoOp) (putUserState newModel)
+          Task.perform (always NoOp) (putUserState newModel)
 
-        cmd =
-          Task.perform (always NoOp) (always ScaleEnd) (Process.sleep 200.0)
+        scaleEndCmd =
+          Task.perform (always ScaleEnd) (Process.sleep 200.0)
       in
-        newModel ! [ saveUserStateCmd, cmd ]
+        newModel ! [ saveUserStateCmd, scaleEndCmd ]
 
     ScaleEnd ->
       { model | scaling = False } ! []
@@ -1001,9 +1011,9 @@ update removeToken setSelectionStart msg model =
       let
         object =
           model.floor
-            |> (flip Maybe.andThen) (\floor -> Floor.getObject objectId (EditingFloor.present floor))
+            |> Maybe.andThen (\floor -> Floor.getObject objectId (EditingFloor.present floor))
 
-        model' =
+        model_ =
           { model |
             contextMenu = NoContextMenu
           }
@@ -1029,13 +1039,13 @@ update removeToken setSelectionStart msg model =
                   }
                   model.prototypes
             in
-              { model' |
+              { model_ |
                 seed = seed
               , prototypes = newPrototypes
               } ! [ (savePrototypesCmd model.apiConfig) newPrototypes.data ]
 
           Nothing ->
-            model' ! []
+            model_ ! []
 
     FloorPropertyMsg message ->
       case model.floor of
@@ -1121,7 +1131,7 @@ update removeToken setSelectionStart msg model =
       { model | headerState = Header.update msg model.headerState } ! []
 
     SignIn ->
-      model ! [ Task.perform (always NoOp) (always NoOp) API.goToLogin ]
+      model ! [ Task.perform (always NoOp) API.goToLogin ]
 
     SignOut ->
       model ! [ removeToken {} ]
@@ -1164,7 +1174,7 @@ update removeToken setSelectionStart msg model =
         newModel =
           { model | lang = lang }
       in
-        newModel ! [ Task.perform never (always NoOp) (putUserState newModel) ]
+        newModel ! [ Task.perform (always NoOp) (putUserState newModel) ]
 
     UpdateSearchQuery searchQuery ->
       { model |
@@ -1215,7 +1225,6 @@ update removeToken setSelectionStart msg model =
 
                 goToFloor =
                   Task.perform
-                    identity
                     GoToFloor
                     (Task.succeed (Just (floorId, requestPrivateFloors)))
               in
@@ -1327,7 +1336,7 @@ update removeToken setSelectionStart msg model =
           let
             maybePersonId =
               Floor.getObject objectId (EditingFloor.present floor)
-                |> (flip Maybe.andThen) Object.relatedPerson
+                |> Maybe.andThen Object.relatedPerson
 
             cmd =
               case maybePersonId of
@@ -1356,11 +1365,9 @@ update removeToken setSelectionStart msg model =
           Floor.initWithOrder newFloorId lastFloorOrder
 
         cmd =
-          performAPI
-            FloorsInfoLoaded
-            ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
-              API.getFloorsInfo model.apiConfig
-            )
+          API.saveFloor model.apiConfig newFloor
+            |> Task.andThen (\_ -> API.getFloorsInfo model.apiConfig)
+            |> performAPI FloorsInfoLoaded
 
         newModel =
           { model | seed = newSeed
@@ -1389,16 +1396,16 @@ update removeToken setSelectionStart msg model =
               Floor.copy withEmptyObjects newFloorId floor
 
             saveCmd =
-              performAPI
-                FloorsInfoLoaded
-                ( API.saveFloor model.apiConfig newFloor `andThen` \_ ->
-                  ( if withEmptyObjects then
-                      API.saveObjects model.apiConfig (ObjectsChange.added (Floor.objects newFloor))
-                    else
-                      Task.succeed ObjectsChange.empty
-                  ) `andThen` \_ ->
-                  API.getFloorsInfo model.apiConfig
+              API.saveFloor model.apiConfig newFloor
+                |> Task.andThen (\_ ->
+                  if withEmptyObjects then
+                    API.saveObjects model.apiConfig (ObjectsChange.added (Floor.objects newFloor))
+                  else
+                    Task.succeed ObjectsChange.empty
                 )
+                |> Task.andThen (\_ -> API.getFloorsInfo model.apiConfig)
+                |> performAPI FloorsInfoLoaded
+
 
             newModel =
               { model |
@@ -1427,7 +1434,7 @@ update removeToken setSelectionStart msg model =
       in
         { model | clickEmulator = clickEmulator }
         ! ( if event == "dblclick" then
-              [ Task.perform identity identity (Task.succeed (StartEditObject id)) ]
+              [ Task.perform identity (Task.succeed (StartEditObject id)) ]
             else
               []
             )
@@ -1487,10 +1494,14 @@ update removeToken setSelectionStart msg model =
             task =
               List.foldl
                 (\object prevTask ->
-                  prevTask `andThen` \list ->
-                    Task.map (\people ->
-                      (Object.idOf object, people) :: list
-                    ) (API.personCandidate model.apiConfig (Object.nameOf object)) -- TODO too many requests
+                  prevTask
+                    |> Task.andThen (\list ->
+                      API.personCandidate model.apiConfig (Object.nameOf object)
+                        |> Task.map (\people ->
+                          (Object.idOf object, people) :: list
+                        )
+                    )
+                    -- TODO too many requests
                 ) (Task.succeed []) newObjects
 
             autoMatchingCmd =
@@ -1541,9 +1552,8 @@ submitSearch model =
       if String.trim model.searchQuery == "" then
         Cmd.none
       else
-        performAPI
-          GotSearchResult
-          (API.search model.apiConfig withPrivate model.searchQuery)
+        API.search model.apiConfig withPrivate model.searchQuery
+          |> performAPI GotSearchResult
   in
     model !
       [ searchCmd, Navigation.modifyUrl (URL.serialize model) ]
@@ -1552,7 +1562,7 @@ submitSearch model =
 updateOnMouseUp : Model -> (Model, Cmd Msg)
 updateOnMouseUp model =
   let
-    (model', cmd) =
+    (model_, cmd) =
       case model.draggingContext of
         MoveObject id start ->
           updateByMoveObjectEnd id start model.mousePosition model
@@ -1619,7 +1629,7 @@ updateOnMouseUp model =
           model ! []
 
     newModel =
-      { model' |
+      { model_ |
         draggingContext = NoDragging
       }
   in
@@ -1647,21 +1657,20 @@ updateOnSelectCandidate objectId personId model =
 
 requestCandidate : Id -> String -> Cmd Msg
 requestCandidate id name =
-  Task.perform identity identity <| Task.succeed (RequestCandidate id name)
+  Task.perform identity <| Task.succeed (RequestCandidate id name)
 
 
 emulateClick : String -> Bool -> Cmd Msg
 emulateClick id down =
-  Task.perform identity identity <|
-  Time.now `Task.andThen` \time ->
-  (Task.succeed (EmulateClick id down time))
+  Time.now
+    |> Task.perform (\time -> EmulateClick id down time)
 
 
 updateOnFinishStamp : Model -> (Model, Cmd Msg)
 updateOnFinishStamp model =
   case model.floor of
     Just floor ->
-      fst <| updateOnFinishStamp_ (Model.getPositionedPrototype model) model floor
+      Tuple.first <| updateOnFinishStamp_ (Model.getPositionedPrototype model) model floor
 
     Nothing ->
       model ! []
@@ -1761,8 +1770,8 @@ updateOnFinishPen from model =
 updateOnFinishResize : ObjectId -> Position -> Model -> (Model, Cmd Msg)
 updateOnFinishResize objectId fromScreen model =
   model.floor
-    |> (flip Maybe.andThen) (\editingFloor -> Floor.getObject objectId (EditingFloor.present editingFloor)
-    |> (flip Maybe.andThen) (\o -> Model.temporaryResizeRect model fromScreen (Object.rect o)
+    |> Maybe.andThen (\editingFloor -> Floor.getObject objectId (EditingFloor.present editingFloor)
+    |> Maybe.andThen (\o -> Model.temporaryResizeRect model fromScreen (Object.rect o)
     |> Maybe.map (\(_, _, width, height) ->
         let
           (newFloor, objectsChange) =
@@ -1832,7 +1841,7 @@ updateOnFinishLabel model =
         saveCmd =
           requestSaveObjectsCmd objectsChange
 
-        model' =
+        model_ =
           { model |
             seed = newSeed
           , mode = Mode.toSelectMode model.mode
@@ -1843,12 +1852,12 @@ updateOnFinishLabel model =
           Just e ->
             let
               newModel =
-                Model.startEdit e model'
+                Model.startEdit e model_
             in
               newModel ! [ saveCmd, focusCmd ]
 
           Nothing ->
-            model' ! [ saveCmd ]
+            model_ ! [ saveCmd ]
 
     _ ->
       model ! []
@@ -1902,7 +1911,14 @@ getAndCachePersonIfNotCached personId model =
 
 focusCmd : Cmd Msg
 focusCmd =
-  Task.perform (always NoOp) (always Focused) (Dom.focus "name-input")
+  Task.attempt (\result ->
+    case result of
+      Ok _ ->
+        Focused
+
+      _ ->
+        NoOp
+  ) (Dom.focus "name-input")
 
 
 updateFloorByFloorPropertyEvent : API.Config -> FloorProperty.Event -> Seed -> EditingFloor -> ((EditingFloor, Seed), Cmd Msg)
@@ -1978,7 +1994,7 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
     FloorProperty.OnFileLoadFailed err ->
       let
         cmd =
-          Task.perform (Error << FileError) (always NoOp) (Task.fail err)
+          Task.perform (Error << FileError) (Task.succeed err)
       in
         (efloor, seed) ! [ cmd ]
 
@@ -1995,9 +2011,8 @@ regesterPersonOfObject apiConfig e =
 
 regesterPerson : API.Config -> PersonId -> Cmd Msg
 regesterPerson apiConfig personId =
-  performAPI identity <|
-    API.getPerson apiConfig personId `andThen` \person ->
-      Task.succeed (RegisterPeople [person])
+  API.getPerson apiConfig personId
+    |> performAPI (\person -> RegisterPeople [person])
 
 
 regesterPersonIfNotCached : API.Config -> Dict PersonId Person -> PersonId -> Cmd Msg
@@ -2076,16 +2091,12 @@ updateOnFinishNameInput continueEditing objectId name model =
 
 registerPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg
 registerPersonDetailIfAPersonIsNotRelatedTo apiConfig object =
-  case Object.relatedPerson object of
-    Just personId ->
-      Cmd.none
-
-    Nothing ->
-      let
-        task =
-          API.personCandidate apiConfig (nameOf object)
-      in
-        performAPI RegisterPeople task
+  Object.relatedPerson object
+    |> Maybe.map (\personId ->
+      API.personCandidate apiConfig (nameOf object)
+        |> performAPI RegisterPeople
+      )
+    |> Maybe.withDefault Cmd.none
 
 
 nextObjectToInput : Object -> List Object -> Maybe Object
@@ -2109,9 +2120,8 @@ nextObjectToInput object allObjects =
 
 savePrototypesCmd : API.Config -> List Prototype -> Cmd Msg
 savePrototypesCmd apiConfig prototypes =
-  performAPI
-    (always NoOp)
-    (API.savePrototypes apiConfig prototypes)
+  API.savePrototypes apiConfig prototypes
+    |> performAPI (always NoOp)
 
 
 requestSaveObjectsCmd : ObjectsChange -> Cmd Msg
@@ -2131,7 +2141,8 @@ requestPublishFloorCmd id =
 
 requestCmd : SaveRequest -> Cmd Msg
 requestCmd req =
-  Task.perform identity RequestSave (Task.succeed req)
+  Task.succeed req
+    |> Task.perform RequestSave
 
 
 batchSave : API.Config -> ReducedSaveRequest -> Cmd Msg
@@ -2151,7 +2162,7 @@ batchSave apiConfig request =
 
     saveObjectsCmd =
       API.saveObjects apiConfig request.objects
-        |> (performAPI ObjectsSaved)
+        |> performAPI ObjectsSaved
   in
     Cmd.batch [ publishFloorCmd, saveFloorCmd, saveObjectsCmd ]
 
@@ -2201,7 +2212,7 @@ updateByKeyEventWithCtrl event model =
               floor = Just newFloor
             , seed = newSeed
             , selectedObjects =
-              case List.map snd copiedIdsWithNewIds of
+              case List.map Tuple.second copiedIdsWithNewIds of
                 [] -> model.selectedObjects -- for pasting from spreadsheet
                 x -> x
             , selectorRect = Nothing
@@ -2349,22 +2360,8 @@ putUserState model =
 
 loadFloor : API.Config -> Bool -> String -> Task API.Error (Maybe Floor)
 loadFloor apiConfig forEdit floorId =
-  recover404 <|
+  HttpUtil.recover404 <|
     if forEdit then
       API.getEditingFloor apiConfig floorId
     else
       API.getFloor apiConfig floorId
-
-
-recover404 : Task API.Error a -> Task API.Error (Maybe a)
-recover404 task =
-  task
-    |> Task.map Just
-    |> ( flip Task.onError) (\e ->
-          case e of
-            Http.BadResponse 404 _ ->
-              Task.succeed Nothing
-
-            e ->
-              Task.fail e
-       )

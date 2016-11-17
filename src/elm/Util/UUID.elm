@@ -3,16 +3,19 @@ module Util.UUID exposing (Seed, init, step)
 -- TODO maybe this implementation is incorrect. Use library instead.
 
 import Random
-import String
+
 
 type Seed =
   Seed Random.Seed Random.Seed
 
+
 r1 : Random.Generator String
 r1 = Random.map toHex <| Random.int 0 15
 
+
 r2 : Random.Generator String
 r2 = Random.map toHex <| Random.int 8 11
+
 
 toHex : Int -> String
 toHex i =
@@ -39,25 +42,27 @@ f : Char -> (String, Random.Seed, Random.Seed) -> (String, Random.Seed, Random.S
 f c (s, s1, s2) =
   if c == 'x' then
     let
-      (c', s1') = Random.step r1 s1
+      (c_, s1_) = Random.step r1 s1
     in
-      (s ++ c', s1', s2)
+      (s ++ c_, s1_, s2)
   else if c == 'y' then
     let
-      (c', s2') = Random.step r2 s2
+      (c_, s2_) = Random.step r2 s2
     in
-      (s ++ c', s1, s2')
+      (s ++ c_, s1, s2_)
   else
     (s ++ String.fromChar c, s1, s2)
+
 
 init : Int -> Int -> Seed
 init i1 i2 =
   Seed (Random.initialSeed i1) (Random.initialSeed i2)
 
+
 step : Seed -> (String, Seed)
 step (Seed s1 s2) =
   let
-    (s, s1', s2') =
+    (s, s1_, s2_) =
       List.foldl f ("", s1, s2) (String.toList "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx")
   in
-    (s, Seed s1' s2')
+    (s, Seed s1_ s2_)

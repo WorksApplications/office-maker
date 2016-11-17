@@ -65,7 +65,7 @@ toPublicList : Dict FloorId FloorInfo -> List FloorBase
 toPublicList floorsInfo =
   floorsInfo
     |> Dict.toList
-    |> List.map (snd >> publicFloor)
+    |> List.map (Tuple.second >> publicFloor)
     |> List.sortBy .ord
 
 
@@ -73,5 +73,5 @@ toEditingList : Dict FloorId FloorInfo -> List FloorBase
 toEditingList floorsInfo =
   floorsInfo
     |> Dict.toList
-    |> List.map (snd >> editingFloor)
+    |> List.map (Tuple.second >> editingFloor)
     |> List.sortBy .ord

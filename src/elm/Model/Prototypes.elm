@@ -22,6 +22,12 @@ type alias Position =
   }
 
 
+type alias Size =
+  { width : Int
+  , height : Int
+  }
+
+
 gridSize : Int
 gridSize = 8 --TODO
 
@@ -96,26 +102,26 @@ prototypes model =
 
 
 stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
-stampIndices horizontal (deskWidth, deskHeight) (x1', y1') (x2', y2') =
+stampIndices horizontal (deskWidth, deskHeight) (x1_, y1_) (x2_, y2_) =
   let
     (amountX, amountY) =
       if horizontal then
         let
-          amountX = (abs (x2' - x1') + deskWidth // 2) // deskWidth
+          amountX = (abs (x2_ - x1_) + deskWidth // 2) // deskWidth
 
-          amountY = if abs (y2' - y1') > (deskHeight // 2) then 1 else 0
+          amountY = if abs (y2_ - y1_) > (deskHeight // 2) then 1 else 0
         in
          (amountX, amountY)
       else
         let
-          amountX = if abs (x2' - x1') > (deskWidth // 2) then 1 else 0
+          amountX = if abs (x2_ - x1_) > (deskWidth // 2) then 1 else 0
 
-          amountY = (abs (y2' - y1') + deskHeight // 2) // deskHeight
+          amountY = (abs (y2_ - y1_) + deskHeight // 2) // deskHeight
         in
           (amountX, amountY)
   in
-    ( List.map (\i -> if x2' > x1' then i else -i) [0..amountX]
-    , List.map (\i -> if y2' > y1' then i else -i) [0..amountY]
+    ( List.map (\i -> if x2_ > x1_ then i else -i) (List.range 0 amountX)
+    , List.map (\i -> if y2_ > y1_ then i else -i) (List.range 0 amountY)
     )
 
 
@@ -155,8 +161,8 @@ positionedPrototypesOnDragging gridSize prototype xy1 xy2 = -- imagePos
     center =
       ObjectsOperation.fitPositionToGrid
         gridSize
-        { x = x1 - fst deskSize // 2
-        , y = y1 - snd deskSize // 2
+        { x = x1 - Tuple.first deskSize // 2
+        , y = y1 - Tuple.second deskSize // 2
         }
 
     all =
@@ -165,10 +171,10 @@ positionedPrototypesOnDragging gridSize prototype xy1 xy2 = -- imagePos
         (center.x, center.y)
         (indicesX, indicesY)
 
-    prototype' =
+    prototype_ =
       { prototype
       | width = deskWidth
       , height = deskHeight
       }
   in
-    List.map ((,) prototype') all
+    List.map ((,) prototype_) all

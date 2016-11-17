@@ -7,7 +7,7 @@ import Json.Decode as Decode
 import View.Styles as S
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
-import String
+
 
 
 type alias Id = String

@@ -17,14 +17,20 @@ view model floor =
     intervalPxOnScreen =
       Scale.imageToScreen model.scale (50 * model.gridSize)
 
-    (witdh, height) =
+    wh =
       Scale.imageToScreenForPosition
         model.scale
-        (Floor.width floor, Floor.height floor)
+        { x = Floor.width floor
+        , y = Floor.height floor
+        }
 
-    lefts = List.map ((*) intervalPxOnScreen) [1..(witdh // intervalPxOnScreen)]
+    width = wh.x
 
-    tops = List.map ((*) intervalPxOnScreen) [1..(height // intervalPxOnScreen)]
+    height = wh.y
+
+    lefts = List.map ((*) intervalPxOnScreen) (List.range 1 (width // intervalPxOnScreen))
+
+    tops = List.map ((*) intervalPxOnScreen) (List.range 1 (height // intervalPxOnScreen))
 
     vertical = List.map verticalLine lefts
 

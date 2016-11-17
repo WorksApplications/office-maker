@@ -2,10 +2,11 @@ module API.Cache exposing (..)
 
 import Task exposing (..)
 import Json.Encode as E exposing (Value)
-import Json.Decode as D exposing ((:=), Decoder)
+import Json.Decode as D exposing (Decoder)
 import PersistentCache as Cache
 import Model.Scale as Scale exposing (Scale)
 import Model.I18n as I18n exposing (..)
+import Util.DecodeUtil exposing (..)
 
 
 type alias Cache = Cache.Cache UserState
@@ -37,14 +38,16 @@ get cache =
 
 getWithDefault : Cache -> UserState -> Task x UserState
 getWithDefault cache defaultState =
-  Cache.get cache "userState" `andThen` \maybeState ->
-  case maybeState of
-    Just state ->
-      Task.succeed state
+  Cache.get cache "userState"
+    |> andThen (\maybeState ->
+      case maybeState of
+        Just state ->
+          Task.succeed state
 
-    Nothing ->
-      put cache defaultState `andThen` \_ ->
-      Task.succeed defaultState
+        Nothing ->
+          put cache defaultState
+            |> Task.map (\_ -> defaultState)
+  )
 
 
 put : Cache -> UserState -> Task x ()
@@ -72,17 +75,16 @@ type alias UserState =
 
 decode : Decoder UserState
 decode =
-  D.object3
+  D.map3
   (\scale (x, y) lang ->
     { scale = Scale.init scale
     , offset = { x = x, y = y }
     , lang = if lang == "JA" then I18n.JA else I18n.EN
     }
   )
-  ("scale" := D.int)
-  ("offset" := D.tuple2 (,) D.int D.int)
-  ("lang" := D.string)
-
+  (D.field "scale" D.int)
+  (D.field "offset" <| tuple2 (,) D.int D.int)
+  (D.field "lang" D.string)
 
 
 encode : UserState -> Value

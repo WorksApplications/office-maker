@@ -1,6 +1,5 @@
 module Page.Map.Msg exposing (..)
 
-import Maybe
 import Time exposing (Time)
 import Mouse exposing (Position)
 import Debounce exposing (Debounce)
@@ -26,6 +25,8 @@ import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
 
+import Page.Map.URL exposing (URL)
+
 
 type alias Size =
   { width : Int
@@ -35,6 +36,7 @@ type alias Size =
 
 type Msg
   = NoOp
+  | UrlUpdate (Result String URL)
   | Initialized (Maybe String) Bool UserState User
   | FloorsInfoLoaded (List FloorInfo)
   | FloorLoaded (Maybe Floor)

@@ -23,14 +23,15 @@ view model =
     Object position id ->
       let
         itemsForPerson =
-          model.floor `Maybe.andThen` \eFloor ->
-          Floor.getObject id (EditingFloor.present eFloor) `Maybe.andThen` \obj ->
-          Object.relatedPerson obj `Maybe.andThen` \personId ->
-          Dict.get personId model.personInfo `Maybe.andThen` \person ->
-            Just <|
-            [ (SelectSamePost person.post, I18n.selectSamePost model.lang, Just person.post)
-            , (SearchByPost person.post, I18n.searchSamePost model.lang, Just person.post)
-            ]
+          model.floor
+            |> Maybe.andThen (\eFloor -> Floor.getObject id (EditingFloor.present eFloor)
+            |> Maybe.andThen (\obj -> Object.relatedPerson obj
+            |> Maybe.andThen (\personId -> Dict.get personId model.personInfo
+            |> Maybe.map (\person ->
+                [ (SelectSamePost person.post, I18n.selectSamePost model.lang, Just person.post)
+                , (SearchByPost person.post, I18n.searchSamePost model.lang, Just person.post)
+                ]
+            ))))
 
         forOneDesk =
           if [id] == model.selectedObjects then

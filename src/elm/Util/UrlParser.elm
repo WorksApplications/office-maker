@@ -1,22 +1,24 @@
 module Util.UrlParser exposing (..)
 
 import Dict exposing (Dict)
-import String
 import Util.StringUtil exposing (..)
 import Http
 
 type alias URL = (List String, Dict String String)
 
+
 parseSearch : String -> Dict String String
-parseSearch s' =
+parseSearch s_ =
   let
-    s = String.dropLeft 1 s' -- drop "?"
+    s = String.dropLeft 1 s_ -- drop "?"
+
     list = String.split "&" s
 
     keyValue indices =
       case indices of
         head :: tail ->
           Just (String.slice 0 head, String.dropLeft (head + 1))
+
         _ ->
           Nothing
 
@@ -26,7 +28,8 @@ parseSearch s' =
     updateDict maybe dict =
       case maybe of
         Just (key, value) ->
-          Dict.insert key (Http.uriDecode value) dict
+          Dict.insert key (Http.decodeUri value |> Maybe.withDefault "") dict
+
         Nothing ->
           dict
   in

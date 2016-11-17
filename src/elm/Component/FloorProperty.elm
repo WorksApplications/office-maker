@@ -1,6 +1,6 @@
 module Component.FloorProperty exposing(..)
 
-import String
+
 import Dict
 import Date exposing (Date)
 import Maybe
@@ -77,7 +77,7 @@ update : Msg -> FloorProperty -> (FloorProperty, Cmd Msg, Event)
 update message model =
   case message of
     NoOp ->
-        (model, Cmd.none, None)
+      (model, Cmd.none, None)
 
     InputFloorName name ->
       let
@@ -112,7 +112,10 @@ update message model =
         Just file ->
           let
             cmd =
-              Task.perform FileError (GotDataURL file) (readAsDataURL file)
+              readAsDataURL file
+                |> Task.map (GotDataURL file)
+                |> Task.onError (\e -> Task.succeed (FileError e))
+                |> Task.perform identity
           in
             (model, cmd, None)
 
@@ -193,7 +196,7 @@ nameInput user value =
   if User.isAdmin user then
     input
     ([ Html.Attributes.id "floor-name-input"
-    , type' "text"
+    , type_ "text"
     , style Styles.floorNameInput
     ] ++ (inputAttributes InputFloorName (always NoOp) value Nothing))
     []
@@ -214,7 +217,7 @@ ordInput user value =
   if User.isAdmin user then
     input
     ([ Html.Attributes.id "floor-ord-input"
-    , type' "text"
+    , type_ "text"
     , style Styles.floorOrdInput
     ] ++ (inputAttributes InputFloorOrd (always NoOp) value Nothing))
     []
@@ -225,8 +228,10 @@ ordInput user value =
 floorRealSizeInputView : Language -> User -> FloorProperty -> Html Msg
 floorRealSizeInputView lang user model =
   let
-    useReal = True--TODO
+    useReal = True -- TODO
+
     widthLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.widthMeter lang) ]
+
     heightLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.heightMeter lang) ]
   in
     div [ style Styles.floorSizeInputContainer ]
@@ -238,13 +243,13 @@ floorRealSizeInputView lang user model =
 
 
 inputAttributes : (String -> msg) -> (Int -> msg) -> String -> Maybe msg -> List (Attribute msg)
-inputAttributes toInputMsg toKeydownMsg value' defence =
-  [ onInput' toInputMsg -- TODO cannot input japanese
-  , onKeyDown'' toKeydownMsg
-  , value value'
+inputAttributes toInputMsg toKeydownMsg value_ defence =
+  [ onInput_ toInputMsg -- TODO cannot input japanese
+  , onKeyDown__ toKeydownMsg
+  , value value_
   ] ++
     ( case defence of
-        Just message -> [onMouseDown' message]
+        Just message -> [onMouseDown_ message]
         Nothing -> []
     )
 
@@ -254,13 +259,13 @@ widthValueView user useReal value =
   if User.isAdmin user then
     input
     ([ Html.Attributes.id "floor-real-width-input"
-    , type' "text"
+    , type_ "text"
     , disabled (not useReal)
     , style Styles.realSizeInput
     ] ++ (inputAttributes InputFloorRealWidth (always NoOp) value Nothing))
     []
   else
-    div [ style Styles.floorWidthText ] [text value]
+    div [ style Styles.floorWidthText ] [ text value ]
 
 
 heightValueView : User -> Bool -> String -> Html Msg
@@ -268,20 +273,20 @@ heightValueView user useReal value =
   if User.isAdmin user then
     input
     ([ Html.Attributes.id "floor-real-height-input"
-    , type' "text"
+    , type_ "text"
     , disabled (not useReal)
     , style Styles.realSizeInput
     ] ++ (inputAttributes InputFloorRealHeight (always NoOp) value Nothing))
     []
   else
-    div [ style Styles.floorHeightText ] [text value]
+    div [ style Styles.floorHeightText ] [ text value ]
 
 
 publishButtonView : Language -> User -> Html Msg
 publishButtonView lang user =
   if User.isAdmin user then
     button
-      [ onClick' PreparePublish
+      [ onClick_ PreparePublish
       , style Styles.publishButton ]
       [ text (I18n.publish lang) ]
   else
@@ -293,7 +298,7 @@ deleteButtonView lang user floor =
   if User.isAdmin user && Dict.isEmpty floor.objects then
     hover Styles.deleteFloorButtonHover
     button
-      [ onClick' SelectDeleteFloor
+      [ onClick_ SelectDeleteFloor
       , style Styles.deleteFloorButton
       ]
       [ text (I18n.deleteFloor lang) ]

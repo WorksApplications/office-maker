@@ -261,29 +261,30 @@ startEdit e model =
 adjustOffset : Model -> Model
 adjustOffset model =
   let
-    maybeShiftedOffset =
-      model.selectedResult `Maybe.andThen` \id ->
-      model.floor `Maybe.andThen` \efloor ->
-      Floor.getObject id (EditingFloor.present efloor) `Maybe.andThen` \obj ->
-      relatedPerson obj `Maybe.andThen` \personId ->
-        Just <|
-          let
-            containerWidth =
-              model.windowSize.width - sideMenuWidth
+    shiftedOffset =
+      model.selectedResult
+        |> Maybe.andThen (\id -> model.floor
+        |> Maybe.andThen (\efloor -> Floor.getObject id (EditingFloor.present efloor)
+        |> Maybe.andThen (\obj -> relatedPerson obj
+        |> Maybe.map (\personId ->
+            let
+              containerWidth =
+                model.windowSize.width - sideMenuWidth
 
-            containerHeight =
-              model.windowSize.height - headerHeight
-          in
-            ProfilePopupLogic.adjustOffset
-              (containerWidth, containerHeight)
-              model.personPopupSize
-              model.scale
-              model.offset
-              obj
+              containerHeight =
+                model.windowSize.height - headerHeight
+            in
+              ProfilePopupLogic.adjustOffset
+                (containerWidth, containerHeight)
+                model.personPopupSize
+                model.scale
+                model.offset
+                obj
+          ))))
+        |> Maybe.withDefault model.offset
   in
-    { model |
-      offset =
-        Maybe.withDefault model.offset maybeShiftedOffset
+    { model
+      | offset = shiftedOffset
     }
 
 
@@ -314,9 +315,9 @@ candidatesOf model =
 shiftSelectionToward : Direction -> Model -> Model
 shiftSelectionToward direction model =
   model.floor
-    |> (Maybe.map) EditingFloor.present
-    |> (flip Maybe.andThen) (\floor -> List.head (selectedObjects model)
-    |> (flip Maybe.andThen) (\primarySelected ->
+    |> Maybe.map EditingFloor.present
+    |> Maybe.andThen (\floor -> List.head (selectedObjects model)
+    |> Maybe.andThen (\primarySelected ->
       ObjectsOperation.nearest direction primarySelected (Floor.objects floor)
     |> Maybe.map (\object ->
       { model |
@@ -330,8 +331,8 @@ shiftSelectionToward direction model =
 expandOrShrinkToward : Direction -> Model -> Model
 expandOrShrinkToward direction model =
   model.floor
-    |> (Maybe.map) EditingFloor.present
-    |> (Maybe.map) (\floor ->
+    |> Maybe.map EditingFloor.present
+    |> Maybe.map (\floor ->
       case selectedObjects model of
         primarySelected :: _ ->
           { model |
@@ -376,7 +377,7 @@ getPositionedPrototype model =
     prototype =
       Prototypes.selectedPrototype model.prototypes
 
-    xy2' =
+    xy2 =
       screenToImageWithOffset model.scale (canvasPosition model) model.offset
   in
     case (Mode.isStampMode model.mode, model.draggingContext) of
@@ -385,8 +386,8 @@ getPositionedPrototype model =
           fitted =
             ObjectsOperation.fitPositionToGrid
               model.gridSize
-              { x = xy2'.x - prototype.width // 2
-              , y = xy2'.y - prototype.height // 2
+              { x = xy2.x - prototype.width // 2
+              , y = xy2.y - prototype.height // 2
               }
         in
           [ (prototype, (fitted.x, fitted.y)) ]
@@ -396,26 +397,26 @@ getPositionedPrototype model =
           fitted =
             ObjectsOperation.fitPositionToGrid
               model.gridSize
-              { x = xy2'.x - prototype.width // 2
-              , y = xy2'.y - prototype.height // 2
+              { x = xy2.x - prototype.width // 2
+              , y = xy2.y - prototype.height // 2
               }
         in
           [ (prototype, (fitted.x, fitted.y)) ]
 
       (True, StampFromScreenPos start) ->
         let
-          xy1' =
+          xy1 =
             screenToImageWithOffset model.scale start model.offset
         in
-          Prototypes.positionedPrototypesOnDragging model.gridSize prototype xy1' xy2'
+          Prototypes.positionedPrototypesOnDragging model.gridSize prototype xy1 xy2
 
       (True, _) ->
         let
           fitted =
             ObjectsOperation.fitPositionToGrid
               model.gridSize
-              { x = xy2'.x - prototype.width // 2
-              , y = xy2'.y - prototype.height // 2
+              { x = xy2.x - prototype.width // 2
+              , y = xy2.y - prototype.height // 2
               }
         in
           [ (prototype, (fitted.x, fitted.y)) ]

@@ -29,7 +29,7 @@ center e =
     ((x + w / 2), (y + h / 2))
 
 
-linked : (number, number, number, number) -> (number, number, number, number) -> Bool
+linked : (comparable, comparable, comparable, comparable) -> (comparable, comparable, comparable, comparable) -> Bool
 linked (x1, y1, w1, h1) (x2, y2, w2, h2) =
   x1 <= x2+w2 && x2 <= x1+w1 && y1 <= y2+h2 && y2 <= y1+h1
 
@@ -48,13 +48,13 @@ linkedByAnyOf list newObject =
 island : List Object -> List Object -> List Object
 island current rest =
   let
-    (newObjects, rest') =
+    (newObjects, rest_) =
       List.partition (linkedByAnyOf current) rest
   in
     if List.isEmpty newObjects then
       current ++ newObjects
     else
-      island (current ++ newObjects) rest'
+      island (current ++ newObjects) rest_
 
 
 compareBy : Direction -> Object -> Object -> Order
@@ -158,7 +158,7 @@ withinRect (left, top) (right, bottom) list =
   List.filter (\object -> isInRect (left, top, right, bottom) (center object)) list
 
 
-isInRect : (comparable, comparable', comparable, comparable') -> (comparable, comparable') -> Bool
+isInRect : (comparable, comparable, comparable, comparable) -> (comparable, comparable) -> Bool
 isInRect (left, top, right, bottom) (x, y) =
   x >= left &&
   x <= right &&

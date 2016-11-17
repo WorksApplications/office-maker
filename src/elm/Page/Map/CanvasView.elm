@@ -5,7 +5,6 @@ import Maybe
 import Json.Decode as Decode
 
 import Html exposing (..)
-import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed as Keyed
@@ -143,8 +142,8 @@ view model =
           [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
           , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseDownOnCanvas)
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
-          , onMouseEnter' EnterCanvas
-          , onMouseLeave' LeaveCanvas
+          , onMouseEnter_ EnterCanvas
+          , onMouseLeave_ LeaveCanvas
           , onMouseWheel MouseWheel
           ]
           [ canvasView model floor
@@ -159,16 +158,20 @@ view model =
 
 profilePopupView : Model -> Floor -> Html Msg
 profilePopupView model floor =
-  Maybe.withDefault (text "") <|
-  model.selectedResult `Maybe.andThen` \objectId ->
-  Floor.getObject objectId floor `Maybe.andThen` \object ->
-    case Object.relatedPerson object of
-      Just personId ->
-        Dict.get personId model.personInfo `Maybe.andThen` \person ->
-        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object (Just person))
+  model.selectedResult
+    |> Maybe.andThen (\objectId -> Floor.getObject objectId floor
+    |> Maybe.andThen (\object ->
+      case Object.relatedPerson object of
+        Just personId ->
+          Dict.get personId model.personInfo
+            |> Maybe.map (\person ->
+              ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object (Just person)
+            )
 
-      Nothing ->
-        Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object Nothing)
+        Nothing ->
+          Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object Nothing)
+      ))
+    |> Maybe.withDefault (text "")
 
 
 canvasView : Model -> Floor -> Html Msg
@@ -178,13 +181,14 @@ canvasView model floor =
       Maybe.map
         (\object ->
           ( Scale.imageToScreenForRect scale (Object.rect object)
-          , relatedPerson object `Maybe.andThen` (\personId -> Dict.get personId personInfo)
+          , relatedPerson object
+              |> Maybe.andThen (\personId -> Dict.get personId personInfo)
           )
         )
         (Floor.getObject objectId floor)
 
     nameInput =
-      App.map ObjectNameInputMsg <|
+      Html.map ObjectNameInputMsg <|
         ObjectNameInput.view
           (deskInfoOf model.scale model.personInfo)
           (transitionDisabled model)

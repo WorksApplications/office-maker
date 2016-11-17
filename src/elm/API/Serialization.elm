@@ -4,7 +4,7 @@ import Date
 import Dict exposing (Dict)
 
 import Json.Encode as E exposing (Value)
-import Json.Decode as D exposing ((:=), Decoder)
+import Json.Decode as D exposing (Decoder)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, custom)
 
 import Util.DecodeUtil exposing (..)
@@ -22,7 +22,7 @@ import Model.ObjectsChange as ObjectsChange exposing (..)
 
 decodeAuthToken : Decoder String
 decodeAuthToken =
-  D.object1 identity ("accessToken" := D.string)
+  D.field "accessToken" D.string
 
 
 decodeColors : Decoder ColorPalette
@@ -106,8 +106,8 @@ encodeFloor floor =
     , ("ord", E.int floor.ord)
     , ("width", E.int floor.width)
     , ("height", E.int floor.height)
-    , ("realWidth", Maybe.withDefault E.null <| Maybe.map (E.int << fst) floor.realSize)
-    , ("realHeight", Maybe.withDefault E.null <| Maybe.map (E.int << snd) floor.realSize)
+    , ("realWidth", Maybe.withDefault E.null <| Maybe.map (E.int << Tuple.first) floor.realSize)
+    , ("realHeight", Maybe.withDefault E.null <| Maybe.map (E.int << Tuple.second) floor.realSize)
     , ("image", Maybe.withDefault E.null <| Maybe.map E.string floor.image)
     , ("public", E.bool floor.public)
     ]
@@ -151,7 +151,7 @@ decodeObjectsChange =
 
 decodeObjectChange : Decoder (ObjectId, ObjectChange Object)
 decodeObjectChange =
-  D.object2 (\flag object ->
+  D.map2 (\flag object ->
     if flag == "added" then
       (Object.idOf object, ObjectsChange.Added object)
     else if flag == "modified" then
@@ -159,8 +159,8 @@ decodeObjectChange =
     else
       (Object.idOf object, ObjectsChange.Deleted object)
   )
-  ("flag" := D.string)
-  ("object" := decodeObject)
+  (D.field "flag" D.string)
+  (D.field "object" decodeObject)
 
 
 encodeLogin : String -> String -> Value
@@ -174,12 +174,12 @@ encodeLogin userId pass =
 decodeUser : Decoder User
 decodeUser =
   D.oneOf
-    [ D.object2
+    [ D.map2
         (\role person ->
           if role == "admin" then User.admin person else User.general person
         )
-        ("role" := D.string)
-        ("person" := decodePerson)
+        (D.field "role" D.string)
+        (D.field "person" decodePerson)
     , D.succeed User.guest
     ]
 
@@ -202,9 +202,9 @@ decodePerson =
     |> required "id" D.string
     |> required "name" D.string
     |> required "post" D.string
-    |> optional' "mail" D.string
-    |> optional' "tel" D.string
-    |> optional' "image" D.string
+    |> optional_ "mail" D.string
+    |> optional_ "tel" D.string
+    |> optional_ "image" D.string
 
 
  -- TODO andThen
@@ -224,7 +224,7 @@ decodeObject =
     )
     |> required "id" D.string
     |> required "floorId" D.string
-    |> optional' "floorVersion" D.int
+    |> optional_ "floorVersion" D.int
     |> required "updateAt" D.float
     |> required "type" D.string
     |> required "x" D.int
@@ -233,7 +233,7 @@ decodeObject =
     |> required "height" D.int
     |> required "backgroundColor" D.string
     |> required "name" D.string
-    |> optional' "personId" D.string
+    |> optional_ "personId" D.string
     |> optional "fontSize" D.float Object.defaultFontSize
     |> required "color" D.string
     |> required "shape" D.string
@@ -253,8 +253,8 @@ decodeSearchResult =
         _ ->
           Nothing
     )
-    |> optional' "personId" D.string
-    |> optional' "objectAndFloorId" (D.tuple2 (,) decodeObject D.string)
+    |> optional_ "personId" D.string
+    |> optional_ "objectAndFloorId" (tuple2 (,) decodeObject D.string)
 
 
 decodeSearchResults : Decoder (List SearchResult)
@@ -286,12 +286,12 @@ decodeFloor =
     |> required "objects" (D.list decodeObject)
     |> required "width" D.int
     |> required "height" D.int
-    |> optional' "realWidth" D.int
-    |> optional' "realHeight" D.int
-    |> optional' "image" D.string
+    |> optional_ "realWidth" D.int
+    |> optional_ "realHeight" D.int
+    |> optional_ "image" D.string
     |> optional "public" D.bool False
-    |> optional' "updateBy" D.string
-    |> optional' "updateAt" D.float
+    |> optional_ "updateBy" D.string
+    |> optional_ "updateAt" D.float
 
 
 decodeFloorBase : Decoder FloorBase
@@ -313,7 +313,7 @@ decodeFloorBase =
 
 decodeFloorInfo : Decoder FloorInfo
 decodeFloorInfo =
-  D.tuple2 FloorInfo.init decodeFloorBase decodeFloorBase
+  tuple2 FloorInfo.init decodeFloorBase decodeFloorBase
 
 
 decodePrototype : Decoder Prototype
@@ -365,7 +365,7 @@ encodeColorEntities entities =
   E.list (List.map encodeColorEntitity entities)
 
 
-encodeColorEntitity : ColorEntity -> Value
+encodeColorEntitity : ColorEntity -> E.Value
 encodeColorEntitity entity =
   E.object
     [ ("ord", E.int entity.ord)
@@ -374,34 +374,9 @@ encodeColorEntitity entity =
     ]
 
 
-serializePrototype : Prototype -> String
-serializePrototype prototype =
-  E.encode 0 (encodePrototype prototype)
-
-
-serializePrototypes : List Prototype -> String
-serializePrototypes prototypes =
-  E.encode 0 (E.list (List.map encodePrototype prototypes))
-
-
-serializeColorPalette : ColorPalette -> String
-serializeColorPalette colorPalette =
-  E.encode 0 (encodeColorPalette colorPalette)
-
-
-serializeFloor : Floor -> String
-serializeFloor floor =
-    E.encode 0 (encodeFloor floor)
-
-
-serializeObjectsChange : ObjectsChange -> String
-serializeObjectsChange change =
-    E.encode 0 (encodeObjectsChange change)
-
-
-serializeLogin : String -> String -> String
-serializeLogin userId pass =
-    E.encode 0 (encodeLogin userId pass)
+encodePrototypes : List Prototype -> E.Value
+encodePrototypes prototypes =
+  E.list (List.map encodePrototype prototypes)
 
 
 type alias ColorEntity =

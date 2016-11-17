@@ -48,7 +48,7 @@ itemView (msg, text_, annotation) =
     Just ann ->
       hover S.contextMenuItemHover div
         [ style (S.contextMenuItem True)
-        , onMouseDown' msg
+        , onMouseDown_ msg
         ]
         [ text text_
         , div [ style S.contextMenuItemAnnotation ] [ text ann ]
@@ -57,6 +57,6 @@ itemView (msg, text_, annotation) =
     Nothing ->
       hover S.contextMenuItemHover div
         [ style (S.contextMenuItem False)
-        , onMouseDown' msg
+        , onMouseDown_ msg
         ]
         [ text text_ ]

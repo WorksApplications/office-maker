@@ -1,12 +1,12 @@
 module View.Styles exposing (..)
 
-import String
-
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Util.StyleUtil exposing (..)
 import View.CommonStyles as Common exposing (..)
 
+
 type alias S = List (String, String)
+
 
 zIndex :
   { labelObject : String
@@ -88,10 +88,10 @@ header =
 deskInput : (Int, Int, Int, Int) -> S
 deskInput (x, y, w, h) =
   let
-    w' = max w 100
-    h' = max h 15
+    w_ = max w 100
+    h_ = max h 15
   in
-    (absoluteRect (x, y, w', h')) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
+    (absoluteRect (x, y, w_, h_)) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
     , ("box-sizing", "border-box")
     ]
 
@@ -237,12 +237,12 @@ contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
 contextMenu (x, y) (windowWidth, windowHeight) height =
   let
     width = 300
-    x' = min x (windowWidth - width)
-    y' = min y (windowHeight - height)
+    x_ = min x (windowWidth - width)
+    y_ = min y (windowHeight - height)
   in
     [ ("width", px width)
-    , ("left", px x')
-    , ("top", px y')
+    , ("left", px x_)
+    , ("top", px y_)
     , ("position", "fixed")
     , ("z-index", zIndex.contextMenu)
     , ("background-color", "#fff")

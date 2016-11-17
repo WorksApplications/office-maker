@@ -1,8 +1,7 @@
 port module Page.Login.Main exposing (..)
 
 import Html exposing (Html, text, div, input, form, h2)
-import Html.App as App
-import Html.Attributes exposing (type', value, action, method, style, autofocus)
+import Html.Attributes exposing (type_, value, action, method, style, autofocus)
 
 import Task
 import Http
@@ -17,9 +16,9 @@ port saveToken : String -> Cmd msg
 
 port tokenSaved : ({} -> msg) -> Sub msg
 
-main : Program Flags
+main : Program Flags Model Msg
 main =
-  App.programWithFlags
+  Html.programWithFlags
     { init = init
     , view = view
     , update = update
@@ -75,20 +74,23 @@ update message model =
       model ! []
 
     InputId s ->
-      { model | inputId = s} ! []
+      { model | inputId = s } ! []
 
     InputPass s ->
-      { model | inputPass = s} ! []
+      { model | inputPass = s } ! []
 
     Submit ->
       let
-        task =
+        cmd =
           API.login
             model.accountServiceRoot
             model.inputId
             model.inputPass
+          |> Task.map Success
+          |> Task.onError (Error >> Task.succeed)
+          |> Task.perform identity
       in
-        model ! [ Task.perform Error Success task ]
+        model ! [ cmd ]
 
     Error e ->
       let
@@ -108,7 +110,7 @@ update message model =
       model ! [ saveToken token ]
 
     TokenSaved ->
-      model ! [ Task.perform (always NoOp) (always NoOp) API.gotoTop ]
+      model ! [ Task.perform (always NoOp) API.gotoTop ]
 
 
 ----
@@ -134,7 +136,7 @@ container model =
 
 loginForm : Model -> Html Msg
 loginForm model =
-  HtmlUtil.form' Submit
+  HtmlUtil.form_ Submit
     []
     [ div
         []
@@ -142,7 +144,7 @@ loginForm model =
         , input
             [ style Styles.formInput
             , onInput InputId
-            , type' "text"
+            , type_ "text"
             , value model.inputId
             , autofocus True
             ]
@@ -154,14 +156,14 @@ loginForm model =
         , input
             [ style Styles.formInput
             , onInput InputPass
-            , type' "password"
+            , type_ "password"
             , value model.inputPass
             ]
             []
         ]
     , input
         [ style Styles.loginSubmitButton
-        , type' "submit"
+        , type_ "submit"
         , value (I18n.signIn model.lang)
         ]
         []

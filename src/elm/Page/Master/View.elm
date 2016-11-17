@@ -1,7 +1,6 @@
 module Page.Master.View exposing (..)
 
 import Html exposing (..)
-import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
@@ -91,17 +90,17 @@ prototypeParameters : Int -> PrototypeForm -> Html Msg
 prototypeParameters index prototypeForm =
   div
     []
-    [ App.map (\backgroundColor -> UpdatePrototype index { prototypeForm | backgroundColor = backgroundColor} )
+    [ Html.map (\backgroundColor -> UpdatePrototype index { prototypeForm | backgroundColor = backgroundColor} )
         <| prototypeParameter "Background Color" prototypeForm.backgroundColor PrototypeForm.validateBackgroundColor
-    , App.map (\color -> UpdatePrototype index { prototypeForm | color = color} )
+    , Html.map (\color -> UpdatePrototype index { prototypeForm | color = color} )
         <| prototypeParameter "Text Color" prototypeForm.color PrototypeForm.validateColor
-    , App.map (\width -> UpdatePrototype index { prototypeForm | width = width} )
+    , Html.map (\width -> UpdatePrototype index { prototypeForm | width = width} )
         <| prototypeParameter "Width" (prototypeForm.width) PrototypeForm.validateWidth
-    , App.map (\height -> UpdatePrototype index { prototypeForm | height = height} )
+    , Html.map (\height -> UpdatePrototype index { prototypeForm | height = height} )
         <| prototypeParameter "Height" (prototypeForm.height) PrototypeForm.validateHeight
-    , App.map (\fontSize -> UpdatePrototype index { prototypeForm | fontSize = fontSize} )
+    , Html.map (\fontSize -> UpdatePrototype index { prototypeForm | fontSize = fontSize} )
         <| prototypeParameter "Font Size" (prototypeForm.fontSize) PrototypeForm.validateFontSize
-    , App.map (\name -> UpdatePrototype index { prototypeForm | name = name} )
+    , Html.map (\name -> UpdatePrototype index { prototypeForm | name = name} )
         <| prototypeParameter "Name" (prototypeForm.name) PrototypeForm.validateName
     ]
 

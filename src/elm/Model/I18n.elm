@@ -136,11 +136,18 @@ networkErrorDetectedPleaseRefreshAndTryAgain lang =
     EN -> "NetworkError detected. Please refresh(F5) and try again."
 
 
+unexpectedBadUrl : Language -> String
+unexpectedBadUrl lang =
+  case lang of
+    JA -> "予期しない不正なURL"
+    EN -> "Unexpected BadUrl"
+
+
 unexpectedPayload : Language -> String
 unexpectedPayload lang =
   case lang of
     JA -> "予期しないペイロード"
-    EN -> "UnexpectedPayload"
+    EN -> "Unexpected BadPayload"
 
 
 conflictSomeoneHasAlreadyChangedPleaseRefreshAndTryAgain : Language -> String
@@ -150,11 +157,11 @@ conflictSomeoneHasAlreadyChangedPleaseRefreshAndTryAgain lang =
     EN -> "Conflict: Someone has already changed. Please refresh(F5) and try again."
 
 
-unexpectedBadResponse : Language -> String
-unexpectedBadResponse lang =
+unexpectedBadStatus : Language -> String
+unexpectedBadStatus lang =
   case lang of
-    JA -> "予期しないエラー(BadResponse)"
-    EN -> "Unexpected BadResponse"
+    JA -> "予期しないエラー(BadStatus)"
+    EN -> "Unexpected BadStatus"
 
 
 

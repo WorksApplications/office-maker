@@ -10,10 +10,10 @@ import Util.HtmlUtil as HtmlUtil
 
 view : Language -> (String -> msg) -> msg -> String -> Html msg
 view lang onInputMsg onSubmit query =
-  HtmlUtil.form' onSubmit
+  HtmlUtil.form_ onSubmit
     [ ]
     [ input
-      [ type' "input"
+      [ type_ "input"
       , placeholder (I18n.search lang)
       , style S.searchBox
       , defaultValue query

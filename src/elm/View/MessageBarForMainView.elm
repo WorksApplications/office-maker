@@ -36,20 +36,23 @@ view lang e =
 describeAPIError : Language -> API.Error -> String
 describeAPIError lang e =
   case e of
+    Http.BadUrl url ->
+      I18n.unexpectedBadUrl lang ++ ": " ++ url
+
     Http.Timeout ->
       I18n.timeout lang
 
     Http.NetworkError ->
       I18n.networkErrorDetectedPleaseRefreshAndTryAgain lang
 
-    Http.UnexpectedPayload str ->
-      I18n.unexpectedPayload lang ++ ": " ++ str
-
-    Http.BadResponse code str ->
-      if code == 409 then
+    Http.BadStatus res ->
+      if res.status.code == 409 then
         I18n.conflictSomeoneHasAlreadyChangedPleaseRefreshAndTryAgain lang
       else
-        I18n.unexpectedBadResponse lang ++ ": " ++ toString code ++ " " ++ str
+        I18n.unexpectedBadStatus lang ++ ": " ++ toString res.status.code ++ " " ++ res.status.message
+
+    Http.BadPayload str res ->
+      I18n.unexpectedPayload lang ++ ": " ++ str
 
 
 --

@@ -1,20 +1,15 @@
 module Util.DecodeUtil exposing (..)
 
-import Json.Decode exposing (Decoder, maybe, succeed, (:=), int, tuple2)
-import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, custom)
-
-(?=) : String -> (Decoder a) -> (Decoder (Maybe a))
-(?=) key decorder =
-  maybe (key := decorder)
+import Json.Decode as D exposing (Decoder)
+import Json.Decode.Pipeline as Pipeline
 
 
-intSize : Decoder (Int, Int)
-intSize = tuple2 (,) int int
+tuple2 : (a -> b -> c) -> Decoder a -> Decoder b -> Decoder c
+tuple2 f a b =
+  D.map2 f (D.index 0 a) (D.index 1 b)
 
 
 -- for Pipeline
-
-
-optional' : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
-optional' field decoder =
-    custom (field ?= decoder)
+optional_ : String -> Decoder a -> Decoder (Maybe a -> b) -> Decoder b
+optional_ key decoder =
+  Pipeline.custom (D.maybe (D.field key decoder))

@@ -1,7 +1,7 @@
 module Page.Map.URL exposing (..)
 
 import Dict
-import String
+
 
 import Navigation
 

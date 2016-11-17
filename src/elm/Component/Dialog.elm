@@ -4,7 +4,6 @@ import Task
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Html.App as App
 
 import View.DialogView as DialogView
 import View.CommonStyles as S
@@ -40,15 +39,15 @@ update msg model =
       True ! []
 
     Close msg ->
-      False ! [ Task.perform identity identity <| Task.succeed msg ]
+      False ! [ Task.perform identity <| Task.succeed msg ]
 
     Confirm msg ->
-      False ! [ Task.perform identity identity <| Task.succeed msg ]
+      False ! [ Task.perform identity <| Task.succeed msg ]
 
 
 open : (Msg msg -> msg) -> Cmd msg
 open f =
-  Task.perform identity identity (Task.succeed (f Open))
+  Task.perform identity (Task.succeed (f Open))
 
 
 view : Config msg -> String -> Dialog -> Html msg
@@ -58,7 +57,7 @@ view config content opened =
       footer =
         case config.strategy of
           ConfirmOrClose (confirmText, confirmMsg) (cancelText, cancelMsg) ->
-            App.map config.transform <|
+            Html.map config.transform <|
               div [ style S.dialogFooter ]
                 [ button [ style S.defaultButton, onClick (Close cancelMsg) ] [ text cancelText ]
                 , button [ style S.primaryButton, onClick (Confirm confirmMsg) ] [ text confirmText ]

@@ -304,12 +304,12 @@ positionOf object =
 
 left : Object -> Int
 left object =
-  fst <| positionOf object
+  Tuple.first <| positionOf object
 
 
 top : Object -> Int
 top object =
-  snd <| positionOf object
+  Tuple.second <| positionOf object
 
 
 right : Object -> Int

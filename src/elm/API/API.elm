@@ -28,7 +28,6 @@ module API.API exposing (
     , Error
   )
 
-import String
 import Http
 import Task exposing (Task)
 
@@ -63,8 +62,8 @@ saveObjects config change =
   patchJson
     decodeObjectsChange
     (config.apiRoot ++ "/1/objects")
-    (authorization config.token)
-    (Http.string <| serializeObjectsChange change)
+    [authorization config.token]
+    (Http.jsonBody <| encodeObjectsChange change)
 
 
 saveFloor : Config -> Floor -> Task Error FloorBase
@@ -72,8 +71,8 @@ saveFloor config floor =
   putJson
     decodeFloorBase
     (config.apiRoot ++ "/1/floors/" ++ floor.id)
-    (authorization config.token)
-    (Http.string <| serializeFloor floor)
+    [authorization config.token]
+    (Http.jsonBody <| encodeFloor floor)
 
 
 publishFloor : Config -> String -> Task Error Floor
@@ -81,16 +80,16 @@ publishFloor config id =
   putJson
     decodeFloor
     (config.apiRoot ++ "/1/floors/" ++ id ++ "/public")
-    (authorization config.token)
-    (Http.string "")
+    [authorization config.token]
+    Http.emptyBody
 
 
 deleteEditingFloor : Config -> String -> Task Error ()
 deleteEditingFloor config id =
   deleteJsonNoResponse
     (config.apiRoot ++ "/1/floors/" ++ id)
-    (authorization config.token)
-    (Http.string "")
+    [authorization config.token]
+    Http.emptyBody
 
 
 getEditingFloor : Config -> String -> Task Error Floor
@@ -107,86 +106,84 @@ getFloorOfVersion : Config -> String -> Int -> Task Error Floor
 getFloorOfVersion config id version =
   let
     url =
-      Http.url
+      makeUrl
         (config.apiRoot ++ "/1/floors/" ++ id ++ "/" ++ toString version)
         []
   in
-    get decodeFloor url (authorization config.token)
+    get decodeFloor url [authorization config.token]
 
 
 getFloorHelp : Config -> Bool -> String -> Task Error Floor
 getFloorHelp config withPrivate id =
   let
     url =
-      Http.url
+      makeUrl
         (config.apiRoot ++ "/1/floors/" ++ id)
         (if withPrivate then [("all", "true")] else [])
   in
-    getWithoutCache decodeFloor url (authorization config.token)
+    getWithoutCache decodeFloor url [authorization config.token]
 
 
 getFloorMaybe : Config -> String -> Task Error (Maybe Floor)
 getFloorMaybe config id =
   getFloor config id
-  `Task.andThen` (\floor -> Task.succeed (Just floor))
-  `Task.onError` \e -> case e of
-    Http.BadResponse 404 _ -> Task.succeed Nothing
-    _ -> Task.fail e
+    |> recover404
 
 
 getFloorsInfo : Config -> Task Error (List FloorInfo)
 getFloorsInfo config =
   getWithoutCache
     decodeFloorInfoList
-    (Http.url (config.apiRoot ++ "/1/floors") [])
-    (authorization config.token)
+    (makeUrl (config.apiRoot ++ "/1/floors") [])
+    [authorization config.token]
 
 
 getPrototypes : Config -> Task Error (List Prototype)
 getPrototypes config =
   getWithoutCache
     decodePrototypes
-    (Http.url (config.apiRoot ++ "/1/prototypes") [])
-    (authorization config.token)
+    (makeUrl (config.apiRoot ++ "/1/prototypes") [])
+    [authorization config.token]
 
 
 savePrototypes : Config -> List Prototype -> Task Error ()
 savePrototypes config prototypes =
   putJsonNoResponse
     (config.apiRoot ++ "/1/prototypes")
-    (authorization config.token)
-    (Http.string <| serializePrototypes prototypes)
+    [authorization config.token]
+    (Http.jsonBody <| encodePrototypes prototypes)
 
 
 savePrototype : Config -> Prototype -> Task Error ()
 savePrototype config prototype =
   putJsonNoResponse
     (config.apiRoot ++ "/1/prototypes/" ++ prototype.id)
-    (authorization config.token)
-    (Http.string <| serializePrototype prototype)
+    [authorization config.token]
+    (Http.jsonBody <| encodePrototype prototype)
 
 
 getColors : Config -> Task Error ColorPalette
 getColors config =
   getWithoutCache
     decodeColors
-    (Http.url (config.apiRoot ++ "/1/colors") [])
-    (authorization config.token)
+    (makeUrl (config.apiRoot ++ "/1/colors") [])
+    [authorization config.token]
 
 
 saveColors : Config -> ColorPalette -> Task Error ()
 saveColors config colorPalette =
   putJsonNoResponse
     (config.apiRoot ++ "/1/colors")
-    (authorization config.token)
-    (Http.string <| serializeColorPalette colorPalette)
+    [authorization config.token]
+    (Http.jsonBody <| encodeColorPalette colorPalette)
 
 
 getDiffSource : Config -> String -> Task Error (Floor, Maybe Floor)
 getDiffSource config id =
   getEditingFloor config id
-  `Task.andThen` \current -> getFloorMaybe config id
-  `Task.andThen` \prev -> Task.succeed (current, prev)
+    |> Task.andThen (\current -> getFloorMaybe config id
+    |> Task.map (\prev -> (current, prev))
+    )
 
 
 getAuth : Config -> Task Error User
@@ -194,21 +191,21 @@ getAuth config =
   getWithoutCache
     decodeUser
     (config.apiRoot ++ "/1/self")
-    (authorization config.token)
+    [authorization config.token]
 
 
 search : Config -> Bool -> String -> Task Error (List SearchResult)
 search config withPrivate query =
   let
     url =
-      Http.url
-        (config.apiRoot ++ "/1/search/" ++ Http.uriEncode query)
+      makeUrl
+        (config.apiRoot ++ "/1/search/" ++ Http.encodeUri query)
         (if withPrivate then [("all", "true")] else [])
   in
     HttpUtil.get
       decodeSearchResults
       url
-      (authorization config.token)
+      [authorization config.token]
 
 
 personCandidate : Config -> String -> Task Error (List Person)
@@ -218,8 +215,8 @@ personCandidate config name =
   else
     getWithoutCache
       decodePeople
-      (config.apiRoot ++ "/1/people/search/" ++ Http.uriEncode name)
-      (authorization config.token)
+      (config.apiRoot ++ "/1/people/search/" ++ Http.encodeUri name)
+      [authorization config.token]
 
 
 saveEditingImage : Config -> Id -> File -> Task a ()
@@ -227,7 +224,7 @@ saveEditingImage config id file =
   HttpUtil.sendFile
     "PUT"
     (config.apiRoot ++ "/1/images/" ++ id)
-    (authorization config.token)
+    [authorizationTuple config.token]
     file
 
 
@@ -236,7 +233,7 @@ getPerson config id =
   HttpUtil.get
     decodePerson
     (config.apiRoot ++ "/1/people/" ++ id)
-    (authorization config.token)
+    [authorization config.token]
 
 
 getPersonByUser : Config -> Id -> Task Error Person
@@ -246,13 +243,13 @@ getPersonByUser config id =
       HttpUtil.get
         decodeUser
         (config.apiRoot ++ "/1/users/" ++ id)
-        (authorization config.token)
+        [authorization config.token]
   in
     getUser
-    `Task.andThen` (\user -> case user of
-        User.Admin person -> Task.succeed person
-        User.General person -> Task.succeed person
-        User.Guest -> Task.succeed
+      |> Task.map (\user -> case user of
+        User.Admin person -> person
+        User.General person -> person
+        User.Guest ->
           -- TODO how to deal with invalid person?
           { id = ""
           , name = ""
@@ -268,14 +265,14 @@ getPeopleByFloorAndPost : Config -> String -> Int -> String -> Task Error (List 
 getPeopleByFloorAndPost config floorId floorVersion post =
   HttpUtil.get
     decodePeople
-    ( Http.url
+    ( makeUrl
         (config.apiRoot ++ "/1/people")
         [ ("floorId", floorId)
         , ("floorVersion", toString floorVersion)
         , ("post", post)
         ]
     )
-    (authorization config.token)
+    [authorization config.token]
 
 
 login : String -> String -> String -> Task Error String
@@ -284,7 +281,7 @@ login accountServiceRoot id pass =
     decodeAuthToken
     (accountServiceRoot ++ "/1/authentication")
     []
-    (Http.string <| serializeLogin id pass)
+    (Http.jsonBody <| encodeLogin id pass)
 
 
 goToLogin : Task a ()

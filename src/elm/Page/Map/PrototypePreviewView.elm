@@ -21,13 +21,14 @@ view : List (Prototype, Bool) -> Html Msg
 view prototypes =
   let
     containerWidth = 320 - (20 * 2) -- TODO
+
     containerHeight = 238 -- TODO
 
     selectedIndex =
-      Maybe.withDefault 0 <|
-      List.head <|
-      List.filterMap (\((prototype, selected), index) -> if selected then Just index else Nothing) <|
       zipWithIndex prototypes
+        |> List.filterMap (\((prototype, selected), index) -> if selected then Just index else Nothing)
+        |> List.head
+        |> Maybe.withDefault 0
 
     buttonsView =
       buttons (List.length prototypes) selectedIndex
@@ -37,7 +38,7 @@ view prototypes =
         containerWidth
         containerHeight
         selectedIndex
-        (List.map fst prototypes)
+        (List.map Tuple.first prototypes)
 
   in
     div
@@ -53,7 +54,7 @@ buttons prototypeLength selectedIndex =
     in
       div
         [ style (S.prototypePreviewScroll isLeft)
-        , onClick' (if isLeft then PrototypesMsg Prototypes.prev else PrototypesMsg Prototypes.next)
+        , onClick_ (if isLeft then PrototypesMsg Prototypes.prev else PrototypesMsg Prototypes.next)
         ]
         [ text label ]
     )

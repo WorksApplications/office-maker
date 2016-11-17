@@ -11,9 +11,9 @@ type Error = Unexpected String
 
 readAsDataURL : File -> Task Error String
 readAsDataURL (File file) =
-    Task.mapError
-      (always (Unexpected (toString file)))
-      (Native.File.readAsDataURL file)
+  Task.mapError
+    (always (Unexpected (toString file)))
+    (Native.File.readAsDataURL file)
 
 
 length : FileList -> Int

@@ -56,22 +56,27 @@ init flags =
 
 initCmd : API.Config -> UserState -> Cmd Msg
 initCmd apiConfig defaultUserState =
-  performAPI
-    identity
-    ( Cache.getWithDefault Cache.cache defaultUserState `Task.andThen` \userState ->
-      API.getAuth apiConfig `Task.andThen` \user ->
-        if not (User.isAdmin user) then
-          Task.succeed NotAuthorized
-        else
-          API.getColors apiConfig `Task.andThen` \colorPalette ->
-          API.getPrototypes apiConfig `Task.andThen` \prototypes ->
-          Task.succeed (Loaded userState user colorPalette prototypes)
+  Cache.getWithDefault Cache.cache defaultUserState
+    |> Task.andThen (\userState -> API.getAuth apiConfig
+    |> Task.andThen (\user ->
+      if not (User.isAdmin user) then
+        Task.succeed NotAuthorized
+      else
+        API.getColors apiConfig
+          |> Task.andThen (\colorPalette -> API.getPrototypes apiConfig
+          |> Task.map (\prototypes -> Loaded userState user colorPalette prototypes)
+          )
+      )
     )
+    |> performAPI identity
 
 
 performAPI : (a -> Msg) -> Task.Task API.Error a -> Cmd Msg
 performAPI tagger task =
-  Task.perform APIError tagger task
+  task
+    |> Task.map tagger
+    |> Task.onError (APIError >> Task.succeed)
+    |> Task.perform identity
 
 
 saveColorDebounceConfig : Debounce.Config Msg
@@ -167,7 +172,7 @@ update removeToken message model =
         { model | savePrototypeDebounce = savePrototypeDebounce } ! [ cmd ]
 
     NotAuthorized ->
-      model ! [ Task.perform (always NoOp) (always NoOp) API.goToLogin ]
+      model ! [ Task.perform (always NoOp) API.goToLogin ]
 
     APIError e ->
       { model | error = Just (toString e) } ! []

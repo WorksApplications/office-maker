@@ -1,6 +1,6 @@
 module Util.StringUtil exposing (..)
 
-import String
+
 
 split2 : String -> String -> Maybe (String, String)
 split2 separator s =

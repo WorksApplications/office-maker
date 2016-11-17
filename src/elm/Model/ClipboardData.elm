@@ -1,7 +1,6 @@
 module Model.ClipboardData exposing (..)
 
 import Model.Prototype exposing (Prototype)
-import String
 import HtmlParser exposing (..)
 import HtmlParser.Util exposing (..)
 
@@ -18,7 +17,7 @@ toObjectCandidates prototype (left, top) s =
       else
         parseString s
 
-    rows' =
+    rows_ =
       List.indexedMap (\rowIndex row ->
         List.indexedMap (\colIndex maybeName ->
           Maybe.map
@@ -33,7 +32,7 @@ toObjectCandidates prototype (left, top) s =
         ) row
       ) rows
   in
-    List.concatMap (List.filterMap identity) rows'
+    List.concatMap (List.filterMap identity) rows_
 
 
 parseString : String -> List (List (Maybe String))
@@ -50,11 +49,13 @@ parseHtml table =
         innerTr
           |> mapElements
             (\_ attrs innerTd ->
-              getValue "bgcolor" attrs `Maybe.andThen` \bgColor ->
-                if bgColor /= "#FFFFFF" then
-                  Just (textContent innerTd)
-                else
-                  Nothing
+              getValue "bgcolor" attrs
+                |> Maybe.andThen (\bgColor ->
+                  if bgColor /= "#FFFFFF" then
+                    Just (textContent innerTd)
+                  else
+                    Nothing
+                )
             )
       )
 

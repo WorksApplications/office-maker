@@ -1,6 +1,6 @@
 module Model.Floor exposing (..)
 
-import String
+
 import Dict exposing (Dict)
 import Regex
 import Date exposing (Date)
@@ -121,11 +121,11 @@ name floor = floor.name
 
 
 width : Floor -> Int
-width floor = size floor |> fst
+width floor = size floor |> Tuple.first
 
 
 height : Floor -> Int
-height floor = size floor |> snd
+height floor = size floor |> Tuple.second
 
 
 -- TODO confusing...

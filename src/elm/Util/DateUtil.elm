@@ -1,7 +1,7 @@
 module Util.DateUtil exposing (..)
 
 import Date exposing (..)
-import String
+
 
 
 monthToInt : Month -> Int

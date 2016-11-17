@@ -1,6 +1,6 @@
 module Page.Master.PrototypeForm exposing (..)
 
-import String
+
 
 import Model.Object exposing (Shape)
 import Model.Prototype exposing (Prototype)
@@ -37,13 +37,12 @@ fromPrototype prototype =
 
 toPrototype : PrototypeForm -> Result String Prototype
 toPrototype form =
-  validateName form.name `Result.andThen` \name ->
-  validateColor form.color `Result.andThen` \color ->
-  validateBackgroundColor form.backgroundColor `Result.andThen` \backgroundColor ->
-  validateWidth form.width `Result.andThen` \width ->
-  validateHeight form.height `Result.andThen` \height ->
-  validateFontSize form.fontSize `Result.andThen` \fontSize ->
-  ( Result.Ok <|
+  validateName form.name |> Result.andThen (\name ->
+  validateColor form.color |> Result.andThen (\color ->
+  validateBackgroundColor form.backgroundColor |> Result.andThen (\backgroundColor ->
+  validateWidth form.width |> Result.andThen (\width ->
+  validateHeight form.height |> Result.andThen (\height ->
+  validateFontSize form.fontSize |> Result.map (\fontSize ->
     { id = form.id
     , name = name
     , color = color
@@ -54,7 +53,8 @@ toPrototype form =
     , shape = form.shape
     , personId = form.personId
     }
-  )
+  ))))))
+  
 
 validateName : String -> Result String String
 validateName name =

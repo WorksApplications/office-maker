@@ -130,8 +130,8 @@ toItemViewModel lang floorsInfo personInfo currentlyFocusedObjectId result =
 
             maybePersonIdAndName =
               Object.relatedPerson object
-                |> (flip Maybe.andThen) (\personId -> Dict.get personId personInfo)
-                |> (flip Maybe.andThen) (\person -> Just (person.id, person.name))
+                |> Maybe.andThen (\personId -> Dict.get personId personInfo)
+                |> Maybe.andThen (\person -> Just (person.id, person.name))
           in
             Just <|
               SearchResultItemView.Object

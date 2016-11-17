@@ -50,8 +50,8 @@ rect (x, y, w, h) =
 
 
 absoluteRect : (Int, Int, Int, Int) -> S
-absoluteRect rect' =
-  ("position", "absolute") :: (rect rect')
+absoluteRect rect_ =
+  ("position", "absolute") :: (rect rect_)
 
 
 card : Maybe Int -> S

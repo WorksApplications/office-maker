@@ -1,9 +1,6 @@
 module Page.Map.View exposing (view)
 
-import Maybe
-
 import Html exposing (..)
-import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Lazy exposing (..)
@@ -48,7 +45,7 @@ mainView model =
     floorInfo =
       floorInfoView model
   in
-    main' [ style (S.mainView model.windowSize.height) ]
+    main_ [ style (S.mainView model.windowSize.height) ]
       [ floorInfo
       , MessageBar.view model.lang model.error
       , CanvasView.view model
@@ -104,7 +101,7 @@ subViewForEdit model editingMode =
   let
     floorView =
       List.map
-        (App.map FloorPropertyMsg)
+        (Html.map FloorPropertyMsg)
         (case model.floor of
           Just editingFloor ->
             FloorProperty.view
@@ -186,7 +183,7 @@ modeSelectionViewEach viewIcon currentEditMode targetEditMode =
   in
     div
       [ style (S.modeSelectionViewEach selected)
-      , onClick' (ChangeMode targetEditMode)
+      , onClick_ (ChangeMode targetEditMode)
       ]
       [ viewIcon selected ]
 

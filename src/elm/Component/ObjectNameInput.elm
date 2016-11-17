@@ -22,7 +22,9 @@ type alias ObjectNameInput =
   , candidateIndex : Int
   }
 
+
 type alias Id = String
+
 
 init : ObjectNameInput
 init =
@@ -32,6 +34,7 @@ init =
   , candidateIndex = -1
   }
 
+
 type Msg =
     NoOp
   | InputName Id String
@@ -39,6 +42,7 @@ type Msg =
   | KeyupOnNameInput Int
   | SelectCandidate Id Id
   | UnsetPerson Id
+
 
 type Event =
     OnInput Id String
@@ -61,15 +65,16 @@ update message model =
 
     InputName id name ->
       case model.editingObject of
-        Just (id', name') ->
-          if id == id' then
+        Just (id_, name_) ->
+          if id == id_ then
             ({ model |
               editingObject = Just (id, name)
             }, OnInput id name)
           else
             ({ model |
-              editingObject = Just (id', name')
+              editingObject = Just (id_, name_)
             }, None)
+
         Nothing ->
             ({ model |
               editingObject = Nothing
@@ -92,6 +97,7 @@ update message model =
                 ( updateNewEdit Nothing model
                 , OnFinish id name (selectedCandidateId model.candidateIndex candidates)
                 )
+
               Nothing ->
                 (model, None)
           else if keyCode == 16 then
@@ -159,7 +165,7 @@ view deskInfoOf transitionDisabled candidates model =
     Just (id, name) ->
       case deskInfoOf id of
         Just (screenRect, maybePerson) ->
-          view' id name maybePerson screenRect transitionDisabled candidates model
+          view_ id name maybePerson screenRect transitionDisabled candidates model
 
         Nothing -> text ""
 
@@ -167,21 +173,22 @@ view deskInfoOf transitionDisabled candidates model =
       text ""
 
 
-view' : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
-view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
+view_ : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
+view_ id name maybePerson screenRectOfDesk transitionDisabled candidates model =
   let
-    candidates' =
+    candidates_ =
       List.filter (\candidate -> Just candidate /= maybePerson) (List.take 15 candidates)
 
-    (relatedPersonExists, reletedpersonView') =
+    (relatedPersonExists, reletedpersonView_) =
       case maybePerson of
         Just person ->
           (True, reletedpersonView id person)
+
         Nothing ->
           (False, text "")
 
     candidatesLength =
-      List.length candidates'
+      List.length candidates_
 
     viewExists =
       relatedPersonExists || candidatesLength > 0
@@ -202,12 +209,12 @@ view' id name maybePerson screenRectOfDesk transitionDisabled candidates model =
         -- , Html.Attributes.property "selectionStart" (Encode.int 9999)
         -- , Html.Attributes.attribute "selection-start" "9999"
         , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
-        ] ++ (inputAttributes (InputName id) (KeydownOnNameInput candidates') KeyupOnNameInput name))
+        ] ++ (inputAttributes (InputName id) (KeydownOnNameInput candidates_) KeyupOnNameInput name))
         [ ])
       , ("candidatesViewContainer", div
           [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
-          [ reletedpersonView'
-          , candidatesView model.candidateIndex id candidates'
+          [ reletedpersonView_
+          , candidatesView model.candidateIndex id candidates_
           ])
       , ("pointer", pointer)
       ]
@@ -232,12 +239,12 @@ unsetButton objectId =
 
 candidatesView : Int -> Id -> List Person -> Html Msg
 candidatesView candidateIndex objectId people =
-  case people of
-    [] -> text ""
-    _ ->
-      Keyed.ul
-        [ style (Styles.candidatesView) ]
-        (List.indexedMap (candidatesViewEach candidateIndex objectId) people)
+  if List.isEmpty people then
+    text ""
+  else
+    Keyed.ul
+      [ style (Styles.candidatesView) ]
+      (List.indexedMap (candidatesViewEach candidateIndex objectId) people)
 
 
 candidatesViewEach : Int -> Id -> Int -> Person -> (String, Html Msg)
@@ -246,7 +253,7 @@ candidatesViewEach candidateIndex objectId index person =
   , hover Styles.candidateItemHover
       li
         [ style (Styles.candidateItem (candidateIndex == index))
-        , onMouseDown' (SelectCandidate objectId person.id)
+        , onMouseDown_ (SelectCandidate objectId person.id)
         ]
         [ div [ style Styles.candidateItemPersonName ] [ text person.name ]
         , mail person
@@ -267,11 +274,11 @@ mail person =
 
 -- TODO duplicated
 inputAttributes : (String -> msg) -> ((Int, Int) -> msg) -> (Int -> msg) -> String -> List (Attribute msg)
-inputAttributes toInputMsg toKeydownMsg toKeyupMsg value' =
-  [ onInput' toInputMsg
+inputAttributes toInputMsg toKeydownMsg toKeyupMsg value_ =
+  [ onInput_ toInputMsg
   -- , autofocus True
   , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map toKeydownMsg decodeKeyCodeAndSelectionStart)
   , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map toKeyupMsg decodeKeyCode)
-  , defaultValue value'
-  -- , value value'
+  , defaultValue value_
+  -- , value value_
   ]

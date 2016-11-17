@@ -1,7 +1,6 @@
 module Util.HtmlUtil exposing (..)
 
 import Html exposing (Html, Attribute, text)
-import Html.App
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
 import Json.Decode as Decode exposing (..)
@@ -14,8 +13,8 @@ type Error =
 
 decodeRightButton : Decoder Bool
 decodeRightButton =
-  object1 (\button -> button > 0)
-    ("button" := int)
+  Decode.map (\button -> button > 0)
+    (field "button" int)
 
 
 decodeKeyCode : Decoder Int
@@ -30,41 +29,41 @@ targetSelectionStart =
 
 decodeKeyCodeAndSelectionStart : Decoder (Int, Int)
 decodeKeyCodeAndSelectionStart =
-  Decode.object2 (,)
-    ("keyCode" := int)
-    ("target" := Decode.object1 identity ("selectionStart" := int))
+  Decode.map2 (,)
+    (field "keyCode" int)
+    (field "target" (field "selectionStart" int))
 
 
-onSubmit' : a -> Attribute a
-onSubmit' e =
+onSubmit_ : a -> Attribute a
+onSubmit_ e =
   onWithOptions
     "onsubmit" { stopPropagation = True, preventDefault = False } (Decode.succeed e)
 
 
-onMouseEnter' : a -> Attribute a
-onMouseEnter' e =
+onMouseEnter_ : a -> Attribute a
+onMouseEnter_ e =
   onWithOptions
     "mouseenter" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
 
-onMouseLeave' : a -> Attribute a
-onMouseLeave' e =
+onMouseLeave_ : a -> Attribute a
+onMouseLeave_ e =
   onWithOptions
     "mouseleave" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
 
-onMouseDown' : a -> Attribute a
-onMouseDown' e =
+onMouseDown_ : a -> Attribute a
+onMouseDown_ e =
   onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
 
-onDblClick' : a -> Attribute a
-onDblClick' e =
+onDblClick_ : a -> Attribute a
+onDblClick_ e =
   onWithOptions "dblclick" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
 
-onClick' : a -> Attribute a
-onClick' e =
+onClick_ : a -> Attribute a
+onClick_ e =
   onWithOptions "click" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
 
@@ -73,31 +72,33 @@ onInput f =
   on "input" (Decode.map f Html.Events.targetValue)
 
 
-onInput' : (String -> a) -> Attribute a
-onInput' f =
+onInput_ : (String -> a) -> Attribute a
+onInput_ f =
   onWithOptions "input" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
 
-onChange' : (String -> a) -> Attribute a
-onChange' f =
+onChange_ : (String -> a) -> Attribute a
+onChange_ f =
   onWithOptions "change" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
--- onKeyUp' : Address KeyboardEvent -> Attribute
--- onKeyUp' address =
+
+-- onKeyUp_ : Address KeyboardEvent -> Attribute
+-- onKeyUp_ address =
 --   on "keyup" decodeKeyboardEvent (Signal.message address)
 
-onKeyDown' : (Int -> a) -> Attribute a
-onKeyDown' f =
+
+onKeyDown_ : (Int -> a) -> Attribute a
+onKeyDown_ f =
   onWithOptions "keydown" { stopPropagation = True, preventDefault = True } (Decode.map f decodeKeyCode)
 
 
-onKeyDown'' : (Int -> a) -> Attribute a
-onKeyDown'' f =
+onKeyDown__ : (Int -> a) -> Attribute a
+onKeyDown__ f =
   on "keydown" (Decode.map f decodeKeyCode)
 
 
-onContextMenu' : a -> Attribute a
-onContextMenu' e =
+onContextMenu_ : a -> Attribute a
+onContextMenu_ e =
   onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
 
@@ -108,7 +109,7 @@ onMouseWheel toMsg =
 
 mouseDownDefence : a -> Attribute a
 mouseDownDefence e =
-  onMouseDown' e
+  onMouseDown_ e
 
 
 decodeWheelEvent : Decoder Float
@@ -117,11 +118,11 @@ decodeWheelEvent =
       [ at [ "deltaY" ] float
       , at [ "wheelDelta" ] float |> map (\v -> -v)
       ])
-    `andThen` (\value -> if value /= 0 then succeed value else fail "Wheel of 0")
+    |> andThen (\value -> if value /= 0 then succeed value else fail "Wheel of 0")
 
 
-form' : a -> List (Attribute a) -> List (Html a) -> Html a
-form' msg attribtes children =
+form_ : a -> List (Attribute a) -> List (Html a) -> Html a
+form_ msg attribtes children =
   Html.form
     ([ Html.Attributes.action "javascript:void(0);"
     , Html.Attributes.method "POST"
@@ -136,9 +137,9 @@ fileLoadButton tagger styles text =
     [ Html.Attributes.style styles ]
     [ Html.text text
     , Html.input
-        [ Html.Attributes.type' "file"
+        [ Html.Attributes.type_ "file"
         , Html.Attributes.style [("display", "none")]
         , on "change" decodeFile
         ]
-        [] |> Html.App.map tagger
+        [] |> Html.map tagger
     ]

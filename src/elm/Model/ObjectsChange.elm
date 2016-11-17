@@ -63,7 +63,7 @@ fromList list =
 
 toList : ObjectsChange_ a -> List (ObjectChange a)
 toList change =
-  List.map snd (Dict.toList change)
+  List.map Tuple.second (Dict.toList change)
 
 
 separate : ObjectsChange_ a -> { added : List Object, modified : List a, deleted : List Object }
