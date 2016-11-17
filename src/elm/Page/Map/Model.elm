@@ -59,7 +59,7 @@ type alias Model =
   , colorPalette : ColorPalette
   , contextMenu : ContextMenu
   , floor : Maybe EditingFloor
-  , floorsInfo : List FloorInfo
+  , floorsInfo : Dict FloorId FloorInfo
   , windowSize : (Int, Int)
   , scale : Scale
   , offset : (Int, Int)
@@ -125,7 +125,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , mode = if isEditMode then Editing EditTab Select else Viewing False
     , colorPalette = ColorPalette.empty
     , contextMenu = NoContextMenu
-    , floorsInfo = []
+    , floorsInfo = Dict.empty
     , floor = Nothing
     , windowSize = initialSize
     , scale = scale

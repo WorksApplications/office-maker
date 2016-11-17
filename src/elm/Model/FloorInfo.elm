@@ -1,140 +1,74 @@
 module Model.FloorInfo exposing (..)
 
+import Dict exposing (Dict)
 import Model.Floor exposing (FloorBase)
-
-
--- TODO List FloorInfo => Dict String FloorInfo
 
 
 type alias FloorId = String
 
 
 type FloorInfo
-  = Public FloorBase
-  | PublicWithEdit FloorBase FloorBase
-  | Private FloorBase
+  = FloorInfo FloorBase FloorBase
 
 
 init : FloorBase -> FloorBase -> FloorInfo
-init lastFloor editingFloor =
-  PublicWithEdit lastFloor editingFloor
+init publicFloor editingFloor =
+  if publicFloor.id /= editingFloor.id then
+    Debug.crash "IDs are not same: "
+  else
+    FloorInfo publicFloor editingFloor
 
 
 idOf : FloorInfo -> FloorId
-idOf info =
-  case info of
-    Public floor ->
-      floor.id
-
-    PublicWithEdit lastPublicFloor currentPrivateFloor ->
-      currentPrivateFloor.id
-
-    Private floor ->
-      floor.id
+idOf (FloorInfo publicFloor editingFloor) =
+  editingFloor.id
 
 
-findViewingFloor : FloorId -> List FloorInfo -> Maybe FloorBase
-findViewingFloor floorId list =
-  case List.filter (\info -> idOf info == floorId) list of
-    x :: _ ->
-      case x of
-        Public floor ->
-          Just floor
-
-        PublicWithEdit lastPublicFloor currentPrivateFloor ->
-          Just lastPublicFloor
-
-        Private floor ->
-          Nothing
-    _ ->
-      Nothing
+publicFloor : FloorInfo -> FloorBase
+publicFloor (FloorInfo publicFloor editingFloor) =
+  publicFloor
 
 
-findFloor : FloorId -> Int -> List FloorInfo -> Maybe FloorBase
-findFloor floorId version list =
-  case List.filter (\info -> idOf info == floorId) list of
-    x :: _ ->
-      case x of
-        Public floor ->
-          if floor.version == version then
-            Just floor
-          else
-            Nothing
-
-        PublicWithEdit lastPublicFloor currentPrivateFloor ->
-          if lastPublicFloor.version == version then
-            Just lastPublicFloor
-          else if currentPrivateFloor.version == version then
-            Just currentPrivateFloor
-          else
-            Nothing
-
-        Private floor ->
-          if floor.version == version then
-            Just floor
-          else
-            Nothing
-    _ ->
-      Nothing
+editingFloor : FloorInfo -> FloorBase
+editingFloor (FloorInfo publicFloor editingFloor) =
+  editingFloor
 
 
-addNewFloor : FloorBase -> List FloorInfo -> List FloorInfo
-addNewFloor newFloor list =
-  case list of
-    [] ->
-      [ if newFloor.public then
-          Public newFloor
-        else
-          Private newFloor
-      ]
-
-    head :: tail ->
-      if idOf head == newFloor.id then
-        let
-          newInfo =
-            case head of
-              Public floor ->
-                if newFloor.public then
-                  Public newFloor
-                else
-                  PublicWithEdit floor newFloor
-
-              PublicWithEdit lastPublicFloor currentPrivateFloor ->
-                if newFloor.public then
-                  Public newFloor
-                else
-                  PublicWithEdit lastPublicFloor newFloor
-
-              Private floor ->
-                if newFloor.public then
-                  Public newFloor
-                else
-                  Private newFloor
-        in
-          newInfo :: tail
-
-      else
-        head :: addNewFloor newFloor tail
+replaceEditingFloor : FloorBase -> FloorInfo -> FloorInfo
+replaceEditingFloor editingFloor (FloorInfo publicFloor _) =
+  FloorInfo publicFloor editingFloor
 
 
-lastFloorOrder : List FloorInfo -> Int
-lastFloorOrder floorsInfo =
-  case List.drop (List.length floorsInfo - 1) floorsInfo of
-    [] ->
-      0
-
-    floorInfo :: _ ->
-      order floorInfo
+findPublicFloor : FloorId -> Dict FloorId FloorInfo -> Maybe FloorBase
+findPublicFloor floorId floorsInfo =
+  floorsInfo
+    |> findFloor floorId
+    |> Maybe.map publicFloor
 
 
-order : FloorInfo -> Int
-order floorInfo =
-  case floorInfo of
-    Public floor ->
-      floor.ord
+findFloor : FloorId -> Dict FloorId FloorInfo -> Maybe FloorInfo
+findFloor floorId floorsInfo =
+  floorsInfo
+    |> Dict.get floorId
 
-    PublicWithEdit publicFloor editingFloor ->
-      editingFloor.ord
 
-    Private floor ->
-      floor.ord
+addEditingFloor : FloorBase -> Dict FloorId FloorInfo -> Dict FloorId FloorInfo
+addEditingFloor editingFloor floorsInfo =
+  floorsInfo
+    |> Dict.update editingFloor.id (Maybe.map (replaceEditingFloor editingFloor))
+
+
+toPublicList : Dict FloorId FloorInfo -> List FloorBase
+toPublicList floorsInfo =
+  floorsInfo
+    |> Dict.toList
+    |> List.map (snd >> publicFloor)
+    |> List.sortBy .ord
+
+
+toEditingList : Dict FloorId FloorInfo -> List FloorBase
+toEditingList floorsInfo =
+  floorsInfo
+    |> Dict.toList
+    |> List.map (snd >> editingFloor)
+    |> List.sortBy .ord

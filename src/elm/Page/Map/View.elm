@@ -35,6 +35,7 @@ import Page.Map.ContextMenu as ContextMenu
 import Page.Map.PrototypePreviewView as PrototypePreviewView
 import Page.Map.SearchResultView as SearchResultView
 
+
 mainView : Model -> Html Msg
 mainView model =
   let
@@ -65,7 +66,7 @@ floorInfoView model =
     FloorsInfoView.view
       ShowContextMenuOnFloorInfo
       MoveOnCanvas
-      GoToFloor
+      (Just >> GoToFloor)
       CreateNewFloor
       model.keys.ctrl
       model.user

@@ -244,7 +244,12 @@ update removeToken setSelectionStart msg model =
       { model | prototypes = Prototypes.init prototypeList } ! []
 
     FloorsInfoLoaded floors ->
-      { model | floorsInfo = floors } ! []
+      { model
+        | floorsInfo =
+            floors
+              |> List.map (\floor -> (FloorInfo.idOf floor, floor))
+              |> Dict.fromList
+      } ! []
 
     FloorLoaded floor ->
       updateOnFloorLoaded floor model
@@ -303,7 +308,7 @@ update removeToken setSelectionStart msg model =
 
     FloorSaved floorBase ->
       { model
-      | floorsInfo = FloorInfo.addNewFloor floorBase model.floorsInfo
+      | floorsInfo = FloorInfo.addEditingFloor floorBase model.floorsInfo
       } ! []
 
     FloorPublished floor ->
@@ -1840,7 +1845,7 @@ updateOnFloorLoaded maybeFloor model =
         newModel =
           Model.adjustOffset
             { model |
-              floorsInfo = FloorInfo.addNewFloor (Floor.baseOf floor) model.floorsInfo
+              floorsInfo = FloorInfo.addEditingFloor (Floor.baseOf floor) model.floorsInfo
             , floor = Just (EditingFloor.init floor)
             , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
             }

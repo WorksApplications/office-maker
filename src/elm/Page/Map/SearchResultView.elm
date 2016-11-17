@@ -56,19 +56,14 @@ view model =
 viewListForOnePost : Model -> (Maybe String, List SearchResult) -> Html Msg
 viewListForOnePost model (maybePostName, results) =
   let
-    floorsInfoDict =
-      Dict.fromList <|
-        List.map (\f ->
-          case f of
-            Public f -> (f.id, f)
-            PublicWithEdit _ f -> (f.id, f)
-            Private f -> (f.id, f)
-          ) model.floorsInfo
+    floorsInfo =
+      model.floorsInfo
+        |> Dict.map (\_ info -> (FloorInfo.publicFloor info))
 
     children =
       results
         |> List.filterMap (\result ->
-          case toItemViewModel model.lang floorsInfoDict model.personInfo model.selectedResult result of
+          case toItemViewModel model.lang floorsInfo model.personInfo model.selectedResult result of
             Just item ->
               let
                 thisFloorId =

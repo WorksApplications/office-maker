@@ -1,6 +1,6 @@
 module View.FloorsInfoView exposing(view)
 
-import String
+import Dict exposing (Dict)
 import Json.Decode as Decode
 
 import Html exposing (..)
@@ -9,12 +9,109 @@ import Html.Events exposing (..)
 import View.Styles as Styles
 
 import Model.User as User exposing (User)
-import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 
 import Util.HtmlUtil exposing (..)
 
 import InlineHover exposing (hover)
+
+
+type alias FloorId = String
+
+
+view : (String -> msg) -> ((Int, Int) -> msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> Dict FloorId FloorInfo -> Html msg
+view onContextMenu onMove goToFloorMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorsInfo =
+  if isEditMode then
+    viewEditingFloors onContextMenu onMove goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo
+  else
+    viewPublicFloors goToFloorMsg currentFloorId floorsInfo
+
+
+viewEditingFloors :  (FloorId -> msg) -> ((Int, Int) -> msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Maybe FloorId -> Dict FloorId FloorInfo -> Html msg
+viewEditingFloors onContextMenu onMove goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo =
+  let
+    contextMenuMsg floor =
+      if not disableContextmenu && not (User.isGuest user) then
+        Just (onContextMenu floor.id)
+      else
+        Nothing
+
+    floorList =
+      floorsInfo
+        |> FloorInfo.toEditingList
+        |> List.map
+          (\floor ->
+            eachView
+              (contextMenuMsg floor)
+              (goToFloorMsg (floor.id, True))
+              (currentFloorId == Just floor.id)
+              (not floor.public)
+              floor.name
+          )
+
+    create =
+      if User.isAdmin user then
+        [ createButton onCreateNewFloor ]
+      else
+        []
+  in
+    wrapList (Just onMove) ( floorList ++ create )
+
+
+viewPublicFloors : ((FloorId, Bool) -> msg) -> Maybe FloorId -> Dict FloorId FloorInfo -> Html msg
+viewPublicFloors goToFloorMsg currentFloorId floorsInfo =
+  let
+    floorList =
+      floorsInfo
+        |> FloorInfo.toEditingList
+        |> List.map
+          (\floor ->
+            eachView
+              Nothing
+              (goToFloorMsg (floor.id, False))
+              (currentFloorId == Just floor.id)
+              False
+              floor.name
+          )
+  in
+    wrapList Nothing floorList
+
+
+wrapList : Maybe ((Int, Int) -> msg) -> List (Html msg) -> Html msg
+wrapList onMove children =
+  ul
+    ( [ style Styles.floorsInfoView ] ++
+      ( case onMove of
+          Just onMove ->
+            [ onMouseMove' onMove ]
+
+          Nothing ->
+            []
+      )
+    )
+    children
+
+
+eachView : Maybe msg -> msg -> Bool -> Bool -> String -> Html msg
+eachView contextmenuMsg onClickMsg selected markAsPrivate floorName =
+  linkBox
+    contextmenuMsg
+    onClickMsg
+    (Styles.floorsInfoViewItem selected markAsPrivate)
+    (Styles.floorsInfoViewItemHover markAsPrivate)
+    Styles.floorsInfoViewItemLink
+    [ text floorName ]
+
+
+createButton : msg -> Html msg
+createButton msg =
+  linkBox
+    Nothing
+    msg
+    (Styles.floorsInfoViewItem False False)
+    (Styles.floorsInfoViewItemHover False)
+    Styles.floorsInfoViewItemLink
+    [ text "+" ]
 
 
 linkBox : Maybe msg -> msg -> List (String, String) -> List (String, String) -> List (String, String) -> List (Html msg) -> Html msg
@@ -32,103 +129,3 @@ linkBox contextmenuMsg clickMsg liStyle hoverStyle innerStyle inner =
       )
     )
     [ span [ style innerStyle ] inner ]
-
-
-eachView : (String -> msg) -> (String -> msg) -> Bool -> User -> Bool -> Maybe String -> FloorInfo -> Maybe (Html msg)
-eachView contextmenuMsg onClickMsg disableContextmenu user isEditMode currentFloorId floorInfo =
-  Maybe.map
-    (\floor ->
-      eachView_
-        (if not disableContextmenu && (not (User.isGuest user)) && isEditMode then Just (contextmenuMsg floor.id) else Nothing)
-        (onClickMsg floor.id)
-        (currentFloorId == Just floor.id)
-        (markAsPrivate floorInfo)
-        floor
-    )
-    (getFloor isEditMode floorInfo)
-
-
-eachView_ : Maybe msg -> msg -> Bool -> Bool -> FloorBase -> Html msg
-eachView_ contextmenuMsg onClickMsg selected markAsPrivate floor =
-  linkBox
-    contextmenuMsg
-    onClickMsg
-    (Styles.floorsInfoViewItem selected markAsPrivate)
-    (Styles.floorsInfoViewItemHover markAsPrivate)
-    Styles.floorsInfoViewItemLink
-    [ text floor.name ]
-
-
-createButton : msg -> Html msg
-createButton msg =
-  linkBox
-    Nothing
-    msg
-    (Styles.floorsInfoViewItem False False)
-    (Styles.floorsInfoViewItemHover False)
-    Styles.floorsInfoViewItemLink
-    [ text "+" ]
-
-
-view : (String -> msg) -> ((Int, Int) -> msg) -> (Maybe (String, Bool) -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> List FloorInfo -> Html msg
-view onContextMenu onMove onClickMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorInfoList =
-  let
-    requestPrivate =
-      (not (User.isGuest user)) && isEditMode
-
-    onClickMsg_ floorId =
-      if String.length floorId > 0 then
-        onClickMsg (Just (floorId, requestPrivate))
-      else
-        onClickMsg Nothing
-
-    floorList =
-      List.filterMap
-        (eachView onContextMenu onClickMsg_ disableContextmenu user isEditMode currentFloorId)
-        (List.sortBy (getOrd isEditMode) floorInfoList)
-
-    create =
-      if isEditMode && User.isAdmin user then
-        [ createButton onCreateNewFloor ]
-      else
-        []
-  in
-    ul
-      [ style Styles.floorsInfoView
-      , onMouseMove' onMove
-      ]
-      ( floorList ++ create )
-
-
-getOrd : Bool -> FloorInfo -> Int
-getOrd isEditMode info =
-  case info of
-    Public floor ->
-      floor.ord
-
-    PublicWithEdit lastPublicFloor currentPrivateFloor ->
-      if isEditMode then currentPrivateFloor.ord else lastPublicFloor.ord
-
-    Private floor ->
-      if isEditMode then floor.ord else -1
-
-
-getFloor : Bool -> FloorInfo -> Maybe FloorBase
-getFloor isEditMode info =
-  case info of
-    Public floor ->
-      Just floor
-
-    PublicWithEdit lastPublicFloor currentPrivateFloor ->
-      if isEditMode then Just currentPrivateFloor else Just lastPublicFloor
-
-    Private floor ->
-      if isEditMode then Just floor else Nothing
-
-
-markAsPrivate : FloorInfo -> Bool
-markAsPrivate floorInfo =
-  case floorInfo of
-    Public _ -> False
-    PublicWithEdit _ _ -> False
-    Private _ -> True
