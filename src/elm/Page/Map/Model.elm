@@ -5,6 +5,7 @@ import Maybe
 import Dict exposing (Dict)
 import Time exposing (Time)
 import Debounce exposing (Debounce)
+import Mouse exposing (Position)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -40,6 +41,11 @@ import Component.Header as Header
 type alias ObjectId = String
 type alias FloorId = String
 
+type alias Size =
+  { width : Int
+  , height : Int
+  }
+
 
 type alias Model =
   { apiConfig : API.Config
@@ -48,6 +54,7 @@ type alias Model =
   , visitDate : Date
   , user : User
   , pos : (Int, Int)
+  , mousePosition : Position
   , draggingContext : DraggingContext
   , selectedObjects : List ObjectId
   , copiedObjects : List Object
@@ -60,7 +67,7 @@ type alias Model =
   , contextMenu : ContextMenu
   , floor : Maybe EditingFloor
   , floorsInfo : Dict FloorId FloorInfo
-  , windowSize : (Int, Int)
+  , windowSize : Size
   , scale : Scale
   , offset : (Int, Int)
   , scaling : Bool
@@ -85,13 +92,13 @@ type alias Model =
 
 type ContextMenu
   = NoContextMenu
-  | Object (Int, Int) Id
-  | FloorInfo (Int, Int) Id
+  | Object Position Id
+  | FloorInfo Position Id
 
 
 type DraggingContext
   = NoDragging
-  | MoveObject Id (Int, Int)
+  | MoveObject Id Position
   | Selector
   | ShiftOffset
   | PenFromScreenPos (Int, Int)
@@ -101,7 +108,7 @@ type DraggingContext
   | MoveExistingObjectFromSearchResult FloorId Time Prototype ObjectId
 
 
-init : API.Config -> String -> (Int, Int) -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
+init : API.Config -> String -> Size -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
 init apiConfig title initialSize randomSeed visitDate isEditMode query scale offset lang =
   let
     initialFloor =
@@ -115,6 +122,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , visitDate = Date.fromTime visitDate
     , user = User.guest
     , pos = (0, 0)
+    , mousePosition = { x = 0, y = 0 }
     , draggingContext = NoDragging
     , selectedObjects = []
     , copiedObjects = []
@@ -148,6 +156,31 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , headerState = Header.init
     , saveFloorDebounce = Debounce.init
     }
+
+
+headerHeight : Int
+headerHeight = 37
+
+
+sideMenuWidth : Int
+sideMenuWidth = 320
+
+
+canvasPosition : Model -> Position
+canvasPosition model =
+  let
+    pos =
+      model.mousePosition
+  in
+    { pos | y = pos.y - headerHeight }
+
+
+isMouseInCanvas : Model -> Bool
+isMouseInCanvas model =
+  model.mousePosition.x > 0 &&
+  model.mousePosition.x < model.windowSize.width - sideMenuWidth &&
+  model.mousePosition.y > headerHeight &&
+  model.mousePosition.y < model.windowSize.height
 
 
 updateSelectorRect : (Int, Int) -> Model -> Model
@@ -231,10 +264,11 @@ adjustOffset model =
       relatedPerson obj `Maybe.andThen` \personId ->
         Just <|
           let
-            (windowWidth, windowHeight) =
-              model.windowSize
-            containerWidth = windowWidth - 320 --TODO
-            containerHeight = windowHeight - 37 --TODO
+            containerWidth =
+              model.windowSize.width - sideMenuWidth
+
+            containerHeight =
+              model.windowSize.height - headerHeight
           in
             ProfilePopupLogic.adjustOffset
               (containerWidth, containerHeight)

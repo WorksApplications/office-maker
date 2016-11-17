@@ -12,24 +12,6 @@ type Error =
   IdNotFound String | Unexpected String
 
 
--- TODO maybe pageX, pageY is better
-decodeClientXY : Decoder (Int, Int)
-decodeClientXY =
-  object2 (,)
-    ("clientX" := int)
-    ("clientY" := int)
-
-
-decodeClientXYandButton : Decoder (Int, Int, Bool)
-decodeClientXYandButton =
-  object3 (\x y button ->
-    (x, y, button > 0)
-    )
-    ("clientX" := int)
-    ("clientY" := int)
-    ("button" := int)
-
-
 decodeRightButton : Decoder Bool
 decodeRightButton =
   object1 (\button -> button > 0)
@@ -59,12 +41,6 @@ onSubmit' e =
     "onsubmit" { stopPropagation = True, preventDefault = False } (Decode.succeed e)
 
 
-onMouseMove' : ((Int, Int) -> a) -> Attribute a
-onMouseMove' f =
-  onWithOptions
-    "mousemove" { stopPropagation = True, preventDefault = True } (Decode.map f decodeClientXY)
-
-
 onMouseEnter' : a -> Attribute a
 onMouseEnter' e =
   onWithOptions
@@ -75,11 +51,6 @@ onMouseLeave' : a -> Attribute a
 onMouseLeave' e =
   onWithOptions
     "mouseleave" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
-
-
--- onMouseUp' : a -> Attribute a
--- onMouseUp' e =
---   on "mouseup" (Decode.succeed e)
 
 
 onMouseDown' : a -> Attribute a

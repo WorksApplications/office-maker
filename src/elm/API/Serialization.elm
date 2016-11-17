@@ -42,7 +42,7 @@ decodeFloors =
 
 decodeFloorInfoList : Decoder (List FloorInfo)
 decodeFloorInfoList =
-  D.list decodeFloorInfo |> D.map (Debug.log "info")
+  D.list decodeFloorInfo
 
 
 decodePeople : Decoder (List Person)

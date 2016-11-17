@@ -12,6 +12,7 @@ import Time exposing (Time, second)
 import Http
 import Dom
 import Basics.Extra exposing (never)
+import Mouse exposing (Position)
 import Debounce exposing (Debounce)
 
 import Util.ShortCut as ShortCut
@@ -59,7 +60,7 @@ type alias Flags =
   , accountServiceRoot : String
   , authToken : String
   , title : String
-  , initialSize : (Int, Int)
+  , initialSize : Model.Size
   , randomSeed : (Int, Int)
   , visitDate : Float
   , lang : String
@@ -75,13 +76,15 @@ subscriptions
   -> Sub Msg
 subscriptions tokenRemoved undo redo clipboard model =
   Sub.batch
-    [ Window.resizes (\e -> WindowSize (e.width, e.height))
+    [ Window.resizes WindowSize
     , Keyboard.downs (KeyCodeMsg True)
     , Keyboard.ups (KeyCodeMsg False)
     , tokenRemoved (always TokenRemoved)
     , undo (always Undo)
     , redo (always Redo)
     , clipboard PasteFromClipboard
+    , Mouse.moves MouseMove
+    , Mouse.ups (always MouseUp)
     ]
 
 
@@ -147,7 +150,7 @@ debugMsg : Msg -> Msg
 debugMsg msg =
   if debug then
     case msg of
-      MoveOnCanvas _ -> msg
+      MouseMove _ -> msg
       _ -> Debug.log "msg" msg
   else
     msg
@@ -187,6 +190,39 @@ update removeToken setSelectionStart msg model =
   case debugMsg msg of
     NoOp ->
       model ! []
+
+    MouseMove position ->
+      let
+        model_ =
+          { model | mousePosition = position }
+
+        canvasPosition =
+          Model.canvasPosition model_
+
+        newModel_ =
+          case model.draggingContext of
+            Selector ->
+              Model.syncSelectedByRect <| Model.updateSelectorRect (canvasPosition.x, canvasPosition.y) model_
+
+            ShiftOffset ->
+              Model.updateOffsetByScreenPos (canvasPosition.x, canvasPosition.y) model_
+
+            _ ->
+              model_
+      in
+        { newModel_ |
+          pos = (canvasPosition.x, canvasPosition.y)
+        } ! []
+
+    MouseUp ->
+      let
+        newModel =
+          if Model.isMouseInCanvas model then
+            model
+          else
+            { model | draggingContext = NoDragging }
+      in
+        newModel ! []
 
     Initialized selectedFloor needsEditMode userState user ->
       let
@@ -329,26 +365,6 @@ update removeToken setSelectionStart msg model =
         , Task.perform (always NoOp) Error <| (Process.sleep 3000.0 `andThen` \_ -> Task.succeed NoError)
         ]
 
-    MoveOnCanvas (clientX, clientY) ->
-      let
-        (x, y) =
-          (clientX, clientY - 37)
-
-        newModel =
-          case model.draggingContext of
-            Selector ->
-              Model.syncSelectedByRect <| Model.updateSelectorRect (x, y) model
-
-            ShiftOffset ->
-              Model.updateOffsetByScreenPos (x, y) model
-
-            _ ->
-              model
-      in
-        { newModel |
-          pos = (x, y)
-        } ! []
-
     EnterCanvas ->
       model ! []
 
@@ -369,9 +385,10 @@ update removeToken setSelectionStart msg model =
               model.draggingContext
       } ! []
 
-    MouseDownOnObject lastTouchedId (clientX, clientY') ->
+    MouseDownOnObject lastTouchedId ->
       let
-        clientY = clientY' - 37
+        canvasPosition =
+          Model.canvasPosition model
 
         (model', cmd) =
           if ObjectNameInput.isEditing model.objectNameInput then
@@ -391,7 +408,7 @@ update removeToken setSelectionStart msg model =
         -- TODO
         help model =
           { model |
-            pos = (clientX, clientY)
+            pos = (canvasPosition.x, canvasPosition.y)
           , selectedObjects =
               if model.keys.ctrl then
                 if List.member lastTouchedId model.selectedObjects
@@ -415,7 +432,7 @@ update removeToken setSelectionStart msg model =
                 if List.member lastTouchedId model.selectedObjects
                 then model.selectedObjects
                 else [lastTouchedId]
-          , draggingContext = MoveObject lastTouchedId (clientX, clientY)
+          , draggingContext = MoveObject lastTouchedId model.mousePosition
           , selectorRect = Nothing
           }
       in
@@ -438,16 +455,20 @@ update removeToken setSelectionStart msg model =
       in
         newModel ! [ cmd1, cmd2 ]
 
-    MouseDownOnCanvas (clientX, clientY') ->
+    MouseDownOnCanvas ->
       let
-        clientY = clientY' - 37
+        canvasPosition =
+          Model.canvasPosition model
+
+        canvasX = canvasPosition.x
+        canvasY = canvasPosition.y
 
         selectorRect =
           if Mode.isSelectMode model.mode then
             let
               (x, y) =
                 ObjectsOperation.fitPositionToGrid model.gridSize <|
-                  Model.screenToImageWithOffset model.scale (clientX, clientY) model.offset
+                  Model.screenToImageWithOffset model.scale (canvasX, canvasY) model.offset
             in
               Just (x, y, model.gridSize, model.gridSize)
 
@@ -460,10 +481,10 @@ update removeToken setSelectionStart msg model =
               NoDragging
 
             Editing _ Stamp ->
-              StampFromScreenPos (clientX, clientY)
+              StampFromScreenPos (canvasX, canvasY)
 
             Editing _ Pen ->
-              PenFromScreenPos (clientX, clientY)
+              PenFromScreenPos (canvasX, canvasY)
 
             Editing _ Select ->
               if model.keys.ctrl then
@@ -490,7 +511,7 @@ update removeToken setSelectionStart msg model =
 
         newModel =
           { model'' |
-            pos = (clientX, clientY)
+            pos = (canvasX, canvasY)
           -- , selectedObjects = []
           , selectorRect = selectorRect
           , contextMenu = NoContextMenu
@@ -757,7 +778,7 @@ update removeToken setSelectionStart msg model =
           Maybe.withDefault Cmd.none maybeLoadPersonCmd
       in
         { model |
-          contextMenu = Model.Object model.pos objectId
+          contextMenu = Model.Object model.mousePosition objectId
         , selectedObjects = selectedObjects
         } ! [ cmd ]
 
@@ -768,7 +789,7 @@ update removeToken setSelectionStart msg model =
             contextMenu =
               -- TODO idealy, change floor and show context menu
               if (EditingFloor.present editingFloor).id == id then
-                FloorInfo model.pos id
+                FloorInfo model.mousePosition id
               else
                 NoContextMenu
           } ! []
@@ -932,8 +953,8 @@ update removeToken setSelectionStart msg model =
 
     MouseWheel value ->
       let
-        (clientX, clientY) =
-          model.pos
+        canvasPosition =
+          Model.canvasPosition model
 
         newScale =
           if value < 0 then
@@ -949,8 +970,8 @@ update removeToken setSelectionStart msg model =
 
         newOffset =
           let
-            x = Scale.screenToImage model.scale clientX
-            y = Scale.screenToImage model.scale (clientY - 37) --TODO header hight
+            x = Scale.screenToImage model.scale canvasPosition.x
+            y = Scale.screenToImage model.scale canvasPosition.y
           in
             ( floor (toFloat (x - floor (ratio * (toFloat (x - offsetX)))) / ratio)
             , floor (toFloat (y - floor (ratio * (toFloat (y - offsetY)))) / ratio)
@@ -974,8 +995,8 @@ update removeToken setSelectionStart msg model =
     ScaleEnd ->
       { model | scaling = False } ! []
 
-    WindowSize (w, h) ->
-      { model | windowSize = (w, h) } ! []
+    WindowSize size ->
+      { model | windowSize = size } ! []
 
     ChangeMode editingMode ->
       { model | mode = Mode.changeEditingMode editingMode model.mode } ! []
@@ -1545,16 +1566,12 @@ submitSearch model =
 updateOnMouseUp : Model -> (Model, Cmd Msg)
 updateOnMouseUp model =
   let
-    (clientX, clientY) =
-      model.pos
-
     (model', cmd) =
       case model.draggingContext of
-        MoveObject id (x, y) ->
-          updateByMoveObjectEnd id (x, y) (clientX, clientY) model
+        MoveObject id start ->
+          updateByMoveObjectEnd id start model.mousePosition model
 
         Selector ->
-          -- (updateSelectorRect (clientX, clientY) model) ! []
           { model | selectorRect = Nothing } ! []
 
         StampFromScreenPos _ ->
@@ -1778,9 +1795,15 @@ updateOnFinishLabel model =
   case model.floor of
     Just floor ->
       let
+        canvasPosition =
+          Model.canvasPosition model
+
         (left, top) =
           ObjectsOperation.fitPositionToGrid model.gridSize <|
-            Model.screenToImageWithOffset model.scale model.pos model.offset
+            Model.screenToImageWithOffset
+              model.scale
+              (canvasPosition.x, canvasPosition.y)
+              model.offset
 
         (width, height) =
           ObjectsOperation.fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
@@ -1799,7 +1822,7 @@ updateOnFinishLabel model =
         newObject =
           Object.initLabel
             newId
-            (EditingFloor.present newFloor).id
+            (EditingFloor.present floor).id
             Nothing
             (left, top, width, height)
             bgColor
@@ -2285,8 +2308,8 @@ moveSelecedObjectsToward direction model editingFloor =
     } ! [ saveCmd ]
 
 
-updateByMoveObjectEnd : Id -> (Int, Int) -> (Int, Int) -> Model -> (Model, Cmd Msg)
-updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
+updateByMoveObjectEnd : Id -> Position -> Position -> Model -> (Model, Cmd Msg)
+updateByMoveObjectEnd id start end model =
   case model.floor of
     Nothing ->
       model ! []
@@ -2294,7 +2317,9 @@ updateByMoveObjectEnd id (x0, y0) (x1, y1) model =
     Just floor ->
       let
         shift =
-          Scale.screenToImageForPosition model.scale (x1 - x0, y1 - y0)
+          Scale.screenToImageForPosition
+            model.scale
+            (end.x - start.x, end.y - start.y)
       in
         if shift /= (0, 0) then
           let

@@ -8,10 +8,22 @@ import Util.HtmlUtil exposing (..)
 import InlineHover exposing (hover)
 
 
-view : List (msg, String, Maybe String) -> (Int, Int) -> (Int, Int) -> Html msg
-view items windowSize (x, y) =
+type alias Position =
+  { x : Int
+  , y : Int
+  }
+
+
+type alias Size =
+  { width : Int
+  , height : Int
+  }
+
+
+view : List (msg, String, Maybe String) -> Size -> Position -> Html msg
+view items windowSize { x, y } =
   div
-    [ style (S.contextMenu (x, y + 37) windowSize (calculateHeight items)) -- TODO
+    [ style (S.contextMenu (x, y) (windowSize.width, windowSize.height) (calculateHeight items))
     ]
     (List.map itemView items)
 

@@ -29,13 +29,25 @@ import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
 import Page.Map.Msg exposing (..)
 
-adjustImagePositionOfMovingObject : Int -> Scale -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (Int, Int)
-adjustImagePositionOfMovingObject gridSize scale (startX, startY) (x, y) (left, top) =
+
+type alias Position =
+  { x : Int
+  , y : Int
+  }
+
+
+adjustImagePositionOfMovingObject : Int -> Scale -> Position -> Position -> Position -> Position
+adjustImagePositionOfMovingObject gridSize scale start end from =
   let
     (dx, dy) =
-      Scale.screenToImageForPosition scale ((x - startX), (y - startY))
+      Scale.screenToImageForPosition scale ((end.x - start.x), (end.y - start.y))
+
+    (toX, toY) =
+      ObjectsOperation.fitPositionToGrid gridSize (from.x + dx, from.y + dy)
   in
-    ObjectsOperation.fitPositionToGrid gridSize (left + dx, top + dy)
+    { x = toX
+    , y = toY
+    }
 
 
 type alias ObjectViewOption =
@@ -65,7 +77,7 @@ objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, d
           noEvents = ObjectView.noEvents
         in
           { noEvents |
-            onMouseDown = Just (always (ShowDetailForObject id))
+            onMouseDown = Just (ShowDetailForObject id)
           }
       else
         { onContextMenu =
@@ -126,14 +138,15 @@ view model =
       in
         div
           [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
-          , onMouseMove' MoveOnCanvas
-          , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map MouseDownOnCanvas decodeClientXY)
+          , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseDownOnCanvas)
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
           , onMouseEnter' EnterCanvas
           , onMouseLeave' LeaveCanvas
           , onMouseWheel MouseWheel
           ]
-          [ canvasView model floor, profilePopupView model floor ]
+          [ canvasView model floor
+          , profilePopupView model floor
+          ]
 
     Nothing ->
       div
@@ -209,7 +222,7 @@ canvasViewStyles model floor =
         (offsetX, offsetY, Floor.width floor, Floor.height floor)
   in
     if (Mode.isPrintMode model.mode) then
-      S.canvasViewForPrint model.windowSize rect
+      S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
     else
       S.canvasView (Mode.isViewMode model.mode) (transitionDisabled model) rect
 
@@ -217,7 +230,7 @@ canvasViewStyles model floor =
 objectsView : Model -> Floor -> List (String, Html Msg)
 objectsView model floor =
   case model.draggingContext of
-    MoveObject _ from ->
+    MoveObject _ start ->
       let
         objectList =
           Floor.objects floor
@@ -246,13 +259,13 @@ objectsView model floor =
         adjustRect object (left, top, width, height) =
           if isSelected object then
             let
-              (x, y) =
+              { x, y } =
                 adjustImagePositionOfMovingObject
                   model.gridSize
                   model.scale
-                  from
-                  model.pos
-                  (left, top)
+                  start
+                  model.mousePosition
+                  { x = left, y = top }
             in
               (x, y, width, height)
           else

@@ -4,7 +4,6 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
-import Util.HtmlUtil exposing (..)
 import View.Styles as S
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
@@ -15,7 +14,7 @@ type alias Id = String
 
 
 type alias EventOptions msg =
-  { onMouseDown : Maybe ((Int, Int) -> msg)
+  { onMouseDown : Maybe msg
   , onMouseUp : Maybe msg
   , onStartEditingName : Maybe msg
   , onContextMenu : Maybe msg
@@ -81,7 +80,7 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ) ++
       ( case eventOptions.onMouseDown of
           Just msg ->
-            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.map msg decodeClientXY)
+            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed msg)
             ]
           Nothing -> []
       ) ++

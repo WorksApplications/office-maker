@@ -11,24 +11,22 @@ import View.Styles as Styles
 import Model.User as User exposing (User)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 
-import Util.HtmlUtil exposing (..)
-
 import InlineHover exposing (hover)
 
 
 type alias FloorId = String
 
 
-view : (String -> msg) -> ((Int, Int) -> msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> Dict FloorId FloorInfo -> Html msg
-view onContextMenu onMove goToFloorMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorsInfo =
+view : (String -> msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> Dict FloorId FloorInfo -> Html msg
+view onContextMenu goToFloorMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorsInfo =
   if isEditMode then
-    viewEditingFloors onContextMenu onMove goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo
+    viewEditingFloors onContextMenu goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo
   else
     viewPublicFloors goToFloorMsg currentFloorId floorsInfo
 
 
-viewEditingFloors :  (FloorId -> msg) -> ((Int, Int) -> msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Maybe FloorId -> Dict FloorId FloorInfo -> Html msg
-viewEditingFloors onContextMenu onMove goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo =
+viewEditingFloors :  (FloorId -> msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Maybe FloorId -> Dict FloorId FloorInfo -> Html msg
+viewEditingFloors onContextMenu goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo =
   let
     contextMenuMsg floor =
       if not disableContextmenu && not (User.isGuest user) then
@@ -55,7 +53,7 @@ viewEditingFloors onContextMenu onMove goToFloorMsg onCreateNewFloor disableCont
       else
         []
   in
-    wrapList (Just onMove) ( floorList ++ create )
+    wrapList ( floorList ++ create )
 
 
 viewPublicFloors : ((FloorId, Bool) -> msg) -> Maybe FloorId -> Dict FloorId FloorInfo -> Html msg
@@ -74,22 +72,12 @@ viewPublicFloors goToFloorMsg currentFloorId floorsInfo =
               floor.name
           )
   in
-    wrapList Nothing floorList
+    wrapList floorList
 
 
-wrapList : Maybe ((Int, Int) -> msg) -> List (Html msg) -> Html msg
-wrapList onMove children =
-  ul
-    ( [ style Styles.floorsInfoView ] ++
-      ( case onMove of
-          Just onMove ->
-            [ onMouseMove' onMove ]
-
-          Nothing ->
-            []
-      )
-    )
-    children
+wrapList : List (Html msg) -> Html msg
+wrapList children =
+  ul [ style Styles.floorsInfoView ] children
 
 
 eachView : Maybe msg -> msg -> Bool -> Bool -> String -> Html msg

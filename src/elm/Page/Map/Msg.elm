@@ -2,6 +2,7 @@ module Page.Map.Msg exposing (..)
 
 import Maybe
 import Time exposing (Time)
+import Mouse exposing (Position)
 import Debounce exposing (Debounce)
 
 import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
@@ -25,6 +26,13 @@ import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
 
+
+type alias Size =
+  { width : Int
+  , height : Int
+  }
+
+
 type Msg
   = NoOp
   | Initialized (Maybe String) Bool UserState User
@@ -39,12 +47,11 @@ type Msg
   | FloorSaved FloorBase
   | FloorPublished Floor
   | FloorDeleted Floor
-  | MoveOnCanvas (Int, Int)
   | EnterCanvas
   | LeaveCanvas
   | MouseUpOnCanvas
-  | MouseDownOnCanvas (Int, Int)
-  | MouseDownOnObject Id (Int, Int)
+  | MouseDownOnCanvas
+  | MouseDownOnObject Id
   | MouseUpOnObject Id
   | MouseDownOnResizeGrip Id
   | StartEditObject Id
@@ -62,7 +69,7 @@ type Msg
   | GotSamePostPeople (List Person)
   | SelectIsland Id
   | SelectSameColor Id
-  | WindowSize (Int, Int)
+  | WindowSize Size
   | MouseWheel Float
   | ChangeMode EditingMode
   | ScaleEnd
@@ -105,4 +112,6 @@ type Msg
   | Focused
   | PasteFromClipboard String
   | SyncFloor
+  | MouseMove Position
+  | MouseUp
   | Error GlobalError

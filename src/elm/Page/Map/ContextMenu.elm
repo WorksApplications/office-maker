@@ -13,13 +13,14 @@ import Model.Floor as Floor
 import Page.Map.Msg exposing (..)
 import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
 
+
 view : Model -> Html Msg
 view model =
   case model.contextMenu of
     NoContextMenu ->
       text ""
 
-    Object (x, y) id ->
+    Object position id ->
       let
         itemsForPerson =
           model.floor `Maybe.andThen` \eFloor ->
@@ -50,9 +51,9 @@ view model =
         items =
           forOneDesk ++ common
       in
-        ContextMenu.view items model.windowSize (x, y)
+        ContextMenu.view items model.windowSize position
 
-    FloorInfo (x, y) floorId ->
+    FloorInfo position floorId ->
       if Maybe.map (\efloor -> (EditingFloor.present efloor).id) model.floor == Just floorId then
         let
           items =
@@ -60,6 +61,6 @@ view model =
             -- , (CopyFloor floorId True, I18n.copyFloorWithEmptyDesks model.lang, Nothing)
             ]
         in
-          ContextMenu.view items model.windowSize (x, y)
+          ContextMenu.view items model.windowSize position
       else
         text ""

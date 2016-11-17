@@ -7,8 +7,10 @@ import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded, cus
 (?=) key decorder =
   maybe (key := decorder)
 
+
 intSize : Decoder (Int, Int)
 intSize = tuple2 (,) int int
+
 
 -- for Pipeline
 

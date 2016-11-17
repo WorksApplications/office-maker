@@ -586,7 +586,7 @@ headerMenuItem =
   noMargin ++
     [ ("text-align", "center")
     , ("justify-content", "flex-end")
-    , ("line-height", "37px")
+    , ("line-height", px headerHeight)
     , ("font-size", "15px")
     ]
 
@@ -605,7 +605,7 @@ userMenuView =
   , ("background", "rgb(100, 100, 120)")
   , ("box-shadow", "rgba(0, 0, 0, 0.2) 0px 3px 4px inset")
   , ("padding", "10px")
-  , ("top", px 37) -- TODO
+  , ("top", px headerHeight)
   , ("width", px 150)
   , ("z-index", zIndex.userMenuView)
   ]

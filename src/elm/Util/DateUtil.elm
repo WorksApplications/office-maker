@@ -3,6 +3,7 @@ module Util.DateUtil exposing (..)
 import Date exposing (..)
 import String
 
+
 monthToInt : Month -> Int
 monthToInt month =
   case month of
@@ -26,12 +27,15 @@ sameDay d1 d2 =
   month d1 == month d2 &&
   day d1 == day d2
 
+
 am : Date -> Bool
 am date =
   if hour date < 12 then True else False
 
+
 pm : Date -> Bool
 pm = not << am
+
 
 hourOfAmPm : Int -> Int
 hourOfAmPm hour =
@@ -40,6 +44,7 @@ hourOfAmPm hour =
   else
     hour
 
+
 ampm : Date -> String
 ampm date =
   toString (hourOfAmPm (hour date))
@@ -47,6 +52,7 @@ ampm date =
   ++ fillZero2 (toString (minute date))
   ++ " "
   ++ (if am date then "a.m." else "p.m.")
+
 
 fillZero2 : String -> String
 fillZero2 s =
@@ -60,6 +66,7 @@ formatDate date =
   ++ toString (Date.day date)
   ++ "/"
   ++ toString (Date.year date)
+
 
 formatDateOrTime : Date -> Date -> String
 formatDateOrTime now date =

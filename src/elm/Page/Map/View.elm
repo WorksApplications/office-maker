@@ -39,8 +39,6 @@ import Page.Map.SearchResultView as SearchResultView
 mainView : Model -> Html Msg
 mainView model =
   let
-    (_, windowHeight) = model.windowSize
-
     sub =
       if Mode.isPrintMode model.mode then
         text ""
@@ -50,7 +48,7 @@ mainView model =
     floorInfo =
       floorInfoView model
   in
-    main' [ style (S.mainView windowHeight) ]
+    main' [ style (S.mainView model.windowSize.height) ]
       [ floorInfo
       , MessageBar.view model.lang model.error
       , CanvasView.view model
@@ -65,7 +63,6 @@ floorInfoView model =
   else
     FloorsInfoView.view
       ShowContextMenuOnFloorInfo
-      MoveOnCanvas
       (Just >> GoToFloor)
       CreateNewFloor
       model.keys.ctrl
@@ -130,7 +127,11 @@ subViewForEdit model editingMode =
 subViewForSearch : Model -> List (Html Msg)
 subViewForSearch model =
   [ card Nothing [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
-  , card (Just (snd model.windowSize - 37 - 69)) [ SearchResultView.view model ]
+  , let
+      height =
+        model.windowSize.height - Model.headerHeight - 69
+    in
+      card (Just height) [ SearchResultView.view model ]
   ]
 
 
