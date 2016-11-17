@@ -34,11 +34,6 @@ editingFloor (FloorInfo publicFloor editingFloor) =
   editingFloor
 
 
-replaceEditingFloor : FloorBase -> FloorInfo -> FloorInfo
-replaceEditingFloor editingFloor (FloorInfo publicFloor _) =
-  FloorInfo publicFloor editingFloor
-
-
 findPublicFloor : FloorId -> Dict FloorId FloorInfo -> Maybe FloorBase
 findPublicFloor floorId floorsInfo =
   floorsInfo
@@ -52,10 +47,18 @@ findFloor floorId floorsInfo =
     |> Dict.get floorId
 
 
-addEditingFloor : FloorBase -> Dict FloorId FloorInfo -> Dict FloorId FloorInfo
-addEditingFloor editingFloor floorsInfo =
+mergeFloor : FloorBase -> Dict FloorId FloorInfo -> Dict FloorId FloorInfo
+mergeFloor editingFloor floorsInfo =
   floorsInfo
-    |> Dict.update editingFloor.id (Maybe.map (replaceEditingFloor editingFloor))
+    |> Dict.update editingFloor.id (Maybe.map (mergeFloorHelp editingFloor))
+
+
+mergeFloorHelp : FloorBase -> FloorInfo -> FloorInfo
+mergeFloorHelp floor (FloorInfo publicFloor editingFloor) =
+  if floor.version < 0 then
+    FloorInfo publicFloor floor
+  else
+    FloorInfo floor editingFloor
 
 
 toPublicList : Dict FloorId FloorInfo -> List FloorBase

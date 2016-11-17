@@ -308,7 +308,7 @@ update removeToken setSelectionStart msg model =
 
     FloorSaved floorBase ->
       { model
-      | floorsInfo = FloorInfo.addEditingFloor floorBase model.floorsInfo
+      | floorsInfo = FloorInfo.mergeFloor floorBase model.floorsInfo
       } ! []
 
     FloorPublished floor ->
@@ -1338,7 +1338,12 @@ update removeToken setSelectionStart msg model =
           IdGenerator.new model.seed
 
         lastFloorOrder =
-          FloorInfo.lastFloorOrder model.floorsInfo
+          model.floorsInfo
+            |> FloorInfo.toEditingList
+            |> List.reverse
+            |> List.head
+            |> Maybe.map .ord
+            |> Maybe.withDefault 0
 
         newFloor =
           Floor.initWithOrder newFloorId lastFloorOrder
@@ -1845,7 +1850,7 @@ updateOnFloorLoaded maybeFloor model =
         newModel =
           Model.adjustOffset
             { model |
-              floorsInfo = FloorInfo.addEditingFloor (Floor.baseOf floor) model.floorsInfo
+              floorsInfo = FloorInfo.mergeFloor (Floor.baseOf floor) model.floorsInfo
             , floor = Just (EditingFloor.init floor)
             , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
             }
