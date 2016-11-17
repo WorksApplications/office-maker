@@ -2235,6 +2235,18 @@ updateByKeyEventWithShift event model =
 updateByKeyEventWithNoControlKeys : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEventWithNoControlKeys event model =
   case (model.floor, event) of
+    (Just floor, ShortCut.UpArrow) ->
+      moveSelecedObjectsToward Up model floor
+
+    (Just floor, ShortCut.DownArrow) ->
+      moveSelecedObjectsToward Down model floor
+
+    (Just floor, ShortCut.LeftArrow) ->
+      moveSelecedObjectsToward Left model floor
+
+    (Just floor, ShortCut.RightArrow) ->
+      moveSelecedObjectsToward Right model floor
+
     (Just floor, ShortCut.Del) ->
       let
         (newFloor, objectsChange) =
@@ -2252,7 +2264,6 @@ updateByKeyEventWithNoControlKeys event model =
 
     _ ->
       model ! []
-
 
 
 moveSelecedObjectsToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg)
