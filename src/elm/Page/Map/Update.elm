@@ -202,17 +202,15 @@ update removeToken setSelectionStart msg model =
         newModel_ =
           case model.draggingContext of
             Selector ->
-              Model.syncSelectedByRect <| Model.updateSelectorRect (canvasPosition.x, canvasPosition.y) model_
+              Model.syncSelectedByRect <| Model.updateSelectorRect canvasPosition model_
 
             ShiftOffset ->
-              Model.updateOffsetByScreenPos (canvasPosition.x, canvasPosition.y) model_
+              Model.updateOffsetByScreenPos canvasPosition model_
 
             _ ->
               model_
       in
-        { newModel_ |
-          pos = (canvasPosition.x, canvasPosition.y)
-        } ! []
+        newModel_ ! []
 
     MouseUp ->
       let
@@ -407,9 +405,8 @@ update removeToken setSelectionStart msg model =
 
         -- TODO
         help model =
-          { model |
-            pos = (canvasPosition.x, canvasPosition.y)
-          , selectedObjects =
+          { model
+          | selectedObjects =
               if model.keys.ctrl then
                 if List.member lastTouchedId model.selectedObjects
                 then List.filter ((/=) lastTouchedId) model.selectedObjects
@@ -460,18 +457,14 @@ update removeToken setSelectionStart msg model =
         canvasPosition =
           Model.canvasPosition model
 
-        canvasX = canvasPosition.x
-        canvasY = canvasPosition.y
-
         selectorRect =
           if Mode.isSelectMode model.mode then
             let
-              (x, y) =
+              fitted =
                 ObjectsOperation.fitPositionToGrid model.gridSize <|
-                  Model.screenToImageWithOffset model.scale (canvasX, canvasY) model.offset
+                  Model.screenToImageWithOffset model.scale canvasPosition model.offset
             in
-              Just (x, y, model.gridSize, model.gridSize)
-
+              Just (fitted.x, fitted.y, model.gridSize, model.gridSize)
           else
             model.selectorRect
 
@@ -481,10 +474,10 @@ update removeToken setSelectionStart msg model =
               NoDragging
 
             Editing _ Stamp ->
-              StampFromScreenPos (canvasX, canvasY)
+              StampFromScreenPos canvasPosition
 
             Editing _ Pen ->
-              PenFromScreenPos (canvasX, canvasY)
+              PenFromScreenPos canvasPosition
 
             Editing _ Select ->
               if model.keys.ctrl then
@@ -510,10 +503,9 @@ update removeToken setSelectionStart msg model =
             (model', Cmd.none)
 
         newModel =
-          { model'' |
-            pos = (canvasX, canvasY)
-          -- , selectedObjects = []
-          , selectorRect = selectorRect
+          { model''
+          | selectorRect = selectorRect
+          --  selectedObjects = []
           , contextMenu = NoContextMenu
           , draggingContext = draggingContext
           }
@@ -522,9 +514,6 @@ update removeToken setSelectionStart msg model =
 
     MouseDownOnResizeGrip id ->
       let
-        (clientX, clientY) =
-          model.pos
-
         (model', cmd) =
           case ObjectNameInput.forceFinish model.objectNameInput of
             (objectNameInput, Just (id, name)) ->
@@ -537,7 +526,7 @@ update removeToken setSelectionStart msg model =
           { model' |
             selectedObjects = []
           , contextMenu = NoContextMenu
-          , draggingContext = ResizeFromScreenPos id (clientX, clientY)
+          , draggingContext = ResizeFromScreenPos id (Model.canvasPosition model)
           }
       in
         newModel ! [ cmd ]
@@ -965,17 +954,14 @@ update removeToken setSelectionStart msg model =
         ratio =
           Scale.ratio model.scale newScale
 
-        (offsetX, offsetY) =
-          model.offset
-
         newOffset =
           let
             x = Scale.screenToImage model.scale canvasPosition.x
             y = Scale.screenToImage model.scale canvasPosition.y
           in
-            ( floor (toFloat (x - floor (ratio * (toFloat (x - offsetX)))) / ratio)
-            , floor (toFloat (y - floor (ratio * (toFloat (y - offsetY)))) / ratio)
-            )
+            { x = floor (toFloat (x - floor (ratio * (toFloat (x - model.offset.x)))) / ratio)
+            , y = floor (toFloat (y - floor (ratio * (toFloat (y - model.offset.y)))) / ratio)
+            }
 
         newModel =
           { model |
@@ -1735,9 +1721,9 @@ updateOnFinishStampWithoutEffects maybeObjectId prototypes model floor =
     (newSeed, newFloor, newObjects, objectsChange)
 
 
-updateOnFinishPen : (Int, Int) -> Model -> (Model, Cmd Msg)
-updateOnFinishPen (x, y) model =
-  case (model.floor, Model.temporaryPen model (x, y)) of
+updateOnFinishPen : Position -> Model -> (Model, Cmd Msg)
+updateOnFinishPen from model =
+  case (model.floor, Model.temporaryPen model from) of
     (Just floor, Just (color, name, (left, top, width, height))) ->
       let
         (newId, newSeed) =
@@ -1772,11 +1758,11 @@ updateOnFinishPen (x, y) model =
       model ! []
 
 
-updateOnFinishResize : ObjectId -> (Int, Int) -> Model -> (Model, Cmd Msg)
-updateOnFinishResize objectId (x, y) model =
+updateOnFinishResize : ObjectId -> Position -> Model -> (Model, Cmd Msg)
+updateOnFinishResize objectId fromScreen model =
   model.floor
     |> (flip Maybe.andThen) (\editingFloor -> Floor.getObject objectId (EditingFloor.present editingFloor)
-    |> (flip Maybe.andThen) (\e -> Model.temporaryResizeRect model (x, y) (rect e)
+    |> (flip Maybe.andThen) (\o -> Model.temporaryResizeRect model fromScreen (Object.rect o)
     |> Maybe.map (\(_, _, width, height) ->
         let
           (newFloor, objectsChange) =
@@ -1798,12 +1784,18 @@ updateOnFinishLabel model =
         canvasPosition =
           Model.canvasPosition model
 
-        (left, top) =
+        fitted =
           ObjectsOperation.fitPositionToGrid model.gridSize <|
             Model.screenToImageWithOffset
               model.scale
-              (canvasPosition.x, canvasPosition.y)
+              canvasPosition
               model.offset
+
+        left =
+          fitted.x
+
+        top =
+          fitted.y
 
         (width, height) =
           ObjectsOperation.fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
@@ -2319,13 +2311,15 @@ updateByMoveObjectEnd id start end model =
         shift =
           Scale.screenToImageForPosition
             model.scale
-            (end.x - start.x, end.y - start.y)
+            { x = end.x - start.x
+            , y = end.y - start.y
+            }
       in
-        if shift /= (0, 0) then
+        if (shift.x, shift.y) /= (0, 0) then
           let
             (newFloor, objectsChange) =
               EditingFloor.updateObjects
-                (Floor.move model.selectedObjects model.gridSize shift)
+                (Floor.move model.selectedObjects model.gridSize (shift.x, shift.y))
                 floor
 
             saveCmd =
@@ -2345,7 +2339,12 @@ updateByMoveObjectEnd id start end model =
 
 putUserState : Model -> Task x ()
 putUserState model =
-  Cache.put model.cache { scale = model.scale, offset = model.offset, lang = model.lang }
+  Cache.put
+    model.cache
+    { scale = model.scale
+    , offset = model.offset
+    , lang = model.lang
+    }
 
 
 loadFloor : API.Config -> Bool -> String -> Task API.Error (Maybe Floor)

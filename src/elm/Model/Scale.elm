@@ -9,6 +9,12 @@ type alias Scale =
   }
 
 
+type alias Position =
+    { x : Int
+    , y : Int
+    }
+
+
 default : Scale
 default = init 0
 
@@ -29,16 +35,18 @@ update msg scale =
       { scale | scaleDown = min 4 (scale.scaleDown + 1) }
 
 
-screenToImageForPosition : Scale -> (Int, Int) -> (Int, Int)
-screenToImageForPosition scale (screenX, screenY) =
-  ( screenToImage scale screenX
-  , screenToImage scale screenY)
+screenToImageForPosition : Scale -> Position -> Position
+screenToImageForPosition scale screenPosition =
+  { x = screenToImage scale screenPosition.x
+  , y = screenToImage scale screenPosition.y
+  }
 
 
-imageToScreenForPosition : Scale -> (Int, Int) -> (Int, Int)
-imageToScreenForPosition scale (imageX, imageY) =
-  ( imageToScreen scale imageX
-  , imageToScreen scale imageY)
+imageToScreenForPosition : Scale -> Position -> Position
+imageToScreenForPosition scale imagePosition =
+  { x = imageToScreen scale imagePosition.x
+  , y = imageToScreen scale imagePosition.y
+  }
 
 
 imageToScreenForRect : Scale -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)

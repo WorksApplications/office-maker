@@ -10,7 +10,7 @@ import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.ProfilePopupLogic exposing (..)
 
-view : msg -> (Int, Int) -> Scale -> (Int, Int) -> Object -> Maybe Person -> Html msg
+view : msg -> (Int, Int) -> Scale -> Position -> Object -> Maybe Person -> Html msg
 view closeMsg (popupWidth, popupHeight) scale offsetScreenXY object person =
   let
     centerTopScreenXY =
@@ -19,14 +19,14 @@ view closeMsg (popupWidth, popupHeight) scale offsetScreenXY object person =
     case person of
       Just person ->
         div
-          [ style (Styles.personDetailPopupDefault popupWidth popupHeight centerTopScreenXY) ]
+          [ style (Styles.personDetailPopupDefault popupWidth popupHeight (centerTopScreenXY.x, centerTopScreenXY.y)) ]
           (pointerDefault popupWidth :: innerView (Just closeMsg) person)
       Nothing ->
         if nameOf object == "" then
           text ""
         else
           div
-            [ style (Styles.personDetailPopupSmall centerTopScreenXY) ]
+            [ style (Styles.personDetailPopupSmall (centerTopScreenXY.x, centerTopScreenXY.y)) ]
             (pointerSmall :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text (nameOf object) ] ])
 
 

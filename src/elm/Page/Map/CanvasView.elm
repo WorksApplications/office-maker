@@ -39,15 +39,18 @@ type alias Position =
 adjustImagePositionOfMovingObject : Int -> Scale -> Position -> Position -> Position -> Position
 adjustImagePositionOfMovingObject gridSize scale start end from =
   let
-    (dx, dy) =
-      Scale.screenToImageForPosition scale ((end.x - start.x), (end.y - start.y))
-
-    (toX, toY) =
-      ObjectsOperation.fitPositionToGrid gridSize (from.x + dx, from.y + dy)
+    shift =
+      Scale.screenToImageForPosition
+        scale
+        { x = end.x - start.x
+        , y = end.y - start.y
+        }
   in
-    { x = toX
-    , y = toY
-    }
+    ObjectsOperation.fitPositionToGrid
+      gridSize
+      { x = from.x + shift.x
+      , y = from.y + shift.y
+      }
 
 
 type alias ObjectViewOption =
@@ -214,12 +217,10 @@ canvasView model floor =
 canvasViewStyles : Model -> Floor -> List (String, String)
 canvasViewStyles model floor =
   let
-    (offsetX, offsetY) = model.offset
-
     rect =
       Scale.imageToScreenForRect
         model.scale
-        (offsetX, offsetY, Floor.width floor, Floor.height floor)
+        (model.offset.x, model.offset.y, Floor.width floor, Floor.height floor)
   in
     if (Mode.isPrintMode model.mode) then
       S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
@@ -405,8 +406,8 @@ temporaryStampView scale selected (prototype, (left, top)) =
 temporaryPenView : Model -> Html msg
 temporaryPenView model =
   case model.draggingContext of
-    PenFromScreenPos (x, y) ->
-      case Model.temporaryPen model (x, y) of
+    PenFromScreenPos start ->
+      case Model.temporaryPen model start of
         Just (color, name, (left, top, width, height)) ->
           ObjectView.viewDesk
             ObjectView.noEvents

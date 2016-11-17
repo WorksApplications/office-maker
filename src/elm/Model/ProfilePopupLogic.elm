@@ -1,25 +1,35 @@
 module Model.ProfilePopupLogic exposing (..)
 
 import Model.Scale as Scale exposing (Scale)
-import Model.Object as Object exposing (..)
+import Model.Object as Object exposing (Object)
 
 
-centerTopScreenXYOfObject : Scale -> (Int, Int) -> Object -> (Int, Int)
-centerTopScreenXYOfObject scale (offsetX, offsetY) object =
+type alias Position =
+    { x : Int
+    , y : Int
+    }
+
+
+centerTopScreenXYOfObject : Scale -> Position -> Object -> Position
+centerTopScreenXYOfObject scale offset object =
   let
     (x, y, w, h) =
-      rect object
+      Object.rect object
   in
-    Scale.imageToScreenForPosition scale (offsetX + x + w//2, offsetY + y)
+    Scale.imageToScreenForPosition
+      scale
+      { x = offset.x + x + w//2
+      , y = offset.y + y
+      }
 
 
-bottomScreenYOfObject : Scale -> (Int, Int) -> Object -> Int
-bottomScreenYOfObject scale (offsetX, offsetY) object =
+bottomScreenYOfObject : Scale -> Position -> Object -> Int
+bottomScreenYOfObject scale offset object =
   let
     (x, y, w, h) =
-      rect object
+      Object.rect object
   in
-    Scale.imageToScreen scale (offsetY + y + h)
+    Scale.imageToScreen scale (offset.y + y + h)
 
 
 calcPopupLeftFromObjectCenter : Int -> Int -> Int
@@ -37,31 +47,33 @@ calcPopupTopFromObjectTop popupHeight objTop =
   objTop - (popupHeight + 10)
 
 
-adjustOffset : (Int, Int) -> (Int, Int) -> Scale -> (Int, Int) -> Object -> (Int, Int)
-adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale (offsetX, offsetY) object =
+adjustOffset : (Int, Int) -> (Int, Int) -> Scale -> Position -> Object -> Position
+adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale offset object =
   let
-    (objCenter, objTop) =
-      centerTopScreenXYOfObject scale (offsetX, offsetY) object
+    objCenterTop =
+      centerTopScreenXYOfObject scale offset object
 
     left =
-      calcPopupLeftFromObjectCenter popupWidth objCenter
+      calcPopupLeftFromObjectCenter popupWidth objCenterTop.x
 
     top =
-      calcPopupTopFromObjectTop popupHeight objTop
+      calcPopupTopFromObjectTop popupHeight objCenterTop.y
 
     right =
-      calcPopupRightFromObjectCenter popupWidth objCenter
+      calcPopupRightFromObjectCenter popupWidth objCenterTop.x
 
     bottom =
-      bottomScreenYOfObject scale (offsetX, offsetY) object
+      bottomScreenYOfObject scale offset object
 
-    offsetX' =
-      adjust scale containerWidth left right offsetX
+    offsetX_ =
+      adjust scale containerWidth left right offset.x
 
-    offsetY' =
-      adjust scale containerHeight top bottom offsetY
+    offsetY_ =
+      adjust scale containerHeight top bottom offset.y
   in
-    (offsetX', offsetY')
+    { x = offsetX_
+    , y = offsetY_
+    }
 
 
 adjust : Scale -> Int -> Int -> Int -> Int -> Int

@@ -25,7 +25,7 @@ cache =
 defaultUserState : Language -> UserState
 defaultUserState lang =
   { scale = Scale.default
-  , offset = (35, 35)
+  , offset = { x = 35, y = 35 }
   , lang = lang
   }
 
@@ -57,9 +57,15 @@ clear cache =
   Cache.clear cache
 
 
+type alias Position =
+  { x : Int
+  , y : Int
+  }
+
+
 type alias UserState =
   { scale : Scale
-  , offset : (Int, Int)
+  , offset : Position
   , lang : Language
   }
 
@@ -67,9 +73,9 @@ type alias UserState =
 decode : Decoder UserState
 decode =
   D.object3
-  (\scale offset lang ->
+  (\scale (x, y) lang ->
     { scale = Scale.init scale
-    , offset = offset
+    , offset = { x = x, y = y }
     , lang = if lang == "JA" then I18n.JA else I18n.EN
     }
   )
@@ -83,7 +89,7 @@ encode : UserState -> Value
 encode state =
   E.object
     [ ("scale", E.int state.scale.scaleDown)
-    , ("offset", E.list [ E.int (fst state.offset), E.int (snd state.offset) ] )
+    , ("offset", E.list [ E.int state.offset.x, E.int state.offset.y ] )
     , ("lang", E.string <| case state.lang of
         JA -> "JA"
         EN -> "EN"

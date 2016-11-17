@@ -16,6 +16,12 @@ type alias Prototypes =
   }
 
 
+type alias Position =
+  { x : Int
+  , y : Int
+  }
+
+
 gridSize : Int
 gridSize = 8 --TODO
 
@@ -125,9 +131,14 @@ generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (in
     List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
 
 
-positionedPrototypesOnDragging : Int -> Prototype -> (Int, Int) -> (Int, Int) -> List PositionedPrototype
-positionedPrototypesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePos
+positionedPrototypesOnDragging : Int -> Prototype -> Position -> Position -> List PositionedPrototype
+positionedPrototypesOnDragging gridSize prototype xy1 xy2 = -- imagePos
   let
+    x1 = xy1.x
+    y1 = xy1.y
+    x2 = xy2.x
+    y2 = xy2.y
+
     deskSize = (prototype.width, prototype.height)
 
     flip (w, h) = (h, w)
@@ -141,13 +152,17 @@ positionedPrototypesOnDragging gridSize prototype (x1, y1) (x2, y2) = -- imagePo
     (indicesX, indicesY) =
       stampIndices horizontal (deskWidth, deskHeight) (x1, y1) (x2, y2)
 
-    (centerLeft, centerTop) =
-      ObjectsOperation.fitPositionToGrid gridSize (x1 - fst deskSize // 2, y1 - snd deskSize // 2)
+    center =
+      ObjectsOperation.fitPositionToGrid
+        gridSize
+        { x = x1 - fst deskSize // 2
+        , y = y1 - snd deskSize // 2
+        }
 
     all =
       generateAllCandidatePosition
         (deskWidth, deskHeight)
-        (centerLeft, centerTop)
+        (center.x, center.y)
         (indicesX, indicesY)
 
     prototype' =

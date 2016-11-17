@@ -7,6 +7,10 @@ import Model.Object as Object exposing (Object)
 
 type alias FloorId = String
 type alias ObjectId = String
+type alias Position =
+  { x : Int
+  , y : Int
+  }
 
 
 rectFloat : Object -> (Float, Float, Float, Float)
@@ -313,14 +317,18 @@ minBoundsOf positions =
   ) (99999, 99999) positions
 
 
-fitPositionToGrid : Int -> (Int, Int) -> (Int, Int)
-fitPositionToGrid gridSize (x, y) =
-  (x // gridSize * gridSize, y // gridSize * gridSize)
+fitPositionToGrid : Int -> Position -> Position
+fitPositionToGrid gridSize { x, y } =
+  { x = x // gridSize * gridSize
+  , y = y // gridSize * gridSize
+  }
 
 
 fitSizeToGrid : Int -> (Int, Int) -> (Int, Int)
 fitSizeToGrid gridSize (x, y) =
-  (x // gridSize * gridSize, y // gridSize * gridSize)
+  ( x // gridSize * gridSize
+  , y // gridSize * gridSize
+  )
 
 
 backgroundColorProperty : List Object -> Maybe String

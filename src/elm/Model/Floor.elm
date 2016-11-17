@@ -177,10 +177,14 @@ moveObjects gridSize (dx, dy) object =
     (x, y, _, _) =
       Object.rect object
 
-    (newX, newY) =
-      ObjectsOperation.fitPositionToGrid gridSize (x + dx, y + dy)
+    new =
+      ObjectsOperation.fitPositionToGrid
+        gridSize
+        { x = x + dx
+        , y = y + dy
+        }
   in
-    Object.move (newX, newY) object
+    Object.move (new.x, new.y) object
 
 
 paste : List (Object, ObjectId) -> (Int, Int) -> Floor -> Floor

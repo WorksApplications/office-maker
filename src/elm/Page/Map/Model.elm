@@ -18,7 +18,7 @@ import Model.Object as Object exposing (..)
 import Model.ObjectsOperation as ObjectsOperation
 import Model.Scale as Scale exposing (Scale)
 import Model.Prototype as Prototype exposing (Prototype)
-import Model.Prototypes as Prototypes exposing (..)
+import Model.Prototypes as Prototypes exposing (Prototypes, PositionedPrototype)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.Errors as Errors exposing (GlobalError(..))
@@ -53,7 +53,6 @@ type alias Model =
   , seed : Seed
   , visitDate : Date
   , user : User
-  , pos : (Int, Int)
   , mousePosition : Position
   , draggingContext : DraggingContext
   , selectedObjects : List ObjectId
@@ -69,7 +68,7 @@ type alias Model =
   , floorsInfo : Dict FloorId FloorInfo
   , windowSize : Size
   , scale : Scale
-  , offset : (Int, Int)
+  , offset : Position
   , scaling : Bool
   , prototypes : Prototypes
   , error : GlobalError
@@ -101,14 +100,14 @@ type DraggingContext
   | MoveObject Id Position
   | Selector
   | ShiftOffset
-  | PenFromScreenPos (Int, Int)
-  | StampFromScreenPos (Int, Int)
-  | ResizeFromScreenPos Id (Int, Int)
+  | PenFromScreenPos Position
+  | StampFromScreenPos Position
+  | ResizeFromScreenPos Id Position
   | MoveFromSearchResult Prototype String
   | MoveExistingObjectFromSearchResult FloorId Time Prototype ObjectId
 
 
-init : API.Config -> String -> Size -> (Int, Int) -> Time -> Bool -> String -> Scale -> (Int, Int) -> Language -> Model
+init : API.Config -> String -> Size -> (Int, Int) -> Time -> Bool -> String -> Scale -> Position -> Language -> Model
 init apiConfig title initialSize randomSeed visitDate isEditMode query scale offset lang =
   let
     initialFloor =
@@ -121,7 +120,6 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , seed = IdGenerator.init randomSeed
     , visitDate = Date.fromTime visitDate
     , user = User.guest
-    , pos = (0, 0)
     , mousePosition = { x = 0, y = 0 }
     , draggingContext = NoDragging
     , selectedObjects = []
@@ -183,20 +181,26 @@ isMouseInCanvas model =
   model.mousePosition.y < model.windowSize.height
 
 
-updateSelectorRect : (Int, Int) -> Model -> Model
-updateSelectorRect (canvasX, canvasY) model =
+updateSelectorRect : Position -> Model -> Model
+updateSelectorRect canvasPosition model =
   { model |
     selectorRect =
       case model.selectorRect of
         Just (x, y, _, _) ->
           let
-            (left, top) =
-              screenToImageWithOffset model.scale (canvasX, canvasY) model.offset
+            leftTop =
+              screenToImageWithOffset
+                model.scale
+                canvasPosition
+                model.offset
 
-            (w, h) =
-              (left - x, top - y)
+            width =
+              leftTop.x - x
+
+            height =
+              leftTop.y - y
           in
-            Just (x, y, w, h)
+            Just (x, y, width, height)
 
         _ ->
           model.selectorRect
@@ -226,23 +230,23 @@ syncSelectedByRect model =
   }
 
 
-updateOffsetByScreenPos : (Int, Int) -> Model -> Model
-updateOffsetByScreenPos (x, y) model =
+updateOffsetByScreenPos : Position -> Model -> Model
+updateOffsetByScreenPos { x, y } model =
   { model |
     offset =
       let
-        (prevX, prevY) =
-          model.pos
+        prev =
+          canvasPosition model
 
-        (offsetX, offsetY) =
-          model.offset
+        dx =
+          x - prev.x
 
-        (dx, dy) =
-          ((x - prevX), (y - prevY))
+        dy =
+          y - prev.y
       in
-        ( offsetX + Scale.screenToImage model.scale dx
-        , offsetY + Scale.screenToImage model.scale dy
-        )
+        { x = model.offset.x + Scale.screenToImage model.scale dx
+        , y = model.offset.y + Scale.screenToImage model.scale dy
+        }
   }
 
 
@@ -278,7 +282,8 @@ adjustOffset model =
               obj
   in
     { model |
-      offset = Maybe.withDefault model.offset maybeShiftedOffset
+      offset =
+        Maybe.withDefault model.offset maybeShiftedOffset
     }
 
 
@@ -358,96 +363,106 @@ selectedObjects model =
     |> Maybe.withDefault []
 
 
-screenToImageWithOffset : Scale -> (Int, Int) -> (Int, Int) -> (Int, Int)
-screenToImageWithOffset scale (screenX, screenY) (offsetX, offsetY) =
-    ( Scale.screenToImage scale screenX - offsetX
-    , Scale.screenToImage scale screenY - offsetY
-    )
+screenToImageWithOffset : Scale -> Position -> Position -> Position
+screenToImageWithOffset scale screenPosition offset =
+  { x = Scale.screenToImage scale screenPosition.x - offset.x
+  , y = Scale.screenToImage scale screenPosition.y - offset.y
+  }
 
 
 getPositionedPrototype : Model -> List PositionedPrototype
 getPositionedPrototype model =
   let
     prototype =
-      selectedPrototype model.prototypes
+      Prototypes.selectedPrototype model.prototypes
 
-    (offsetX, offsetY) = model.offset
-
-    (x2, y2) =
-      model.pos
-
-    (x2', y2') =
-      screenToImageWithOffset model.scale (x2, y2) (offsetX, offsetY)
+    xy2' =
+      screenToImageWithOffset model.scale (canvasPosition model) model.offset
   in
     case (Mode.isStampMode model.mode, model.draggingContext) of
       (_, MoveFromSearchResult prototype _) ->
         let
-          (left, top) =
-            ObjectsOperation.fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
+          fitted =
+            ObjectsOperation.fitPositionToGrid
+              model.gridSize
+              { x = xy2'.x - prototype.width // 2
+              , y = xy2'.y - prototype.height // 2
+              }
         in
-          [ (prototype, (left, top)) ]
+          [ (prototype, (fitted.x, fitted.y)) ]
 
       (_, MoveExistingObjectFromSearchResult floorId _ prototype _) ->
         let
-          (left, top) =
-            ObjectsOperation.fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
+          fitted =
+            ObjectsOperation.fitPositionToGrid
+              model.gridSize
+              { x = xy2'.x - prototype.width // 2
+              , y = xy2'.y - prototype.height // 2
+              }
         in
-          [ (prototype, (left, top)) ]
+          [ (prototype, (fitted.x, fitted.y)) ]
 
-      (True, StampFromScreenPos (x1, y1)) ->
+      (True, StampFromScreenPos start) ->
         let
-          (x1', y1') =
-            screenToImageWithOffset model.scale (x1, y1) (offsetX, offsetY)
+          xy1' =
+            screenToImageWithOffset model.scale start model.offset
         in
-          positionedPrototypesOnDragging model.gridSize prototype (x1', y1') (x2', y2')
+          Prototypes.positionedPrototypesOnDragging model.gridSize prototype xy1' xy2'
 
       (True, _) ->
         let
-          (left, top) =
-            ObjectsOperation.fitPositionToGrid model.gridSize (x2' - prototype.width // 2, y2' - prototype.height // 2)
+          fitted =
+            ObjectsOperation.fitPositionToGrid
+              model.gridSize
+              { x = xy2'.x - prototype.width // 2
+              , y = xy2'.y - prototype.height // 2
+              }
         in
-          [ (prototype, (left, top)) ]
+          [ (prototype, (fitted.x, fitted.y)) ]
 
       _ -> []
 
 
-temporaryPen : Model -> (Int, Int) -> Maybe (String, String, (Int, Int, Int, Int))
+temporaryPen : Model -> Position -> Maybe (String, String, (Int, Int, Int, Int))
 temporaryPen model from =
   Maybe.map
     (\rect -> ("#fff", "", rect)) -- TODO color
     (temporaryPenRect model from)
 
 
-temporaryPenRect : Model -> (Int, Int) -> Maybe (Int, Int, Int, Int)
+temporaryPenRect : Model -> Position -> Maybe (Int, Int, Int, Int)
 temporaryPenRect model from =
   let
-    (left, top) =
+    leftTop =
       ObjectsOperation.fitPositionToGrid model.gridSize <|
         screenToImageWithOffset model.scale from model.offset
 
-    (right, bottom) =
+    rightBottom =
       ObjectsOperation.fitPositionToGrid model.gridSize <|
-        screenToImageWithOffset model.scale model.pos model.offset
+        screenToImageWithOffset model.scale (canvasPosition model) model.offset
   in
-    validateRect (left, top, right, bottom)
+    validateRect (leftTop.x, leftTop.y, rightBottom.x, rightBottom.y)
 
 
-temporaryResizeRect : Model -> (Int, Int) -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
-temporaryResizeRect model (fromScreenX, fromScreenY) (objLeft, objTop, objWidth, objHeight) =
+temporaryResizeRect : Model -> Position -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
+temporaryResizeRect model fromScreen (objLeft, objTop, objWidth, objHeight) =
   let
-    (toScreenX, toScreenY) =
-      model.pos
+    toScreen =
+      canvasPosition model
 
-    (dx, dy) =
-      (toScreenX - fromScreenX, toScreenY - fromScreenY)
+    dx =
+      toScreen.x - fromScreen.x
 
-    (right, bottom) =
+    dy =
+      toScreen.y - fromScreen.y
+
+    rightBottom =
       ObjectsOperation.fitPositionToGrid model.gridSize <|
-        ( objLeft + objWidth + Scale.screenToImage model.scale dx
-        , objTop + objHeight + Scale.screenToImage model.scale dy
-        )
+        { x = objLeft + objWidth + Scale.screenToImage model.scale dx
+        , y = objTop + objHeight + Scale.screenToImage model.scale dy
+        }
   in
-    validateRect (objLeft, objTop, right, bottom)
+    validateRect (objLeft, objTop, rightBottom.x, rightBottom.y)
 
 
 validateRect : (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
