@@ -263,21 +263,22 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
     if(!editingFloor) {
       return Promise.reject('Editing floor not found: ' + floorId);
     }
-    return getPublicFloor(conn, tenantId, floorId).then((lastFloor) => {
-      if(!lastFloor) {
+    return getPublicFloor(conn, tenantId, floorId).then((lastPublicFloor) => {
+      if(!lastPublicFloor) {
         return Promise.reject('Public floor not found: ' + floorId);
       }
       var updateAt = Date.now();
-      var newFloorVersion = floor.version + 1;// たぶん +1 であるという前提はおかないほうがベター
+      var newFloorVersion = lastPublicFloor.version + 1;// たぶん +1 であるという前提はおかないほうがベター
 
       var sqls = [];
       editingFloor.updateBy = updateBy;
       editingFloor.version = newFloorVersion;
       sqls.push(sql.insert('floors', schema.floorKeyValues(tenantId, editingFloor, updateAt)));
 
-      floor.objects.forEach((object) => {
+      editingFloor.objects.forEach((object) => {
         object.floorVersion = newFloorVersion;
-        sqls.push(sql.insert('objects', schema.objectKeyValues(object)));
+        object.updateAt = updateAt;
+        sqls.push(sql.insert('objects', schema.objectKeyValues(object, updateAt)));
       });
 
       return rdb.batch(conn, sqls).then(() => {
