@@ -8,14 +8,14 @@ type alias FloorId = String
 
 
 type FloorInfo
-  = FloorInfo FloorBase FloorBase
+  = FloorInfo (Maybe FloorBase) FloorBase
 
 
-init : FloorBase -> FloorBase -> FloorInfo
+init : Maybe FloorBase -> FloorBase -> FloorInfo
 init publicFloor editingFloor =
-  if publicFloor.id /= editingFloor.id then
-    Debug.crash "IDs are not same: "
-  else
+  -- if publicFloor.id /= editingFloor.id then
+  --   Debug.crash "IDs are not same: "
+  -- else
     FloorInfo publicFloor editingFloor
 
 
@@ -24,7 +24,7 @@ idOf (FloorInfo publicFloor editingFloor) =
   editingFloor.id
 
 
-publicFloor : FloorInfo -> FloorBase
+publicFloor : FloorInfo -> Maybe FloorBase
 publicFloor (FloorInfo publicFloor editingFloor) =
   publicFloor
 
@@ -38,7 +38,7 @@ findPublicFloor : FloorId -> Dict FloorId FloorInfo -> Maybe FloorBase
 findPublicFloor floorId floorsInfo =
   floorsInfo
     |> findFloor floorId
-    |> Maybe.map publicFloor
+    |> Maybe.andThen publicFloor
 
 
 findFloor : FloorId -> Dict FloorId FloorInfo -> Maybe FloorInfo
@@ -58,14 +58,14 @@ mergeFloorHelp floor (FloorInfo publicFloor editingFloor) =
   if floor.version < 0 then
     FloorInfo publicFloor floor
   else
-    FloorInfo floor editingFloor
+    FloorInfo (Just floor) editingFloor
 
 
 toPublicList : Dict FloorId FloorInfo -> List FloorBase
 toPublicList floorsInfo =
   floorsInfo
     |> Dict.toList
-    |> List.map (Tuple.second >> publicFloor)
+    |> List.filterMap (Tuple.second >> publicFloor)
     |> List.sortBy .ord
 
 

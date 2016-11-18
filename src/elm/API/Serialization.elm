@@ -313,7 +313,7 @@ decodeFloorBase =
 
 decodeFloorInfo : Decoder FloorInfo
 decodeFloorInfo =
-  tuple2 FloorInfo.init decodeFloorBase decodeFloorBase
+  tuple2 FloorInfo.init (D.maybe decodeFloorBase) decodeFloorBase
 
 
 decodePrototype : Decoder Prototype

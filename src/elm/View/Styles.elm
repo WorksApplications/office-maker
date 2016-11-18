@@ -284,6 +284,7 @@ canvasView isViewing disableTransition rect =
     -- TODO on select person
     -- , ("transition-property", "top, left")
     -- , ("transition-duration", "0.2s")
+    , ("user-select", "none")
     ] ++ (if isViewing then [("overflow", "hidden")] else []) ++
     transition ["width", "height", "top", "left"] disableTransition
 
@@ -316,6 +317,7 @@ canvasImage =
   , ("left", "0")
   , ("width", "100%")
   , ("height", "100%")
+  , ("pointer-events", "none")
   ]
 
 

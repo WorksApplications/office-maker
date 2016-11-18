@@ -58,7 +58,9 @@ viewListForOnePost model (maybePostName, results) =
   let
     floorsInfo =
       model.floorsInfo
-        |> Dict.map (\_ info -> (FloorInfo.publicFloor info))
+        |> FloorInfo.toPublicList
+        |> List.map (\floor -> (floor.id, floor))
+        |> Dict.fromList
 
     children =
       results
