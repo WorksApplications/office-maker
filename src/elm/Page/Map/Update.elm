@@ -143,7 +143,7 @@ initCmd apiConfig needsEditMode defaultUserState selectedFloor =
 
 
 debug : Bool
-debug = False --|| True
+debug = False -- || True
 
 
 debugMsg : Msg -> Msg
@@ -204,8 +204,24 @@ update removeToken setSelectionStart msg model =
             Selector ->
               Model.syncSelectedByRect <| Model.updateSelectorRect canvasPosition model_
 
-            ShiftOffset ->
-              Model.updateOffsetByScreenPos canvasPosition model_
+            ShiftOffset prev ->
+              let
+                dx =
+                  model.mousePosition.x - prev.x
+
+                dy =
+                  model.mousePosition.y - prev.y
+
+                newOffset =
+                  { x = model.offset.x + Scale.screenToImage model.scale dx
+                  , y = model.offset.y + Scale.screenToImage model.scale dy
+                  }
+              in
+                { model_
+                | offset = newOffset
+                , draggingContext =
+                    ShiftOffset model.mousePosition
+                }
 
             _ ->
               model_
@@ -370,7 +386,7 @@ update removeToken setSelectionStart msg model =
       { model |
         draggingContext =
           case model.draggingContext of
-            ShiftOffset ->
+            ShiftOffset _ ->
               NoDragging
 
             MoveFromSearchResult _ _ ->
@@ -483,10 +499,10 @@ update removeToken setSelectionStart msg model =
               if model.keys.ctrl then
                 Selector
               else
-                ShiftOffset
+                ShiftOffset model.mousePosition
 
             Viewing _ ->
-              ShiftOffset
+              ShiftOffset model.mousePosition
 
         (model', cmd) =
           case ObjectNameInput.forceFinish model.objectNameInput of

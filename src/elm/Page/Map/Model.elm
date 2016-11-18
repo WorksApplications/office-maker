@@ -99,7 +99,7 @@ type DraggingContext
   = NoDragging
   | MoveObject Id Position
   | Selector
-  | ShiftOffset
+  | ShiftOffset Position
   | PenFromScreenPos Position
   | StampFromScreenPos Position
   | ResizeFromScreenPos Id Position
@@ -228,27 +228,7 @@ syncSelectedByRect model =
         _ ->
           model.selectedObjects
   }
-
-
-updateOffsetByScreenPos : Position -> Model -> Model
-updateOffsetByScreenPos { x, y } model =
-  { model |
-    offset =
-      let
-        prev =
-          canvasPosition model
-
-        dx =
-          x - prev.x
-
-        dy =
-          y - prev.y
-      in
-        { x = model.offset.x + Scale.screenToImage model.scale dx
-        , y = model.offset.y + Scale.screenToImage model.scale dy
-        }
-  }
-
+  
 
 startEdit : Object -> Model -> Model
 startEdit e model =
