@@ -146,7 +146,7 @@ view model =
       in
         div
           [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
-          , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseDownOnCanvas)
+          , onWithOptions "mousedown" { stopPropagation = False, preventDefault = False } (Decode.succeed MouseDownOnCanvas)
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
           , onMouseEnter_ EnterCanvas
           , onMouseLeave_ LeaveCanvas
@@ -439,8 +439,8 @@ temporaryPenView model =
 
 selectorRectView : Model -> Html msg
 selectorRectView model =
-  case (Mode.isSelectMode model.mode, model.selectorRect) of
-    (True, Just rect) ->
+  case (Mode.isSelectMode model.mode, model.selectorRect, model.draggingContext) of
+    (True, Just rect, Selector) ->
       div
         [ style (S.selectorRect (transitionDisabled model) (Scale.imageToScreenForRect model.scale rect) )
         ]
