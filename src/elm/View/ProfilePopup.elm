@@ -10,6 +10,7 @@ import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
 import Model.ProfilePopupLogic exposing (..)
 
+
 view : msg -> (Int, Int) -> Scale -> Position -> Object -> Maybe Person -> Html msg
 view closeMsg (popupWidth, popupHeight) scale offsetScreenXY object person =
   let

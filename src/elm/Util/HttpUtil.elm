@@ -48,11 +48,6 @@ queryEscape string =
   String.join "+" (String.split "%20" (Http.encodeUri string))
 
 
-contentTypeJsonUtf8 : Header
-contentTypeJsonUtf8 =
-  Http.header "Content-Type" "application/json; charset=utf-8"
-
-
 authorization : String -> Header
 authorization s =
   Http.header "Authorization" s
@@ -66,7 +61,7 @@ authorizationTuple s =
 sendJson : String -> Decoder value -> String -> List Header -> Http.Body -> Task Http.Error value
 sendJson method decoder url headers body =
   { method = method
-  , headers = contentTypeJsonUtf8 :: headers
+  , headers = headers
   , url = url
   , body = body
   , expect = Http.expectJson decoder
@@ -80,7 +75,7 @@ sendJson method decoder url headers body =
 sendJsonNoResponse : String -> String -> List Header -> Http.Body -> Task Http.Error ()
 sendJsonNoResponse method url headers body =
   { method = method
-  , headers = contentTypeJsonUtf8 :: headers
+  , headers = headers
   , url = url
   , body = body
   , expect = Http.expectStringResponse (\_ -> Ok ())
@@ -94,7 +89,7 @@ sendJsonNoResponse method url headers body =
 get : Decoder value -> String -> List Header -> Task Http.Error value
 get decoder url headers =
   { method = "GET"
-  , headers = contentTypeJsonUtf8 :: headers
+  , headers = headers
   , url = url
   , body = Http.emptyBody
   , expect = Http.expectJson decoder

@@ -24,3 +24,7 @@ a {
   text-decoration: none;
   color: inherit;
 }
+
+.elm-overlay {
+  z-index: 2147483647;
+}

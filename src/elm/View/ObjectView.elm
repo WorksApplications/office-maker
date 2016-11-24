@@ -81,6 +81,15 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ( case eventOptions.onMouseDown of
           Just msg ->
             [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed msg)
+              -- onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } <|
+              --   ( Decode.field "buttton" Decode.int
+              --     |> Decode.andThen (\value ->
+              --       if value <= 0 then
+              --         Decode.succeed msg
+              --       else
+              --         Decode.fail "" -- don't handle right
+              --       )
+              --   )
             ]
 
           Nothing -> []
