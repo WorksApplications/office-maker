@@ -4,8 +4,10 @@ import Dict exposing (..)
 import Maybe
 import Json.Decode as Decode
 
+import ContextMenu
+
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes as Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed as Keyed
 import Html.Lazy exposing (..)
@@ -25,7 +27,8 @@ import Model.Scale as Scale exposing (Scale)
 import Model.ObjectsOperation as ObjectsOperation
 import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
+import Page.Map.Model as Model exposing (Model, DraggingContext(..))
+import Page.Map.ContextMenuContext exposing (ContextMenuContext(ObjectContextMenu))
 import Page.Map.Msg exposing (..)
 
 
@@ -86,7 +89,10 @@ objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, d
             if contextMenuDisabled then
               Nothing
             else
-              Just (ShowContextMenuOnObject id)
+              Just
+                ( ContextMenu.open ContextMenuMsg (ObjectContextMenu id)
+                    |> Attributes.map (BeforeContextMenuOnObject id)
+                )
         , onMouseDown = Just (MouseDownOnObject id)
         , onMouseUp = Just (MouseUpOnObject id)
         , onStartEditingName = Nothing -- Just (StartEditObject id)

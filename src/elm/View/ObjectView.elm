@@ -17,7 +17,7 @@ type alias EventOptions msg =
   { onMouseDown : Maybe msg
   , onMouseUp : Maybe msg
   , onStartEditingName : Maybe msg
-  , onContextMenu : Maybe msg
+  , onContextMenu : Maybe (Attribute msg)
   , onStartResize : Maybe msg
   }
 
@@ -73,21 +73,23 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
   let
     eventHandlers =
       ( case eventOptions.onContextMenu of
-          Just msg ->
-            [ onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } (Decode.succeed msg)
-            ]
+          Just attr ->
+            [ attr ]
+
           Nothing -> []
       ) ++
       ( case eventOptions.onMouseDown of
           Just msg ->
             [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed msg)
             ]
+
           Nothing -> []
       ) ++
       ( case eventOptions.onMouseUp of
           Just msg ->
             [ onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
             ]
+
           Nothing -> []
       ) ++
       ( case eventOptions.onStartEditingName of

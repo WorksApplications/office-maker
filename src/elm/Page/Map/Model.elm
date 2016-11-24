@@ -4,8 +4,9 @@ import Date exposing (Date)
 import Maybe
 import Dict exposing (Dict)
 import Time exposing (Time)
-import Debounce exposing (Debounce)
 import Mouse exposing (Position)
+import ContextMenu exposing (ContextMenu)
+import Debounce exposing (Debounce)
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -37,6 +38,8 @@ import Component.FloorProperty as FloorProperty exposing (FloorProperty)
 import Component.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Component.Header as Header
 
+import Page.Map.ContextMenuContext exposing (ContextMenuContext)
+
 
 type alias ObjectId = String
 type alias FloorId = String
@@ -63,7 +66,7 @@ type alias Model =
   , keys : ShortCut.Model
   , mode : Mode
   , colorPalette : ColorPalette
-  , contextMenu : ContextMenu
+  , contextMenu : ContextMenu ContextMenuContext
   , floor : Maybe EditingFloor
   , floorsInfo : Dict FloorId FloorInfo
   , windowSize : Size
@@ -89,12 +92,6 @@ type alias Model =
   }
 
 
-type ContextMenu
-  = NoContextMenu
-  | Object Position Id
-  | FloorInfo Position Id
-
-
 type DraggingContext
   = NoDragging
   | MoveObject Id Position
@@ -107,8 +104,20 @@ type DraggingContext
   | MoveExistingObjectFromSearchResult FloorId Time Prototype ObjectId
 
 
-init : API.Config -> String -> Size -> (Int, Int) -> Time -> Bool -> String -> Scale -> Position -> Language -> Model
-init apiConfig title initialSize randomSeed visitDate isEditMode query scale offset lang =
+init
+   : API.Config
+  -> String
+  -> Size
+  -> (Int, Int)
+  -> Time
+  -> Bool
+  -> String
+  -> Scale
+  -> Position
+  -> Language
+  -> ContextMenu ContextMenuContext
+  -> Model
+init apiConfig title initialSize randomSeed visitDate isEditMode query scale offset lang contextMenu =
   let
     initialFloor =
       Floor.empty
@@ -130,7 +139,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , keys = ShortCut.init
     , mode = if isEditMode then Editing EditTab Select else Viewing False
     , colorPalette = ColorPalette.empty
-    , contextMenu = NoContextMenu
+    , contextMenu = contextMenu
     , floorsInfo = Dict.empty
     , floor = Nothing
     , windowSize = initialSize
@@ -228,7 +237,7 @@ syncSelectedByRect model =
         _ ->
           model.selectedObjects
   }
-  
+
 
 startEdit : Object -> Model -> Model
 startEdit e model =

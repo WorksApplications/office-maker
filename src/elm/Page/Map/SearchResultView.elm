@@ -19,7 +19,7 @@ import Model.I18n as I18n exposing (Language)
 import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
 import View.Styles as S
 
-import Page.Map.Model exposing (Model, ContextMenu(..), DraggingContext(..))
+import Page.Map.Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 
 

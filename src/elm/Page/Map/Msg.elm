@@ -3,6 +3,7 @@ module Page.Map.Msg exposing (..)
 import Time exposing (Time)
 import Mouse exposing (Position)
 import Debounce exposing (Debounce)
+import ContextMenu exposing (ContextMenu)
 
 import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
 import Model.User as User exposing (User)
@@ -26,6 +27,7 @@ import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
 
 import Page.Map.URL exposing (URL)
+import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 
 
 type alias Size =
@@ -63,8 +65,8 @@ type Msg
   | SelectShape Object.Shape
   | SelectFontSize Float
   | ObjectNameInputMsg ObjectNameInput.Msg
-  | ShowContextMenuOnObject Id
-  | ShowContextMenuOnFloorInfo Id
+  | BeforeContextMenuOnObject Id Msg
+  | ContextMenuMsg (ContextMenu.Msg ContextMenuContext)
   | GoToFloor (Maybe (String, Bool))
   | SelectSamePost String
   | SearchByPost String

@@ -12,7 +12,7 @@ import Model.Object as Object
 import Model.ObjectsOperation as ObjectsOperation
 
 import Page.Map.Msg exposing (..)
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
+import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 
 view : Model -> List (Html Msg)
 view model =

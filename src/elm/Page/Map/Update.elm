@@ -12,6 +12,7 @@ import Time exposing (Time, second)
 import Dom
 import Mouse exposing (Position)
 import Debounce exposing (Debounce)
+import ContextMenu
 
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
@@ -45,7 +46,7 @@ import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ObjectNameInput as ObjectNameInput
 
-import Page.Map.Model as Model exposing (Model, ContextMenu(..), DraggingContext(..))
+import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
 
@@ -84,6 +85,7 @@ subscriptions tokenRemoved undo redo clipboard model =
     , clipboard PasteFromClipboard
     , Mouse.moves MouseMove
     , Mouse.ups (always MouseUp)
+    , Sub.map ContextMenuMsg (ContextMenu.subscriptions model.contextMenu)
     ]
 
 
@@ -107,6 +109,8 @@ init flags location =
     userState =
       Cache.defaultUserState (if flags.lang == "ja" then JA else EN)
 
+    (contextMenu, contextMenuMsg) = ContextMenu.init
+
     toModel url =
       Model.init
         apiConfig
@@ -119,6 +123,7 @@ init flags location =
         userState.scale
         userState.offset
         userState.lang
+        contextMenu
   in
     case urlResult of
       Ok url ->
@@ -136,6 +141,7 @@ init flags location =
           model !
             [ initCmd apiConfig url.editMode userState url.floorId
             , Navigation.modifyUrl (URL.stringify "/" url)
+            , Cmd.map ContextMenuMsg contextMenuMsg
             ]
 
 
@@ -533,7 +539,6 @@ update removeToken setSelectionStart msg model =
           { model__
           | selectorRect = selectorRect
           --  selectedObjects = []
-          , contextMenu = NoContextMenu
           , draggingContext = draggingContext
           }
       in
@@ -552,7 +557,6 @@ update removeToken setSelectionStart msg model =
         newModel =
           { model_ |
             selectedObjects = []
-          , contextMenu = NoContextMenu
           , draggingContext = ResizeFromScreenPos id (Model.canvasPosition model)
           }
       in
@@ -568,7 +572,6 @@ update removeToken setSelectionStart msg model =
                   Model.startEdit object
                     { model |
                       selectedResult = Nothing
-                    , contextMenu = NoContextMenu
                     }
               in
                 newModel !
@@ -776,7 +779,7 @@ update removeToken setSelectionStart msg model =
             , personInfo = personInfo
             } ! [ saveCmd ]
 
-    ShowContextMenuOnObject objectId ->
+    BeforeContextMenuOnObject objectId contextmenuMsg ->
       let
         selectedObjects =
           if List.member objectId model.selectedObjects then
@@ -793,24 +796,18 @@ update removeToken setSelectionStart msg model =
             |> Maybe.withDefault Cmd.none
       in
         { model |
-          contextMenu = Model.Object model.mousePosition objectId
-        , selectedObjects = selectedObjects
-        } ! [ loadPersonCmd ]
+          selectedObjects = selectedObjects
+        } !
+          [ loadPersonCmd
+          , Task.perform identity <| Task.succeed contextmenuMsg
+          ]
 
-    ShowContextMenuOnFloorInfo id ->
-      case model.floor of
-        Just editingFloor ->
-          { model |
-            contextMenu =
-              -- TODO idealy, change floor and show context menu
-              if (EditingFloor.present editingFloor).id == id then
-                FloorInfo model.mousePosition id
-              else
-                NoContextMenu
-          } ! []
-
-        Nothing ->
-          model ! []
+    ContextMenuMsg msg ->
+      let
+        (contextMenu, cmd) =
+          ContextMenu.update msg model.contextMenu
+      in
+        { model | contextMenu = contextMenu } ! [ Cmd.map ContextMenuMsg cmd ]
 
     GoToFloor maybeNextFloor ->
       let
@@ -833,15 +830,10 @@ update removeToken setSelectionStart msg model =
                       Just load
               )
             |> Maybe.withDefault Cmd.none
-
-        newModel =
-          { model |
-            contextMenu = NoContextMenu
-          }
       in
-        newModel !
+        model !
           [ loadCmd
-          , Navigation.modifyUrl (URL.serialize newModel)
+          , Navigation.modifyUrl (URL.serialize model)
           ]
 
     SelectSamePost postName ->
@@ -863,20 +855,14 @@ update removeToken setSelectionStart msg model =
                     floor.version
                     postName
                 )
-
-            newModel =
-              { model |
-                contextMenu = NoContextMenu
-              }
           in
-            newModel ! [ cmd ]
+            model ! [ cmd ]
 
     SearchByPost postName ->
       submitSearch
         { model
         | searchQuery = postName
         , mode = Mode.showSearchTab model.mode
-        , contextMenu = NoContextMenu
         }
 
     GotSamePostPeople people ->
@@ -922,7 +908,6 @@ update removeToken setSelectionStart msg model =
                   in
                     { model |
                       selectedObjects = List.map Object.idOf island
-                    , contextMenu = NoContextMenu
                     }
 
                 Nothing ->
@@ -950,7 +935,6 @@ update removeToken setSelectionStart msg model =
               in
                 { model |
                   selectedObjects = List.map Object.idOf target
-                , contextMenu = NoContextMenu
                 } ! []
             )
           )
@@ -1028,11 +1012,6 @@ update removeToken setSelectionStart msg model =
         object =
           model.floor
             |> Maybe.andThen (\floor -> Floor.getObject objectId (EditingFloor.present floor))
-
-        model_ =
-          { model |
-            contextMenu = NoContextMenu
-          }
       in
         case object of
           Just o ->
@@ -1055,13 +1034,13 @@ update removeToken setSelectionStart msg model =
                   }
                   model.prototypes
             in
-              { model_ |
+              { model |
                 seed = seed
               , prototypes = newPrototypes
               } ! [ (savePrototypesCmd model.apiConfig) newPrototypes.data ]
 
           Nothing ->
-            model_ ! []
+            model ! []
 
     FloorPropertyMsg message ->
       case model.floor of
@@ -1102,7 +1081,6 @@ update removeToken setSelectionStart msg model =
           in
             { model |
               floor = Just newFloor
-            , contextMenu = NoContextMenu
             } ! [ saveCmd ]
 
     FirstNameOnly ids ->
@@ -1122,7 +1100,6 @@ update removeToken setSelectionStart msg model =
           in
             { model |
               floor = Just newFloor
-            , contextMenu = NoContextMenu
             } ! [ saveCmd ]
 
     RemoveSpaces ids ->
@@ -1140,7 +1117,6 @@ update removeToken setSelectionStart msg model =
           in
             { model |
               floor = Just newFloor
-            , contextMenu = NoContextMenu
             } ! [ saveCmd ]
 
     UpdateHeaderState msg ->
@@ -1262,8 +1238,7 @@ update removeToken setSelectionStart msg model =
           Prototypes.selectedPrototype model.prototypes
       in
         { model |
-          contextMenu = NoContextMenu
-        , draggingContext =
+          draggingContext =
             MoveFromSearchResult
               { prototype
               | name = personName
@@ -1278,8 +1253,7 @@ update removeToken setSelectionStart msg model =
           Prototypes.selectedPrototype model.prototypes
       in
         { model |
-          contextMenu = NoContextMenu
-        , draggingContext =
+          draggingContext =
             MoveExistingObjectFromSearchResult
               floorId
               updateAt
@@ -1427,7 +1401,6 @@ update removeToken setSelectionStart msg model =
               { model |
                 seed = newSeed
               , floor = Just (EditingFloor.init newFloor)
-              , contextMenu = NoContextMenu
               }
 
           in
