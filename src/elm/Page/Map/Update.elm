@@ -252,24 +252,27 @@ update removeToken setSelectionStart msg model =
 
     Initialized selectedFloor needsEditMode userState user ->
       let
+        mode =
+          if not (User.isGuest user) then
+            Mode.init needsEditMode
+          else
+            model.mode
+
         requestPrivateFloors =
-          Mode.isEditMode model.mode && not (User.isGuest user)
+          Mode.isEditMode mode
 
         searchCmd =
           if String.trim model.searchQuery == "" then
             Cmd.none
           else
-            performAPI
-              GotSearchResult
-              (API.search model.apiConfig requestPrivateFloors model.searchQuery)
+            API.search model.apiConfig requestPrivateFloors model.searchQuery
+              |> performAPI GotSearchResult
 
         loadFloorCmd =
-          case selectedFloor of
-            Just floorId ->
-              performAPI FloorLoaded (loadFloor model.apiConfig requestPrivateFloors floorId)
-
-            Nothing ->
-              Cmd.none
+          selectedFloor
+            |> Maybe.map (\floorId -> loadFloor model.apiConfig requestPrivateFloors floorId)
+            |> Maybe.map (performAPI FloorLoaded)
+            |> Maybe.withDefault Cmd.none
 
         loadSettingsCmd =
           if User.isGuest user then
@@ -279,12 +282,6 @@ update removeToken setSelectionStart msg model =
               [ performAPI ColorsLoaded (API.getColors model.apiConfig)
               , performAPI PrototypesLoaded (API.getPrototypes model.apiConfig)
               ]
-
-        mode =
-          if not (User.isGuest user) then
-            Mode.init needsEditMode
-          else
-            model.mode
       in
         { model |
           user = user
