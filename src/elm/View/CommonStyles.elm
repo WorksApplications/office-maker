@@ -38,7 +38,7 @@ noPadding =
 noUserSelect : S
 noUserSelect =
   [ ("user-select", "none")
-  , ("-moz-user-select", "none")
+  , ("MozUserSelect", "none") -- must be UpperCamelCase
   , ("-ms-user-select", "none")
   , ("-webkit-user-select", "none")
   ]
