@@ -35,6 +35,15 @@ noPadding =
   [ ( "padding", "0") ]
 
 
+noUserSelect : S
+noUserSelect =
+  [ ("user-select", "none")
+  , ("-moz-user-select", "none")
+  , ("-ms-user-select", "none")
+  , ("-webkit-user-select", "none")
+  ]
+
+
 flex : S
 flex =
   [ ( "display", "flex") ]

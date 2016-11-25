@@ -115,9 +115,7 @@ deskObject rect backgroundColor selected isGhost disableTransition =
   , ("border-left-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
   , ("border-bottom-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
   , ("border-right-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
-  , ("user-select", "none")
-  , ("-webkit-user-select", "none")
-  ] ++ transition ["width", "height", "top", "left"] disableTransition
+  ] ++ noUserSelect ++ transition ["width", "height", "top", "left"] disableTransition
 
 
 labelObject : Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> S
@@ -138,9 +136,7 @@ labelObject isEllipse rect backgroundColor fontColor selected isGhost rectVisibl
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
   , ("border-radius", if isEllipse  then "50%" else "")
-  , ("user-select", "none")
-  , ("-webkit-user-select", "none")
-  ] ++ transition ["width", "height", "top", "left"] disableTransition
+  ] ++ noUserSelect ++ transition ["width", "height", "top", "left"] disableTransition
 
 
 deskResizeGrip : Bool -> S
@@ -284,8 +280,7 @@ canvasView isViewing disableTransition rect =
     -- TODO on select person
     -- , ("transition-property", "top, left")
     -- , ("transition-duration", "0.2s")
-    , ("user-select", "none")
-    ] ++ (if isViewing then [("overflow", "hidden")] else []) ++
+    ] ++ noUserSelect ++ (if isViewing then [("overflow", "hidden")] else []) ++
     transition ["width", "height", "top", "left"] disableTransition
 
 
@@ -648,8 +643,7 @@ editingToggleText =
   , ("margin-top", "5px")
   , ("line-height", "30px")
   , ("width", "150px")
-  , ("user-select", "none")
-  ]
+  ] ++ noUserSelect
 
 
 userMenuToggle : S
@@ -1176,8 +1170,7 @@ searchResultItem draggable =
         , ("padding", "5px")
         , ("border", "solid 1px #aaa")
         , ("cursor", "move")
-        , ("user-select", "none")
-        ]
+        ] ++ noUserSelect
       else
         []
     )
