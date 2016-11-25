@@ -137,7 +137,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , gridSize = gridSize
     , selectorRect = Nothing
     , keys = ShortCut.init
-    , mode = if isEditMode then Editing EditTab Select else Viewing False
+    , mode = Mode.init False
     , colorPalette = ColorPalette.empty
     , contextMenu = contextMenu
     , floorsInfo = Dict.empty

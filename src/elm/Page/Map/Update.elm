@@ -282,9 +282,9 @@ update removeToken setSelectionStart msg model =
 
         mode =
           if not (User.isGuest user) then
-            if needsEditMode then Editing EditTab Select else Viewing False
+            Mode.init needsEditMode
           else
-            Viewing False
+            model.mode
       in
         { model |
           user = user
@@ -515,7 +515,7 @@ update removeToken setSelectionStart msg model =
               else
                 ShiftOffset model.mousePosition
 
-            Viewing _ ->
+            Viewing _ _ ->
               ShiftOffset model.mousePosition
 
         (model_, cmd) =
@@ -1428,7 +1428,7 @@ update removeToken setSelectionStart msg model =
     TokenRemoved ->
       { model |
         user = User.guest
-      , mode = Viewing False
+      , mode = Mode.init False
       } ! []
 
     Undo ->

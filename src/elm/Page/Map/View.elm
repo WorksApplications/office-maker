@@ -194,13 +194,16 @@ modeSelectionViewEach viewIcon currentEditMode targetEditMode =
 view : Model -> Html Msg
 view model =
   let
-    (title, printMode) =
-      case (model.floor, model.mode) of
-        (Just floor, Viewing True) ->
-          ((EditingFloor.present floor).name, True)
+    printMode =
+      Mode.isPrintMode model.mode
+
+    title =
+      case (model.floor, printMode) of
+        (Just floor, True) ->
+          (EditingFloor.present floor).name
 
         _ ->
-          (model.title, False)
+          model.title
 
     header =
       Header.view

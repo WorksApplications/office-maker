@@ -7,7 +7,7 @@ type Tab
 
 
 type Mode
-  = Viewing Bool
+  = Viewing Bool EditingMode
   | Editing Tab EditingMode
 
 
@@ -18,18 +18,26 @@ type EditingMode
   | Label
 
 
+init : Bool -> Mode
+init isEditMode =
+  if isEditMode then
+    Editing EditTab Select
+  else
+    Viewing False Select
+
+
 toggleEditing : Mode -> Mode
 toggleEditing mode =
   case mode of
-    Viewing _ -> Editing EditTab Select
-    _ -> Viewing False
+    Viewing _ editMode -> Editing EditTab editMode
+    Editing _ editMode -> Viewing False editMode
 
 
 togglePrintView : Mode -> Mode
 togglePrintView mode =
   case mode of
-    Viewing printMode -> Viewing (not printMode)
-    x -> x
+    Viewing printMode editMode -> Viewing (not printMode) editMode
+    Editing _ editMode -> Viewing True editMode
 
 
 toSelectMode : Mode -> Mode
@@ -84,14 +92,14 @@ isLabelMode mode =
 isViewMode : Mode -> Bool
 isViewMode mode =
   case mode of
-    Viewing _ -> True
+    Viewing _ _ -> True
     _ -> False
 
 
 isPrintMode : Mode -> Bool
 isPrintMode mode =
   case mode of
-    Viewing True -> True
+    Viewing True _ -> True
     _ -> False
 
 
