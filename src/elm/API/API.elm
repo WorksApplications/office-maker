@@ -47,6 +47,10 @@ import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 import API.Serialization exposing (..)
 
 
+type alias PersonId = String
+type alias ImageId = String
+type alias UserId = String
+
 type alias Error = Http.Error
 
 
@@ -75,39 +79,39 @@ saveFloor config floor =
     (Http.jsonBody <| encodeFloor floor)
 
 
-publishFloor : Config -> String -> Task Error Floor
-publishFloor config id =
+publishFloor : Config -> FloorId -> Task Error Floor
+publishFloor config floorId =
   putJson
     decodeFloor
-    (config.apiRoot ++ "/1/floors/" ++ id ++ "/public")
+    (config.apiRoot ++ "/1/floors/" ++ floorId ++ "/public")
     [authorization config.token]
     Http.emptyBody
 
 
-deleteEditingFloor : Config -> String -> Task Error ()
-deleteEditingFloor config id =
+deleteEditingFloor : Config -> FloorId -> Task Error ()
+deleteEditingFloor config floorId =
   deleteJsonNoResponse
-    (config.apiRoot ++ "/1/floors/" ++ id)
+    (config.apiRoot ++ "/1/floors/" ++ floorId)
     [authorization config.token]
     Http.emptyBody
 
 
-getEditingFloor : Config -> String -> Task Error Floor
-getEditingFloor config id =
-  getFloorHelp config True id
+getEditingFloor : Config -> FloorId -> Task Error Floor
+getEditingFloor config floorId =
+  getFloorHelp config True floorId
 
 
-getFloor : Config -> String -> Task Error Floor
-getFloor config id =
-  getFloorHelp config False id
+getFloor : Config -> FloorId -> Task Error Floor
+getFloor config floorId =
+  getFloorHelp config False floorId
 
 
-getFloorOfVersion : Config -> String -> Int -> Task Error Floor
-getFloorOfVersion config id version =
+getFloorOfVersion : Config -> FloorId -> Int -> Task Error Floor
+getFloorOfVersion config floorId version =
   let
     url =
       makeUrl
-        (config.apiRoot ++ "/1/floors/" ++ id ++ "/" ++ toString version)
+        (config.apiRoot ++ "/1/floors/" ++ floorId ++ "/" ++ toString version)
         []
   in
     get decodeFloor url [authorization config.token]
@@ -219,30 +223,30 @@ personCandidate config name =
       [authorization config.token]
 
 
-saveEditingImage : Config -> Id -> File -> Task a ()
-saveEditingImage config id file =
+saveEditingImage : Config -> ImageId -> File -> Task a ()
+saveEditingImage config imageId file =
   HttpUtil.sendFile
     "PUT"
-    (config.apiRoot ++ "/1/images/" ++ id)
+    (config.apiRoot ++ "/1/images/" ++ imageId)
     [authorizationTuple config.token]
     file
 
 
-getPerson : Config -> Id -> Task Error Person
-getPerson config id =
+getPerson : Config -> PersonId -> Task Error Person
+getPerson config personId =
   HttpUtil.get
     decodePerson
-    (config.apiRoot ++ "/1/people/" ++ id)
+    (config.apiRoot ++ "/1/people/" ++ personId)
     [authorization config.token]
 
 
-getPersonByUser : Config -> Id -> Task Error Person
-getPersonByUser config id =
+getPersonByUser : Config -> UserId -> Task Error Person
+getPersonByUser config userId =
   let
     getUser =
       HttpUtil.get
         decodeUser
-        (config.apiRoot ++ "/1/users/" ++ id)
+        (config.apiRoot ++ "/1/users/" ++ userId)
         [authorization config.token]
   in
     getUser

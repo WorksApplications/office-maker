@@ -71,7 +71,7 @@ objectView : ObjectViewOption -> Html Msg
 objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, disableTransition} =
   let
     id =
-      idOf object
+      Object.idOf object
 
     (x, y, width, height) =
       rect
@@ -258,12 +258,12 @@ objectsView model floor =
           Floor.objects floor
 
         isSelected object =
-          List.member (idOf object) model.selectedObjects
+          List.member (Object.idOf object) model.selectedObjects
 
         ghostsView =
           List.map
             (\object ->
-              ( idOf object ++ "ghost"
+              ( Object.idOf object ++ "ghost"
               , lazy objectView
                   { mode = model.mode
                   , scale = model.scale
@@ -296,7 +296,7 @@ objectsView model floor =
         normalView =
           List.map
             (\object ->
-              ( idOf object
+              ( Object.idOf object
               , lazy
                 objectView
                   { mode = model.mode
@@ -320,15 +320,15 @@ objectsView model floor =
           Floor.objects floor
 
         isSelected object =
-          List.member (idOf object) model.selectedObjects
+          List.member (Object.idOf object) model.selectedObjects
 
         isResizing object =
-          idOf object == id
+          Object.idOf object == id
 
         ghostsView =
           List.map
             (\object ->
-              ( idOf object ++ "ghost"
+              ( Object.idOf object ++ "ghost"
               , lazy objectView
                 { mode = model.mode
                 , scale = model.scale
@@ -354,7 +354,7 @@ objectsView model floor =
         normalView =
           List.map
             (\object ->
-              ( idOf object
+              ( Object.idOf object
               , lazy objectView
                 { mode = model.mode
                 , scale = model.scale
@@ -374,12 +374,12 @@ objectsView model floor =
     _ ->
       List.map
         (\object ->
-          ( idOf object
+          ( Object.idOf object
           , lazy objectView
             { mode = model.mode
             , scale = model.scale
             , rect = (rect object)
-            , selected = Mode.isEditMode model.mode && List.member (idOf object) model.selectedObjects
+            , selected = Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects
             , isGhost = False
             , object = object
             , contextMenuDisabled = model.keys.ctrl

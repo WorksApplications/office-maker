@@ -448,7 +448,7 @@ update removeToken setSelectionStart msg model =
                 in
                   case (Floor.getObject lastTouchedId floor, Model.primarySelectedObject model) of
                     (Just object, Just primary) ->
-                      List.map idOf <|
+                      List.map Object.idOf <|
                         primary :: ObjectsOperation.withinRange (primary, object) (objectsExcept primary) --keep primary
 
                     _ -> [lastTouchedId]
@@ -975,10 +975,12 @@ update removeToken setSelectionStart msg model =
           }
 
         saveUserStateCmd =
-          Task.perform (always NoOp) (putUserState newModel)
+          putUserState newModel
+            |> Task.perform (always NoOp)
 
         scaleEndCmd =
-          Task.perform (always ScaleEnd) (Process.sleep 200.0)
+          Process.sleep 200.0
+            |> Task.perform (always ScaleEnd)
       in
         newModel ! [ saveUserStateCmd, scaleEndCmd ]
 
@@ -1010,7 +1012,7 @@ update removeToken setSelectionStart msg model =
         case object of
           Just o ->
             let
-              (_, _, width, height) = rect o
+              (_, _, width, height) = Object.rect o
 
               (newId, seed) = IdGenerator.new model.seed
 
@@ -1181,7 +1183,7 @@ update removeToken setSelectionStart msg model =
         selectedResult =
           case results of
             SearchResult.Object object floorId :: [] ->
-              Just (idOf object)
+              Just (Object.idOf object)
 
             _ ->
               Nothing
@@ -1203,7 +1205,7 @@ update removeToken setSelectionStart msg model =
                 model_ =
                   Model.adjustOffset
                     { model |
-                      selectedResult = Just (idOf object)
+                      selectedResult = Just (Object.idOf object)
                     }
 
                 requestPrivateFloors =
@@ -1235,8 +1237,8 @@ update removeToken setSelectionStart msg model =
           draggingContext =
             MoveFromSearchResult
               { prototype
-              | name = personName
-              , personId = Just personId
+                | name = personName
+                , personId = Just personId
               }
               personId
         } ! []
@@ -1252,8 +1254,8 @@ update removeToken setSelectionStart msg model =
               floorId
               updateAt
               { prototype
-              | name = name
-              , personId = personId
+                | name = name
+                , personId = personId
               }
               objectId
         } ! []
@@ -1354,8 +1356,9 @@ update removeToken setSelectionStart msg model =
             |> performAPI FloorsInfoLoaded
 
         newModel =
-          { model | seed = newSeed
-          , floor = Just (EditingFloor.init newFloor)
+          { model
+            | seed = newSeed
+            , floor = Just (EditingFloor.init newFloor)
           }
       in
         newModel !
@@ -1508,7 +1511,8 @@ update removeToken setSelectionStart msg model =
               (EditingFloor.present editingFloor).id
 
             loadFloorCmd =
-              performAPI FloorLoaded (loadFloor model.apiConfig requestPrivateFloors floorId)
+              loadFloor model.apiConfig requestPrivateFloors floorId
+                |> performAPI FloorLoaded
           in
             model !
               [ loadFloorCmd ]
@@ -1960,7 +1964,8 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
     FloorProperty.OnPreparePublish ->
       let
         cmd =
-          performAPI GotDiffSource (API.getDiffSource apiConfig (EditingFloor.present efloor).id)
+          API.getDiffSource apiConfig (EditingFloor.present efloor).id
+            |> performAPI GotDiffSource
       in
         (efloor, seed) ! [ cmd ]
 
@@ -1970,7 +1975,8 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
           EditingFloor.present efloor
 
         cmd =
-          performAPI (\_ -> FloorDeleted floor) (API.deleteEditingFloor apiConfig floor.id)
+          API.deleteEditingFloor apiConfig floor.id
+            |> performAPI (\_ -> FloorDeleted floor)
       in
         (efloor, seed) ! [ cmd ]
 

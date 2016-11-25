@@ -23,8 +23,8 @@ type alias ObjectNameInput =
   }
 
 
-type alias Id = String
-
+type alias ObjectId = String
+type alias PersonId = String
 
 init : ObjectNameInput
 init =
@@ -37,18 +37,18 @@ init =
 
 type Msg =
     NoOp
-  | InputName Id String
+  | InputName ObjectId String
   | KeydownOnNameInput (List Person) (Int, Int)
   | KeyupOnNameInput Int
-  | SelectCandidate Id Id
-  | UnsetPerson Id
+  | SelectCandidate ObjectId PersonId
+  | UnsetPerson ObjectId
 
 
 type Event =
-    OnInput Id String
-  | OnFinish Id String (Maybe Id)
-  | OnSelectCandidate Id Id
-  | OnUnsetPerson Id
+    OnInput ObjectId String
+  | OnFinish ObjectId String (Maybe PersonId)
+  | OnSelectCandidate ObjectId PersonId
+  | OnUnsetPerson ObjectId
   | None
 
 
@@ -93,9 +93,9 @@ update message model =
         (newModel, event) =
           if keyCode == 13 then
             case model.editingObject of
-              Just (id, name) ->
+              Just (objectId, name) ->
                 ( updateNewEdit Nothing model
-                , OnFinish id name (selectedCandidateId model.candidateIndex candidates)
+                , OnFinish objectId name (selectedCandidateId model.candidateIndex candidates)
                 )
 
               Nothing ->
@@ -130,13 +130,15 @@ update message model =
       ( model, OnUnsetPerson objectId )
 
 
-selectedCandidateId : Int -> List Person -> Maybe Id
+selectedCandidateId : Int -> List Person -> Maybe PersonId
 selectedCandidateId candidateIndex candidates =
   if candidateIndex < 0 then
     Nothing
   else
-    Maybe.map (.id) <|
-      List.head (List.drop candidateIndex candidates)
+    candidates
+      |> List.drop candidateIndex
+      |> List.head
+      |> Maybe.map .id
 
 
 updateNewEdit : (Maybe (String, String)) -> ObjectNameInput -> ObjectNameInput
@@ -149,11 +151,11 @@ start =
   updateNewEdit << Just
 
 
-forceFinish : ObjectNameInput -> (ObjectNameInput, Maybe (Id, String))
+forceFinish : ObjectNameInput -> (ObjectNameInput, Maybe (ObjectId, String))
 forceFinish model =
   case model.editingObject of
-    Just (id, name) ->
-      (updateNewEdit Nothing model, Just (id, name))
+    Just (objectId, name) ->
+      (updateNewEdit Nothing model, Just (objectId, name))
 
     Nothing ->
       (model, Nothing)
@@ -162,10 +164,10 @@ forceFinish model =
 view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
 view deskInfoOf transitionDisabled candidates model =
   case model.editingObject of
-    Just (id, name) ->
-      case deskInfoOf id of
+    Just (objectId, name) ->
+      case deskInfoOf objectId of
         Just (screenRect, maybePerson) ->
-          view_ id name maybePerson screenRect transitionDisabled candidates model
+          view_ objectId name maybePerson screenRect transitionDisabled candidates model
 
         Nothing -> text ""
 
@@ -173,8 +175,8 @@ view deskInfoOf transitionDisabled candidates model =
       text ""
 
 
-view_ : Id -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
-view_ id name maybePerson screenRectOfDesk transitionDisabled candidates model =
+view_ : ObjectId -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
+view_ objectId name maybePerson screenRectOfDesk transitionDisabled candidates model =
   let
     candidates_ =
       List.filter (\candidate -> Just candidate /= maybePerson) (List.take 15 candidates)
@@ -182,7 +184,7 @@ view_ id name maybePerson screenRectOfDesk transitionDisabled candidates model =
     (relatedPersonExists, reletedpersonView_) =
       case maybePerson of
         Just person ->
-          (True, reletedpersonView id person)
+          (True, reletedpersonView objectId person)
 
         Nothing ->
           (False, text "")
@@ -204,30 +206,30 @@ view_ id name maybePerson screenRectOfDesk transitionDisabled candidates model =
       [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
       , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
       ]
-      [ ("nameInput" ++ id, input
+      [ ("nameInput" ++ objectId, input
         ([ Html.Attributes.id "name-input"
         -- , Html.Attributes.property "selectionStart" (Encode.int 9999)
         -- , Html.Attributes.attribute "selection-start" "9999"
         , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
-        ] ++ (inputAttributes (InputName id) (KeydownOnNameInput candidates_) KeyupOnNameInput name))
+        ] ++ (inputAttributes (InputName objectId) (KeydownOnNameInput candidates_) KeyupOnNameInput name))
         [ ])
       , ("candidatesViewContainer", div
           [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
           [ reletedpersonView_
-          , candidatesView model.candidateIndex id candidates_
+          , candidatesView model.candidateIndex objectId candidates_
           ])
       , ("pointer", pointer)
       ]
 
 
-reletedpersonView : Id -> Person -> Html Msg
+reletedpersonView : ObjectId -> Person -> Html Msg
 reletedpersonView objectId person =
   div
     [ style (Styles.candidatesViewRelatedPerson) ]
     ( unsetButton objectId :: ProfilePopup.innerView Nothing person )
 
 
-unsetButton : Id -> Html Msg
+unsetButton : ObjectId -> Html Msg
 unsetButton objectId =
   hover Styles.unsetRelatedPersonButtonHover
   div
@@ -237,7 +239,7 @@ unsetButton objectId =
     [ text "Unset"]
 
 
-candidatesView : Int -> Id -> List Person -> Html Msg
+candidatesView : Int -> ObjectId -> List Person -> Html Msg
 candidatesView candidateIndex objectId people =
   if List.isEmpty people then
     text ""
@@ -247,7 +249,7 @@ candidatesView candidateIndex objectId people =
       (List.indexedMap (candidatesViewEach candidateIndex objectId) people)
 
 
-candidatesViewEach : Int -> Id -> Int -> Person -> (String, Html Msg)
+candidatesViewEach : Int -> ObjectId -> Int -> Person -> (String, Html Msg)
 candidatesViewEach candidateIndex objectId index person =
   ( person.id
   , hover Styles.candidateItemHover
