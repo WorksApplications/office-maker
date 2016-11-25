@@ -2094,11 +2094,11 @@ nextObjectToInput object allObjects =
     island =
       ObjectsOperation.island
         [object]
-        (List.filter (\e -> (idOf e) /= (idOf object)) allObjects)
+        (List.filter (\e -> (Object.idOf e) /= (idOf object)) allObjects)
   in
     case ObjectsOperation.nearest Down object island of
       Just e ->
-        if idOf object == idOf e then
+        if Object.idOf object == idOf e then
           Nothing
         else
           Just e
@@ -2300,8 +2300,8 @@ moveSelecedObjectsToward direction model editingFloor =
     } ! [ saveCmd ]
 
 
-updateByMoveObjectEnd : Id -> Position -> Position -> Model -> (Model, Cmd Msg)
-updateByMoveObjectEnd id start end model =
+updateByMoveObjectEnd : ObjectId -> Position -> Position -> Model -> (Model, Cmd Msg)
+updateByMoveObjectEnd objectId start end model =
   case model.floor of
     Nothing ->
       model ! []
@@ -2331,7 +2331,7 @@ updateByMoveObjectEnd id start end model =
         -- comment out for contextmenu
         -- else if not model.keys.ctrl && not model.keys.shift then
         --   { model |
-        --     selectedObjects = [id]
+        --     selectedObjects = [objectId]
         --   } ! []
         else
           model ! []
