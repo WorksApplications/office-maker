@@ -153,8 +153,9 @@ printButtonView onTogglePrintView lang printMode =
   div
     [ onClick onTogglePrintView
     , style (S.editingToggleContainer False)
+    , class "no-print"
     ]
-    [ div [ style S.editingToggleIcon ] [ Icons.printButton ]
+    [ div [ style S.editingToggleIcon ] [ Icons.printButton printMode ]
     , div [ style (S.editingToggleText) ] [ text (if printMode then I18n.close lang else I18n.print lang) ]
     ]
 

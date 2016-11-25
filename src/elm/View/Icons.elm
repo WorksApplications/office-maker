@@ -130,9 +130,9 @@ editingToggle =
   pencil headerIconColor 22
 
 
-printButton : Svg msg
-printButton =
-  print headerIconColor 22
+printButton : Bool -> Svg msg
+printButton printMode =
+  print ( if printMode then defaultColor else headerIconColor) 22
 
 
 userMenuToggle : Bool -> Svg msg

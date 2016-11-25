@@ -19,6 +19,7 @@ zIndex :
   , candidatesView : String
   , subView : String
   , headerForPrint : String
+  , printGuide : String
   , messageBar : String
   , modalBackground : Int
   , userMenuView : String
@@ -32,7 +33,8 @@ zIndex =
   , floorInfo = "500"
   , personDetailPopup = "550"
   , subView = "600"
-  , headerForPrint = "650"
+  , headerForPrint = "630"
+  , printGuide = "650"
   , candidatesView = "660"
   , messageBar = "700"
   , modalBackground = 900
@@ -75,9 +77,7 @@ headerHeight = 37
 header : Bool -> S
 header printMode =
   noMargin ++
-    [ ("background", "rgb(100,100,120)")
-    , ("color", "#eee")
-    , ("height", px headerHeight)
+    [ ("height", px headerHeight)
     , ("padding-left", "10px")
     , ("padding-right", "10px")
     , ("display", "flex")
@@ -89,7 +89,9 @@ header printMode =
           , ("width", "100%")
           ]
         else
-          []
+          [ ("color", "#eee")
+          , ("background", "rgb(100,100,120)")
+          ]
       )
 
 
@@ -308,7 +310,7 @@ gridLayerHorizontalLine top =
 canvasContainer : Bool -> Bool -> S
 canvasContainer printMode rangeSelectMode =
   [ ("position", "relative")
-  , ("background", if printMode then "#fff" else "#000")
+  , ("background", if printMode then "#ddd" else "#000")
   , ("flex", "1")
   , ("cursor", if rangeSelectMode then "crosshair" else "default")
   ]
@@ -1157,4 +1159,28 @@ searchResultItemIcon =
 nameInputContainer : S
 nameInputContainer =
   [ ("position", "relative")
+  ]
+
+
+printGuide : List (String, String)
+printGuide =
+  [ ("position", "fixed")
+  , ("z-index", zIndex.printGuide)
+  , ("top", "0")
+  , ("left", "0")
+  , ("pointer-events", "none")
+  ]
+
+
+printGuideItem : Int -> Int -> List (String, String)
+printGuideItem width height =
+  [ ("position", "fixed")
+  , ("top", "0")
+  , ("left", "0")
+  , ("width", px width)
+  , ("height", px height)
+  , ("border", "dashed 1px #888")
+  , ("color", "#888")
+  , ("text-align", "right")
+  , ("padding-right", "3px")
   ]

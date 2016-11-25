@@ -246,12 +246,12 @@ printGuide : Bool -> Html msg
 printGuide isPrintMode =
   if isPrintMode then
     div
-      [ style [("position", "fixed"), ("z-index", "999999"), ("top", "0"), ("left", "0"), ("text-align", "right"), ("color", "#888"), ("pointer-events", "none")]
+      [ style S.printGuide
       , class "no-print"
       ]
-      [ div [ style [("position", "fixed"), ("top", "0"), ("left", "0"), ("width", "1122px"), ("height", "793px"), ("border", "dashed 1px #888")]] [ text "A4" ]
-      , div [ style [("position", "fixed"), ("top", "0"), ("left", "0"), ("width", "1587px"), ("height", "1122px"), ("border", "dashed 1px #888")]] [ text "A3" ]
-      , div [ style [("position", "fixed"), ("top", "0"), ("left", "0"), ("width", "2245px"), ("height", "1587px"), ("border", "dashed 1px #888")]] [ text "A2" ]
+      [ div [ style ( S.printGuideItem 1122 793) ] [ text "A4" ]
+      , div [ style ( S.printGuideItem 1587 1122) ] [ text "A3" ]
+      , div [ style ( S.printGuideItem 2245 1587) ] [ text "A2" ]
       ]
   else
     text ""

@@ -10,7 +10,6 @@ view : Bool -> String -> Maybe String -> Html msg -> Html msg
 view printMode title link menu =
   header
     [ style (S.header printMode)
-    , class "no-print"
     ]
     [ h1
         [ style S.h1 ]
