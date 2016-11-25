@@ -238,6 +238,23 @@ view model =
       , mainView model
       , diffView
       , Page.Map.ContextMenu.view model
+      , printGuide printMode
       ]
+
+
+printGuide : Bool -> Html msg
+printGuide isPrintMode =
+  if isPrintMode then
+    div
+      [ style [("position", "fixed"), ("z-index", "999999"), ("top", "0"), ("left", "0"), ("text-align", "right"), ("color", "#888"), ("pointer-events", "none")]
+      , class "no-print"
+      ]
+      [ div [ style [("position", "fixed"), ("top", "0"), ("left", "0"), ("width", "1122px"), ("height", "793px"), ("border", "dashed 1px #888")]] [ text "A4" ]
+      , div [ style [("position", "fixed"), ("top", "0"), ("left", "0"), ("width", "1587px"), ("height", "1122px"), ("border", "dashed 1px #888")]] [ text "A3" ]
+      , div [ style [("position", "fixed"), ("top", "0"), ("left", "0"), ("width", "2245px"), ("height", "1587px"), ("border", "dashed 1px #888")]] [ text "A2" ]
+      ]
+  else
+    text ""
+
 
 --

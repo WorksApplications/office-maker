@@ -6,15 +6,21 @@ import Html.Attributes exposing (..)
 import View.Styles as S
 
 
-view : String -> Maybe String -> Html msg -> Html msg
-view title link menu =
+view : Bool -> String -> Maybe String -> Html msg -> Html msg
+view printMode title link menu =
   header
-    [ style S.header ]
+    [ style (S.header printMode)
+    , class "no-print"
+    ]
     [ h1
         [ style S.h1 ]
         [ case link of
             Just url ->
-              a [ style S.headerLink, href url ] [ text title ]
+              a
+                [ style S.headerLink
+                , href url
+                ]
+                [ text title ]
 
             Nothing ->
               text title

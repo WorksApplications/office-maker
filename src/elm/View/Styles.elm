@@ -18,8 +18,8 @@ zIndex :
   , personDetailPopup : String
   , candidatesView : String
   , subView : String
+  , headerForPrint : String
   , messageBar : String
-  , contextMenu : String
   , modalBackground : Int
   , userMenuView : String
   }
@@ -32,9 +32,9 @@ zIndex =
   , floorInfo = "500"
   , personDetailPopup = "550"
   , subView = "600"
+  , headerForPrint = "650"
   , candidatesView = "660"
   , messageBar = "700"
-  , contextMenu = "800"
   , modalBackground = 900
   , userMenuView = "1000"
   }
@@ -72,17 +72,25 @@ headerHeight : Int
 headerHeight = 37
 
 
-header : S
-header =
+header : Bool -> S
+header printMode =
   noMargin ++
-    [ ( "background", "rgb(100,100,120)")
+    [ ("background", "rgb(100,100,120)")
     , ("color", "#eee")
     , ("height", px headerHeight)
     , ("padding-left", "10px")
     , ("padding-right", "10px")
     , ("display", "flex")
     , ("justify-content", "space-between")
-    ]
+    ] ++
+      ( if printMode then
+          [ ("position", "absolute")
+          , ("z-index", zIndex.headerForPrint)
+          , ("width", "100%")
+          ]
+        else
+          []
+      )
 
 
 deskInput : (Int, Int, Int, Int) -> S
@@ -219,57 +227,6 @@ subView =
     , ("background", "#eee")
     , ("position", "relative")
     ]
-
-
-contextMenuItemHeight : Int
-contextMenuItemHeight = 28
-
-
-contextMenuItemHeightWithAnnotation : Int
-contextMenuItemHeightWithAnnotation = 40
-
-
-contextMenu : (Int, Int) -> (Int, Int) -> Int -> S
-contextMenu (x, y) (windowWidth, windowHeight) height =
-  let
-    width = 300
-    x_ = min x (windowWidth - width)
-    y_ = min y (windowHeight - height)
-  in
-    [ ("width", px width)
-    , ("left", px x_)
-    , ("top", px y_)
-    , ("position", "fixed")
-    , ("z-index", zIndex.contextMenu)
-    , ("background-color", "#fff")
-    , ("box-sizing", "border-box")
-    , ("border-style", "solid")
-    , ("border-width", "1px")
-    , ("border-color", "#aaa")
-    , ("font-size", "15px")
-    ]
-
-
-contextMenuItem : Bool -> S
-contextMenuItem withAnnotation =
-  [ ("padding", "5px 15px")
-  , ("cursor", "pointer")
-  , ("height", px (if withAnnotation then contextMenuItemHeightWithAnnotation else contextMenuItemHeight))
-  , ("box-sizing", "border-box")
-  ]
-
-
-contextMenuItemHover : S
-contextMenuItemHover =
-  [ ("background-color", "#9ce")
-  ]
-
-
-contextMenuItemAnnotation : S
-contextMenuItemAnnotation =
-  [ ("color", "#aaa")
-  , ("font-size", "10px")
-  ]
 
 
 canvasView : Bool -> Bool -> (Int, Int, Int, Int) -> S

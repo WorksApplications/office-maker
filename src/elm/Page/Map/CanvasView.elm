@@ -164,20 +164,23 @@ view model =
 
 profilePopupView : Model -> Floor -> Html Msg
 profilePopupView model floor =
-  model.selectedResult
-    |> Maybe.andThen (\objectId -> Floor.getObject objectId floor
-    |> Maybe.andThen (\object ->
-      case Object.relatedPerson object of
-        Just personId ->
-          Dict.get personId model.personInfo
-            |> Maybe.map (\person ->
-              ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object (Just person)
-            )
+  if Mode.isPrintMode model.mode then
+    text ""
+  else
+    model.selectedResult
+      |> Maybe.andThen (\objectId -> Floor.getObject objectId floor
+      |> Maybe.andThen (\object ->
+        case Object.relatedPerson object of
+          Just personId ->
+            Dict.get personId model.personInfo
+              |> Maybe.map (\person ->
+                ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object (Just person)
+              )
 
-        Nothing ->
-          Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object Nothing)
-      ))
-    |> Maybe.withDefault (text "")
+          Nothing ->
+            Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object Nothing)
+        ))
+      |> Maybe.withDefault (text "")
 
 
 canvasView : Model -> Floor -> Html Msg
@@ -240,9 +243,9 @@ canvasViewStyles model floor =
         model.scale
         (model.offset.x, model.offset.y, Floor.width floor, Floor.height floor)
   in
-    if (Mode.isPrintMode model.mode) then
-      S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
-    else
+    -- if (Mode.isPrintMode model.mode) then
+    --   S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
+    -- else
       S.canvasView (Mode.isViewMode model.mode) (transitionDisabled model) rect
 
 

@@ -1,5 +1,15 @@
 @font-face {
-   font-family: Roboto;
+  font-family: Roboto;
+}
+
+@page {
+  size:landscape;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }
 
 body {

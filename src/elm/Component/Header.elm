@@ -49,9 +49,9 @@ type alias Context msg =
 view : Context msg -> State -> Html msg
 view context state =
   if context.printMode then
-    HeaderView.view context.title Nothing (menu [ printButtonView context.onTogglePrintView context.lang True ])
+    HeaderView.view context.printMode context.title Nothing (menu [ printButtonView context.onTogglePrintView context.lang True ])
   else
-    HeaderView.view context.title (Just "/") (normalMenu context state)
+    HeaderView.view context.printMode context.title (Just "/") (normalMenu context state)
 
 
 normalMenu : Context msg -> State -> Html msg
