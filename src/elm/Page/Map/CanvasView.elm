@@ -207,21 +207,29 @@ canvasView model floor =
       else
         text ""
 
+    isEditMode =
+      Mode.isEditMode model.mode
+
     children1 =
-      ("canvas-image", canvasImage floor) ::
-      ("grid-layer", gridLayer) ::
-      ("canvas-name-input", nameInput) ::
-      ("canvas-selector-rect", selectorRectView model) ::
-      (objectsView model floor)
+      Just ("canvas-image", canvasImage floor) ::
+      (if isEditMode then Just ("grid-layer", gridLayer) else Nothing) ::
+      (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) ::
+      (if isEditMode then Just ("canvas-selector-rect", selectorRectView model) else Nothing) :: []
+      |> List.filterMap identity
 
     children2 =
-      ("canvas-temporary-pen", temporaryPenView model) ::
-      (temporaryStampsView model)
+      objectsView model floor
+
+    children3 =
+      if isEditMode then
+        ("canvas-temporary-pen", temporaryPenView model) :: temporaryStampsView model
+      else
+        []
   in
     Keyed.node
       "div"
       [ style (canvasViewStyles model floor) ]
-      ( children1 ++ children2 )
+      ( children1 ++ children2 ++ children3)
 
 
 canvasViewStyles : Model -> Floor -> List (String, String)

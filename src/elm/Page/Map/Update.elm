@@ -147,13 +147,10 @@ init flags location =
 
 initCmd : API.Config -> Bool -> UserState -> Maybe String -> Cmd Msg
 initCmd apiConfig needsEditMode defaultUserState selectedFloor =
-  performAPI
-    (\(userState, user) -> Initialized selectedFloor needsEditMode userState user)
-    ( Cache.getWithDefault Cache.cache defaultUserState
-        |> Task.andThen (\userState -> API.getAuth apiConfig
-        |> Task.map (\user -> (userState, user))
-        )
-    )
+  Cache.getWithDefault Cache.cache defaultUserState
+    |> Task.andThen (\userState -> API.getAuth apiConfig
+    |> Task.map (\user -> (userState, user)))
+    |> performAPI (\(userState, user) -> Initialized selectedFloor needsEditMode userState user)
 
 
 debug : Bool

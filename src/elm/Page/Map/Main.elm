@@ -7,7 +7,6 @@ import Navigation
 import Page.Map.Model exposing (Model)
 import Page.Map.Update as Update exposing (Flags)
 import Page.Map.View as View
-import Page.Map.URL as URL exposing (URL)
 import Page.Map.Msg exposing (Msg)
 
 
