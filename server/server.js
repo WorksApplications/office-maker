@@ -42,7 +42,7 @@ function inTransaction(f) {
         res.status(e).send('');
       } else {
         log.system.error('error', e);
-        log.system.error(e.stack);
+        e.stack && log.system.error(e.stack);
         res.status(500).send('');
       }
     });

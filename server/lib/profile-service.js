@@ -16,7 +16,11 @@ function send(token, method, url, data) {
       if (e || response.statusCode >= 400) {
         log.system.error(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
         body && body.message && log.system.error(body.message);
-        reject(body ? body.message : e || response.statusCode);
+        if(response.statusCode === 401) {
+          reject(401);
+        } else {
+          reject(body ? body.message : e || response.statusCode);
+        }
       } else {
         log.system.debug(response.statusCode, 'profile service: success ' + method + ' ' + url);
         resolve(body);
