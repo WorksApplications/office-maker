@@ -5,6 +5,7 @@ const slash = require('slash');
 const minimatch = require('minimatch');
 
 var runServer = !process.argv.filter(a => { return a == '--no-server' }).length;
+var debugMode = process.argv.filter(a => { return a == '--debug' }).length;
 var server = null;
 
 var queued = {
@@ -15,7 +16,11 @@ function taskBuild(cb) {
   if(queued.build) {
     queued.build = false;
     // console.log('build start\n');
-    var sh = cp.spawn('sh', ['build.sh'], {stdio: 'inherit'});
+    var args = ['build.sh'];
+    if(debugMode) {
+      args.push('--debug');
+    }
+    var sh = cp.spawn('sh', args, {stdio: 'inherit'});
     sh.on('close', cb);
   } else {
     cb();
