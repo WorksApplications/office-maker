@@ -672,18 +672,22 @@ searchBox =
     , ("outline", "none")
     , ("box-shadow", "rgba(0, 0, 0, 9.07451) 0px 1px 5px inset")
     , ("border", "none")
+    , ("border-bottom-left-radius", "15px")
+    , ("border-top-left-radius", "15px")
     ]
 
 
 searchBoxSubmit : S
 searchBoxSubmit =
   [ ("line-height", "30px")
-  , ("padding", "0 10px")
+  , ("padding", "0 15px 0 12px")
   , ("background-color", "inherit")
   , ("color", "white")
   , ("border", "solid 1px #445")
   , ("outline", "none")
   , ("cursor", "pointer")
+  , ("border-bottom-right-radius", "15px")
+  , ("border-top-right-radius", "15px")
   ]
 
 
