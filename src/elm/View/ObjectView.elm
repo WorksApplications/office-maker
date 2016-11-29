@@ -1,24 +1,26 @@
 module View.ObjectView exposing (noEvents, viewDesk, viewLabel)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import Json.Decode as Decode
+import Html exposing (..)
+import Html.Attributes as Attributes exposing (..)
+import Html.Events exposing (..)
+import Mouse exposing (Position)
+
+
 import View.Styles as S
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
-
 
 
 type alias Id = String
 
 
 type alias EventOptions msg =
-  { onMouseDown : Maybe msg
+  { onMouseDown : Maybe (Position -> msg)
   , onMouseUp : Maybe msg
   , onStartEditingName : Maybe msg
   , onContextMenu : Maybe (Attribute msg)
-  , onStartResize : Maybe msg
+  , onStartResize : Maybe (Position -> msg)
   }
 
 
@@ -80,7 +82,7 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ) ++
       ( case eventOptions.onMouseDown of
           Just msg ->
-            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } (Decode.succeed msg)
+            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position |> Attributes.map msg
               -- onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } <|
               --   ( Decode.field "buttton" Decode.int
               --     |> Decode.andThen (\value ->
@@ -114,13 +116,13 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ]
 
 
-resizeGripView : Bool -> Maybe msg -> Html msg
+resizeGripView : Bool -> Maybe (Position -> msg) -> Html msg
 resizeGripView selected onStartResize =
   case onStartResize of
     Just msg ->
       div
         [ style (S.deskResizeGrip selected)
-        , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+        , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } Mouse.position |> Attributes.map msg
         ]
         []
     Nothing ->

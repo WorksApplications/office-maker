@@ -4,13 +4,13 @@ import Dict exposing (..)
 import Maybe
 import Json.Decode as Decode
 
-import ContextMenu
-
+import Mouse
 import Html exposing (..)
 import Html.Attributes as Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed as Keyed
 import Html.Lazy exposing (..)
+import ContextMenu
 
 import Component.ObjectNameInput as ObjectNameInput
 import View.Styles as S
@@ -82,7 +82,7 @@ objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, d
           noEvents = ObjectView.noEvents
         in
           { noEvents |
-            onMouseDown = Just (ShowDetailForObject id)
+            onMouseDown = Just (always <| ShowDetailForObject id)
           }
       else
         { onContextMenu =
@@ -146,7 +146,7 @@ view model =
       in
         div
           [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
-          , onWithOptions "mousedown" { stopPropagation = False, preventDefault = False } (Decode.succeed MouseDownOnCanvas)
+          , on "mousedown" Mouse.position |> Attributes.map MouseDownOnCanvas
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
           , onMouseEnter_ EnterCanvas
           , onMouseLeave_ LeaveCanvas

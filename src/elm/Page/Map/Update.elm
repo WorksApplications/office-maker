@@ -83,7 +83,11 @@ subscriptions tokenRemoved undo redo clipboard model =
     , undo (always Undo)
     , redo (always Redo)
     , clipboard PasteFromClipboard
-    , Mouse.moves MouseMove
+    , if model.draggingContext == NoDragging then
+        Sub.none
+      else
+        Mouse.moves MouseMove
+    , Mouse.downs MouseMove
     , Mouse.ups (always MouseUp)
     , Sub.map ContextMenuMsg (ContextMenu.subscriptions model.contextMenu)
     , Sub.map HeaderMsg (Header.subscriptions)
@@ -416,25 +420,28 @@ update removeToken setSelectionStart msg model =
               model.draggingContext
       } ! []
 
-    MouseDownOnObject lastTouchedId ->
+    MouseDownOnObject lastTouchedId mousePosition ->
       let
+        model0 =
+          { model | mousePosition = mousePosition }
+
         canvasPosition =
-          Model.canvasPosition model
+          Model.canvasPosition model0
 
         (model_, cmd) =
-          if ObjectNameInput.isEditing model.objectNameInput then
+          if ObjectNameInput.isEditing model0.objectNameInput then
             let
               (objectNameInput, ev) =
-                ObjectNameInput.forceFinish model.objectNameInput
+                ObjectNameInput.forceFinish model0.objectNameInput
             in
               case ev of
                 Just (id, name) ->
-                  updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
+                  updateOnFinishNameInput False id name { model0 | objectNameInput = objectNameInput }
 
                 Nothing ->
-                  { model | objectNameInput = objectNameInput } ! []
+                  { model0 | objectNameInput = objectNameInput } ! []
           else
-            model ! []
+            model0 ! []
 
         -- TODO
         help model =
@@ -485,24 +492,27 @@ update removeToken setSelectionStart msg model =
       in
         newModel ! [ cmd1, cmd2 ]
 
-    MouseDownOnCanvas ->
+    MouseDownOnCanvas mousePosition ->
       let
+        model0 =
+          { model | mousePosition = mousePosition }
+
         canvasPosition =
-          Model.canvasPosition model
+          Model.canvasPosition model0
 
         selectorRect =
-          if Mode.isSelectMode model.mode then
+          if Mode.isSelectMode model0.mode then
             let
               fitted =
-                ObjectsOperation.fitPositionToGrid model.gridSize <|
-                  Model.screenToImageWithOffset model.scale canvasPosition model.offset
+                ObjectsOperation.fitPositionToGrid model0.gridSize <|
+                  Model.screenToImageWithOffset model0.scale canvasPosition model0.offset
             in
-              Just (fitted.x, fitted.y, model.gridSize, model.gridSize)
+              Just (fitted.x, fitted.y, model0.gridSize, model0.gridSize)
           else
-            model.selectorRect
+            model0.selectorRect
 
         draggingContext =
-          case Mode.currentEditMode model.mode of
+          case Mode.currentEditMode model0.mode of
             Just Mode.Label ->
               NoDragging
 
@@ -513,21 +523,21 @@ update removeToken setSelectionStart msg model =
               PenFromScreenPos canvasPosition
 
             Just Select ->
-              if model.keys.ctrl then
+              if model0.keys.ctrl then
                 Selector
               else
-                ShiftOffset model.mousePosition
+                ShiftOffset model0.mousePosition
 
             Nothing ->
-              ShiftOffset model.mousePosition
+              ShiftOffset model0.mousePosition
 
         (model_, cmd) =
-          case ObjectNameInput.forceFinish model.objectNameInput of
+          case ObjectNameInput.forceFinish model0.objectNameInput of
             (objectNameInput, Just (id, name)) ->
-              updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
+              updateOnFinishNameInput False id name { model0 | objectNameInput = objectNameInput }
 
             (objectNameInput, _) ->
-              { model | objectNameInput = objectNameInput } ! []
+              { model0 | objectNameInput = objectNameInput } ! []
 
         (model__, cmd2) =
           if Mode.isLabelMode model.mode then
@@ -544,20 +554,23 @@ update removeToken setSelectionStart msg model =
       in
         newModel ! [ cmd, cmd2 ]
 
-    MouseDownOnResizeGrip id ->
+    MouseDownOnResizeGrip id mousePosition ->
       let
+        model0 =
+          { model | mousePosition = mousePosition }
+
         (model_, cmd) =
-          case ObjectNameInput.forceFinish model.objectNameInput of
+          case ObjectNameInput.forceFinish model0.objectNameInput of
             (objectNameInput, Just (id, name)) ->
-              updateOnFinishNameInput False id name { model | objectNameInput = objectNameInput }
+              updateOnFinishNameInput False id name { model0 | objectNameInput = objectNameInput }
 
             (objectNameInput, _) ->
-              { model | objectNameInput = objectNameInput } ! []
+              { model0 | objectNameInput = objectNameInput } ! []
 
         newModel =
           { model_ |
             selectedObjects = []
-          , draggingContext = ResizeFromScreenPos id (Model.canvasPosition model)
+          , draggingContext = ResizeFromScreenPos id (Model.canvasPosition model_)
           }
       in
         newModel ! [ cmd ]

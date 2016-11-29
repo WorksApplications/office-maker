@@ -54,10 +54,10 @@ type Msg
   | EnterCanvas
   | LeaveCanvas
   | MouseUpOnCanvas
-  | MouseDownOnCanvas
-  | MouseDownOnObject Id
+  | MouseDownOnCanvas Position
+  | MouseDownOnObject Id Position
   | MouseUpOnObject Id
-  | MouseDownOnResizeGrip Id
+  | MouseDownOnResizeGrip Id Position
   | StartEditObject Id
   | KeyCodeMsg Bool Int
   | SelectBackgroundColor String
