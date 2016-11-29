@@ -74,7 +74,7 @@ type Msg
   | SelectIsland Id
   | SelectSameColor Id
   | WindowSize Size
-  | MouseWheel Float
+  | MouseWheel Float Position
   | ChangeMode EditingMode
   | ScaleEnd
   | PrototypesMsg Prototypes.Msg

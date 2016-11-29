@@ -1,5 +1,6 @@
 module Util.HtmlUtil exposing (..)
 
+import Mouse exposing (Position)
 import Html exposing (Html, Attribute, text)
 import Html.Attributes
 import Html.Events exposing (on, onWithOptions)
@@ -102,9 +103,10 @@ onContextMenu_ e =
   onWithOptions "contextmenu" { stopPropagation = True, preventDefault = True } (Decode.succeed e)
 
 
-onMouseWheel : (Float -> a) -> Attribute a
+onMouseWheel : (Float -> Position -> a) -> Attribute a
 onMouseWheel toMsg =
-  onWithOptions "wheel" { stopPropagation = True, preventDefault = True } (Decode.map toMsg decodeWheelEvent)
+  onWithOptions "wheel" { stopPropagation = True, preventDefault = True }
+    (Decode.map (\(value, pos) -> toMsg value pos) decodeWheelEvent)
 
 
 mouseDownDefence : a -> Attribute a
@@ -112,13 +114,16 @@ mouseDownDefence e =
   onMouseDown_ e
 
 
-decodeWheelEvent : Decoder Float
+decodeWheelEvent : Decoder (Float, Position)
 decodeWheelEvent =
     (oneOf
       [ at [ "deltaY" ] float
       , at [ "wheelDelta" ] float |> map (\v -> -v)
       ])
     |> andThen (\value -> if value /= 0 then succeed value else fail "Wheel of 0")
+    |> andThen (\value -> Mouse.position
+    |> map (\position -> (value, position)
+    ))
 
 
 form_ : a -> List (Attribute a) -> List (Html a) -> Html a

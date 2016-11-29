@@ -963,31 +963,34 @@ update removeToken setSelectionStart msg model =
       in
         updateByKeyEvent event model_
 
-    MouseWheel value ->
+    MouseWheel value mousePosition ->
       let
+        model0 =
+          { model | mousePosition = mousePosition }
+
         canvasPosition =
-          Model.canvasPosition model
+          Model.canvasPosition model0
 
         newScale =
           if value < 0 then
-            Scale.update Scale.ScaleUp model.scale
+            Scale.update Scale.ScaleUp model0.scale
           else
-            Scale.update Scale.ScaleDown model.scale
+            Scale.update Scale.ScaleDown model0.scale
 
         ratio =
-          Scale.ratio model.scale newScale
+          Scale.ratio model0.scale newScale
 
         newOffset =
           let
-            x = Scale.screenToImage model.scale canvasPosition.x
-            y = Scale.screenToImage model.scale canvasPosition.y
+            x = Scale.screenToImage model0.scale canvasPosition.x
+            y = Scale.screenToImage model0.scale canvasPosition.y
           in
-            { x = floor (toFloat (x - floor (ratio * (toFloat (x - model.offset.x)))) / ratio)
-            , y = floor (toFloat (y - floor (ratio * (toFloat (y - model.offset.y)))) / ratio)
+            { x = floor (toFloat (x - floor (ratio * (toFloat (x - model0.offset.x)))) / ratio)
+            , y = floor (toFloat (y - floor (ratio * (toFloat (y - model0.offset.y)))) / ratio)
             }
 
         newModel =
-          { model |
+          { model0 |
             scale = newScale
           , offset = newOffset
           , scaling = True
