@@ -6,9 +6,9 @@ import Html.Attributes exposing (..)
 import View.CommonStyles as S
 
 
-card : Maybe Int -> List (Html msg) -> Html msg
-card maybeHeight children =
-  div [ style (S.card maybeHeight) ] children
+card : Bool -> String -> Maybe Int -> List (Html msg) -> Html msg
+card absolute backgroundColor maxHeight children =
+  div [ style (S.cardComponent (if absolute then "absolute" else "") backgroundColor maxHeight) ] children
 
 
 formControl : List (Html msg) -> Html msg

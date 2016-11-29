@@ -5,7 +5,7 @@ import Mouse exposing (Position)
 import Debounce exposing (Debounce)
 import ContextMenu exposing (ContextMenu)
 
-import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
@@ -83,7 +83,7 @@ type Msg
   | Rotate Id
   | FirstNameOnly (List Id)
   | RemoveSpaces (List Id)
-  | UpdateHeaderState Header.Msg
+  | HeaderMsg Header.Msg
   | SignIn
   | SignOut
   | ToggleEditing
@@ -104,7 +104,7 @@ type Msg
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
   | ConfirmDiff
-  | ChangeTab Tab
+  | HideSearchResult
   | ClosePopup
   | ShowDetailForObject Id
   | CreateNewFloor

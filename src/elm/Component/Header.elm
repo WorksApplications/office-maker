@@ -1,5 +1,6 @@
 module Component.Header exposing (..)
 
+import Mouse
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -14,21 +15,31 @@ import View.HeaderView as HeaderView
 
 import InlineHover exposing (hover)
 
-type alias State = Bool
+type alias Model = Bool
 
 type Msg
   = ToggleUserMenu
+  | CloseUserMenu
 
 
-init : State
+init : Model
 init = False
 
 
-update : Msg -> State -> State
+update : Msg -> Model -> Model
 update msg menuOpened =
   case msg of
     ToggleUserMenu ->
       not menuOpened
+
+    CloseUserMenu ->
+      False
+
+
+subscriptions : Sub Msg
+subscriptions =
+  -- Mouse.clicks (\_ -> CloseUserMenu)
+  Sub.none
 
 
 type alias Context msg =
@@ -43,37 +54,52 @@ type alias Context msg =
   , user : Maybe User
   , editing : Bool
   , printMode : Bool
+  , searchInput : Maybe (Html msg)
   }
 
 
-view : Context msg -> State -> Html msg
+view : Context msg -> Model -> Html msg
 view context state =
   if context.printMode then
-    HeaderView.view context.printMode context.title Nothing (menu [ printButtonView context.onTogglePrintView context.lang True ])
+    HeaderView.view
+      context.printMode
+      context.title
+      Nothing
+      (menu [ printButtonView context.onTogglePrintView context.lang True ])
   else
-    HeaderView.view context.printMode context.title (Just "/") (normalMenu context state)
+    HeaderView.view
+      context.printMode
+      context.title
+      (Just "/")
+      (normalMenu context state)
 
 
-normalMenu : Context msg -> State -> Html msg
+normalMenu : Context msg -> Model -> Html msg
 normalMenu context menuOpened =
-  menu <|
-    case context.user of
-      Just user ->
-        editingToggle context.onToggleEditing context.lang user context.editing ::
-        printButton context.onTogglePrintView context.lang user ::
-        ( if user == Guest then
-            [ signIn context.onSignInClicked context.lang ]
-          else
-            [ userMenuToggle context.onUpdate user menuOpened
-            , if menuOpened then
-                userMenuView context
-              else
-                text ""
-            ]
-        )
+  let
+    searchInput =
+      context.searchInput |> Maybe.withDefault (text "")
 
-      Nothing ->
-        []
+    others =
+      case context.user of
+        Just user ->
+          editingToggle context.onToggleEditing context.lang user context.editing ::
+          printButton context.onTogglePrintView context.lang user ::
+          ( if user == Guest then
+              [ signIn context.onSignInClicked context.lang ]
+            else
+              [ userMenuToggle context.onUpdate user menuOpened
+              , if menuOpened then
+                  userMenuView context
+                else
+                  text ""
+              ]
+          )
+
+        Nothing ->
+          []
+  in
+    menu (searchInput :: others)
 
 
 userMenuToggle : (Msg -> msg) -> User -> Bool -> Html msg

@@ -82,6 +82,7 @@ header printMode =
     , ("padding-right", "10px")
     , ("display", "flex")
     , ("justify-content", "space-between")
+    , ("position", "relative")
     ] ++
       ( if printMode then
           [ ("position", "absolute")
@@ -225,9 +226,8 @@ subView : S
 subView =
     [ ("z-index", zIndex.subView)
     , ("width", "320px")
-    -- , ("overflow", "hidden")
-    , ("background", "#eee")
-    , ("position", "relative")
+    , ("position", "absolute")
+    , ("right", "0")
     ]
 
 
@@ -651,14 +651,40 @@ userMenuItem =
   [ ("margin", "10px 0") ]
 
 
+searchBoxContainer : S
+searchBoxContainer =
+  [ ("box-shadow", "white")
+  , ("top", "0")
+  , ("padding-right", "30px")
+  , ("bottom", "0")
+  , ("margin", "auto")
+  , ("width", "400px")
+  , ("height", "29px")
+  , ("display", "flex")
+  ]
+
+
 searchBox : S
 searchBox =
   input ++
-    [ ("background-color", "white")
-    , ("color", inputTextColor)
-    , ("border-radius", "17px")
+    [ ("background-color", "#445")
+    , ("color", "white")
     , ("outline", "none")
+    , ("box-shadow", "rgba(0, 0, 0, 9.07451) 0px 1px 5px inset")
+    , ("border", "none")
     ]
+
+
+searchBoxSubmit : S
+searchBoxSubmit =
+  [ ("line-height", "30px")
+  , ("padding", "0 10px")
+  , ("background-color", "inherit")
+  , ("color", "white")
+  , ("border", "solid 1px #445")
+  , ("outline", "none")
+  , ("cursor", "pointer")
+  ]
 
 
 floorsInfoView : S
@@ -1093,9 +1119,21 @@ mainView windowHeight =
   ] ++ flex
 
 
+
+searchResultClose : S
+searchResultClose =
+  [ ("display", "flex")
+  , ("float", "right")
+  , ("height", "20px")
+  , ("margin-bottom", "6px")
+  , ("cursor", "pointer")
+  ]
+
+
 searchResult : S
 searchResult =
   [ ("font-size", "14px")
+  , ("clear", "both")
   ]
 
 

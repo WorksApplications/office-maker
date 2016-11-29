@@ -19,7 +19,7 @@ type alias Model =
   , colorPalette : ColorPalette
   , prototypes : List PrototypeForm
   , error : Maybe String
-  , headerState : Header.State
+  , header : Header.Model
   , lang : Language
   , saveColorDebounce : Debounce ColorPalette
   , savePrototypeDebounce : Debounce Prototype

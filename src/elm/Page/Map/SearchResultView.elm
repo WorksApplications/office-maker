@@ -17,9 +17,10 @@ import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 
 import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
+import View.Icons as I
 import View.Styles as S
 
-import Page.Map.Model exposing (Model, DraggingContext(..))
+import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 
 
@@ -27,30 +28,39 @@ type alias FloorId = String
 type alias PersonId = String
 
 
-view : Model -> Html Msg
+view : Model -> List (Html Msg)
 view model =
-  case model.searchResult of
-    Nothing ->
+  let
+    closeButton =
       div
-        [ style S.searchResult ]
-        [ text "" ]
+        [ style S.searchResultClose
+        , onClick HideSearchResult
+        ]
+        [ I.searchResultClose
+        , text "Close"
+        ]
 
-    Just [] ->
-      div
-        [ style S.searchResult ]
-        [ text (I18n.nothingFound model.lang) ]
+    wrap children =
+      [ closeButton
+      , div [ style S.searchResult ] children
+      ]
+  in
+    case model.searchResult of
+      Nothing ->
+        wrap [ text "" ]
 
-    Just results ->
-      let
-        grouped =
-          SearchResult.groupByPostAndReorder
-            (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
-            model.personInfo
-            results
-      in
-        div
-          [ style S.searchResult ]
-          ( List.map (viewListForOnePost model) grouped )
+      Just [] ->
+        wrap [ text (I18n.nothingFound model.lang) ]
+
+      Just results ->
+        let
+          grouped =
+            SearchResult.groupByPostAndReorder
+              (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
+              model.personInfo
+              results
+        in
+          wrap ( List.map (viewListForOnePost model) grouped )
 
 
 viewListForOnePost : Model -> (Maybe String, List SearchResult) -> Html Msg

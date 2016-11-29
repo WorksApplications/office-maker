@@ -10,12 +10,12 @@ import Model.User as User exposing (User)
 import Model.Prototype exposing (Prototype)
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
-import Page.Master.PrototypeForm exposing (PrototypeForm) 
+import Page.Master.PrototypeForm exposing (PrototypeForm)
 
 type Msg
   = NoOp
   | Loaded UserState User ColorPalette (List Prototype)
-  | UpdateHeaderState Header.Msg
+  | HeaderMsg Header.Msg
   | InputColor Bool Int String
   | UpdatePrototype Int PrototypeForm
   | SaveColorDebounceMsg Debounce.Msg

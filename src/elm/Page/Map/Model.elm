@@ -28,7 +28,7 @@ import Model.SearchResult as SearchResult exposing (SearchResult, SearchResultsF
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.EditingFloor as EditingFloor exposing (EditingFloor)
-import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..))
 
 import API.API as API
@@ -87,7 +87,7 @@ type alias Model =
   , personPopupSize : (Int, Int)
   , lang : Language
   , cache : Cache
-  , headerState : Header.State
+  , header : Header.Model
   , saveFloorDebounce : Debounce SaveRequest
   }
 
@@ -160,7 +160,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , personPopupSize = (300, 160)
     , lang = lang
     , cache = Cache.cache
-    , headerState = Header.init
+    , header = Header.init
     , saveFloorDebounce = Debounce.init
     }
 

@@ -21,7 +21,7 @@ import Util.File exposing (..)
 import Util.HttpUtil as HttpUtil
 
 import Model.Direction as Direction exposing (..)
-import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (..)
@@ -86,6 +86,7 @@ subscriptions tokenRemoved undo redo clipboard model =
     , Mouse.moves MouseMove
     , Mouse.ups (always MouseUp)
     , Sub.map ContextMenuMsg (ContextMenu.subscriptions model.contextMenu)
+    , Sub.map HeaderMsg (Header.subscriptions)
     ]
 
 
@@ -252,21 +253,26 @@ update removeToken setSelectionStart msg model =
 
     Initialized selectedFloor needsEditMode userState user ->
       let
+        needSearch =
+          String.trim model.searchQuery /= ""
+
         mode =
-          if not (User.isGuest user) then
-            Mode.init needsEditMode
-          else
-            model.mode
+          ( if not (User.isGuest user) then
+              Mode.init needsEditMode
+            else
+              model.mode
+          )
+            |> (if needSearch then Mode.showSearchResult else identity)
 
         requestPrivateFloors =
           Mode.isEditMode mode
 
         searchCmd =
-          if String.trim model.searchQuery == "" then
-            Cmd.none
-          else
+          if needSearch then
             API.search model.apiConfig requestPrivateFloors model.searchQuery
               |> performAPI GotSearchResult
+          else
+            Cmd.none
 
         loadFloorCmd =
           selectedFloor
@@ -496,23 +502,23 @@ update removeToken setSelectionStart msg model =
             model.selectorRect
 
         draggingContext =
-          case model.mode of
-            Editing _ Mode.Label ->
+          case Mode.currentEditMode model.mode of
+            Just Mode.Label ->
               NoDragging
 
-            Editing _ Stamp ->
+            Just Stamp ->
               StampFromScreenPos canvasPosition
 
-            Editing _ Pen ->
+            Just Pen ->
               PenFromScreenPos canvasPosition
 
-            Editing _ Select ->
+            Just Select ->
               if model.keys.ctrl then
                 Selector
               else
                 ShiftOffset model.mousePosition
 
-            Viewing _ _ ->
+            Nothing ->
               ShiftOffset model.mousePosition
 
         (model_, cmd) =
@@ -855,8 +861,8 @@ update removeToken setSelectionStart msg model =
     SearchByPost postName ->
       submitSearch
         { model
-        | searchQuery = postName
-        , mode = Mode.showSearchTab model.mode
+        | searchQuery = "\"" ++ postName ++ "\""
+        , mode = Mode.showSearchResult model.mode
         }
 
     GotSamePostPeople people ->
@@ -1115,8 +1121,8 @@ update removeToken setSelectionStart msg model =
               floor = Just newFloor
             } ! [ saveCmd ]
 
-    UpdateHeaderState msg ->
-      { model | headerState = Header.update msg model.headerState } ! []
+    HeaderMsg msg ->
+      { model | header = Header.update msg model.header } ! []
 
     SignIn ->
       model ! [ Task.perform (always NoOp) API.goToLogin ]
@@ -1170,7 +1176,7 @@ update removeToken setSelectionStart msg model =
       } ! []
 
     SubmitSearch ->
-      submitSearch model
+      submitSearch { model | mode = Mode.showSearchResult model.mode }
 
     GotSearchResult results ->
       let
@@ -1307,8 +1313,8 @@ update removeToken setSelectionStart msg model =
               diff = Nothing
             } ! [ cmd ]
 
-    ChangeTab tab ->
-      { model | mode = Mode.changeTab tab model.mode } ! []
+    HideSearchResult ->
+      { model | mode = Mode.hideSearchResult model.mode } ! []
 
     ClosePopup ->
       { model | selectedResult = Nothing } ! []

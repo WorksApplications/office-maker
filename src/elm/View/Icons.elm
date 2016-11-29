@@ -55,15 +55,10 @@ popupClose =
   close defaultColor 18
 
 
-searchTab : Svg msg
-searchTab =
-  search defaultColor 20
-
-
-editTab : Svg msg
-editTab =
-  pencil defaultColor 20
-
+searchResultClose : Svg msg
+searchResultClose =
+  close defaultColor 18
+  
 
 proplabelColor : Color
 proplabelColor =

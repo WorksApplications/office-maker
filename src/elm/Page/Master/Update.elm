@@ -46,7 +46,7 @@ init flags =
     , title = flags.title
     , colorPalette = ColorPalette.empty
     , prototypes = []
-    , headerState = Header.init
+    , header = Header.init
     , lang = defaultUserState.lang
     , saveColorDebounce = Debounce.init
     , savePrototypeDebounce = Debounce.init
@@ -105,8 +105,8 @@ update removeToken message model =
       , prototypes = List.map PrototypeForm.fromPrototype prototypes
       } ! []
 
-    UpdateHeaderState msg ->
-      { model | headerState = Header.update msg model.headerState } ! []
+    HeaderMsg msg ->
+      { model | header = Header.update msg model.header } ! []
 
     InputColor isBackground index color ->
       let
@@ -176,6 +176,11 @@ update removeToken message model =
 
     APIError e ->
       { model | error = Just (toString e) } ! []
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.map HeaderMsg Header.subscriptions
 
 
 saveColorPalette : API.Config -> ColorPalette -> Cmd Msg

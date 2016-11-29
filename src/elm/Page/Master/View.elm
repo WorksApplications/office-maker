@@ -25,8 +25,8 @@ view model =
     []
     [ headerView model
     , messageBar model
-    , card Nothing <| colorMasterView model
-    , card Nothing <| prototypeMasterView model
+    , card False "" Nothing <| colorMasterView model
+    , card False "" Nothing <| prototypeMasterView model
     ]
 
 
@@ -38,14 +38,15 @@ headerView model =
     , onToggleEditing = NoOp
     , onTogglePrintView = NoOp
     , onSelectLang = \_ -> NoOp
-    , onUpdate = UpdateHeaderState
+    , onUpdate = HeaderMsg
     , title = model.title
     , lang = EN
     , user = Nothing
     , editing = False
     , printMode = False
+    , searchInput = Nothing
     }
-    model.headerState
+    model.header
 
 
 colorMasterView : Model -> List (Html Msg)

@@ -20,9 +20,8 @@ import Component.Header as Header
 
 import Util.HtmlUtil exposing (..)
 
-import Model.Mode as Mode exposing (Mode(..), EditingMode(..), Tab(..))
+import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
 import Model.Prototypes as Prototypes exposing (PositionedPrototype)
-import Model.User as User
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 
@@ -75,28 +74,21 @@ floorInfoView model =
 subView : Model -> Html Msg
 subView model =
   let
-    pane =
-      case model.mode of
-        Editing EditTab editingMode ->
-          subViewForEdit model editingMode
-
-        _ ->
-          subViewForSearch model
-
-    tabs =
-      if model.floor /= Nothing && (not <| User.isGuest model.user) then
-        case model.mode of
-          Editing tab _ ->
-            [ subViewTab (ChangeTab SearchTab) 0 Icons.searchTab (tab == SearchTab)
-            , subViewTab (ChangeTab EditTab) 1 Icons.editTab (tab == EditTab)
-            ]
-
-          _ ->
-            []
+    searchResultView =
+      if Mode.showingSearchResult model.mode then
+        [ searchResultCard model ]
       else
         []
+
+    editView =
+      case Mode.currentEditMode model.mode of
+        Just editingMode ->
+          subViewForEdit model editingMode
+
+        Nothing ->
+          []
   in
-    div [ style (S.subView) ] (pane ++ tabs)
+    div [ style S.subView ] ( searchResultView ++ editView )
 
 
 subViewForEdit : Model -> EditingMode -> List (Html Msg)
@@ -118,21 +110,20 @@ subViewForEdit model editingMode =
             []
         )
   in
-    [ card Nothing <| drawingView model editingMode
-    , card Nothing <| PropertyView.view model
-    , card Nothing <| floorView
+    [ card False "#eee" Nothing <| drawingView model editingMode
+    , card False "#eee" Nothing <| PropertyView.view model
+    , card False "#eee" Nothing <| floorView
     ]
 
 
-subViewForSearch : Model -> List (Html Msg)
-subViewForSearch model =
-  [ card Nothing [ SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery ]
-  , let
-      height =
-        model.windowSize.height - Model.headerHeight - 69
-    in
-      card (Just height) [ SearchResultView.view model ]
-  ]
+searchResultCard : Model -> Html Msg
+searchResultCard model =
+  let
+    maxHeight =
+      model.windowSize.height - Model.headerHeight
+  in
+    card True "#eee" (Just maxHeight) <|
+      SearchResultView.view model
 
 
 subViewTab : msg -> Int -> Html msg -> Bool -> Html msg
@@ -212,14 +203,15 @@ view model =
         , onToggleEditing = ToggleEditing
         , onTogglePrintView = TogglePrintView
         , onSelectLang = SelectLang
-        , onUpdate = UpdateHeaderState
+        , onUpdate = HeaderMsg
         , title = title
         , lang = model.lang
         , user = Just model.user
         , editing = Mode.isEditMode model.mode
         , printMode = printMode
+        , searchInput = Just (SearchInputView.view model.lang UpdateSearchQuery SubmitSearch model.searchQuery)
         }
-        model.headerState
+        model.header
 
     diffView =
       Maybe.withDefault (text "") <|

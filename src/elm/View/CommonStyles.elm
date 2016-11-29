@@ -63,11 +63,19 @@ absoluteRect rect_ =
   ("position", "absolute") :: (rect rect_)
 
 
-card : Maybe Int -> S
-card maybeHeight =
-  ( case maybeHeight of
-      Just height ->
-        [ ("height", px height)
+card : S
+card =
+  [ ("padding", "20px")
+  , ("box-shadow", "rgba(0, 0, 0, 0.25) 0px 6px 4px")
+  , ("border-bottom", "solid 1px #ccc")
+  ]
+
+
+cardComponent : String -> String -> Maybe Int -> S
+cardComponent position backgroundColor maybeMaxHeight =
+  ( case maybeMaxHeight of
+      Just maxHeight ->
+        [ ("max-height", px maxHeight)
         , ("overflow-y", "scroll")
         , ("box-sizing", "border-box")
         ]
@@ -75,9 +83,10 @@ card maybeHeight =
       Nothing ->
         []
   ) ++
-  [ ("padding", "20px")
-  , ("box-shadow", "rgba(0, 0, 0, 0.08451) -2px 2px 4px inset")
-  ]
+  [ ("background-color", backgroundColor)
+  , ("position", position)
+  ] ++
+  card
 
 
 formControl : S

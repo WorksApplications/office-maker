@@ -1,14 +1,13 @@
 module Model.Mode exposing (..)
 
 
-type Tab
-  = SearchTab
-  | EditTab
-
-
 type Mode
-  = Viewing Bool EditingMode
-  | Editing Tab EditingMode
+  = Mode
+    { printMode : Bool
+    , searchResult : Bool
+    , editing : Bool
+    , editMode : EditingMode
+    }
 
 
 type EditingMode
@@ -20,105 +19,115 @@ type EditingMode
 
 init : Bool -> Mode
 init isEditMode =
-  if isEditMode then
-    Editing EditTab Select
-  else
-    Viewing False Select
+  Mode
+    { printMode = False
+    , searchResult = False
+    , editing = isEditMode
+    , editMode = Select
+    }
+
+
+showingSearchResult : Mode -> Bool
+showingSearchResult (Mode mode) =
+  mode.searchResult
 
 
 toggleEditing : Mode -> Mode
-toggleEditing mode =
-  case mode of
-    Viewing _ editMode -> Editing EditTab editMode
-    Editing _ editMode -> Viewing False editMode
+toggleEditing (Mode mode) =
+  Mode
+    { mode
+      | editing = not (mode.editing)
+    }
 
 
 togglePrintView : Mode -> Mode
-togglePrintView mode =
-  case mode of
-    Viewing printMode editMode -> Viewing (not printMode) editMode
-    Editing _ editMode -> Viewing True editMode
+togglePrintView (Mode mode) =
+  Mode
+    { mode
+      | printMode = not (mode.printMode)
+    }
 
 
 toSelectMode : Mode -> Mode
-toSelectMode mode =
-  case mode of
-    Editing tab _ -> Editing tab Select
-    _ -> Editing EditTab Select
+toSelectMode (Mode mode) =
+  Mode
+    { mode
+      | editing = True
+      , editMode = Select
+    }
 
 
 toStampMode : Mode -> Mode
-toStampMode mode =
-  case mode of
-    Editing tab _ -> Editing tab Stamp
-    _ -> Editing EditTab Stamp
+toStampMode (Mode mode) =
+  Mode
+    { mode
+      | editing = True
+      , editMode = Stamp
+    }
 
 
 isEditMode : Mode -> Bool
-isEditMode mode =
-  case mode of
-    Editing _ _ -> True
-    _ -> False
+isEditMode (Mode mode) =
+  mode.editing
+
+
+currentEditMode : Mode -> Maybe EditingMode
+currentEditMode (Mode mode) =
+  if mode.editing then
+    Just mode.editMode
+  else
+    Nothing
 
 
 isSelectMode : Mode -> Bool
-isSelectMode mode =
-  case mode of
-    Editing _ Select -> True
-    _ -> False
+isSelectMode (Mode mode) =
+  mode.editing && mode.editMode == Select
 
 
 isPenMode : Mode -> Bool
-isPenMode mode =
-  case mode of
-    Editing _ Pen -> True
-    _ -> False
+isPenMode (Mode mode) =
+  mode.editing && mode.editMode == Pen
 
 
 isStampMode : Mode -> Bool
-isStampMode mode =
-  case mode of
-    Editing _ Stamp -> True
-    _ -> False
+isStampMode (Mode mode) =
+  mode.editing && mode.editMode == Stamp
 
 
 isLabelMode : Mode -> Bool
-isLabelMode mode =
-  case mode of
-    Editing _ Label -> True
-    _ -> False
+isLabelMode (Mode mode) =
+  mode.editing && mode.editMode == Label
 
 
 isViewMode : Mode -> Bool
-isViewMode mode =
-  case mode of
-    Viewing _ _ -> True
-    _ -> False
+isViewMode (Mode mode) =
+  not mode.editing
 
 
 isPrintMode : Mode -> Bool
-isPrintMode mode =
-  case mode of
-    Viewing True _ -> True
-    _ -> False
-
-
-changeTab : Tab -> Mode -> Mode
-changeTab tab mode =
-  case mode of
-    Editing _ editingMode -> Editing tab editingMode
-    x -> x
+isPrintMode (Mode mode) =
+  mode.printMode
 
 
 changeEditingMode : EditingMode -> Mode -> Mode
-changeEditingMode editingMode mode =
-  case mode of
-    Editing tab _ -> Editing tab editingMode
-    _ -> Editing EditTab editingMode
+changeEditingMode editingMode (Mode mode) =
+  Mode
+    { mode
+      | editing = True
+      , editMode = editingMode
+    }
+
+showSearchResult : Mode -> Mode
+showSearchResult (Mode mode) =
+  Mode
+    { mode
+      | searchResult = True
+    }
 
 
-showSearchTab : Mode -> Mode
-showSearchTab mode =
-  case mode of
-    Editing _ editingMode -> Editing SearchTab editingMode
-    x -> x
+hideSearchResult : Mode -> Mode
+hideSearchResult (Mode mode) =
+  Mode
+    { mode
+      | searchResult = False
+    }
