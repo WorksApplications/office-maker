@@ -1,4 +1,4 @@
-Office Maker Simple Server
+Office Maker Server
 ----
 
 ## Requirement
@@ -10,26 +10,24 @@ You need to have MySQL and [Node.js](https://nodejs.org/) (>= 4.0) installed.
 
 ### Install
 
-Currently, installation is done by [client](../README.md) for ease.
+```
+$ npm install
+```
 
-<!--
-```
-npm install
-```
--->
+This is also written in [home page](../README.md#install).
 
 ### Initialize
 
 If this is the first time to set up, execute following, which creates config.json and initialize DB.
 
 ```
-sh initialize.sh
+$ sh initialize.sh
 ```
 
 There are also other commands in commands.js.
 
 ```
-node commands.js [commandName] [args]
+$ node commands.js [commandName] [args]
 ```
 
 ## Configuration
@@ -63,6 +61,10 @@ Currently, server operations are handled by [client](../README.md) for ease.
 
 
 ## REST API
+
+(TODO: write by swagger)
+
+Currently, all of these API are used by client-side program. No public API for other services.
 
 |Method|URL|Req Body|Res Body|Description|Guest|General|Admin|
 |:--|:--|:--|:--|:--|:--|:--|:--|

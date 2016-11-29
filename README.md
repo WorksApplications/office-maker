@@ -1,56 +1,57 @@
 Office Maker
 ----
 
-CAUTION: This product is under construction.
+[![Build Status](https://travis-ci.org/WorksApplications/office-maker.svg)](https://travis-ci.org/WorksApplications/office-maker)
 
-### Server Implementations
+CAUTION: Currently this product is work in progress.
 
-There is only one server implementation which is made for debugging.See [here](./server/README.md).
+TODO: All of following processes should be replaced by Docker.
 
-
-## Development
 
 ### Requirement
 
-You need to have [Elm](http://elm-lang.org/) (>= 0.17) and [Node.js](https://nodejs.org/) (>= 4.0) installed.
+You need to have [Elm](http://elm-lang.org/) (>= 0.18) and [Node.js](https://nodejs.org/) (>= 4.0) installed.
 
-### Install
+### Install Elm
 
 ```
-elm-package install
-npm install
-cd server
-npm install
+# npm install -g elm
+```
+
+### Install libraries
+
+```
+$ elm-package install
+$ npm install
+$ cd server
+$ npm install
 ```
 
 ### Build
 
 ```
-sh build.sh
+$ sh build.sh
 ```
 
 If `elm-make` fails in Windows, try
 ```
-chcp 65001
+$ chcp 65001
 ```
-which will change encoding to UTF-8.
+which changes encoding to UTF-8.
 
 
 ### Run server
-
-See [server's document](./server/README.md).
-
-
-### Run server for development
 
 ```
 node watch
 ```
 
-### Test
+#### debug mode
+
+To debug Elm program, use `--debug` option.
 
 ```
-npm test
+node watch --debug
 ```
 
 ## License
