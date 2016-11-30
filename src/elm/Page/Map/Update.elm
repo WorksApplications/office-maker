@@ -400,26 +400,6 @@ update removeToken setSelectionStart msg model =
             |> Task.perform (\_ -> Error NoError)
         ]
 
-    EnterCanvas ->
-      model ! []
-
-    LeaveCanvas ->
-      { model |
-        draggingContext =
-          case model.draggingContext of
-            ShiftOffset _ ->
-              NoDragging
-
-            MoveFromSearchResult _ _ ->
-              NoDragging
-
-            MoveExistingObjectFromSearchResult _ _ _ _ ->
-              NoDragging
-
-            _ ->
-              model.draggingContext
-      } ! []
-
     MouseDownOnObject lastTouchedId mousePosition ->
       let
         model0 =
@@ -481,6 +461,12 @@ update removeToken setSelectionStart msg model =
           updateOnMouseUp model
       in
         newModel ! [ cmd, emulateClick lastTouchedId False ]
+
+    ClickOnCanvas ->
+      { model
+        | selectedObjects = []
+        , selectedResult = Nothing
+      } ! []
 
     MouseUpOnCanvas ->
       let

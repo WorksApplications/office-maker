@@ -18,6 +18,7 @@ type alias Id = String
 type alias EventOptions msg =
   { onMouseDown : Maybe (Position -> msg)
   , onMouseUp : Maybe msg
+  , onClick : Maybe msg
   , onStartEditingName : Maybe msg
   , onContextMenu : Maybe (Attribute msg)
   , onStartResize : Maybe (Position -> msg)
@@ -28,6 +29,7 @@ noEvents : EventOptions msg
 noEvents =
   { onMouseDown = Nothing
   , onMouseUp = Nothing
+  , onClick = Nothing
   , onStartEditingName = Nothing
   , onContextMenu = Nothing
   , onStartResize = Nothing
@@ -83,15 +85,6 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ( case eventOptions.onMouseDown of
           Just msg ->
             [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position |> Attributes.map msg
-              -- onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } <|
-              --   ( Decode.field "buttton" Decode.int
-              --     |> Decode.andThen (\value ->
-              --       if value <= 0 then
-              --         Decode.succeed msg
-              --       else
-              --         Decode.fail "" -- don't handle right
-              --       )
-              --   )
             ]
 
           Nothing -> []
@@ -99,6 +92,13 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ( case eventOptions.onMouseUp of
           Just msg ->
             [ onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            ]
+
+          Nothing -> []
+      ) ++
+      ( case eventOptions.onClick of
+          Just msg ->
+            [ onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
             ]
 
           Nothing -> []

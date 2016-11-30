@@ -51,8 +51,7 @@ type Msg
   | FloorSaved FloorBase
   | FloorPublished Floor
   | FloorDeleted Floor
-  | EnterCanvas
-  | LeaveCanvas
+  | ClickOnCanvas
   | MouseUpOnCanvas
   | MouseDownOnCanvas Position
   | MouseDownOnObject Id Position

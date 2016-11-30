@@ -95,6 +95,7 @@ objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, d
                 )
         , onMouseDown = Just (MouseDownOnObject id)
         , onMouseUp = Just (MouseUpOnObject id)
+        , onClick = Just NoOp
         , onStartEditingName = Nothing -- Just (StartEditObject id)
         , onStartResize = Just (MouseDownOnResizeGrip id)
         }
@@ -148,8 +149,7 @@ view model =
           [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
           , on "mousedown" Mouse.position |> Attributes.map MouseDownOnCanvas
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
-          , onMouseEnter_ EnterCanvas
-          , onMouseLeave_ LeaveCanvas
+          , onClick ClickOnCanvas
           , onMouseWheel MouseWheel
           ]
           [ canvasView model floor
