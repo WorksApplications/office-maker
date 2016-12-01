@@ -27,7 +27,6 @@ type Event
   = OnNameChange String
   | OnOrdChange Int
   | OnRealSizeChange (Int, Int)
-  | None
 
 
 type alias FloorProperty =
@@ -54,11 +53,11 @@ validName s =
   String.length s > 0
 
 
-update : Msg -> FloorProperty -> (FloorProperty, Cmd Msg, Event)
+update : Msg -> FloorProperty -> (FloorProperty, Maybe Event)
 update message model =
   case message of
     NoOp ->
-      (model, Cmd.none, None)
+      (model, Nothing)
 
     InputFloorName name ->
       let
@@ -66,49 +65,49 @@ update message model =
           { model | nameInput = name }
 
         event =
-          if validName name then OnNameChange name else None
+          if validName name then Just (OnNameChange name) else Nothing
       in
-        (newModel, Cmd.none, event)
+        (newModel, event)
 
     InputFloorOrd ord ->
       let
         newModel = { model | ordInput = ord }
       in
-        (newModel, Cmd.none, ordEvent ord)
+        (newModel, ordEvent ord)
 
     InputFloorRealWidth width ->
       let
         newModel = { model | realWidthInput = width }
       in
-        (newModel, Cmd.none, sizeEvent newModel)
+        (newModel, sizeEvent newModel)
 
     InputFloorRealHeight height ->
       let
         newModel = { model | realHeightInput = height }
       in
-        (newModel, Cmd.none, sizeEvent newModel)
+        (newModel, sizeEvent newModel)
 
 
-ordEvent : String -> Event
+ordEvent : String -> Maybe Event
 ordEvent ord =
   case String.toInt ord of
     Ok ord ->
-      OnOrdChange ord
+      Just <| OnOrdChange ord
 
     Err s ->
-      None
+      Nothing
 
 
-sizeEvent : FloorProperty -> Event
+sizeEvent : FloorProperty -> Maybe Event
 sizeEvent newModel =
   case ( parsePositiveInt newModel.realWidthInput
        , parsePositiveInt newModel.realHeightInput
        ) of
     (Just width, Just height) ->
-      OnRealSizeChange (width, height)
+      Just <| OnRealSizeChange (width, height)
 
     _ ->
-      None
+      Nothing
 
 
 parsePositiveInt : String -> Maybe Int

@@ -1045,10 +1045,10 @@ update removeToken setSelectionStart msg model =
 
         Just editingFloor ->
           let
-            (floorProperty, cmd1, event) =
+            (floorProperty, event) =
               FloorProperty.update message model.floorProperty
 
-            (newFloor, cmd2) =
+            (newFloor, saveCmd) =
               updateFloorByFloorPropertyEvent model.apiConfig event editingFloor
 
             newModel =
@@ -1057,7 +1057,7 @@ update removeToken setSelectionStart msg model =
               , floorProperty = floorProperty
               }
           in
-            newModel ! [ Cmd.map FloorPropertyMsg cmd1, cmd2 ]
+            newModel ! [ saveCmd ]
 
     Rotate id ->
       case model.floor of
@@ -1973,41 +1973,31 @@ focusCmd =
   ) (Dom.focus "name-input")
 
 
-updateFloorByFloorPropertyEvent : API.Config -> FloorProperty.Event -> EditingFloor -> (EditingFloor, Cmd Msg)
+updateFloorByFloorPropertyEvent : API.Config -> Maybe FloorProperty.Event -> EditingFloor -> (EditingFloor, Cmd Msg)
 updateFloorByFloorPropertyEvent apiConfig event efloor =
-  case event of
-    FloorProperty.None ->
-      efloor ! []
-
-    FloorProperty.OnNameChange name ->
+  event
+    |> Maybe.map (\e ->
       let
+        f =
+          case e of
+            FloorProperty.OnNameChange name ->
+              Floor.changeName name
+
+            FloorProperty.OnOrdChange ord ->
+              Floor.changeOrd ord
+
+            FloorProperty.OnRealSizeChange size ->
+              Floor.changeRealSize size
+
         (newFloor, rawFloor) =
-          EditingFloor.updateFloor (Floor.changeName name) efloor
+          EditingFloor.updateFloor f efloor
 
         saveCmd =
           requestSaveFloorCmd rawFloor
       in
-        newFloor ! [ saveCmd ]
-
-    FloorProperty.OnOrdChange ord ->
-      let
-        (newFloor, rawFloor) =
-          EditingFloor.updateFloor (Floor.changeOrd ord) efloor
-
-        saveCmd =
-          requestSaveFloorCmd rawFloor
-      in
-        newFloor ! [ saveCmd ]
-
-    FloorProperty.OnRealSizeChange (w, h) ->
-      let
-        (newFloor, rawFloor) =
-          EditingFloor.updateFloor (Floor.changeRealSize (w, h)) efloor
-
-        saveCmd =
-          requestSaveFloorCmd rawFloor
-      in
-        newFloor ! [ saveCmd ]
+        (newFloor, saveCmd)
+    )
+    |> Maybe.withDefault (efloor, Cmd.none)
 
 
 regesterPersonOfObject : API.Config -> Object -> Cmd Msg
