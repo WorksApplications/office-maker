@@ -8,7 +8,6 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Task
 
-import Util.File as File exposing (..)
 import Util.HtmlUtil exposing (..)
 
 import View.Styles as Styles
@@ -28,21 +27,16 @@ type Msg
   | InputFloorOrd String
   | InputFloorRealWidth String
   | InputFloorRealHeight String
-  | LoadFile FileList
-  | GotDataURL File String
   | SelectDeleteFloor
   | DeleteDialogMsg (Dialog.Msg Msg)
   | DeleteFloor
-  | FileError File.Error
 
 
 type Event
   = OnNameChange String
   | OnOrdChange Int
   | OnRealSizeChange (Int, Int)
-  | OnFileWithDataURL File String
   | OnDeleteFloor
-  | OnFileLoadFailed File.Error
   | None
 
 
@@ -104,24 +98,6 @@ update message model =
       in
         (newModel, Cmd.none, sizeEvent newModel)
 
-    LoadFile fileList ->
-      case File.getAt 0 fileList of
-        Just file ->
-          let
-            cmd =
-              readAsDataURL file
-                |> Task.map (GotDataURL file)
-                |> Task.onError (\e -> Task.succeed (FileError e))
-                |> Task.perform identity
-          in
-            (model, cmd, None)
-
-        Nothing ->
-          (model, Cmd.none, None)
-
-    GotDataURL file url ->
-        (model, Cmd.none, OnFileWithDataURL file url)
-
     SelectDeleteFloor ->
       (model, Dialog.open DeleteDialogMsg, None)
 
@@ -133,10 +109,7 @@ update message model =
         ({ model | deleteFloorDialog = deleteFloorDialog }, newMsg, None)
 
     DeleteFloor ->
-        (model, Cmd.none, OnDeleteFloor)
-
-    FileError err ->
-        (model, Cmd.none, OnFileLoadFailed err)
+      (model, Cmd.none, OnDeleteFloor)
 
 
 ordEvent : String -> Event
@@ -289,12 +262,9 @@ deleteButtonView lang user floor =
     text ""
 
 
-view : (Msg -> msg) -> Language -> Date -> User -> Floor -> FloorProperty -> Html msg -> List (Html msg)
-view transform lang visitDate user floor model publishButtonView =
-  [ if User.isAdmin user then
-      fileLoadButton LoadFile Styles.imageLoadButton (I18n.loadImage lang) |> Html.map transform
-    else
-      text ""
+view : (Msg -> msg) -> Language -> Date -> User -> Floor -> FloorProperty -> Html msg -> Html msg -> List (Html msg)
+view transform lang visitDate user floor model floorLoadButton publishButtonView =
+  [ floorLoadButton
   , floorNameInputView lang user model |> Html.map transform
   , floorOrdInputView lang user model |> Html.map transform
   , floorRealSizeInputView lang user model |> Html.map transform

@@ -17,6 +17,7 @@ import View.SearchInputView as SearchInputView
 
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
+import Component.FileLoader as FileLoader
 
 import Util.HtmlUtil exposing (..)
 
@@ -106,7 +107,8 @@ subViewForEdit model editingMode =
             model.user
             (EditingFloor.present editingFloor)
             model.floorProperty
-            (publishButtonView model.lang model.user)
+            (fileLoadButton model.lang model.user)
+            (publishButton model.lang model.user)
 
         _ ->
           []
@@ -117,8 +119,16 @@ subViewForEdit model editingMode =
     ]
 
 
-publishButtonView : Language -> User -> Html Msg
-publishButtonView lang user =
+fileLoadButton : Language -> User -> Html Msg
+fileLoadButton lang user =
+  if User.isAdmin user then
+    FileLoader.view lang |> Html.map FileLoaderMsg
+  else
+    text ""
+
+
+publishButton : Language -> User -> Html Msg
+publishButton lang user =
   if User.isAdmin user then
     button
       [ onClick_ PreparePublish

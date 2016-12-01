@@ -20,11 +20,14 @@ import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.SaveRequest as SaveRequest exposing (SaveRequest(..))
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 
+import Util.File exposing (File)
+
 import API.Cache as Cache exposing (Cache, UserState)
 
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
+import Component.FileLoader as FileLoader
 
 import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
@@ -118,4 +121,6 @@ type Msg
   | SyncFloor
   | MouseMove Position
   | MouseUp
+  | FileLoaderMsg FileLoader.Msg
+  | GotFileWithDataURL File String
   | Error GlobalError

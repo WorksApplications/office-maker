@@ -17,7 +17,7 @@ import ContextMenu
 import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
-import Util.File exposing (..)
+import Util.File as File exposing (..)
 import Util.HttpUtil as HttpUtil
 
 import Model.Direction as Direction exposing (..)
@@ -45,6 +45,7 @@ import API.Cache as Cache exposing (Cache, UserState)
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ObjectNameInput as ObjectNameInput
+import Component.FileLoader as FileLoader
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
@@ -1537,6 +1538,33 @@ update removeToken setSelectionStart msg model =
         _ ->
           model ! []
 
+
+    FileLoaderMsg msg ->
+      model !
+        [ FileLoader.update
+            { onFileWithDataURL = GotFileWithDataURL
+            , onFileLoadFailed = Error << FileError
+            }
+            msg
+        ]
+
+    GotFileWithDataURL file dataURL ->
+      let
+        (id, newSeed) =
+          IdGenerator.new model.seed
+
+        url = id
+
+        (width, height) =
+          File.getSizeOfImage dataURL
+
+        saveImageCmd =
+          API.saveEditingImage model.apiConfig url file
+            |> performAPI (always <| ImageSaved url width height)
+      in
+        { model | seed = newSeed }
+          ! [ saveImageCmd ]
+
     Error e ->
       let
         newModel =
@@ -1961,23 +1989,6 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
       in
         (newFloor, seed) ! [ saveCmd ]
 
-    FloorProperty.OnFileWithDataURL file dataURL ->
-      let
-        (id, newSeed) =
-          IdGenerator.new seed
-
-        url = id
-
-        (width, height) =
-          getSizeOfImage dataURL
-
-        saveImageCmd =
-          performAPI
-            (always <| ImageSaved url width height)
-            (API.saveEditingImage apiConfig url file)
-      in
-        (efloor, newSeed) ! [ saveImageCmd ]
-
     FloorProperty.OnDeleteFloor ->
       let
         floor =
@@ -1988,14 +1999,6 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
             |> performAPI (\_ -> FloorDeleted floor)
       in
         (efloor, seed) ! [ cmd ]
-
-    FloorProperty.OnFileLoadFailed err ->
-      let
-        cmd =
-          Task.perform (Error << FileError) (Task.succeed err)
-      in
-        (efloor, seed) ! [ cmd ]
-
 
 regesterPersonOfObject : API.Config -> Object -> Cmd Msg
 regesterPersonOfObject apiConfig e =
