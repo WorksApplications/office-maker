@@ -18,6 +18,7 @@ import View.SearchInputView as SearchInputView
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.FileLoader as FileLoader
+import Component.FloorDeleter as FloorDeleter
 
 import Util.HtmlUtil exposing (..)
 
@@ -103,12 +104,13 @@ subViewForEdit model editingMode =
           FloorProperty.view
             FloorPropertyMsg
             model.lang
-            model.visitDate
             model.user
             (EditingFloor.present editingFloor)
             model.floorProperty
             (fileLoadButton model.lang model.user)
             (publishButton model.lang model.user)
+            (FloorDeleter.button model.lang model.user (EditingFloor.present editingFloor) |> Html.map FloorDeleterMsg)
+            (FloorDeleter.dialog (EditingFloor.present editingFloor) model.floorDeleter |> Html.map FloorDeleterMsg)
 
         _ ->
           []

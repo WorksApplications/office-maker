@@ -1,12 +1,8 @@
 module Component.FloorProperty exposing(..)
 
-
-import Dict
-import Date exposing (Date)
 import Maybe
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Task
 
 import Util.HtmlUtil exposing (..)
 
@@ -18,8 +14,6 @@ import Model.I18n as I18n exposing (Language)
 
 import Component.Dialog as Dialog exposing (Dialog)
 
-import InlineHover exposing (hover)
-
 
 type Msg
   = NoOp
@@ -27,16 +21,12 @@ type Msg
   | InputFloorOrd String
   | InputFloorRealWidth String
   | InputFloorRealHeight String
-  | SelectDeleteFloor
-  | DeleteDialogMsg (Dialog.Msg Msg)
-  | DeleteFloor
 
 
 type Event
   = OnNameChange String
   | OnOrdChange Int
   | OnRealSizeChange (Int, Int)
-  | OnDeleteFloor
   | None
 
 
@@ -97,19 +87,6 @@ update message model =
         newModel = { model | realHeightInput = height }
       in
         (newModel, Cmd.none, sizeEvent newModel)
-
-    SelectDeleteFloor ->
-      (model, Dialog.open DeleteDialogMsg, None)
-
-    DeleteDialogMsg msg ->
-      let
-        (deleteFloorDialog, newMsg) =
-          Dialog.update msg model.deleteFloorDialog
-      in
-        ({ model | deleteFloorDialog = deleteFloorDialog }, newMsg, None)
-
-    DeleteFloor ->
-      (model, Cmd.none, OnDeleteFloor)
 
 
 ordEvent : String -> Event
@@ -249,32 +226,13 @@ heightValueView user useReal value =
     div [ style Styles.floorHeightText ] [ text value ]
 
 
-deleteButtonView : Language -> User -> Floor -> Html Msg
-deleteButtonView lang user floor =
-  if User.isAdmin user && Dict.isEmpty floor.objects then
-    hover Styles.deleteFloorButtonHover
-    button
-      [ onClick_ SelectDeleteFloor
-      , style Styles.deleteFloorButton
-      ]
-      [ text (I18n.deleteFloor lang) ]
-  else
-    text ""
-
-
-view : (Msg -> msg) -> Language -> Date -> User -> Floor -> FloorProperty -> Html msg -> Html msg -> List (Html msg)
-view transform lang visitDate user floor model floorLoadButton publishButtonView =
+view : (Msg -> msg) -> Language -> User -> Floor -> FloorProperty -> Html msg -> Html msg -> Html msg -> Html msg -> List (Html msg)
+view transform lang user floor model floorLoadButton publishButton deleteButton deleteDialog =
   [ floorLoadButton
   , floorNameInputView lang user model |> Html.map transform
   , floorOrdInputView lang user model |> Html.map transform
   , floorRealSizeInputView lang user model |> Html.map transform
-  , publishButtonView
-  , deleteButtonView lang user floor |> Html.map transform
-  , Dialog.view
-      { strategy = Dialog.ConfirmOrClose ("delete", DeleteFloor) ("cancel", NoOp)
-      , transform = DeleteDialogMsg
-      }
-      "delete this floor?"
-      model.deleteFloorDialog
-      |> Html.map transform
+  , publishButton
+  , deleteButton
+  , deleteDialog
   ]

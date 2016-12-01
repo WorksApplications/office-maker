@@ -28,6 +28,7 @@ import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
 import Component.FileLoader as FileLoader
+import Component.FloorDeleter as FloorDeleter
 
 import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
@@ -53,7 +54,6 @@ type Msg
   | ObjectsSaved ObjectsChange
   | FloorSaved FloorBase
   | FloorPublished Floor
-  | FloorDeleted Floor
   | ClickOnCanvas
   | MouseUpOnCanvas
   | MouseDownOnCanvas Position
@@ -123,4 +123,6 @@ type Msg
   | MouseUp
   | FileLoaderMsg FileLoader.Msg
   | GotFileWithDataURL File String
+  | FloorDeleterMsg FloorDeleter.Msg
+  | FloorDeleted Floor
   | Error GlobalError

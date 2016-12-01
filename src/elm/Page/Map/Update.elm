@@ -46,6 +46,7 @@ import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ObjectNameInput as ObjectNameInput
 import Component.FileLoader as FileLoader
+import Component.FloorDeleter as FloorDeleter
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
@@ -385,16 +386,6 @@ update removeToken setSelectionStart msg model =
       { model |
         floor = Maybe.map (\_ -> EditingFloor.init floor) model.floor
       , error = Success ("Successfully published " ++ floor.name)
-      } !
-        [ performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
-        , Process.sleep 3000.0
-            |> Task.perform (\_ -> Error NoError)
-        ]
-
-    FloorDeleted floor ->
-      { model |
-        floor = Nothing
-      , error = Success ("Successfully deleted " ++ floor.name)
       } !
         [ performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
         , Process.sleep 3000.0
@@ -1057,14 +1048,13 @@ update removeToken setSelectionStart msg model =
             (floorProperty, cmd1, event) =
               FloorProperty.update message model.floorProperty
 
-            ((newFloor, newSeed), cmd2) =
-              updateFloorByFloorPropertyEvent model.apiConfig event model.seed editingFloor
+            (newFloor, cmd2) =
+              updateFloorByFloorPropertyEvent model.apiConfig event editingFloor
 
             newModel =
               { model |
                 floor = Just newFloor
               , floorProperty = floorProperty
-              , seed = newSeed
               }
           in
             newModel ! [ Cmd.map FloorPropertyMsg cmd1, cmd2 ]
@@ -1565,6 +1555,36 @@ update removeToken setSelectionStart msg model =
         { model | seed = newSeed }
           ! [ saveImageCmd ]
 
+    FloorDeleterMsg msg ->
+      let
+        (floorDeleter, cmd) =
+          FloorDeleter.update
+            FloorDeleterMsg
+            { onDeleteFloor = \floor ->
+                API.deleteEditingFloor model.apiConfig floor.id
+                  |> performAPI (\_ -> FloorDeleted floor)
+            }
+            msg
+            model.floorDeleter
+      in
+        { model | floorDeleter = floorDeleter } ! [ cmd ]
+
+    FloorDeleted floor ->
+      let
+        newModel =
+          { model |
+            floor = Nothing
+          , error = Success ("Successfully deleted " ++ floor.name)
+          }
+      in
+        newModel !
+          [ API.getFloorsInfo model.apiConfig
+              |> performAPI FloorsInfoLoaded
+          , Process.sleep 3000.0
+              |> Task.perform (\_ -> Error NoError)
+          , Navigation.modifyUrl (URL.serialize newModel)
+          ]
+
     Error e ->
       let
         newModel =
@@ -1953,11 +1973,11 @@ focusCmd =
   ) (Dom.focus "name-input")
 
 
-updateFloorByFloorPropertyEvent : API.Config -> FloorProperty.Event -> Seed -> EditingFloor -> ((EditingFloor, Seed), Cmd Msg)
-updateFloorByFloorPropertyEvent apiConfig event seed efloor =
+updateFloorByFloorPropertyEvent : API.Config -> FloorProperty.Event -> EditingFloor -> (EditingFloor, Cmd Msg)
+updateFloorByFloorPropertyEvent apiConfig event efloor =
   case event of
     FloorProperty.None ->
-      (efloor, seed) ! []
+      efloor ! []
 
     FloorProperty.OnNameChange name ->
       let
@@ -1967,7 +1987,7 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
         saveCmd =
           requestSaveFloorCmd rawFloor
       in
-        (newFloor, seed) ! [ saveCmd ]
+        newFloor ! [ saveCmd ]
 
     FloorProperty.OnOrdChange ord ->
       let
@@ -1977,7 +1997,7 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
         saveCmd =
           requestSaveFloorCmd rawFloor
       in
-        (newFloor, seed) ! [ saveCmd ]
+        newFloor ! [ saveCmd ]
 
     FloorProperty.OnRealSizeChange (w, h) ->
       let
@@ -1987,18 +2007,8 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
         saveCmd =
           requestSaveFloorCmd rawFloor
       in
-        (newFloor, seed) ! [ saveCmd ]
+        newFloor ! [ saveCmd ]
 
-    FloorProperty.OnDeleteFloor ->
-      let
-        floor =
-          EditingFloor.present efloor
-
-        cmd =
-          API.deleteEditingFloor apiConfig floor.id
-            |> performAPI (\_ -> FloorDeleted floor)
-      in
-        (efloor, seed) ! [ cmd ]
 
 regesterPersonOfObject : API.Config -> Object -> Cmd Msg
 regesterPersonOfObject apiConfig e =

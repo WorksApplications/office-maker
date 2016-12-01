@@ -37,6 +37,7 @@ import API.Cache as Cache exposing (Cache, UserState)
 import Component.FloorProperty as FloorProperty exposing (FloorProperty)
 import Component.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Component.Header as Header
+import Component.FloorDeleter as FloorDeleter exposing (FloorDeleter)
 
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 
@@ -89,6 +90,7 @@ type alias Model =
   , cache : Cache
   , header : Header.Model
   , saveFloorDebounce : Debounce SaveRequest
+  , floorDeleter : FloorDeleter
   }
 
 
@@ -162,6 +164,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , cache = Cache.cache
     , header = Header.init
     , saveFloorDebounce = Debounce.init
+    , floorDeleter = FloorDeleter.init
     }
 
 
