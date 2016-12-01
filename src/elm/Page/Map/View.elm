@@ -34,7 +34,7 @@ import Page.Map.PropertyView as PropertyView
 import Page.Map.ContextMenu
 import Page.Map.PrototypePreviewView as PrototypePreviewView
 import Page.Map.SearchResultView as SearchResultView
-
+import Page.Map.FloorUpdateInfoView as FloorUpdateInfoView
 
 mainView : Model -> Html Msg
 mainView model =
@@ -53,6 +53,7 @@ mainView model =
       , MessageBar.view model.lang model.error
       , CanvasView.view model
       , sub
+      , FloorUpdateInfoView.view model
       ]
 
 

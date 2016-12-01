@@ -10,7 +10,6 @@ import Task
 
 import Util.File as File exposing (..)
 import Util.HtmlUtil exposing (..)
-import Util.DateUtil exposing (..)
 
 import View.Styles as Styles
 
@@ -290,22 +289,6 @@ deleteButtonView lang user floor =
     text ""
 
 
-floorUpdateInfoView : Language -> Date -> Floor -> Html msg
-floorUpdateInfoView lang visitDate floor =
-  let
-    date at =
-      formatDateOrTime visitDate at
-  in
-    case floor.update of
-      Just { by, at } ->
-        div
-          [ style Styles.floorPropertyLastUpdate ]
-          [ text (I18n.lastUpdateByAt lang by (date at)) ]
-
-      Nothing ->
-        text ""
-
-
 view : (Msg -> msg) -> Language -> Date -> User -> Floor -> FloorProperty -> Html msg -> List (Html msg)
 view transform lang visitDate user floor model publishButtonView =
   [ if User.isAdmin user then
@@ -317,7 +300,6 @@ view transform lang visitDate user floor model publishButtonView =
   , floorRealSizeInputView lang user model |> Html.map transform
   , publishButtonView
   , deleteButtonView lang user floor |> Html.map transform
-  , floorUpdateInfoView lang visitDate floor
   , Dialog.view
       { strategy = Dialog.ConfirmOrClose ("delete", DeleteFloor) ("cancel", NoOp)
       , transform = DeleteDialogMsg

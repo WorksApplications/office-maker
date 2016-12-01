@@ -1,6 +1,6 @@
 module Component.Header exposing (..)
 
-import Mouse
+-- import Mouse
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)

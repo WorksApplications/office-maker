@@ -527,7 +527,23 @@ floorHeightText =
 
 floorPropertyLastUpdate : S
 floorPropertyLastUpdate =
-  formControl
+  [ ("position", "fixed")
+  , ("left", "0")
+  , ("bottom", "0")
+  , ("background-color", "#fff")
+  , ("padding", "5px 20px")
+  , ("box-shadow", "rgba(0, 0, 0, 0.237255) 2px 0px 5px 0px")
+  ]
+
+
+floorPropertyLastUpdateForPrint : S
+floorPropertyLastUpdateForPrint =
+  [ ("position", "fixed")
+  , ("left", "0")
+  , ("top", "34px")
+  , ("padding", "5px 10px")
+  , ("font-size", "14px")
+  ]
 
 
 headerMenu : S
