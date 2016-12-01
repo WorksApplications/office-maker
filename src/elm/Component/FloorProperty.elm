@@ -31,7 +31,6 @@ type Msg
   | InputFloorRealHeight String
   | LoadFile FileList
   | GotDataURL File String
-  | PreparePublish
   | SelectDeleteFloor
   | DeleteDialogMsg (Dialog.Msg Msg)
   | DeleteFloor
@@ -43,7 +42,6 @@ type Event
   | OnOrdChange Int
   | OnRealSizeChange (Int, Int)
   | OnFileWithDataURL File String
-  | OnPreparePublish
   | OnDeleteFloor
   | OnFileLoadFailed File.Error
   | None
@@ -124,9 +122,6 @@ update message model =
 
     GotDataURL file url ->
         (model, Cmd.none, OnFileWithDataURL file url)
-
-    PreparePublish ->
-        (model, Cmd.none, OnPreparePublish)
 
     SelectDeleteFloor ->
       (model, Dialog.open DeleteDialogMsg, None)
@@ -282,17 +277,6 @@ heightValueView user useReal value =
     div [ style Styles.floorHeightText ] [ text value ]
 
 
-publishButtonView : Language -> User -> Html Msg
-publishButtonView lang user =
-  if User.isAdmin user then
-    button
-      [ onClick_ PreparePublish
-      , style Styles.publishButton ]
-      [ text (I18n.publish lang) ]
-  else
-    text ""
-
-
 deleteButtonView : Language -> User -> Floor -> Html Msg
 deleteButtonView lang user floor =
   if User.isAdmin user && Dict.isEmpty floor.objects then
@@ -306,7 +290,7 @@ deleteButtonView lang user floor =
     text ""
 
 
-floorUpdateInfoView : Language -> Date -> Floor -> Html Msg
+floorUpdateInfoView : Language -> Date -> Floor -> Html msg
 floorUpdateInfoView lang visitDate floor =
   let
     date at =
@@ -322,22 +306,23 @@ floorUpdateInfoView lang visitDate floor =
         text ""
 
 
-view : Language -> Date -> User -> Floor -> FloorProperty -> List (Html Msg)
-view lang visitDate user floor model =
-    [ if User.isAdmin user then
-        fileLoadButton LoadFile Styles.imageLoadButton (I18n.loadImage lang)
-      else
-        text ""
-    , floorNameInputView lang user model
-    , floorOrdInputView lang user model
-    , floorRealSizeInputView lang user model
-    , publishButtonView lang user
-    , deleteButtonView lang user floor
-    , floorUpdateInfoView lang visitDate floor
-    , Dialog.view
-        { strategy = Dialog.ConfirmOrClose ("delete", DeleteFloor) ("cancel", NoOp)
-        , transform = DeleteDialogMsg
-        }
-        "delete this floor?"
-        model.deleteFloorDialog
-    ]
+view : (Msg -> msg) -> Language -> Date -> User -> Floor -> FloorProperty -> Html msg -> List (Html msg)
+view transform lang visitDate user floor model publishButtonView =
+  [ if User.isAdmin user then
+      fileLoadButton LoadFile Styles.imageLoadButton (I18n.loadImage lang) |> Html.map transform
+    else
+      text ""
+  , floorNameInputView lang user model |> Html.map transform
+  , floorOrdInputView lang user model |> Html.map transform
+  , floorRealSizeInputView lang user model |> Html.map transform
+  , publishButtonView
+  , deleteButtonView lang user floor |> Html.map transform
+  , floorUpdateInfoView lang visitDate floor
+  , Dialog.view
+      { strategy = Dialog.ConfirmOrClose ("delete", DeleteFloor) ("cancel", NoOp)
+      , transform = DeleteDialogMsg
+      }
+      "delete this floor?"
+      model.deleteFloorDialog
+      |> Html.map transform
+  ]

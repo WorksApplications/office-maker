@@ -100,6 +100,7 @@ type Msg
   | GotCandidateSelection Id (List Person)
   | GotMatchingList (List (Id, List Person))
   | UpdatePersonCandidate Id (List Id)
+  | PreparePublish
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
   | ConfirmDiff

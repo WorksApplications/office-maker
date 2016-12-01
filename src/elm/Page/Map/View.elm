@@ -24,6 +24,7 @@ import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
 import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
+import Model.User as User exposing (User)
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.ContextMenuContext exposing (ContextMenuContext(..))
@@ -95,25 +96,35 @@ subViewForEdit : Model -> EditingMode -> List (Html Msg)
 subViewForEdit model editingMode =
   let
     floorView =
-      List.map
-        (Html.map FloorPropertyMsg)
-        (case model.floor of
-          Just editingFloor ->
-            FloorProperty.view
-              model.lang
-              model.visitDate
-              model.user
-              (EditingFloor.present editingFloor)
-              model.floorProperty
+      case model.floor of
+        Just editingFloor ->
+          FloorProperty.view
+            FloorPropertyMsg
+            model.lang
+            model.visitDate
+            model.user
+            (EditingFloor.present editingFloor)
+            model.floorProperty
+            (publishButtonView model.lang model.user)
 
-          _ ->
-            []
-        )
+        _ ->
+          []
   in
     [ card False "#eee" Nothing <| drawingView model editingMode
     , card False "#eee" Nothing <| PropertyView.view model
     , card False "#eee" Nothing <| floorView
     ]
+
+
+publishButtonView : Language -> User -> Html Msg
+publishButtonView lang user =
+  if User.isAdmin user then
+    button
+      [ onClick_ PreparePublish
+      , style S.publishButton ]
+      [ text (I18n.publish lang) ]
+  else
+    text ""
 
 
 searchResultCard : Model -> Html Msg

@@ -1295,6 +1295,15 @@ update removeToken setSelectionStart msg model =
             _ ->
               model ! []
 
+    PreparePublish ->
+      model.floor
+        |> Maybe.map (\efloor ->
+          API.getDiffSource model.apiConfig (EditingFloor.present efloor).id
+            |> performAPI GotDiffSource
+          )
+        |> Maybe.map ((,) model)
+        |> Maybe.withDefault (model, Cmd.none)
+
     GotDiffSource diffSource ->
       { model | diff = Just diffSource } ! []
 
@@ -1968,14 +1977,6 @@ updateFloorByFloorPropertyEvent apiConfig event seed efloor =
             (API.saveEditingImage apiConfig url file)
       in
         (efloor, newSeed) ! [ saveImageCmd ]
-
-    FloorProperty.OnPreparePublish ->
-      let
-        cmd =
-          API.getDiffSource apiConfig (EditingFloor.present efloor).id
-            |> performAPI GotDiffSource
-      in
-        (efloor, seed) ! [ cmd ]
 
     FloorProperty.OnDeleteFloor ->
       let
