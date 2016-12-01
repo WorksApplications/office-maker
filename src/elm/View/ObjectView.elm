@@ -17,7 +17,7 @@ type alias Id = String
 
 type alias EventOptions msg =
   { onMouseDown : Maybe (Position -> msg)
-  , onMouseUp : Maybe msg
+  , onMouseUp : Maybe (Position -> msg)
   , onClick : Maybe msg
   , onStartEditingName : Maybe msg
   , onContextMenu : Maybe (Attribute msg)
@@ -91,7 +91,7 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ) ++
       ( case eventOptions.onMouseUp of
           Just msg ->
-            [ onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            [ onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } Mouse.position |> Attributes.map msg
             ]
 
           Nothing -> []

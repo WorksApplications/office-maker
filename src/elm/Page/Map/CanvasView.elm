@@ -148,7 +148,7 @@ view model =
         div
           [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
           , on "mousedown" Mouse.position |> Attributes.map MouseDownOnCanvas
-          , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Decode.succeed MouseUpOnCanvas)
+          , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Mouse.position |> Decode.map MouseUpOnCanvas)
           , onClick ClickOnCanvas
           , onMouseWheel MouseWheel
           ]

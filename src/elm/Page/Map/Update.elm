@@ -447,23 +447,23 @@ update removeToken setSelectionStart msg model =
       in
         help model_ ! [ cmd, emulateClick lastTouchedId True ]
 
-    MouseUpOnObject lastTouchedId ->
+    MouseUpOnObject lastTouchedId pos ->
       let
         (newModel, cmd) =
-          updateOnMouseUp model
+          updateOnMouseUp pos model
       in
         newModel ! [ cmd, emulateClick lastTouchedId False ]
 
     ClickOnCanvas ->
       { model
         | selectedObjects = []
-        , selectedResult = Nothing
+        -- , selectedResult = Nothing
       } ! []
 
-    MouseUpOnCanvas ->
+    MouseUpOnCanvas pos ->
       let
         (newModel, cmd1) =
-          updateOnMouseUp model
+          updateOnMouseUp pos model
 
         cmd2 =
           Task.perform (always NoOp) (putUserState newModel)
@@ -1611,8 +1611,8 @@ submitSearch model =
       [ searchCmd, Navigation.modifyUrl (URL.serialize model) ]
 
 
-updateOnMouseUp : Model -> (Model, Cmd Msg)
-updateOnMouseUp model =
+updateOnMouseUp : Position -> Model -> (Model, Cmd Msg)
+updateOnMouseUp pos model =
   let
     (model_, cmd) =
       case model.draggingContext of
@@ -1676,6 +1676,15 @@ updateOnMouseUp model =
 
             _ ->
               model ! []
+
+        ShiftOffset from ->
+          { model
+            | selectedResult =
+              if from == pos then
+                Nothing
+              else
+                model.selectedResult
+          } ! []
 
         _ ->
           model ! []

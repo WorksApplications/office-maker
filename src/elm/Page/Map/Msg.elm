@@ -55,10 +55,10 @@ type Msg
   | FloorSaved FloorBase
   | FloorPublished Floor
   | ClickOnCanvas
-  | MouseUpOnCanvas
+  | MouseUpOnCanvas Position
   | MouseDownOnCanvas Position
   | MouseDownOnObject Id Position
-  | MouseUpOnObject Id
+  | MouseUpOnObject Id Position
   | MouseDownOnResizeGrip Id Position
   | StartEditObject Id
   | KeyCodeMsg Bool Int
