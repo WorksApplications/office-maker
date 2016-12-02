@@ -450,13 +450,14 @@ temporaryPenView model =
 
 selectorRectView : Model -> Html msg
 selectorRectView model =
-  case (Mode.isSelectMode model.mode, model.selectorRect, model.draggingContext) of
-    (True, Just rect, Selector) ->
+  case (Mode.isSelectMode model.mode, model.selectorRect) of
+    (True, Just rect) ->
       div
         [ style (S.selectorRect (transitionDisabled model) (Scale.imageToScreenForRect model.scale rect) )
         ]
         []
 
-    _ -> text ""
+    _ ->
+      text ""
 
 --
