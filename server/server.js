@@ -126,15 +126,13 @@ app.get('/api/1/people/search/:name', inTransaction((conn, req, res) => {
 }));
 
 app.get('/api/1/people/:id', inTransaction((conn, req, res) => {
-  var token = getAuthToken(req);
   var id = req.params.id;
-  return getSelf(conn, token).then((user) => {
-    return profileService.getPerson(config.profileServiceRoot, token, id).then((person) => {
-      if(!person) {
-        return Promise.reject(404);
-      }
-      return Promise.resolve(person);
-    });
+  // using IP address
+  return profileService.getPerson(config.profileServiceRoot, null, id).then((person) => {
+    if(!person) {
+      return Promise.reject(404);
+    }
+    return Promise.resolve(person);
   });
 }));
 
