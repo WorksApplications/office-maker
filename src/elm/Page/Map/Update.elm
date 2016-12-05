@@ -1176,7 +1176,7 @@ update removeToken setSelectionStart msg model =
         regesterPersonCmd =
           results
             |> List.filterMap SearchResult.getPersonId
-            |> List.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
+            |> List.map (regesterPersonIfNotCached model.apiConfig model.personInfo) -- FIXME too many requests
             |> Cmd.batch
 
         selectedResult =

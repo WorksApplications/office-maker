@@ -322,7 +322,8 @@ app.get('/api/1/search/:query', inTransaction((conn, req, res) => {
   var query = req.params.query;
   return getSelf(conn, token).then((user) => {
     return profileService.search(config.profileServiceRoot, token, query).then((people) => {
-      return db.search(conn, user.tenantId, query, options.all, people);
+      var tenantId = user ? user.tenantId : '';
+      return db.search(conn, tenantId, query, options.all, people);
     });
   });
 }));
