@@ -115,9 +115,9 @@ subViewForEdit model editingMode =
         _ ->
           []
   in
-    [ card False "#eee" Nothing <| drawingView model editingMode
-    , card False "#eee" Nothing <| PropertyView.view model
-    , card False "#eee" Nothing <| floorView
+    [ card False "#eee" Nothing Nothing <| drawingView model editingMode
+    , card False "#eee" Nothing Nothing <| PropertyView.view model
+    , card False "#eee" Nothing Nothing <| floorView
     ]
 
 
@@ -146,7 +146,7 @@ searchResultCard model =
     maxHeight =
       model.windowSize.height - Model.headerHeight
   in
-    card True "#eee" (Just maxHeight) <|
+    card True "#eee" (Just maxHeight) (Just 320) <|
       SearchResultView.view model
 
 

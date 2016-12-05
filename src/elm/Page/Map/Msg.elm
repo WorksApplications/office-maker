@@ -93,7 +93,7 @@ type Msg
   | SelectLang Language
   | UpdateSearchQuery String
   | SubmitSearch
-  | GotSearchResult (List SearchResult)
+  | GotSearchResult (List SearchResult) (List Person)
   | SelectSearchResult SearchResult
   | StartDraggingFromMissingPerson String String
   | StartDraggingFromExistingObject Id String (Maybe String) String Time

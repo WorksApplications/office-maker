@@ -65,6 +65,19 @@ function getPerson(root, token, personId) {
   });
 }
 
+function getPeopleByIds(root, token, personIds) {
+  return personIds.reduce((promise, personId) => {
+    return promise.then(results => {
+      return getPerson(root, token, personId).then(person => {
+        if(person) {
+          results.push(person);
+        }
+        return Promise.resolve(results);
+      });
+    })
+  }, Promise.resolve([]));
+}
+
 function getPeopleByPost(root, token, post, exclusiveStartKey) {
   var url = root + '/1/profiles?q=' + encodeURIComponent(post)
     + (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '')
@@ -103,6 +116,7 @@ function search(root, token, query) {
 module.exports = {
   getPerson: getPerson,
   getPeopleByPost: getPeopleByPost,
+  getPeopleByIds: getPeopleByIds,
   savePerson: savePerson,
   search: search
 };

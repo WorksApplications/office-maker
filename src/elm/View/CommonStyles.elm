@@ -71,13 +71,21 @@ card =
   ]
 
 
-cardComponent : String -> String -> Maybe Int -> S
-cardComponent position backgroundColor maybeMaxHeight =
+cardComponent : String -> String -> Maybe Int -> Maybe Int -> S
+cardComponent position backgroundColor maybeMaxHeight maybeWidth =
   ( case maybeMaxHeight of
       Just maxHeight ->
         [ ("max-height", px maxHeight)
         , ("overflow-y", "scroll")
         , ("box-sizing", "border-box")
+        ]
+
+      Nothing ->
+        []
+  ) ++
+  ( case maybeWidth of
+      Just width ->
+        [ ("width", px width)
         ]
 
       Nothing ->

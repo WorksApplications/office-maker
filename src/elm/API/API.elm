@@ -18,6 +18,7 @@ module API.API exposing (
     , getDiffSource
     , getPerson
     , getPersonByUser
+    , getPeopleByIds
     , getPeopleByFloorAndPost
     , getColors
     , saveColors
@@ -265,7 +266,22 @@ getPersonByUser config userId =
       )
 
 
-getPeopleByFloorAndPost : Config -> String -> Int -> String -> Task Error (List Person)
+getPeopleByIds : Config -> List PersonId -> Task Error (List Person)
+getPeopleByIds config personIds =
+  if List.isEmpty personIds then
+    Task.succeed []
+  else
+    HttpUtil.get
+      decodePeople
+      ( makeUrl
+          (config.apiRoot ++ "/1/people")
+          [ ("ids", String.join "," personIds)
+          ]
+      )
+      [authorization config.token]
+
+
+getPeopleByFloorAndPost : Config -> FloorId -> Int -> String -> Task Error (List Person)
 getPeopleByFloorAndPost config floorId floorVersion post =
   HttpUtil.get
     decodePeople

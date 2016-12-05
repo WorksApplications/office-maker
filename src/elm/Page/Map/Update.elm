@@ -275,8 +275,11 @@ update removeToken setSelectionStart msg model =
 
         searchCmd =
           if needSearch then
-            API.search model.apiConfig requestPrivateFloors model.searchQuery
-              |> performAPI GotSearchResult
+            search
+              model.apiConfig
+              requestPrivateFloors
+              model.personInfo
+              model.searchQuery
           else
             Cmd.none
 
@@ -1171,14 +1174,8 @@ update removeToken setSelectionStart msg model =
     SubmitSearch ->
       submitSearch { model | mode = Mode.showSearchResult model.mode }
 
-    GotSearchResult results ->
+    GotSearchResult results people ->
       let
-        regesterPersonCmd =
-          results
-            |> List.filterMap SearchResult.getPersonId
-            |> List.map (regesterPersonIfNotCached model.apiConfig model.personInfo) -- FIXME too many requests
-            |> Cmd.batch
-
         selectedResult =
           case results of
             SearchResult.Object object floorId :: [] ->
@@ -1190,10 +1187,11 @@ update removeToken setSelectionStart msg model =
         searchResult =
           Just results
       in
-        { model |
-          searchResult = searchResult
-        , selectedResult = selectedResult
-        } ! [ regesterPersonCmd ]
+        ( { model |
+            searchResult = searchResult
+          , selectedResult = selectedResult
+          } |> Model.registerPeople people
+        ) ! []
 
     SelectSearchResult result ->
       let
@@ -1599,16 +1597,29 @@ submitSearch model =
     withPrivate =
       not (User.isGuest model.user)
 
-    -- TODO dedup
     searchCmd =
       if String.trim model.searchQuery == "" then
         Cmd.none
       else
-        API.search model.apiConfig withPrivate model.searchQuery
-          |> performAPI GotSearchResult
+        search model.apiConfig withPrivate model.personInfo model.searchQuery
   in
     model !
-      [ searchCmd, Navigation.modifyUrl (URL.serialize model) ]
+      [ searchCmd
+      , Navigation.modifyUrl (URL.serialize model)
+      ]
+
+
+search : API.Config -> Bool -> Dict PersonId Person -> String -> Cmd Msg
+search apiConfig withPrivate personInfo query =
+  API.search apiConfig withPrivate query
+    |> Task.andThen (\results ->
+      results
+        |> List.filterMap SearchResult.getPersonId
+        |> List.filter (\personId -> Dict.member personId personInfo |> not)
+        |> API.getPeopleByIds apiConfig
+        |> Task.map ((,) results)
+      )
+    |> performAPI (\(results, people) -> GotSearchResult results people)
 
 
 updateOnMouseUp : Position -> Model -> (Model, Cmd Msg)

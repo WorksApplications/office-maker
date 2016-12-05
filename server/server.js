@@ -137,8 +137,12 @@ app.get('/api/1/people/:id', inTransaction((conn, req, res) => {
 }));
 
 app.get('/api/1/people', inTransaction((conn, req, res) => {
-  var token = getAuthToken(req);
   var options = url.parse(req.url, true).query;
+  if(options.ids) {
+    var ids = options.ids.split(',');
+    return profileService.getPeopleByIds(config.profileServiceRoot, null, ids);
+  }
+  var token = getAuthToken(req);
   var floorId = options.floorId;
   var floorVersion = options.floorVersion;
   var postName = options.post;

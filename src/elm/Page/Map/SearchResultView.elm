@@ -47,7 +47,7 @@ view model =
   in
     case model.searchResult of
       Nothing ->
-        wrap [ text "" ]
+        wrap [ text "Loading..." ]
 
       Just [] ->
         wrap [ text (I18n.nothingFound model.lang) ]

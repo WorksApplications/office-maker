@@ -25,8 +25,8 @@ view model =
     []
     [ headerView model
     , messageBar model
-    , card False "" Nothing <| colorMasterView model
-    , card False "" Nothing <| prototypeMasterView model
+    , card False "" Nothing Nothing <| colorMasterView model
+    , card False "" Nothing Nothing <| prototypeMasterView model
     ]
 
 
