@@ -6,6 +6,7 @@ import InlineHover exposing (hover)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy as Lazy
 import View.Styles as Styles
 
 import Model.User as User exposing (User)
@@ -47,7 +48,7 @@ viewEditingFloors toContextMenuAttribute goToFloorMsg onCreateNewFloor disableCo
 
     create =
       if User.isAdmin user then
-        [ createButton onCreateNewFloor ]
+        [ Lazy.lazy createButton onCreateNewFloor ]
       else
         []
   in
@@ -102,7 +103,7 @@ createButton msg =
 
 linkBox : msg -> List (String, String) -> List (String, String) -> List (String, String) -> Maybe (Attribute msg) -> List (Html msg) -> Html msg
 linkBox clickMsg liStyle hoverStyle innerStyle maybeOpenContextMenu inner =
-  hover hoverStyle
+  -- hover hoverStyle
   li
     ( style liStyle ::
       onClick clickMsg ::

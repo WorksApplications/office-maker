@@ -3,6 +3,7 @@ module Page.Map.FloorUpdateInfoView exposing (view)
 import Date exposing (Date)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Lazy as Lazy
 
 import Util.DateUtil exposing (..)
 
@@ -30,6 +31,11 @@ view model =
 
 viewHelp : Language -> Date -> String -> Date -> Bool -> Html msg
 viewHelp lang visitDate by at printMode =
+  Lazy.lazy2 viewHelpHelp printMode (I18n.lastUpdateByAt lang by (formatDateOrTime visitDate at))
+
+
+viewHelpHelp : Bool -> String -> Html msg
+viewHelpHelp printMode string  =
   div
     [ style
       ( if printMode then
@@ -38,4 +44,4 @@ viewHelp lang visitDate by at printMode =
           S.floorPropertyLastUpdate
       )
     ]
-    [ text (I18n.lastUpdateByAt lang by (formatDateOrTime visitDate at)) ]
+    [ text string ]

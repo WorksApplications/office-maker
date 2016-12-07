@@ -4,6 +4,7 @@ module Component.Header exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy as Lazy
 
 import Model.Person exposing (..)
 import Model.User as User exposing (..)
@@ -65,7 +66,7 @@ view context state =
       context.printMode
       context.title
       Nothing
-      (menu [ printButtonView context.onTogglePrintView context.lang True ])
+      (menu [ Lazy.lazy3 printButtonView context.onTogglePrintView context.lang True ])
   else
     HeaderView.view
       context.printMode
@@ -84,11 +85,11 @@ normalMenu context menuOpened =
       case context.user of
         Just user ->
           editingToggle context.onToggleEditing context.lang user context.editing ::
-          printButton context.onTogglePrintView context.lang user ::
+          Lazy.lazy3 printButton context.onTogglePrintView context.lang user ::
           ( if user == Guest then
-              [ signIn context.onSignInClicked context.lang ]
+              [ Lazy.lazy2 signIn context.onSignInClicked context.lang ]
             else
-              [ userMenuToggle context.onUpdate user menuOpened
+              [ Lazy.lazy3 userMenuToggle context.onUpdate user menuOpened
               , if menuOpened then
                   userMenuView context
                 else
@@ -106,7 +107,7 @@ userMenuToggle : (Msg -> msg) -> User -> Bool -> Html msg
 userMenuToggle onUpdate user menuOpened =
   div
     [ onClick (onUpdate ToggleUserMenu) ]
-    [ greeting user menuOpened
+    [ Lazy.lazy2 greeting user menuOpened
     ]
 
 
@@ -114,9 +115,9 @@ userMenuView : Context msg -> Html msg
 userMenuView context =
   div
     [ style S.userMenuView ]
-    [ langSelectView context.onSelectLang context.lang
-    , linkToMaster context
-    , signOut context.onSignOutClicked context.lang
+    [ Lazy.lazy2 langSelectView context.onSelectLang context.lang
+    , Lazy.lazy2 linkToMaster context.lang context.user
+    , Lazy.lazy2 signOut context.onSignOutClicked context.lang
     ]
 
 
@@ -129,13 +130,13 @@ langSelectView onSelectLang lang =
     ]
 
 
-linkToMaster : Context msg -> Html msg
-linkToMaster context =
-  case context.user of
+linkToMaster : Language -> Maybe User -> Html msg
+linkToMaster lang user =
+  case user of
     Just (Admin _) ->
       div
         [ style S.userMenuItem ]
-        [ a [ href "/master" ] [ text ( I18n.goToMaster context.lang ) ] ]
+        [ a [ href "/master" ] [ text ( I18n.goToMaster lang ) ] ]
 
     _ ->
       text ""
@@ -164,7 +165,7 @@ printButton onTogglePrintView lang user =
   if User.isGuest user then
     text ""
   else
-    printButtonView onTogglePrintView lang False
+    Lazy.lazy3 printButtonView onTogglePrintView lang False
 
 
 signIn : msg -> Language -> Html msg
@@ -175,7 +176,7 @@ signIn onSignInClicked lang =
 printButtonView : msg -> Language -> Bool -> Html msg
 printButtonView onTogglePrintView lang printMode =
   -- iconView ToggleEditing (Icons.editingToggle False) "Print"
-  hover S.hoverHeaderIconHover
+  -- hover S.hoverHeaderIconHover
   div
     [ onClick onTogglePrintView
     , style (S.editingToggleContainer False)
@@ -189,8 +190,8 @@ printButtonView onTogglePrintView lang printMode =
 editingToggleView : msg -> Language -> Bool -> Html msg
 editingToggleView onToggleEditing lang editing =
   -- iconView ToggleEditing (Icons.editingToggle editing) "Edit"
-  hover
-    S.hoverHeaderIconHover
+  -- hover
+  --   S.hoverHeaderIconHover
     div
     [ onClick onToggleEditing
     , style (S.editingToggleContainer editing)

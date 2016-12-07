@@ -2,17 +2,20 @@ module Page.Map.PropertyView exposing (view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Lazy as Lazy
 
 import View.Styles as S
 import View.Icons as Icons
 import View.Common exposing (..)
 
 import Util.HtmlUtil exposing (..)
-import Model.Object as Object
+import Model.Object as Object exposing (Object)
 import Model.ObjectsOperation as ObjectsOperation
+import Model.ColorPalette exposing (ColorPalette)
 
 import Page.Map.Msg exposing (..)
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
+
 
 view : Model -> List (Html Msg)
 view model =
@@ -23,19 +26,19 @@ view model =
       []
     else
       [ if List.all Object.backgroundColorEditable selectedObjects then
-          formControl [ label Icons.backgroundColorPropLabel, backgroundColorView model ]
+          formControl [ Lazy.lazy label Icons.backgroundColorPropLabel, Lazy.lazy2 backgroundColorView model.colorPalette selectedObjects ]
         else
           text ""
       , if List.all Object.colorEditable selectedObjects then
-          formControl [ label Icons.colorPropLabel, colorView model ]
+          formControl [ Lazy.lazy label Icons.colorPropLabel, Lazy.lazy2 colorView model.colorPalette selectedObjects ]
         else
           text ""
       , if List.all Object.shapeEditable selectedObjects then
-          formControl [ label Icons.shapePropLabel, shapeView model ]
+          formControl [ Lazy.lazy label Icons.shapePropLabel, Lazy.lazy shapeView selectedObjects ]
         else
           text ""
       , if List.all Object.fontSizeEditable selectedObjects then
-          formControl [ label Icons.fontSizePropLabel, fontSizeView model ]
+          formControl [ Lazy.lazy label Icons.fontSizePropLabel, Lazy.lazy fontSizeView selectedObjects ]
         else
           text ""
       ] -- TODO name, icon?
@@ -46,20 +49,22 @@ label icon =
   div [ style S.propertyViewPropertyIcon ] [ icon ]
 
 
-backgroundColorView : Model -> Html Msg
-backgroundColorView model =
-  paletteView
+backgroundColorView : ColorPalette -> List Object -> Html Msg
+backgroundColorView colorPalette selectedObjects =
+  Lazy.lazy3
+    paletteView
     SelectBackgroundColor
-    (ObjectsOperation.backgroundColorProperty (Model.selectedObjects model))
-    model.colorPalette.backgroundColors
+    (ObjectsOperation.backgroundColorProperty selectedObjects)
+    colorPalette.backgroundColors
 
 
-colorView : Model -> Html Msg
-colorView model =
-  paletteView
+colorView : ColorPalette -> List Object -> Html Msg
+colorView colorPalette selectedObjects =
+  Lazy.lazy3
+    paletteView
     SelectColor
-    (ObjectsOperation.colorProperty (Model.selectedObjects model))
-    model.colorPalette.textColors
+    (ObjectsOperation.colorProperty selectedObjects)
+    colorPalette.textColors
 
 
 paletteView : (String -> Msg) -> Maybe String -> List String -> Html Msg
@@ -84,11 +89,11 @@ paletteViewEach toMsg match color =
     []
 
 
-shapeView : Model -> Html Msg
-shapeView model =
+shapeView : List Object -> Html Msg
+shapeView selectedObjects =
   let
     selectedShape =
-      ObjectsOperation.shapeProperty (Model.selectedObjects model)
+      ObjectsOperation.shapeProperty selectedObjects
 
     shapes =
       [ Object.Rectangle, Object.Ellipse ]
@@ -117,11 +122,12 @@ shapeViewEach toMsg match toIcon shape =
     [ toIcon shape ]
 
 
-fontSizeView : Model -> Html Msg
-fontSizeView model =
-  fontSizeViewHelp
+fontSizeView : List Object -> Html Msg
+fontSizeView selectedObjects =
+  Lazy.lazy3
+    fontSizeViewHelp
     SelectFontSize
-    (ObjectsOperation.fontSizeProperty (Model.selectedObjects model))
+    (ObjectsOperation.fontSizeProperty selectedObjects)
     [10, 12, 16, 20, 40, 80, 120, 160, 200, 300]
 
 

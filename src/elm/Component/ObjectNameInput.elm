@@ -3,6 +3,7 @@ module Component.ObjectNameInput exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy as Lazy
 import Html.Keyed as Keyed
 
 import Json.Decode as Decode
@@ -25,6 +26,7 @@ type alias ObjectNameInput =
 
 type alias ObjectId = String
 type alias PersonId = String
+
 
 init : ObjectNameInput
 init =
@@ -184,7 +186,7 @@ view_ objectId name maybePerson screenRectOfDesk transitionDisabled candidates m
     (relatedPersonExists, reletedpersonView_) =
       case maybePerson of
         Just person ->
-          (True, reletedpersonView objectId person)
+          (True, Lazy.lazy2 reletedpersonView objectId person)
 
         Nothing ->
           (False, text "")
@@ -226,7 +228,7 @@ reletedpersonView : ObjectId -> Person -> Html Msg
 reletedpersonView objectId person =
   div
     [ style (Styles.candidatesViewRelatedPerson) ]
-    ( unsetButton objectId :: ProfilePopup.innerView Nothing person )
+    ( Lazy.lazy unsetButton objectId :: ProfilePopup.innerView Nothing person )
 
 
 unsetButton : ObjectId -> Html Msg

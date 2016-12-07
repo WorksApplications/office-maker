@@ -2,8 +2,7 @@ module Page.Map.View exposing (view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
-import Html.Lazy exposing (..)
+import Html.Lazy as Lazy exposing (..)
 
 import ContextMenu
 
@@ -52,7 +51,7 @@ mainView model =
   in
     main_ [ style (S.mainView model.windowSize.height) ]
       [ floorInfo
-      , MessageBar.view model.lang model.error
+      , Lazy.lazy2 MessageBar.view model.lang model.error
       , CanvasView.view model
       , sub
       , FloorUpdateInfoView.view model
@@ -107,8 +106,8 @@ subViewForEdit model editingMode =
             model.user
             (EditingFloor.present editingFloor)
             model.floorProperty
-            (fileLoadButton model.lang model.user)
-            (publishButton model.lang model.user)
+            (Lazy.lazy2 fileLoadButton model.lang model.user)
+            (Lazy.lazy2 publishButton model.lang model.user)
             (FloorDeleter.button model.lang model.user (EditingFloor.present editingFloor) |> Html.map FloorDeleterMsg)
             (FloorDeleter.dialog (EditingFloor.present editingFloor) model.floorDeleter |> Html.map FloorDeleterMsg)
 
@@ -150,36 +149,32 @@ searchResultCard model =
       SearchResultView.view model
 
 
-subViewTab : msg -> Int -> Html msg -> Bool -> Html msg
-subViewTab msg index icon active =
-  div
-    [ style (S.subViewTab index active)
-    , onClick msg
-    ]
-    [ icon ]
-
-
 drawingView : Model -> EditingMode -> List (Html Msg)
 drawingView model editingMode =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
   in
-    [ modeSelectionView editingMode
+    [ Lazy.lazy modeSelectionView editingMode
     , case editingMode of
         Select ->
-          input
-            [ id "paste-from-spreadsheet"
-            , style S.pasteFromSpreadsheetInput
-            , placeholder (I18n.pasteFromSpreadsheet model.lang)
-            ] []
+          Lazy.lazy pasteInput model.lang
 
         Stamp ->
-          lazy PrototypePreviewView.view prototypes
+          Lazy.lazy PrototypePreviewView.view prototypes
 
         _ ->
           text ""
     ]
+
+
+pasteInput : Language -> Html msg
+pasteInput lang =
+  input
+    [ id "paste-from-spreadsheet"
+    , style S.pasteFromSpreadsheetInput
+    , placeholder (I18n.pasteFromSpreadsheet lang)
+    ] []
 
 
 modeSelectionView : EditingMode -> Html Msg

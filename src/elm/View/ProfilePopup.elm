@@ -3,6 +3,7 @@ module View.ProfilePopup exposing(view, innerView)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy as Lazy
 import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
@@ -21,7 +22,8 @@ view closeMsg (popupWidth, popupHeight) scale offsetScreenXY object person =
       Just person ->
         div
           [ style (Styles.personDetailPopupDefault popupWidth popupHeight (centerTopScreenXY.x, centerTopScreenXY.y)) ]
-          (pointerDefault popupWidth :: innerView (Just closeMsg) person)
+          (Lazy.lazy pointerDefault popupWidth :: innerView (Just closeMsg) person)
+
       Nothing ->
         if nameOf object == "" then
           text ""
@@ -36,6 +38,7 @@ innerView maybeCloseMsg person =
   let
     url =
       Maybe.withDefault "images/users/default.png" person.image
+
     closeButton =
       case maybeCloseMsg of
         Just msg ->
@@ -44,17 +47,23 @@ innerView maybeCloseMsg person =
             , onClick msg
             ]
             [ Icons.popupClose ]
+
         Nothing ->
           text ""
   in
     [ closeButton
-    , img [ style Styles.personDetailPopupPersonImage, src url ] []
+    , Lazy.lazy photo url
     -- , div [ style Styles.popupPersonNo ] [ text person.no ]
     , div [ style Styles.personDetailPopupPersonName ] [ text person.name ]
-    , tel person
-    , mail person
+    , Lazy.lazy tel person
+    , Lazy.lazy mail person
     , div [ style Styles.personDetailPopupPersonPost ] [ text person.post ]
     ]
+
+
+photo : String -> Html msg
+photo url =
+  img [ style Styles.personDetailPopupPersonImage, src url ] []
 
 
 pointerDefault : Int -> Html msg

@@ -108,7 +108,8 @@ itemViewCommon icon label =
 itemViewLabel : Maybe msg -> Bool -> String -> Html msg
 itemViewLabel onSelect focused s =
   let
-    selectable = onSelect /= Nothing
+    selectable =
+      onSelect /= Nothing
 
     events =
       case onSelect of

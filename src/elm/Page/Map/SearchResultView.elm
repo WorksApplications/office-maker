@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy as Lazy
 
 import InlineHover exposing (hover)
 
@@ -30,37 +31,45 @@ type alias PersonId = String
 
 view : Model -> List (Html Msg)
 view model =
-  let
-    closeButton =
-      div
-        [ style S.searchResultClose
-        , onClick HideSearchResult
-        ]
-        [ I.searchResultClose
-        , text "Close"
-        ]
+  case model.searchResult of
+    Nothing ->
+      loading
 
-    wrap children =
-      [ closeButton
-      , div [ style S.searchResult ] children
-      ]
-  in
-    case model.searchResult of
-      Nothing ->
-        wrap [ text "Loading..." ]
+    Just [] ->
+      wrap [ text (I18n.nothingFound model.lang) ]
 
-      Just [] ->
-        wrap [ text (I18n.nothingFound model.lang) ]
+    Just results ->
+      let
+        grouped =
+          SearchResult.groupByPostAndReorder
+            (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
+            model.personInfo
+            results
+      in
+        wrap ( List.map (viewListForOnePost model) grouped )
 
-      Just results ->
-        let
-          grouped =
-            SearchResult.groupByPostAndReorder
-              (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
-              model.personInfo
-              results
-        in
-          wrap ( List.map (viewListForOnePost model) grouped )
+
+loading : List (Html Msg)
+loading =
+  wrap [ text "Loading..." ]
+
+
+wrap : List (Html Msg) -> List (Html Msg)
+wrap children =
+  [ closeButton
+  , div [ style S.searchResult ] children
+  ]
+
+
+closeButton : Html Msg
+closeButton =
+  div
+    [ style S.searchResultClose
+    , onClick HideSearchResult
+    ]
+    [ I.searchResultClose
+    , text "Close"
+    ]
 
 
 viewListForOnePost : Model -> (Maybe String, List SearchResult) -> Html Msg
@@ -72,30 +81,30 @@ viewListForOnePost model (maybePostName, results) =
         |> List.map (\floor -> (floor.id, floor))
         |> Dict.fromList
 
+    thisFloorId =
+      model.floor
+        |> Maybe.map (\floor -> (EditingFloor.present floor).id )
+
+    onStartDraggingMsg =
+      if Mode.isEditMode model.mode then
+        Just StartDraggingFromMissingPerson
+      else
+        Nothing
+
+    onStartDraggingExistingObjectMsg =
+      if Mode.isEditMode model.mode then
+        Just StartDraggingFromExistingObject
+      else
+        Nothing
+
     children =
       results
         |> List.filterMap (\result ->
           case toItemViewModel model.lang floorsInfo model.personInfo model.selectedResult result of
             Just item ->
               let
-                thisFloorId =
-                  model.floor
-                    |> Maybe.map (\floor -> (EditingFloor.present floor).id )
-
                 onSelectResultMsg =
                   SelectSearchResult result
-
-                onStartDraggingMsg =
-                  if Mode.isEditMode model.mode then
-                    Just StartDraggingFromMissingPerson
-                  else
-                    Nothing
-
-                onStartDraggingExistingObjectMsg =
-                  if Mode.isEditMode model.mode then
-                    Just StartDraggingFromExistingObject
-                  else
-                    Nothing
               in
                 Just <|
                   SearchResultItemView.view
@@ -109,25 +118,27 @@ viewListForOnePost model (maybePostName, results) =
             Nothing ->
               Nothing
         )
-
-    groupHeader =
-      case maybePostName of
-        Just name ->
-          hover
-            S.searchResultGroupHeaderHover
-            div
-            [ style S.searchResultGroupHeader
-            , onClick (SearchByPost name)
-            ]
-            [ text name ]
-
-        Nothing ->
-          div [ style S.searchResultGroupHeader ] [ text "No Post" ]
   in
     div [ style S.searchResultGroup ]
-      [ groupHeader
+      [ Lazy.lazy2 groupHeader model.lang maybePostName
       , div [] children
       ]
+
+
+groupHeader : Language -> Maybe String -> Html Msg
+groupHeader lang maybePostName =
+  case maybePostName of
+    Just name ->
+      hover
+        S.searchResultGroupHeaderHover
+        div
+        [ style S.searchResultGroupHeader
+        , onClick (SearchByPost name)
+        ]
+        [ text name ]
+
+    Nothing ->
+      div [ style S.searchResultGroupHeader ] [ text "No Post" ]
 
 
 toItemViewModel : Language -> Dict FloorId FloorBase -> Dict PersonId Person -> Maybe Id -> SearchResult -> Maybe Item

@@ -2,6 +2,7 @@ module View.HeaderView exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Lazy as Lazy
 
 import View.Styles as S
 
@@ -15,14 +16,19 @@ view printMode title link menu =
         [ style S.h1 ]
         [ case link of
             Just url ->
-              a
-                [ style S.headerLink
-                , href url
-                ]
-                [ text title ]
+              Lazy.lazy2 headerLink url title
 
             Nothing ->
               text title
          ]
     , menu
     ]
+
+
+headerLink : String -> String -> Html msg
+headerLink url text_ =
+  a
+    [ style S.headerLink
+    , href url
+    ]
+    [ text text_ ]

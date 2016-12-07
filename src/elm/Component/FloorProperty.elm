@@ -3,6 +3,7 @@ module Component.FloorProperty exposing(..)
 import Maybe
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Lazy as Lazy
 
 import Util.HtmlUtil exposing (..)
 
@@ -228,9 +229,9 @@ heightValueView user useReal value =
 view : (Msg -> msg) -> Language -> User -> Floor -> FloorProperty -> Html msg -> Html msg -> Html msg -> Html msg -> List (Html msg)
 view transform lang user floor model floorLoadButton publishButton deleteButton deleteDialog =
   [ floorLoadButton
-  , floorNameInputView lang user model |> Html.map transform
-  , floorOrdInputView lang user model |> Html.map transform
-  , floorRealSizeInputView lang user model |> Html.map transform
+  , Lazy.lazy3 floorNameInputView lang user model |> Html.map transform
+  , Lazy.lazy3 floorOrdInputView lang user model |> Html.map transform
+  , Lazy.lazy3 floorRealSizeInputView lang user model |> Html.map transform
   , publishButton
   , deleteButton
   , deleteDialog

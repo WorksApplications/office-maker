@@ -17,13 +17,16 @@ import View.PrototypePreviewView as PrototypePreviewView
 import Page.Map.Msg exposing (..)
 
 
+containerSize : Size
+containerSize =
+  { width = 320 - (20 * 2) -- TODO
+  , height = 238
+  }
+
+
 view : List (Prototype, Bool) -> Html Msg
 view prototypes =
   let
-    containerWidth = 320 - (20 * 2) -- TODO
-
-    containerHeight = 238 -- TODO
-
     selectedIndex =
       zipWithIndex prototypes
         |> List.filterMap (\((prototype, selected), index) -> if selected then Just index else Nothing)
@@ -35,8 +38,7 @@ view prototypes =
 
     box =
       PrototypePreviewView.view
-        containerWidth
-        containerHeight
+        containerSize
         selectedIndex
         (List.map Tuple.first prototypes)
 

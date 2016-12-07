@@ -9,7 +9,7 @@ import Html exposing (..)
 import Html.Attributes as Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed as Keyed
-import Html.Lazy exposing (..)
+import Html.Lazy as Lazy exposing (..)
 import ContextMenu
 
 import Component.ObjectNameInput as ObjectNameInput
@@ -214,7 +214,7 @@ canvasView model floor =
       Mode.isEditMode model.mode
 
     children1 =
-      Just ("canvas-image", canvasImage floor) ::
+      Just ("canvas-image", Lazy.lazy canvasImage floor) ::
       (if isEditMode then Just ("grid-layer", gridLayer) else Nothing) ::
       (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) ::
       (if isEditMode then Just ("canvas-selector-rect", selectorRectView model) else Nothing) :: []

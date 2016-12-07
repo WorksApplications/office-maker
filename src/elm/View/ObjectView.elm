@@ -4,6 +4,7 @@ import Json.Decode as Decode
 import Html exposing (..)
 import Html.Attributes as Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy as Lazy
 import Mouse exposing (Position)
 
 
@@ -41,7 +42,7 @@ viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha sc
   let
     personMatchIcon =
       if showPersonMatch then
-        personMatchingView scale name personMatched
+        Lazy.lazy3 personMatchingView scale name personMatched
       else
         text ""
 
@@ -112,7 +113,7 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
       ( styles ++ eventHandlers )
       [ nameView
       , personMatchIcon
-      , resizeGripView selected eventOptions.onStartResize
+      , Lazy.lazy2 resizeGripView selected eventOptions.onStartResize
       ]
 
 
@@ -125,6 +126,7 @@ resizeGripView selected onStartResize =
         , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } Mouse.position |> Attributes.map msg
         ]
         []
+
     Nothing ->
       text ""
 
@@ -136,9 +138,9 @@ personMatchingView scale name personMatched =
       Scale.imageToScreenRatio scale
   in
     if name /= "" && personMatched then
-      div [ style (S.personMatched ratio) ] [ Icons.personMatched ratio ]
+      div [ style (S.personMatched ratio) ] [ Lazy.lazy Icons.personMatched ratio ]
     else if name /= "" && not personMatched then
-      div [ style (S.personNotMatched ratio) ] [ Icons.personNotMatched ratio ]
+      div [ style (S.personNotMatched ratio) ] [ Lazy.lazy Icons.personNotMatched ratio ]
     else
       text ""
 

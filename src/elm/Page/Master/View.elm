@@ -3,6 +3,7 @@ module Page.Master.View exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Html.Lazy as Lazy
 
 import Component.Header as Header
 
@@ -17,6 +18,10 @@ import Page.Master.Model exposing (Model)
 import Page.Master.PrototypeForm as PrototypeForm exposing (PrototypeForm)
 import Page.Master.Msg exposing (Msg(..))
 import Page.Master.Styles as S
+
+
+type alias Size =
+  { width : Int, height : Int }
 
 
 view : Model -> Html Msg
@@ -73,15 +78,22 @@ prototypeMasterView model =
   ]
 
 
+prototypeContainerSize : Size
+prototypeContainerSize =
+  { width = 300
+  , height = 300
+  }
+
+
 prototypeMasterRow : Int -> PrototypeForm -> Html Msg
 prototypeMasterRow index prototypeForm =
   div [ style [ ("display", "flex")] ]
     [ case PrototypeForm.toPrototype prototypeForm of
         Ok prototype ->
-          PrototypePreviewView.singleView 300 300 prototype
+          Lazy.lazy2 PrototypePreviewView.singleView prototypeContainerSize prototype
 
         _ ->
-          PrototypePreviewView.emptyView 300 300
+          Lazy.lazy PrototypePreviewView.emptyView prototypeContainerSize
 
     , prototypeParameters index prototypeForm
     ]

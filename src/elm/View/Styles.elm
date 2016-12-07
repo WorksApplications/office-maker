@@ -748,23 +748,6 @@ floorsInfoViewItemLink =
     ]
 
 
-subViewTab : Int -> Bool -> S
-subViewTab index active =
-    [ ("position", "absolute")
-    , ("top", px (10 + index * 130))
-    , ("left", "-30px")
-    , ("width", "30px")
-    , ("height", "120px")
-    , ("padding-top", "50px")
-    , ("background-color", if active then "#eee" else "#eee")
-    , ("z-index", zIndex.subView)
-    , ("cursor", "pointer")
-    , ("border-radius", "8px 0 0 8px")
-    , ("box-shadow", if active then "" else "inset -4px 0 4px rgba(0,0,0,0.03)")
-    , ("box-sizing", "border-box")
-    ]
-
-
 personMatchingInfo : Float -> S
 personMatchingInfo ratio =
     [ ("border-radius", px (10 * ratio))

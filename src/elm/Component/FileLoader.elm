@@ -2,6 +2,7 @@ module Component.FileLoader exposing (..)
 
 import Task
 import Html exposing (Html)
+import Html.Lazy as Lazy
 
 import Util.File as File exposing (..)
 import Util.HtmlUtil as HtmlUtil
@@ -36,4 +37,4 @@ update config message =
 
 view : Language -> Html Msg
 view lang =
-  HtmlUtil.fileLoadButton LoadFile S.imageLoadButton (I18n.loadImage lang)
+  Lazy.lazy3 HtmlUtil.fileLoadButton LoadFile S.imageLoadButton (I18n.loadImage lang)
