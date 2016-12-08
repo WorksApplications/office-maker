@@ -458,10 +458,11 @@ update removeToken setSelectionStart msg model =
         newModel ! [ cmd, emulateClick lastTouchedId False ]
 
     ClickOnCanvas ->
-      { model
-        | selectedObjects = []
-        -- , selectedResult = Nothing
-      } ! []
+      model ! []
+      -- { model
+      --   | selectedObjects = []
+      --   -- , selectedResult = Nothing
+      -- } ! []
 
     MouseUpOnCanvas pos ->
       let
@@ -1626,7 +1627,7 @@ updateOnMouseUp : Position -> Model -> (Model, Cmd Msg)
 updateOnMouseUp pos model =
   let
     (model_, cmd) =
-      case model.draggingContext of
+      case Debug.log "draggingContext" model.draggingContext of
         MoveObject id start ->
           updateByMoveObjectEnd id start model.mousePosition model
 
