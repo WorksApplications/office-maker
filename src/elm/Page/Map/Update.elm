@@ -1627,7 +1627,7 @@ updateOnMouseUp : Position -> Model -> (Model, Cmd Msg)
 updateOnMouseUp pos model =
   let
     (model_, cmd) =
-      case Debug.log "draggingContext" model.draggingContext of
+      case model.draggingContext of
         MoveObject id start ->
           updateByMoveObjectEnd id start model.mousePosition model
 

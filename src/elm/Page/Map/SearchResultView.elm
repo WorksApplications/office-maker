@@ -129,16 +129,24 @@ groupHeader : Language -> Maybe String -> Html Msg
 groupHeader lang maybePostName =
   case maybePostName of
     Just name ->
-      hover
-        S.searchResultGroupHeaderHover
-        div
-        [ style S.searchResultGroupHeader
-        , onClick (SearchByPost name)
-        ]
-        [ text name ]
+      Lazy.lazy2 groupHeaderHelp lang name
 
     Nothing ->
-      div [ style S.searchResultGroupHeader ] [ text "No Post" ]
+      Lazy.lazy groupHeaderNoPost lang
+
+
+groupHeaderHelp : Language -> String -> Html Msg
+groupHeaderHelp lang name =
+  div
+    [ style S.searchResultGroupHeader
+    , onClick (SearchByPost name)
+    ]
+    [ text name ]
+
+
+groupHeaderNoPost : Language -> Html Msg
+groupHeaderNoPost lang =
+  div [ style S.searchResultGroupHeader ] [ text "No Post" ]
 
 
 toItemViewModel : Language -> Dict FloorId FloorBase -> Dict PersonId Person -> Maybe Id -> SearchResult -> Maybe Item

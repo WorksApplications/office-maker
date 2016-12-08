@@ -121,14 +121,20 @@ resizeGripView : Bool -> Maybe (Position -> msg) -> Html msg
 resizeGripView selected onStartResize =
   case onStartResize of
     Just msg ->
-      div
-        [ style (S.deskResizeGrip selected)
-        , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } Mouse.position |> Attributes.map msg
-        ]
-        []
-
+      (Lazy.lazy resizeGripViewHelp selected)
+        |> Html.map msg
+        
     Nothing ->
       text ""
+
+
+resizeGripViewHelp : Bool -> Html Position
+resizeGripViewHelp selected =
+  div
+    [ style (S.deskResizeGrip selected)
+    , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } Mouse.position
+    ]
+    []
 
 
 personMatchingView : Scale -> String -> Bool -> Html msg
