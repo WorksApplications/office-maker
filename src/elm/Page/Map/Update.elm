@@ -1613,13 +1613,6 @@ submitSearch model =
 search : API.Config -> Bool -> Dict PersonId Person -> String -> Cmd Msg
 search apiConfig withPrivate personInfo query =
   API.search apiConfig withPrivate query
-    |> Task.andThen (\results ->
-      results
-        |> List.filterMap SearchResult.getPersonId
-        |> List.filter (\personId -> Dict.member personId personInfo |> not)
-        |> API.getPeopleByIds apiConfig
-        |> Task.map ((,) results)
-      )
     |> performAPI (\(results, people) -> GotSearchResult results people)
 
 

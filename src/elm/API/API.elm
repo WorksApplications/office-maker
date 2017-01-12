@@ -199,7 +199,7 @@ getAuth config =
     [authorization config.token]
 
 
-search : Config -> Bool -> String -> Task Error (List SearchResult)
+search : Config -> Bool -> String -> Task Error (List SearchResult, List Person)
 search config withPrivate query =
   let
     url =

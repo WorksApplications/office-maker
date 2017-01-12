@@ -107,9 +107,18 @@ function savePerson(root, token, person) {
   return put(token, root + '/1/profiles/' + encodeURIComponent(person.userId), person);
 }
 
-function search(root, token, query) {
-  return get(token, root + '/1/profiles?q=' + encodeURIComponent(query)).then((data) => {
-    return Promise.resolve(data.profiles.map(fixPerson));
+function search(root, token, query, exclusiveStartKey) {
+  var url = root + '/1/profiles?q=' + encodeURIComponent(query) +
+    (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '');
+  return get(token, url).then((data) => {
+    var people = data.profiles.map(fixPerson);
+    if(data.lastEvaluatedKey) {
+      return search(root, token, query, data.lastEvaluatedKey).then((people2) => {
+        return Promise.resolve(people.concat(people2));
+      });
+    } else {
+      return Promise.resolve(people);
+    }
   });
 }
 
