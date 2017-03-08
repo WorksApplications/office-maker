@@ -88,10 +88,9 @@ function getSelf(conn, token) {
   (e.g. configure try_files for nginx)
   app.get methods should not be called in production!
 */
-require('./generate-html.js');
-var templateDir = __dirname + '/template';
-var loginHtml = fs.readFileSync(publicDir + '/login', 'utf8');
-var masterHtml = fs.readFileSync(publicDir + '/master', 'utf8');
+var outputFiles = require('./generate-html.js')(config, publicDir);
+var loginHtml = fs.readFileSync(outputFiles.login, 'utf8');
+var masterHtml = fs.readFileSync(outputFiles.master, 'utf8');
 app.get('/login', (req, res) => {
   res.send(loginHtml);
 });
@@ -100,6 +99,7 @@ app.get('/master', (req, res) => {
 });
 /* other static files */
 app.use(express.static(publicDir));
+
 
 app.get('/logout', (req, res) => {
   res.redirect('/login');
