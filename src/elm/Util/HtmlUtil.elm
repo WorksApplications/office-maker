@@ -136,13 +136,14 @@ form_ msg attribtes children =
     children
 
 
-fileLoadButton : (FileList -> msg) -> List (String, String) -> String -> Html msg
-fileLoadButton tagger styles text =
+fileLoadButton : (FileList -> msg) -> List (String, String) -> String -> String -> Html msg
+fileLoadButton tagger styles accept text =
   Html.label
     [ Html.Attributes.style styles ]
     [ Html.text text
     , Html.input
         [ Html.Attributes.type_ "file"
+        , Html.Attributes.accept accept
         , Html.Attributes.style [("display", "none")]
         , on "change" decodeFile
         ]

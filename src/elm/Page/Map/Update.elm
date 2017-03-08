@@ -46,7 +46,7 @@ import API.Cache as Cache exposing (Cache, UserState)
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ObjectNameInput as ObjectNameInput
-import Component.FileLoader as FileLoader
+import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
@@ -1529,9 +1529,9 @@ update removeToken setSelectionStart msg model =
           model ! []
 
 
-    FileLoaderMsg msg ->
+    ImageLoaderMsg msg ->
       model !
-        [ FileLoader.update
+        [ ImageLoader.update
             { onFileWithDataURL = GotFileWithDataURL
             , onFileLoadFailed = Error << FileError
             }

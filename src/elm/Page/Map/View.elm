@@ -16,7 +16,7 @@ import View.SearchInputView as SearchInputView
 
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
-import Component.FileLoader as FileLoader
+import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
 
 import Util.HtmlUtil exposing (..)
@@ -123,7 +123,7 @@ subViewForEdit model editingMode =
 fileLoadButton : Language -> User -> Html Msg
 fileLoadButton lang user =
   if User.isAdmin user then
-    FileLoader.view lang |> Html.map FileLoaderMsg
+    ImageLoader.view lang |> Html.map ImageLoaderMsg
   else
     text ""
 

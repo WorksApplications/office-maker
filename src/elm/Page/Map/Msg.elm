@@ -27,7 +27,7 @@ import API.Cache as Cache exposing (Cache, UserState)
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
 import Component.ObjectNameInput as ObjectNameInput
-import Component.FileLoader as FileLoader
+import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
 
 import Page.Map.URL exposing (URL)
@@ -121,7 +121,7 @@ type Msg
   | SyncFloor
   | MouseMove Position
   | MouseUp
-  | FileLoaderMsg FileLoader.Msg
+  | ImageLoaderMsg ImageLoader.Msg
   | GotFileWithDataURL File String
   | FloorDeleterMsg FloorDeleter.Msg
   | FloorDeleted Floor
