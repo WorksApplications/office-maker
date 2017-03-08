@@ -29,8 +29,8 @@ function send(token, method, url, data) {
   });
 }
 
-function get(token, url, exclusiveStartKey) {
-  return send(token, 'GET', url, null, exclusiveStartKey);
+function get(token, url) {
+  return send(token, 'GET', url, null);
 }
 
 function post(token, url, data) {

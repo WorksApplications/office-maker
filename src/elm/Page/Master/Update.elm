@@ -46,6 +46,7 @@ init flags =
   in
     { apiConfig = apiConfig
     , title = flags.title
+    , allAdmins = []
     , colorPalette = ColorPalette.empty
     , prototypes = []
     , header = Header.init
@@ -58,18 +59,18 @@ init flags =
 
 initCmd : API.Config -> UserState -> Cmd Msg
 initCmd apiConfig defaultUserState =
-  Cache.getWithDefault Cache.cache defaultUserState
-    |> Task.andThen (\userState -> API.getAuth apiConfig
+  API.getAuth apiConfig
     |> Task.andThen (\user ->
       if not (User.isAdmin user) then
         Task.succeed NotAuthorized
       else
-        API.getColors apiConfig
+        Cache.getWithDefault Cache.cache defaultUserState
+          |> Task.andThen (\userState -> API.getColors apiConfig
           |> Task.andThen (\colorPalette -> API.getPrototypes apiConfig
-          |> Task.map (\prototypes -> Loaded userState user colorPalette prototypes)
-          )
+          |> Task.andThen (\prototypes -> API.getAllAdmins apiConfig
+          |> Task.map (\admins -> Loaded userState user colorPalette prototypes admins
+          ))))
       )
-    )
     |> performAPI identity
 
 
@@ -101,10 +102,11 @@ update removeToken message model =
     NoOp ->
       model ! []
 
-    Loaded userState user colorPalette prototypes ->
+    Loaded userState user colorPalette prototypes allAdmins ->
       { model
       | colorPalette = colorPalette
       , prototypes = List.map PrototypeForm.fromPrototype prototypes
+      , allAdmins = allAdmins
       } ! []
 
     HeaderMsg msg ->

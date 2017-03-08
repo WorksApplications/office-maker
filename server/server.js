@@ -68,9 +68,7 @@ function getSelf(conn, token) {
       if (e) {
         reject(e);
       } else {
-        user.id = user.id || user.userId;
-        user.role = user.role.toLowerCase();
-        user.tenantId = '';
+        accountService.toMapUser(user);
         resolve(user);
       }
     });
@@ -187,13 +185,39 @@ app.get('/api/1/self', inTransaction((conn, req, res) => {
   });
 }));
 
+
+app.get('/api/1/admins', inTransaction((conn, req, res) => {
+  var token = getAuthToken(req);
+  return getSelf(conn, token).then((user) => {
+    return accountService.getAllAdmins(config.accountServiceRoot, token).then(admins => {
+      var ids = admins.map(admin => admin.userId);
+      var dict = {};
+      admins.forEach(admin => {
+        dict[admin.userId] = admin;
+      });
+      return profileService.getPeopleByIds(config.profileServiceRoot, token, ids).then((people) => {
+        people.forEach(person => {
+          dict[person.id].person = person;
+        });
+        var list = Object.keys(dict).map(key => {
+          return dict[key];
+        });
+        return Promise.resolve(list);
+      });
+      console.log(admins);
+      return Promise.resolve(admins);
+    });
+  });
+}));
+
+
 // should be person?
 app.get('/api/1/users/:id', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var userId = req.params.id;
   return getSelf(conn, token).then((user) => {
     return profileService.getPerson(config.profileServiceRoot, token, userId).then((person) => {
-      user.person = person//FIXME should not
+      user.person = person;
       return Promise.resolve(user);
     });
   });

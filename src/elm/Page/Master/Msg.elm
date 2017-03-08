@@ -14,7 +14,7 @@ import Page.Master.PrototypeForm exposing (PrototypeForm)
 
 type Msg
   = NoOp
-  | Loaded UserState User ColorPalette (List Prototype)
+  | Loaded UserState User ColorPalette (List Prototype) (List User)
   | HeaderMsg Header.Msg
   | InputColor Bool Int String
   | UpdatePrototype Int PrototypeForm

@@ -184,6 +184,11 @@ decodeUser =
     ]
 
 
+decodeUsers : Decoder (List User)
+decodeUsers =
+  D.list decodeUser
+
+
 decodeColorEntity : Decoder ColorEntity
 decodeColorEntity =
   decode

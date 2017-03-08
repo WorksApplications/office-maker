@@ -22,6 +22,7 @@ module API.API exposing (
     , getPrototypes
     , savePrototype
     , savePrototypes
+    , getAllAdmins
     , Config
     , Error
   )
@@ -289,6 +290,14 @@ getPeopleByFloorAndPost config floorId floorVersion post =
         , ("post", post)
         ]
     )
+    [authorization config.token]
+
+
+getAllAdmins : Config -> Task Error (List User)
+getAllAdmins config =
+  HttpUtil.get
+    decodeUsers
+    (config.apiRoot ++ "/1/admins")
     [authorization config.token]
 
 

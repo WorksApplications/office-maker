@@ -53,7 +53,35 @@ function addUser(root, token, user) {
   return post(token, root + '/1/users', user);
 }
 
+function getAllAdmins(root, token, exclusiveStartKey) {
+  var url = root + '/1/users'
+    + (exclusiveStartKey ? '?exclusiveStartKey=' + exclusiveStartKey : '')
+  return get(token, url).then((data) => {
+    var users = data.users.map(user => {
+      toMapUser(user);
+      return user;
+    }).filter(user => {
+      return user.role === 'admin';
+    });
+    if(data.lastEvaluatedKey) {
+      return getAllAdmins(root, token, data.lastEvaluatedKey).then((users2) => {
+        return Promise.resolve(users.concat(users2));
+      });
+    } else {
+      return Promise.resolve(users);
+    }
+  });
+}
+
+function toMapUser(user) {
+  user.id = user.id || user.userId;
+  user.role = user.role.toLowerCase();
+  user.tenantId = '';
+}
+
 module.exports = {
   addUser: addUser,
-  login: login
+  login: login,
+  getAllAdmins: getAllAdmins,
+  toMapUser: toMapUser
 };

@@ -7,6 +7,7 @@ import Html.Lazy as Lazy
 
 import Component.Header as Header
 
+import Model.User as User exposing (User)
 import Model.I18n as I18n exposing (Language(..))
 
 import View.Common exposing (..)
@@ -32,6 +33,7 @@ view model =
     , messageBar model
     , card False "" Nothing Nothing <| colorMasterView model
     , card False "" Nothing Nothing <| prototypeMasterView model
+    , card False "" Nothing Nothing <| usersView model
     ]
 
 
@@ -155,3 +157,24 @@ messageBar model =
 
     Nothing ->
       MessageBar.none
+
+
+usersView : Model -> List (Html Msg)
+usersView model =
+  [ h1 [] [ text "Admins"]
+  , model.allAdmins
+    |> List.map userView
+    |> div []
+  ]
+
+
+userView : User -> Html Msg
+userView user =
+  case Debug.log "" user of
+    User.Admin person ->
+      div []
+        [ text (person.name ++ " ( " ++ Maybe.withDefault "" person.mail ++ " )")
+        ]
+
+    _ ->
+      text ""
