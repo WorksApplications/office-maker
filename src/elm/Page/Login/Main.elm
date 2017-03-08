@@ -5,8 +5,10 @@ import Html.Attributes exposing (type_, value, action, method, style, autofocus)
 
 import Task
 import Http
+import Navigation
 
 import API.API as API
+import API.Page as Page
 import View.HeaderView as HeaderView
 import Util.HtmlUtil as HtmlUtil exposing (..)
 import Model.I18n as I18n exposing (Language(..))
@@ -53,7 +55,6 @@ type Msg =
   | Error Http.Error
   | Success String
   | TokenSaved
-  | NoOp
 
 
 init : Flags -> (Model, Cmd Msg)
@@ -70,9 +71,6 @@ init { accountServiceRoot, title, lang } =
 update : Msg -> Model -> (Model, Cmd Msg)
 update message model =
   case message of
-    NoOp ->
-      model ! []
-
     InputId s ->
       { model | inputId = s } ! []
 
@@ -110,7 +108,7 @@ update message model =
       model ! [ saveToken token ]
 
     TokenSaved ->
-      model ! [ Task.perform (always NoOp) API.gotoTop ]
+      model ! [ Navigation.load Page.top ]
 
 
 ----

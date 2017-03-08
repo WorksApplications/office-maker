@@ -8,16 +8,6 @@ import Json.Decode as D exposing (Decoder)
 import Json.Encode as E
 
 
-reload : Task a ()
-reload =
-  Native.HttpUtil.reload
-
-
-goTo : String -> Task a ()
-goTo =
-  Native.HttpUtil.goTo
-
-
 encodeHeaders : List (String, String) -> E.Value
 encodeHeaders headers =
   E.list (List.map (\(k, v) -> E.list [E.string k, E.string v]) headers)

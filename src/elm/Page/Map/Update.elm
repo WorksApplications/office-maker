@@ -40,6 +40,7 @@ import Model.ClipboardData as ClipboardData
 import Model.SearchResult as SearchResult
 
 import API.API as API
+import API.Page as Page
 import API.Cache as Cache exposing (Cache, UserState)
 
 import Component.FloorProperty as FloorProperty
@@ -1122,7 +1123,7 @@ update removeToken setSelectionStart msg model =
       { model | header = Header.update msg model.header } ! []
 
     SignIn ->
-      model ! [ Task.perform (always NoOp) API.goToLogin ]
+      model ! [ Navigation.load Page.login ]
 
     SignOut ->
       model ! [ removeToken {} ]

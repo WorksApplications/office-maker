@@ -2,10 +2,12 @@ module Page.Master.Update exposing (..)
 
 import Time exposing (second)
 import Task
+import Navigation
 
 import Debounce exposing (Debounce)
 
 import API.API as API
+import API.Page as Page
 import API.Cache as Cache exposing (Cache, UserState)
 import Component.Header as Header
 
@@ -172,7 +174,7 @@ update removeToken message model =
         { model | savePrototypeDebounce = savePrototypeDebounce } ! [ cmd ]
 
     NotAuthorized ->
-      model ! [ Task.perform (always NoOp) API.goToLogin ]
+      model ! [ Navigation.load Page.login ]
 
     APIError e ->
       { model | error = Just (toString e) } ! []

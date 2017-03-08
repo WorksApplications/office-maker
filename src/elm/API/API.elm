@@ -10,10 +10,7 @@ module API.API exposing (
     , getFloorOfVersion
     , getFloorsInfo
     , saveEditingImage
-    , gotoTop
     , login
-    , goToLogin
-    , goToLogout
     , personCandidate
     , getDiffSource
     , getPerson
@@ -302,18 +299,3 @@ login accountServiceRoot id pass =
     (accountServiceRoot ++ "/1/authentication")
     []
     (Http.jsonBody <| encodeLogin id pass)
-
-
-goToLogin : Task a ()
-goToLogin =
-  HttpUtil.goTo "/login"
-
-
-goToLogout : Task a ()
-goToLogout =
-  HttpUtil.goTo "/logout"
-
-
-gotoTop : Task a ()
-gotoTop =
-  HttpUtil.goTo "/"

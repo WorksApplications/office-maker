@@ -16,19 +16,7 @@ var _user$project$Native_HttpUtil = function(localRuntime) {
         xhr.send(file);
       });
     }
-    var reload = _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-      location.reload();
-      callback(_elm_lang$core$Native_Scheduler.succeed(_elm_lang$core$Native_Utils.Tuple0));
-    });
-    function goTo(url) {
-      return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-        location.href = url;
-        callback(_elm_lang$core$Native_Scheduler.succeed(_elm_lang$core$Native_Utils.Tuple0));
-      });
-    }
     return {
-        sendFile: F4(sendFile),
-        reload: reload,
-        goTo: goTo
+        sendFile: F4(sendFile)
     };
 }();
