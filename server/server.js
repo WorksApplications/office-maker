@@ -4,7 +4,6 @@ var app = express();
 var bodyParser = require('body-parser');
 var fs = require('fs');
 var path = require('path');
-var ejs = require('ejs');
 var request = require('request');
 var jwt = require('jsonwebtoken');
 var filestorage = require('./lib/filestorage.js');
@@ -83,38 +82,27 @@ function getSelf(conn, token) {
   });
 }
 
-app.use(express.static(publicDir));
-
+/*
+  Static files (only for debug)
+  These should be served as static resources.
+  (e.g. configure try_files for nginx)
+  app.get methods should not be called in production!
+*/
+require('./generate-html.js');
 var templateDir = __dirname + '/template';
-var indexHtml = ejs.render(fs.readFileSync(templateDir + '/index.html', 'utf8'), {
-  apiRoot: config.apiRoot,
-  accountServiceRoot: config.accountServiceRoot,
-  title: config.title
-});
-var loginHtml = ejs.render(fs.readFileSync(templateDir + '/login.html', 'utf8'), {
-  accountServiceRoot: config.accountServiceRoot,
-  title: config.title
-});
-var masterHtml = ejs.render(fs.readFileSync(templateDir + '/master.html', 'utf8'), {
-  apiRoot: config.apiRoot,
-  accountServiceRoot: config.accountServiceRoot,
-  title: config.title
-});
-
-app.get('/', (req, res) => {
-  res.send(indexHtml);
-});
-
+var loginHtml = fs.readFileSync(publicDir + '/login', 'utf8');
+var masterHtml = fs.readFileSync(publicDir + '/master', 'utf8');
 app.get('/login', (req, res) => {
   res.send(loginHtml);
 });
+app.get('/master', (req, res) => {
+  res.send(masterHtml);
+});
+/* other static files */
+app.use(express.static(publicDir));
 
 app.get('/logout', (req, res) => {
   res.redirect('/login');
-});
-
-app.get('/master', (req, res) => {
-  res.send(masterHtml);
 });
 
 app.get('/api/1/people/search/:name', inTransaction((conn, req, res) => {
