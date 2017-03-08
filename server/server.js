@@ -165,7 +165,7 @@ app.get('/api/1/self', inTransaction((conn, req, res) => {
     }
     return profileService.getPerson(config.profileServiceRoot, token, user.id).then((person) => {
       if(person == null) {
-        throw "Relevant person for " + user.id + " not ound."
+        throw "Relevant person for " + user.id + " not found."
       }
       user.person = person;
       return Promise.resolve(user);
