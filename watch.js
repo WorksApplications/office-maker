@@ -53,7 +53,11 @@ watch.createMonitor('src', (monitor) => {
   monitor.on("removed", schedule.bind(null, 'build'));
 });
 
-watch.createMonitor('server', (monitor) => {
+watch.createMonitor('server', {
+  filter: function(file) {
+    return !file.includes('public') && !file.includes('node_modules');
+  }
+}, (monitor) => {
   monitor.on("created", schedule.bind(null, 'server'));
   monitor.on("changed", schedule.bind(null, 'server'));
   monitor.on("removed", schedule.bind(null, 'server'));
