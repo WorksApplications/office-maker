@@ -1,16 +1,11 @@
 elm-stuff
 node_modules
-index.js
-login.js
-master.js
 elm.js
 
-data
 repl-temp-*
 *.ods*
-manual
 npm-debug.log
-bugs.html
 
 count.sh
-dep-check.html
+
+aws-config
