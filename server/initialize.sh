@@ -1,3 +1,5 @@
+cd `dirname $0`
+
 user=root
 pass=root
 

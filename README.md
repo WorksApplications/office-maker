@@ -1,22 +1,23 @@
 Office Maker
-----
+====
 
 [![Build Status](https://travis-ci.org/WorksApplications/office-maker.svg)](https://travis-ci.org/WorksApplications/office-maker)
 
 CAUTION: Currently this product is work in progress.
 
-TODO: All of following processes should be replaced by Docker.
+
+## Requirement
+
+1. [Elm](http://elm-lang.org/) (>= 0.18)
+2. [Node.js](https://nodejs.org/) (>= 4.0)
+3. MySQL
+4. Static file server (nginx or httpd)
+
+* To develop: all
+* To run: 2, 3 and 4
 
 
-### Requirement
-
-You need to have [Elm](http://elm-lang.org/) (>= 0.18) and [Node.js](https://nodejs.org/) (>= 4.0) installed.
-
-### Install Elm
-
-```
-# npm install -g elm
-```
+## Build
 
 ### Install libraries
 
@@ -33,26 +34,80 @@ $ npm install
 $ sh build.sh
 ```
 
-If `elm-make` fails in Windows, try
-```
-$ chcp 65001
-```
-which changes encoding to UTF-8.
+## API Server Settings
+
+`cd server` first.
 
 
-### Run server
+### Initialize
+
+If this is the first time to set up, execute following.
+
+* Create config.json
+* Initialize DB
 
 ```
-node watch
+$ sh initialize.sh
 ```
 
-#### debug mode
+### Configuration
 
-To debug Elm program, use `--debug` option.
+Edit `config.json`. Bold properties are essential to work with various environment.
+
+|name||
+|:--|:--|
+|mysql.host||
+|mysql.user||
+|mysql.pass||
+|title|This name is used by header.|
+|**accountServiceRoot**|URL of account service. http://xxx.xxx.xx.xx/accounts/api |
+|**profileServiceRoot**|URL of account service. http://xxx.xxx.xx.xx/profiles/api |
+|**secret**|The path of account service's public key file. This is the path from `server` directory `path/to/pubkey.pem` |
+
+
+## Static file Server Settings
+
+### Linux + nginx
+```
+location /map/ {
+        alias /home/ubuntu/office-maker/server/static/public/;
+        try_files $uri.html $uri $uri/ 404.html=404;
+}
+
+location /map/api/ {
+        include /etc/nginx/cors.conf
+        proxy_pass http://localhost:3000/api/
+}
+```
+
+### Windows + httpd
 
 ```
-node watch --debug
+# office maker settings
+Alias /map C:/WorksMap/workspace/office-maker/server/static/public
+<Directory "C:/WorksMap/workspace/office-maker/server/static/public">
+    Options Indexes FollowSymLinks MultiViews
+    Require all granted
+</Directory>
+ProxyRequests Off
+ProxyPass /api/ http://localhost:3000/api/
+ProxyPassReverse /api/ http://localhost:3000/api/
 ```
+
+## Run server
+
+Currently, this is the same as development.
+
+```
+$ node watch
+```
+
+## Development
+
+```
+$ node watch
+```
+
 
 ## License
 
