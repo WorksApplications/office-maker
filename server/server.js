@@ -70,6 +70,15 @@ function getSelf(conn, token) {
   });
 }
 
+if(config.redirect) {
+  app.get('/', inTransaction((conn, req, res) => {
+    return res.send('<a href="' +
+      config.redirect +
+      '">URL が変更されました。お手数ですがブックマークの変更をお願いいたします。</a>'
+    );
+  }));
+}
+
 app.get('/api/1/people/search/:name', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var name = req.params.name;
