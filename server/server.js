@@ -5,7 +5,6 @@ var bodyParser = require('body-parser');
 var path = require('path');
 var request = require('request');
 var jwt = require('jsonwebtoken');
-var filestorage = require('./static/filestorage.js');
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var accountService = require('./lib/account-service');
@@ -70,10 +69,6 @@ function getSelf(conn, token) {
     // }
   });
 }
-
-
-// TODO move to other place
-require('./static/generate-html.js')(config);
 
 app.get('/api/1/people/search/:name', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
