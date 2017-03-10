@@ -100,11 +100,6 @@ app.get('/master', (req, res) => {
 /* other static files */
 app.use(express.static(publicDir));
 
-
-app.get('/logout', (req, res) => {
-  res.redirect('/login');
-});
-
 app.get('/api/1/people/search/:name', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);
   var name = req.params.name;

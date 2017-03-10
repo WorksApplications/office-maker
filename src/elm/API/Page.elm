@@ -9,9 +9,5 @@ login : String
 login = "/login"
 
 
-logout : String
-logout = "/logout"
-
-
 master : String
 master = "/master"
