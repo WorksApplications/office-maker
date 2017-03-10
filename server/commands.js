@@ -1,15 +1,7 @@
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var mock = require('./lib/mock.js');
-var fs = require('fs');
-
-var config = null;
-if(fs.existsSync(__dirname + '/config.json')) {
-  config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
-} else {
-  config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json'));
-}
-config.apiRoot = '/api';
+var config =  require('./lib/config.js');
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 

@@ -2,29 +2,18 @@ var url = require('url');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var fs = require('fs');
 var path = require('path');
 var request = require('request');
 var jwt = require('jsonwebtoken');
-var filestorage = require('./lib/filestorage.js');
+var filestorage = require('./static/filestorage.js');
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var accountService = require('./lib/account-service');
 var profileService = require('./lib/profile-service');
 var log = require('./lib/log.js');
-
-var config = null;
-if(fs.existsSync(__dirname + '/config.json')) {
-  config = JSON.parse(fs.readFileSync(__dirname + '/config.json', 'utf8'));
-} else {
-  config = JSON.parse(fs.readFileSync(__dirname + '/defaultConfig.json', 'utf8'));
-}
-config.apiRoot = '/api';
-config.secret = fs.readFileSync(path.resolve(__dirname, config.secret), 'utf8');
+var config = require('./lib/config.js');
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
-
-var publicDir = __dirname + '/public';
 
 app.use(log.express);
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -82,23 +71,9 @@ function getSelf(conn, token) {
   });
 }
 
-/*
-  Static files (only for debug)
-  These should be served as static resources.
-  (e.g. configure try_files for nginx)
-  app.get methods should not be called in production!
-*/
-var outputFiles = require('./generate-html.js')(config, publicDir);
-var loginHtml = fs.readFileSync(outputFiles.login, 'utf8');
-var masterHtml = fs.readFileSync(outputFiles.master, 'utf8');
-app.get('/login', (req, res) => {
-  res.send(loginHtml);
-});
-app.get('/master', (req, res) => {
-  res.send(masterHtml);
-});
-/* other static files */
-app.use(express.static(publicDir));
+
+// TODO move to other place
+require('./static/generate-html.js')(config);
 
 app.get('/api/1/people/search/:name', inTransaction((conn, req, res) => {
   var token = getAuthToken(req);

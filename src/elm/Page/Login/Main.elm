@@ -117,7 +117,7 @@ view : Model -> Html Msg
 view model =
   div
     []
-    [ HeaderView.view False model.title (Just "/") (text "")
+    [ HeaderView.view False model.title (Just ".") (text "")
     , container model
     ]
 

@@ -2,7 +2,9 @@ var fs = require('fs');
 var path = require('path');
 var ejs = require('ejs');
 
-function generate(config, publicDir) {
+function generate(config) {
+  var publicDir = __dirname + '/public';
+
   var outputFiles = {
     index: path.join(publicDir, 'index.html'),
     login: path.join(publicDir, 'login.html'),

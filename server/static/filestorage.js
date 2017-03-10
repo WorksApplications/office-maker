@@ -1,6 +1,6 @@
 var fs = require('fs-extra');
 
-var publicDir = __dirname + '/../public';
+var publicDir = __dirname + '/public';
 
 function save(path, image) {
   return new Promise((resolve, reject) => {

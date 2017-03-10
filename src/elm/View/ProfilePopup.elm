@@ -37,7 +37,7 @@ innerView : Maybe msg -> Person -> List (Html msg)
 innerView maybeCloseMsg person =
   let
     url =
-      Maybe.withDefault "images/users/default.png" person.image
+      Maybe.withDefault "./images/users/default.png" person.image
 
     closeButton =
       case maybeCloseMsg of

@@ -1,12 +1,6 @@
 var log4js = require('log4js');
 var fs = require('fs');
-
-var config = null;
-if(fs.existsSync(__dirname + '/../config.json')) {
-  config = JSON.parse(fs.readFileSync(__dirname + '/../config.json', 'utf8'));
-} else {
-  config = JSON.parse(fs.readFileSync(__dirname + '/../defaultConfig.json', 'utf8'));
-}
+var config = require('./config.js');
 
 var options = {
   appenders: [{

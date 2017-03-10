@@ -104,7 +104,7 @@ fromModel model =
 
 serialize : Model -> String
 serialize =
-  (stringify "/") << fromModel
+  (stringify ".") << fromModel
 
 
 

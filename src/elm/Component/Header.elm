@@ -71,7 +71,7 @@ view context state =
     HeaderView.view
       context.printMode
       context.title
-      (Just "/")
+      (Just ".")
       (normalMenu context state)
 
 
@@ -136,7 +136,7 @@ linkToMaster lang user =
     Just (Admin _) ->
       div
         [ style S.userMenuItem ]
-        [ a [ href "/master" ] [ text ( I18n.goToMaster lang ) ] ]
+        [ a [ href "./master" ] [ text ( I18n.goToMaster lang ) ] ]
 
     _ ->
       text ""

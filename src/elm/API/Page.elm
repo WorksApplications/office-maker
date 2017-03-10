@@ -2,12 +2,12 @@ module API.Page exposing (..)
 
 
 top : String
-top = "/"
+top = "."
 
 
 login : String
-login = "/login"
+login = "./login"
 
 
 master : String
-master = "/master"
+master = "./master"

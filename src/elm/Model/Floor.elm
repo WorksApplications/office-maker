@@ -139,7 +139,7 @@ realSize floor =
 src : Floor -> Maybe String
 src floor =
   case floor.image of
-    Just src -> Just ("/images/floors/" ++ src)
+    Just src -> Just ("./images/floors/" ++ src)
     Nothing -> Nothing
 
 

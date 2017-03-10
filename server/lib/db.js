@@ -1,10 +1,9 @@
 var url = require('url');
-var fs = require('fs-extra');
 
 var sql = require('./sql.js');
 var rdb = require('./mysql.js');
 var schema = require('./schema.js');
-var filestorage = require('./filestorage.js');
+var filestorage = require('../static/filestorage.js');
 var profileService = require('./profile-service.js');
 
 
