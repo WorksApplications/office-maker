@@ -1,5 +1,16 @@
 module Util.ListUtil exposing (..)
 
+
+sepBy : Int -> List a -> List (List a)
+sepBy count list =
+  case List.drop count list of
+    [] ->
+      [ List.take count list ]
+
+    cont ->
+      List.take count list :: sepBy count cont
+
+
 findBy : (a -> Bool) -> List a -> Maybe a
 findBy f list =
   List.head (List.filter f list)

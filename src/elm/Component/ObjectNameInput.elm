@@ -1,5 +1,7 @@
 module Component.ObjectNameInput exposing (..)
 
+import Task
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -161,6 +163,18 @@ forceFinish model =
 
     Nothing ->
       (model, Nothing)
+
+
+insertText : (Msg -> msg) -> String -> ObjectNameInput -> Cmd msg
+insertText toMsg text model =
+  case model.editingObject of
+    Just (objectId, name) ->
+      InputName objectId (name ++ text)
+        |> Task.succeed
+        |> Task.perform toMsg
+
+    Nothing ->
+      Cmd.none
 
 
 view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> ObjectNameInput -> Html Msg

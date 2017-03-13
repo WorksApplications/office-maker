@@ -53,7 +53,7 @@ viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha sc
       [ style (S.deskObject screenRect color selected alpha disableTransition) ]
 
     nameView =
-      objectLabelView "" fontSize scale disableTransition screenRect name
+      objectLabelView False "" fontSize scale disableTransition screenRect name
   in
     viewInternal selected eventOptions styles nameView personMatchIcon
 
@@ -68,7 +68,7 @@ viewLabel eventOptions rect backgroundColor fontColor name fontSize isEllipse se
       [ style (S.labelObject isEllipse screenRect backgroundColor fontColor selected isGhost rectVisible disableTransition) ]
 
     nameView =
-      objectLabelView fontColor fontSize scale disableTransition screenRect name
+      objectLabelView True fontColor fontSize scale disableTransition screenRect name
   in
     viewInternal selected eventOptions styles nameView (text "")
 
@@ -123,7 +123,7 @@ resizeGripView selected onStartResize =
     Just msg ->
       (Lazy.lazy resizeGripViewHelp selected)
         |> Html.map msg
-        
+
     Nothing ->
       text ""
 
@@ -151,8 +151,8 @@ personMatchingView scale name personMatched =
       text ""
 
 
-objectLabelView : String -> Float -> Scale -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
-objectLabelView color fontSize scale disableTransition screenRect name =
+objectLabelView : Bool -> String -> Float -> Scale -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
+objectLabelView canBeEmoji color fontSize scale disableTransition screenRect name =
   let
     (_, _, _, height) =
       screenRect
@@ -171,5 +171,5 @@ objectLabelView color fontSize scale disableTransition screenRect name =
         disableTransition  --TODO
   in
     div
-      [ style styles ]
-      [ text trimed ]
+      ( style styles :: if canBeEmoji then [ class "emoji-target" ] else [])
+      [ span [] [ text trimed ]]

@@ -140,6 +140,7 @@ init flags location =
         (toModel url)
         ! [ initCmd apiConfig url.editMode userState url.floorId
           , Emoji.request
+          , Emoji.replace
           ]
 
       Err _ ->
@@ -1592,6 +1593,9 @@ update removeToken setSelectionStart msg model =
     ReceiveEmoji emojiList ->
       { model | emojiList = emojiList } ! []
 
+    InsertEmoji text ->
+      model ! [ ObjectNameInput.insertText ObjectNameInputMsg text model.objectNameInput ]
+
     Error e ->
       { model | error = e } ! []
 
@@ -2105,7 +2109,7 @@ updateOnFinishNameInput continueEditing objectId name model =
           , selectedObjects = selectedObjects
           }
       in
-        newModel ! [ requestCandidateCmd, registerPersonDetailCmd, saveCmd, focusCmd ]
+        newModel ! [ requestCandidateCmd, registerPersonDetailCmd, saveCmd, focusCmd, Emoji.replace ]
 
 
 registerPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg

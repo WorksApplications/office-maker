@@ -127,4 +127,5 @@ type Msg
   | FloorDeleterMsg FloorDeleter.Msg
   | FloorDeleted Floor
   | ReceiveEmoji (List Emoji)
+  | InsertEmoji String
   | Error GlobalError

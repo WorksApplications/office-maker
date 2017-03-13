@@ -1,4 +1,4 @@
-port module Page.Map.Emoji exposing (Emoji, request, response, view)
+port module Page.Map.Emoji exposing (Emoji, request, response, replace, insert, view)
 
 
 import Html exposing (..)
@@ -7,6 +7,8 @@ import Html.Attributes exposing (..)
 
 port requestEmoji : List String -> Cmd msg
 port responseEmoji : (List Emoji -> msg) -> Sub msg
+port replaceEmoji : () -> Cmd msg
+port insertEmoji : String -> Cmd msg
 
 
 type alias Emoji =
@@ -23,6 +25,16 @@ request =
 response : (List Emoji -> msg) -> Sub msg
 response =
   responseEmoji
+
+
+replace : Cmd msg
+replace =
+  replaceEmoji ()
+
+
+insert : String -> Cmd msg
+insert =
+  insertEmoji
 
 
 view : Emoji -> List (Attribute msg) -> Html msg
@@ -44,25 +56,27 @@ top =
   , "🚺"
   , "🚻"
   , "🚼"
-  -- , "🛀"
+  , "🛀"
   , "🌂"
   , "🍔"
-  -- , "🍕"
-  -- , "🍖"
-  -- , "🍗"
-  -- , "🍘"
+  , "🍕"
+  , "🍖"
+  , "🍗"
+  , "🍘"
   , "🍙"
-  -- , "🍚"
-  -- , "🍛"
-  -- , "🍜"
-  -- , "🍝"
-  -- , "🍞"
-  -- , "🏠"
-  -- , "🏡"
-  -- , "🏢"
-  -- , "🏣"
-  -- , "🏥"
-  -- , "👤"
+  , "🍚"
+  , "🍛"
+  , "🍜"
+  , "🍝"
+  , "🍞"
+  , "🍩"
+  , "🍪"
+  , "🍫"
+  , "🍬"
+  , "🍭"
+  , "🍮"
+  , "🍯"
+  , "🍰"
   , "👦"
   , "👧"
   , "👨"
@@ -89,6 +103,10 @@ top =
   , "❕"
   , "❗"
   , "❤"
+  , "💙"
+  , "💚"
+  , "💛"
+  , "💜"
   ]
 
 

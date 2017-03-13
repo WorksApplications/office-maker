@@ -2,6 +2,7 @@ module Page.Map.View exposing (view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Html.Lazy as Lazy exposing (..)
 
 import ContextMenu
@@ -19,6 +20,7 @@ import Component.Header as Header
 import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
 
+import Util.ListUtil as ListUtil
 import Util.HtmlUtil exposing (..)
 
 import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
@@ -165,8 +167,8 @@ drawingView model editingMode =
         Stamp ->
           Lazy.lazy PrototypePreviewView.view prototypes
 
-        -- Label ->
-        --   viewEmojiSelector 8 model.emojiList
+        Label ->
+          viewEmojiSelector 10 model.emojiList
 
         _ ->
           text ""
@@ -175,13 +177,10 @@ drawingView model editingMode =
 
 viewEmojiSelector : Int -> List Emoji -> Html Msg
 viewEmojiSelector cols emojiList =
-  div []
-    [ div [] (emojiList |> List.drop 0 |> List.take cols |> List.map (\e -> Emoji.view e []))
-    , div [] (emojiList |> List.drop cols |> List.take cols |> List.map (\e -> Emoji.view e []))
-    , div [] (emojiList |> List.drop (2*cols) |> List.take cols |> List.map (\e -> Emoji.view e []))
-    , div [] (emojiList |> List.drop (3*cols) |> List.take cols |> List.map (\e -> Emoji.view e []))
-    , div [] (emojiList |> List.drop (4*cols) |> List.take cols |> List.map (\e -> Emoji.view e []))
-    ]
+  emojiList
+    |> ListUtil.sepBy cols
+    |> List.map (List.map (\e -> Emoji.view e [ onClick (InsertEmoji e.text) ]) >> div [])
+    |> div []
 
 
 pasteInput : Language -> Html msg

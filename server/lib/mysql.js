@@ -108,7 +108,8 @@ function createEnv(host, user, pass, dbname) {
     host     : host,
     user     : user,
     password : pass,
-    database : dbname
+    database : dbname,
+    charset  : 'utf8mb4'
   });
 
   function forConnection(f) {

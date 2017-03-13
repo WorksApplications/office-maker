@@ -128,6 +128,26 @@
 					return { text: s, url: url };
 				}));
 			});
+			main.ports.replaceEmoji.subscribe(function() {
+				// Array.prototype.forEach.call(document.getElementsByClassName('emoji-target'), function(e) {
+				//
+				// 	if(!e.children[1]) {
+				// 		var node = document.createElement('div');
+				// 		node.textContent = e.textContent;
+				// 		e.appendChild(node);
+				// 	}
+				// 	twemoji.parse(e.children[1]);
+				// 	e.children[0].textContent = '';
+				// });
+			});
+			// main.ports.insertEmoji.subscribe(function(text) {
+			// 	var el = document.getElementById('name-input');
+			// 	if(el) {
+			// 		el.focus();
+			// 		el.value += text;
+			// 	}
+			// });
+
 		</script>
 	</body>
 </html>
