@@ -524,7 +524,7 @@ update removeToken setSelectionStart msg model =
 
         (model__, cmd2) =
           if Mode.isLabelMode model.mode then
-            updateOnFinishLabel model
+            updateOnFinishLabel model_
           else
             (model_, Cmd.none)
 

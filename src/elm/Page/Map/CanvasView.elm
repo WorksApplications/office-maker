@@ -187,14 +187,14 @@ canvasView : Model -> Floor -> Html Msg
 canvasView model floor =
   let
     deskInfoOf scale personInfo objectId =
-      Maybe.map
-        (\object ->
-          ( Scale.imageToScreenForRect scale (Object.rect object)
-          , relatedPerson object
-              |> Maybe.andThen (\personId -> Dict.get personId personInfo)
+      Floor.getObject objectId floor
+        |> Maybe.map
+          (\object ->
+            ( Scale.imageToScreenForRect scale (Object.rect object)
+            , relatedPerson object
+                |> Maybe.andThen (\personId -> Dict.get personId personInfo)
+            )
           )
-        )
-        (Floor.getObject objectId floor)
 
     nameInput =
       Html.map ObjectNameInputMsg <|
