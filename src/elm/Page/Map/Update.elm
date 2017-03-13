@@ -52,6 +52,7 @@ import Component.FloorDeleter as FloorDeleter
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
+import Page.Map.Emoji as Emoji exposing (Emoji)
 
 
 type alias ObjectId = String
@@ -94,6 +95,7 @@ subscriptions tokenRemoved undo redo clipboard model =
     , Mouse.ups (always MouseUp)
     , Sub.map ContextMenuMsg (ContextMenu.subscriptions model.contextMenu)
     , Sub.map HeaderMsg (Header.subscriptions)
+    , Emoji.response ReceiveEmoji
     ]
 
 
@@ -136,7 +138,9 @@ init flags location =
     case urlResult of
       Ok url ->
         (toModel url)
-        ! [ initCmd apiConfig url.editMode userState url.floorId ]
+        ! [ initCmd apiConfig url.editMode userState url.floorId
+          , Emoji.request
+          ]
 
       Err _ ->
         let
@@ -1585,12 +1589,11 @@ update removeToken setSelectionStart msg model =
           , Navigation.modifyUrl (URL.serialize newModel)
           ]
 
+    ReceiveEmoji emojiList ->
+      { model | emojiList = emojiList } ! []
+
     Error e ->
-      let
-        newModel =
-          { model | error = e }
-      in
-        newModel ! []
+      { model | error = e } ! []
 
 
 submitSearch : Model -> (Model, Cmd Msg)

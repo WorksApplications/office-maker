@@ -36,6 +36,8 @@ import Page.Map.ContextMenu
 import Page.Map.PrototypePreviewView as PrototypePreviewView
 import Page.Map.SearchResultView as SearchResultView
 import Page.Map.FloorUpdateInfoView as FloorUpdateInfoView
+import Page.Map.Emoji as Emoji exposing (Emoji)
+
 
 mainView : Model -> Html Msg
 mainView model =
@@ -163,8 +165,22 @@ drawingView model editingMode =
         Stamp ->
           Lazy.lazy PrototypePreviewView.view prototypes
 
+        -- Label ->
+        --   viewEmojiSelector 8 model.emojiList
+
         _ ->
           text ""
+    ]
+
+
+viewEmojiSelector : Int -> List Emoji -> Html Msg
+viewEmojiSelector cols emojiList =
+  div []
+    [ div [] (emojiList |> List.drop 0 |> List.take cols |> List.map (\e -> Emoji.view e []))
+    , div [] (emojiList |> List.drop cols |> List.take cols |> List.map (\e -> Emoji.view e []))
+    , div [] (emojiList |> List.drop (2*cols) |> List.take cols |> List.map (\e -> Emoji.view e []))
+    , div [] (emojiList |> List.drop (3*cols) |> List.take cols |> List.map (\e -> Emoji.view e []))
+    , div [] (emojiList |> List.drop (4*cols) |> List.take cols |> List.map (\e -> Emoji.view e []))
     ]
 
 

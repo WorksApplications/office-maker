@@ -38,3 +38,10 @@ a {
 .elm-overlay {
   z-index: 2147483647;
 }
+
+img.emoji {
+  height: 2em;
+  width: 2em;
+  margin: 0 .05em 0 .1em;
+  vertical-align: -0.1em;
+}

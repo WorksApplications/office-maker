@@ -40,6 +40,7 @@ import Component.Header as Header
 import Component.FloorDeleter as FloorDeleter exposing (FloorDeleter)
 
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
+import Page.Map.Emoji as Emoji exposing (Emoji)
 
 
 type alias ObjectId = String
@@ -91,6 +92,7 @@ type alias Model =
   , header : Header.Model
   , saveFloorDebounce : Debounce SaveRequest
   , floorDeleter : FloorDeleter
+  , emojiList : List Emoji
   }
 
 
@@ -165,6 +167,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , header = Header.init
     , saveFloorDebounce = Debounce.init
     , floorDeleter = FloorDeleter.init
+    , emojiList = []
     }
 
 

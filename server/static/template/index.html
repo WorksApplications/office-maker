@@ -6,6 +6,7 @@
 		<script src="./index.js"></script>
 		<link rel="stylesheet" href="./style.css"></link>
 		<link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
+		<script src="//twemoji.maxcdn.com/2/twemoji.min.js?2.2.3"></script>
 	</head>
 	<body>
 		<input id="paste" hidden>
@@ -110,8 +111,23 @@
 			// 	// }
 			// }, true);
 
-
-
+			/* Emoji */
+			main.ports.requestEmoji.subscribe(function(emojis) {
+				main.ports.responseEmoji.send(emojis.map(function(s) {
+					var url = '';
+					twemoji.parse(s, function (icon, options) {
+					  url = ''.concat(
+					    options.base, // by default Twitter Inc. CDN
+					    options.size, // by default "36x36" string
+					    '/',
+					    icon,         // the found emoji as code point
+					    options.ext   // by default ".png"
+					  );
+						return 'not/used';
+					});
+					return { text: s, url: url };
+				}));
+			});
 		</script>
 	</body>
 </html>
