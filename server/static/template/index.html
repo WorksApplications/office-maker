@@ -58,7 +58,7 @@
 			  }
 			}, true);
 			window.addEventListener('paste', function(e) {
-				if(e.target.id === 'paste-from-spreadsheet') {
+				if(document.activeElement.id == 'paste-from-spreadsheet') {
 					e.preventDefault();
 					// var items = e.clipboardData.items;
 				  // for (var i = 0 ; i < items.length ; i++) {
