@@ -6,7 +6,14 @@ var configJsonPath = path.resolve(__dirname, '../config.json');
 var defaultConfigJsonPath = path.resolve(__dirname, '../defaultConfig.json');
 var replaceSecret = config => {
   var secretFilePath = path.resolve(__dirname, '..', config.secret);
-  config.secret = fs.readFileSync(secretFilePath, 'utf8');
+  if(fs.existsSync(secretFilePath)) {
+    config.secret = {
+      token: fs.readFileSync(secretFilePath, 'utf8');
+    };
+  } else {
+    // It is okay on test.
+    config.secret = null;
+  }
 };
 
 /* load */

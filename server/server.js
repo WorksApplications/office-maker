@@ -49,7 +49,7 @@ function getSelf(conn, token) {
     }
   }
   return new Promise((resolve, reject) => {
-    jwt.verify(token, config.secret, {
+    jwt.verify(token, config.secret.token, {
       algorithms: ['RS256', 'RS384', 'RS512', 'HS256', 'HS256', 'HS512', 'ES256', 'ES384', 'ES512']
     }, (e, user) => {
       if (e) {
