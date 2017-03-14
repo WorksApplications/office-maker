@@ -8,6 +8,13 @@ type alias PositionedPrototype =
   (Prototype, (Int, Int))
 
 
+type alias Cell =
+  { cols : Int
+  , rows : Int
+  , text : String
+  }
+
+
 toObjectCandidates : Prototype -> (Int, Int) -> String -> List PositionedPrototype
 toObjectCandidates prototype (left, top) s =
   let
@@ -19,28 +26,33 @@ toObjectCandidates prototype (left, top) s =
 
     rows_ =
       List.indexedMap (\rowIndex row ->
-        List.indexedMap (\colIndex maybeName ->
+        List.indexedMap (\colIndex maybeCell ->
           Maybe.map
-            (\name ->
+            (\cell ->
               ( { prototype |
-                  name = name
+                  name = cell.text
                 }
               , calcPosition prototype (left, top) rowIndex colIndex
               )
             )
-            maybeName
+            maybeCell
         ) row
       ) rows
   in
     List.concatMap (List.filterMap identity) rows_
 
 
-parseString : String -> List (List (Maybe String))
+parseString : String -> List (List (Maybe Cell))
 parseString s =
-  List.map (\s -> (List.map Just <| String.split "\t" s)) (String.split "\n" s)
+  String.split "\n" s
+    |> List.map
+      (\s ->
+         String.split "\t" s
+           |> List.map (Cell 1 1 >> Just)
+      )
 
 
-parseHtml : String -> List (List (Maybe String))
+parseHtml : String -> List (List (Maybe Cell))
 parseHtml table =
   parse table
     |> getElementsByTagName "tr"
@@ -50,14 +62,23 @@ parseHtml table =
           |> mapElements
             (\_ attrs innerTd ->
               let
+                cols = getIntValueWithDefault "colspan" attrs 1
+                rows = getIntValueWithDefault "rowspan" attrs 1
                 s = textContent innerTd
               in
                 if String.trim s /= "" then
-                  Just s
+                  Just (Cell cols rows s)
                 else
                   Nothing
             )
       )
+
+
+getIntValueWithDefault : String -> Attributes -> Int -> Int
+getIntValueWithDefault attrName attrs value =
+  getValue attrName attrs
+    |> Maybe.andThen (String.toInt >> Result.toMaybe)
+    |> Maybe.withDefault value
 
 
 calcPosition : Prototype -> (Int, Int) -> Int -> Int -> (Int, Int)

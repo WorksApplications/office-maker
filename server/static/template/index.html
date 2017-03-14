@@ -72,12 +72,12 @@
 					// console.log(e.clipboardData.types);
 					// console.log(e.clipboardData.files[0]);
 					// console.log(e.clipboardData.items[0]);
-					// console.log(e.clipboardData.getData('text/html'));
+					console.log(e.clipboardData.getData('text/html'));
 					// console.log(e.clipboardData.getData('text/rtf'));
 					// console.log(e.clipboardData.getData('text/plain'));
 					// console.log(e.clipboardData.getData('Files'));
 					// console.log(e.clipboardData.getData('image/png'));
-					main.ports.clipboard.send(e.clipboardData.getData('text/html') || e.clipboardData.getData('text'));
+					// main.ports.clipboard.send(e.clipboardData.getData('text/html') || e.clipboardData.getData('text'));
 				}
 			}, true);
 
