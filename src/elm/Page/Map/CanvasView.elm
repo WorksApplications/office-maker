@@ -146,7 +146,7 @@ view model =
           Mode.isSelectMode model.mode && model.keys.ctrl
       in
         div
-          [ style (S.canvasContainer (Mode.isPrintMode model.mode) isRangeSelectMode)
+          [ style (canvasContainerStyle model.mode isRangeSelectMode)
           , on "mousedown" Mouse.position |> Attributes.map MouseDownOnCanvas
           , onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } (Mouse.position |> Decode.map MouseUpOnCanvas)
           , onClick ClickOnCanvas
@@ -158,7 +158,7 @@ view model =
 
     Nothing ->
       div
-        [ style (S.canvasContainer (Mode.isPrintMode model.mode) False)
+        [ style (canvasContainerStyle model.mode False)
         ] []
 
 
@@ -461,3 +461,16 @@ selectorRectView model =
       text ""
 
 --
+
+
+canvasContainerStyle : Mode -> Bool -> S.S
+canvasContainerStyle mode rangeSelectMode =
+  let
+    crosshair =
+      rangeSelectMode || Mode.isLabelMode mode
+  in
+    [ ("position", "relative")
+    , ("background", if Mode.isPrintMode mode then "#ddd" else "#000")
+    , ("flex", "1")
+    , ("cursor", if crosshair then "crosshair" else "default")
+    ]

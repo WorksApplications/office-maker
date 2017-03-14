@@ -1,8 +1,10 @@
-module Page.Map.Emoji exposing (all, view)
-
+module Page.Map.Emoji exposing (view, selector)
 
 import Html exposing (..)
+import Html.Events exposing (..)
 import Native.Emoji
+import Util.ListUtil as ListUtil
+import Page.Map.Msg exposing (..)
 
 
 hack : List (Attribute msg) -> String -> Html msg
@@ -12,6 +14,19 @@ hack = Native.Emoji.view
 view : List (Attribute msg) -> String -> Html msg
 view attr s =
   hack attr s
+
+
+selector : Html Msg
+selector =
+  all
+    |> ListUtil.sepBy 10
+    |> List.map (List.map selectorEach >> div [])
+    |> div []
+
+
+selectorEach : String -> Html Msg
+selectorEach s =
+  view [ onClick (InsertEmoji s) ] s
 
 
 all : List String

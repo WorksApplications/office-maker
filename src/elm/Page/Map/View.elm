@@ -1,10 +1,7 @@
 module Page.Map.View exposing (view)
 
-import Json.Decode as Decode
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import Html.Lazy as Lazy exposing (..)
 
 import ContextMenu
@@ -21,8 +18,8 @@ import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
+import Component.ObjectNameInput as ObjectNameInput
 
-import Util.ListUtil as ListUtil
 import Util.HtmlUtil exposing (..)
 
 import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
@@ -162,33 +159,20 @@ drawingView model editingMode =
       Prototypes.prototypes model.prototypes
   in
     [ Lazy.lazy modeSelectionView editingMode
-    , case editingMode of
-        Select ->
-          Lazy.lazy pasteInput model.lang
+    , if ObjectNameInput.isEditing model.objectNameInput then
+        Emoji.selector
+      else
+        case editingMode of
+            Select ->
+              Lazy.lazy pasteInput model.lang
 
-        Stamp ->
-          Lazy.lazy PrototypePreviewView.view prototypes
+            Stamp ->
+              Lazy.lazy PrototypePreviewView.view prototypes
 
-        Label ->
-          emojiSelector
-
-        _ ->
-          text ""
+            _ ->
+              text ""
     ]
 
-
-emojiSelector : Html Msg
-emojiSelector =
-  Emoji.all
-    |> ListUtil.sepBy 8
-    |> List.map (List.map emojiSelectorEach >> div [])
-    |> div []
-
-
-emojiSelectorEach : String -> Html Msg
-emojiSelectorEach s =
-  Emoji.view [ onClick (InsertEmoji s) ] s
-  
 
 pasteInput : Language -> Html msg
 pasteInput lang =

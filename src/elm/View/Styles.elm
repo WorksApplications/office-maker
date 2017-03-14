@@ -307,15 +307,6 @@ gridLayerHorizontalLine top =
   ]
 
 
-canvasContainer : Bool -> Bool -> S
-canvasContainer printMode rangeSelectMode =
-  [ ("position", "relative")
-  , ("background", if printMode then "#ddd" else "#000")
-  , ("flex", "1")
-  , ("cursor", if rangeSelectMode then "crosshair" else "default")
-  ]
-
-
 nameLabel : String -> Float -> number -> Bool -> S
 nameLabel color scale fontSize disableTransition =
   [ ("color", color)
