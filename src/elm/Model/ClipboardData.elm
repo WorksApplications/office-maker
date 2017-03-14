@@ -49,13 +49,13 @@ parseHtml table =
         innerTr
           |> mapElements
             (\_ attrs innerTd ->
-              getValue "bgcolor" attrs
-                |> Maybe.andThen (\bgColor ->
-                  if bgColor /= "#FFFFFF" then
-                    Just (textContent innerTd)
-                  else
-                    Nothing
-                )
+              let
+                s = textContent innerTd
+              in
+                if String.trim s /= "" then
+                  Just s
+                else
+                  Nothing
             )
       )
 

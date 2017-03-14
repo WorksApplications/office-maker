@@ -6,6 +6,8 @@ import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 
 import Util.UndoList as UndoList exposing (UndoList)
 
+import Dict
+
 
 type alias EditingFloor =
   { undoList : UndoList Floor

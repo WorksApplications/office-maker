@@ -1500,7 +1500,9 @@ update removeToken setSelectionStart msg model =
                 ) (Task.succeed []) newObjects
 
             autoMatchingCmd =
-              performAPI GotMatchingList task
+              Process.sleep 1000
+                |> Task.andThen (\_ -> task)
+                |> performAPI GotMatchingList
           in
             { newModel |
               selectedObjects = List.map (Object.idOf) newObjects
