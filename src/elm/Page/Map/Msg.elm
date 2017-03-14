@@ -32,7 +32,6 @@ import Component.FloorDeleter as FloorDeleter
 
 import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
-import Page.Map.Emoji exposing (Emoji)
 
 
 type alias Size =
@@ -126,6 +125,5 @@ type Msg
   | GotFileWithDataURL File String
   | FloorDeleterMsg FloorDeleter.Msg
   | FloorDeleted Floor
-  | ReceiveEmoji (List Emoji)
   | InsertEmoji String
   | Error GlobalError

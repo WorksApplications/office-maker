@@ -1,57 +1,21 @@
-port module Page.Map.Emoji exposing (Emoji, request, response, replace, insert, view)
+module Page.Map.Emoji exposing (all, view)
 
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Native.Emoji
 
 
-port requestEmoji : List String -> Cmd msg
-port responseEmoji : (List Emoji -> msg) -> Sub msg
-port replaceEmoji : () -> Cmd msg
-port insertEmoji : String -> Cmd msg
+hack : List (Attribute msg) -> String -> Html msg
+hack = Native.Emoji.view
 
 
-type alias Emoji =
-  { text : String
-  , url : String
-  }
+view : List (Attribute msg) -> String -> Html msg
+view attr s =
+  hack attr s
 
 
-request : Cmd msg
-request =
-  requestEmoji top
-
-
-response : (List Emoji -> msg) -> Sub msg
-response =
-  responseEmoji
-
-
-replace : Cmd msg
-replace =
-  replaceEmoji ()
-
-
-insert : String -> Cmd msg
-insert =
-  insertEmoji
-
-
-view : Emoji -> List (Attribute msg) -> Html msg
-view emoji events =
-  img
-    ( events ++
-        [ class "emoji"
-        , draggable "false"
-        , alt emoji.text
-        , src emoji.url
-        ]
-    )
-    []
-
-
-top : List String
-top =
+all : List String
+all =
   [ "🚹"
   , "🚺"
   , "🚻"

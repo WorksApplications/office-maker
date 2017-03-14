@@ -52,7 +52,6 @@ import Component.FloorDeleter as FloorDeleter
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
-import Page.Map.Emoji as Emoji exposing (Emoji)
 
 
 type alias ObjectId = String
@@ -95,7 +94,6 @@ subscriptions tokenRemoved undo redo clipboard model =
     , Mouse.ups (always MouseUp)
     , Sub.map ContextMenuMsg (ContextMenu.subscriptions model.contextMenu)
     , Sub.map HeaderMsg (Header.subscriptions)
-    , Emoji.response ReceiveEmoji
     ]
 
 
@@ -139,8 +137,6 @@ init flags location =
       Ok url ->
         (toModel url)
         ! [ initCmd apiConfig url.editMode userState url.floorId
-          , Emoji.request
-          , Emoji.replace
           ]
 
       Err _ ->
@@ -1590,9 +1586,6 @@ update removeToken setSelectionStart msg model =
           , Navigation.modifyUrl (URL.serialize newModel)
           ]
 
-    ReceiveEmoji emojiList ->
-      { model | emojiList = emojiList } ! []
-
     InsertEmoji text ->
       model ! [ ObjectNameInput.insertText ObjectNameInputMsg text model.objectNameInput ]
 
@@ -2109,7 +2102,7 @@ updateOnFinishNameInput continueEditing objectId name model =
           , selectedObjects = selectedObjects
           }
       in
-        newModel ! [ requestCandidateCmd, registerPersonDetailCmd, saveCmd, focusCmd, Emoji.replace ]
+        newModel ! [ requestCandidateCmd, registerPersonDetailCmd, saveCmd, focusCmd ]
 
 
 registerPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg

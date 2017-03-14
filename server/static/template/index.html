@@ -111,43 +111,6 @@
 			// 	// }
 			// }, true);
 
-			/* Emoji */
-			main.ports.requestEmoji.subscribe(function(emojis) {
-				main.ports.responseEmoji.send(emojis.map(function(s) {
-					var url = '';
-					twemoji.parse(s, function (icon, options) {
-					  url = ''.concat(
-					    options.base, // by default Twitter Inc. CDN
-					    options.size, // by default "36x36" string
-					    '/',
-					    icon,         // the found emoji as code point
-					    options.ext   // by default ".png"
-					  );
-						return 'not/used';
-					});
-					return { text: s, url: url };
-				}));
-			});
-			main.ports.replaceEmoji.subscribe(function() {
-				// Array.prototype.forEach.call(document.getElementsByClassName('emoji-target'), function(e) {
-				//
-				// 	if(!e.children[1]) {
-				// 		var node = document.createElement('div');
-				// 		node.textContent = e.textContent;
-				// 		e.appendChild(node);
-				// 	}
-				// 	twemoji.parse(e.children[1]);
-				// 	e.children[0].textContent = '';
-				// });
-			});
-			// main.ports.insertEmoji.subscribe(function(text) {
-			// 	var el = document.getElementById('name-input');
-			// 	if(el) {
-			// 		el.focus();
-			// 		el.value += text;
-			// 	}
-			// });
-
 		</script>
 	</body>
 </html>

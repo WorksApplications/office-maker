@@ -7,11 +7,10 @@ import Html.Events exposing (..)
 import Html.Lazy as Lazy
 import Mouse exposing (Position)
 
-
 import View.Styles as S
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
-
+import Page.Map.Emoji as Emoji
 
 type alias Id = String
 
@@ -171,5 +170,5 @@ objectLabelView canBeEmoji color fontSize scale disableTransition screenRect nam
         disableTransition  --TODO
   in
     div
-      ( style styles :: if canBeEmoji then [ class "emoji-target" ] else [])
-      [ span [] [ text trimed ]]
+      [ style styles ]
+      [ if canBeEmoji then Emoji.view [] trimed else span [] [ text trimed ]]
