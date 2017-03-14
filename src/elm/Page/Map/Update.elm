@@ -1587,7 +1587,10 @@ update removeToken setSelectionStart msg model =
           ]
 
     InsertEmoji text ->
-      model ! [ ObjectNameInput.insertText ObjectNameInputMsg text model.objectNameInput ]
+      model !
+        [ ObjectNameInput.insertText ObjectNameInputMsg text model.objectNameInput
+        , focusCmd
+        ]
 
     Error e ->
       { model | error = e } ! []
@@ -1978,14 +1981,9 @@ getAndCachePersonIfNotCached personId model =
 
 focusCmd : Cmd Msg
 focusCmd =
-  Task.attempt (\result ->
-    case result of
-      Ok _ ->
-        Focused
-
-      _ ->
-        NoOp
-  ) (Dom.focus "name-input")
+  Task.attempt
+    (Result.map (always Focused) >> Result.withDefault NoOp)
+    (Dom.focus "name-input")
 
 
 updateFloorByFloorPropertyEvent : API.Config -> Maybe FloorProperty.Event -> EditingFloor -> (EditingFloor, Cmd Msg)

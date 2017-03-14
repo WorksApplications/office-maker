@@ -1,5 +1,7 @@
 module Page.Map.View exposing (view)
 
+import Json.Decode as Decode
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -179,9 +181,14 @@ emojiSelector : Html Msg
 emojiSelector =
   Emoji.all
     |> ListUtil.sepBy 8
-    |> List.map (List.map (\s -> Emoji.view [ onClick (InsertEmoji s) ] s) >> div [])
+    |> List.map (List.map emojiSelectorEach >> div [])
     |> div []
 
+
+emojiSelectorEach : String -> Html Msg
+emojiSelectorEach s =
+  Emoji.view [ onClick (InsertEmoji s) ] s
+  
 
 pasteInput : Language -> Html msg
 pasteInput lang =
