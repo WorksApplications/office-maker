@@ -27,6 +27,7 @@ import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 import Model.User as User exposing (User)
+import Model.Object as Object
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.ContextMenuContext exposing (ContextMenuContext(..))
@@ -157,9 +158,18 @@ drawingView model editingMode =
   let
     prototypes =
       Prototypes.prototypes model.prototypes
+
+    editinglabel =
+      ObjectNameInput.isEditing model.objectNameInput &&
+        case Model.primarySelectedObject model of
+          Just object ->
+            Object.isLabel object
+
+          Nothing ->
+            False
   in
     [ Lazy.lazy modeSelectionView editingMode
-    , if ObjectNameInput.isEditing model.objectNameInput then
+    , if editinglabel then
         Emoji.selector
       else
         case editingMode of
