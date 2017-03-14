@@ -159,7 +159,7 @@ drawingView model editingMode =
     prototypes =
       Prototypes.prototypes model.prototypes
 
-    editinglabel =
+    editingLabel =
       ObjectNameInput.isEditing model.objectNameInput &&
         case Model.primarySelectedObject model of
           Just object ->
@@ -169,18 +169,18 @@ drawingView model editingMode =
             False
   in
     [ Lazy.lazy modeSelectionView editingMode
-    , if editinglabel then
+    , if editingLabel then
         Emoji.selector
       else
         case editingMode of
-            Select ->
-              Lazy.lazy pasteInput model.lang
+          Select ->
+            Lazy.lazy pasteInput model.lang
 
-            Stamp ->
-              Lazy.lazy PrototypePreviewView.view prototypes
+          Stamp ->
+            Lazy.lazy PrototypePreviewView.view prototypes
 
-            _ ->
-              text ""
+          _ ->
+            text ""
     ]
 
 
