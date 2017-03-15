@@ -8,7 +8,7 @@ var replaceSecret = config => {
   var secretFilePath = path.resolve(__dirname, '..', config.secret);
   if(fs.existsSync(secretFilePath)) {
     config.secret = {
-      token: fs.readFileSync(secretFilePath, 'utf8');
+      token: fs.readFileSync(secretFilePath, 'utf8')
     };
   } else {
     // It is okay on test.
