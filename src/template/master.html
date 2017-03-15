@@ -1,0 +1,35 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title><%= title %></title>
+		<script src="./master.js"></script>
+		<link rel="stylesheet" href="./style.css"></link>
+		<link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
+		<style>
+		/* overriding style.css */
+		body {
+		    overflow-y: inherit;
+		}
+	  </style>
+	</head>
+	<body>
+		<script>
+			var lang =
+					window.navigator.language ||
+					window.navigator.userLanguage ||
+					window.navigator.browserLanguage;
+			var main = Elm.Page.Master.Main.fullscreen({
+				apiRoot: '<%= apiRoot %>',
+				accountServiceRoot: '<%= accountServiceRoot %>',
+				title: '<%= title %>',
+				authToken: localStorage.getItem('authToken') || '',
+				lang: lang
+			});
+			main.ports.removeToken.subscribe(function(token) {
+				localStorage.removeItem('authToken', token);
+			  main.ports.tokenRemoved.send();
+			});
+		</script>
+	</body>
+</html>

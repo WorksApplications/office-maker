@@ -1,8 +1,9 @@
 module Component.FloorProperty exposing(..)
 
-import Maybe
+import Json.Decode as Decode
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Html.Lazy as Lazy
 
 import Util.HtmlUtil exposing (..)
@@ -196,6 +197,11 @@ inputAttributes toInputMsg toKeydownMsg value_ defence =
         Just message -> [onMouseDown_ message]
         Nothing -> []
     )
+
+
+onInput_ : (String -> a) -> Attribute a
+onInput_ f =
+  onWithOptions "input" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
 
 widthValueView : User -> Bool -> String -> Html Msg

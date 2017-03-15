@@ -3,7 +3,7 @@ module Util.HtmlUtil exposing (..)
 import Mouse exposing (Position)
 import Html exposing (Html, Attribute, text)
 import Html.Attributes
-import Html.Events exposing (on, onWithOptions)
+import Html.Events exposing (on, onWithOptions, targetValue)
 import Json.Decode as Decode exposing (..)
 import Util.File exposing (..)
 
@@ -35,10 +35,11 @@ decodeKeyCodeAndSelectionStart =
     (field "target" (field "selectionStart" int))
 
 
-onSubmit_ : a -> Attribute a
-onSubmit_ e =
-  onWithOptions
-    "onsubmit" { stopPropagation = True, preventDefault = False } (Decode.succeed e)
+decodeTargetValueAndSelectionStart : Decoder (String, Int)
+decodeTargetValueAndSelectionStart =
+  Decode.map2 (,)
+    targetValue
+    (field "target" (field "selectionStart" int))
 
 
 onMouseEnter_ : a -> Attribute a
@@ -71,11 +72,6 @@ onClick_ e =
 onInput : (String -> a) -> Attribute a
 onInput f =
   on "input" (Decode.map f Html.Events.targetValue)
-
-
-onInput_ : (String -> a) -> Attribute a
-onInput_ f =
-  onWithOptions "input" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
 
 onChange_ : (String -> a) -> Attribute a

@@ -94,6 +94,7 @@ subscriptions tokenRemoved undo redo clipboard model =
     , Mouse.ups (always MouseUp)
     , Sub.map ContextMenuMsg (ContextMenu.subscriptions model.contextMenu)
     , Sub.map HeaderMsg (Header.subscriptions)
+    , ObjectNameInput.subscriptions ObjectNameInputMsg
     ]
 
 
@@ -1591,7 +1592,7 @@ update removeToken setSelectionStart msg model =
     InsertEmoji text ->
       model !
         [ ObjectNameInput.insertText ObjectNameInputMsg text model.objectNameInput
-        , focusCmd
+        -- , focusCmd
         ]
 
     Error e ->

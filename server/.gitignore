@@ -2,5 +2,6 @@ npm-debug.log
 node_modules
 
 public
+template
 secret
 config.json

@@ -9,7 +9,8 @@ elm-make src/elm/Page/Login/Main.elm --output=server/static/public/login.js --wa
 elm-make src/elm/Page/Master/Main.elm --output=server/static/public/master.js --warn $1 &&
 
 # copy static files
-cp -f src/style.css server/static/public
+cp -f src/style.css server/static/public &&
+cp -r src/template server/static &&
 
 # generate html
 node server/static/generate-html

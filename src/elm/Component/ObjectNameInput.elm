@@ -1,6 +1,4 @@
-module Component.ObjectNameInput exposing (..)
-
-import Task
+port module Component.ObjectNameInput exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -23,11 +21,16 @@ type alias ObjectNameInput =
   , ctrl : Bool
   , shift : Bool
   , candidateIndex : Int
+  , caretPosition : Int
   }
 
 
 type alias ObjectId = String
 type alias PersonId = String
+
+
+port insertInput : (String, Int, ObjectId, String) -> Cmd msg
+port receiveInputValue : ((ObjectId, String, Int) -> msg) -> Sub msg
 
 
 init : ObjectNameInput
@@ -36,20 +39,22 @@ init =
   , ctrl = False
   , shift = False
   , candidateIndex = -1
+  , caretPosition = 0
   }
 
 
-type Msg =
-    NoOp
-  | InputName ObjectId String
+type Msg
+  = NoOp
+  | CaretPosition Int
+  | InputName ObjectId String Int
   | KeydownOnNameInput (List Person) (Int, Int)
   | KeyupOnNameInput Int
   | SelectCandidate ObjectId PersonId
   | UnsetPerson ObjectId
 
 
-type Event =
-    OnInput ObjectId String
+type Event
+  = OnInput ObjectId String
   | OnFinish ObjectId String (Maybe PersonId)
   | OnSelectCandidate ObjectId PersonId
   | OnUnsetPerson ObjectId
@@ -67,21 +72,29 @@ update message model =
     NoOp ->
       (model, None)
 
-    InputName id name ->
+    CaretPosition caretPosition ->
+      ({ model
+        | caretPosition = caretPosition
+      }, None)
+
+    InputName id name caretPosition ->
       case model.editingObject of
         Just (id_, name_) ->
           if id == id_ then
-            ({ model |
-              editingObject = Just (id, name)
+            ({ model
+              | editingObject = Just (id, name)
+              , caretPosition = caretPosition
             }, OnInput id name)
           else
-            ({ model |
-              editingObject = Just (id_, name_)
+            ({ model
+              | editingObject = Just (id_, name_)
+              , caretPosition = caretPosition
             }, None)
 
         Nothing ->
-            ({ model |
-              editingObject = Nothing
+            ({ model
+              | editingObject = Nothing
+              , caretPosition = caretPosition
             }, None)
 
     KeyupOnNameInput keyCode ->
@@ -110,8 +123,9 @@ update message model =
             ({ model | ctrl = True }, None)
           else
             (model, None)
-      in
-        ( if keyCode == 38 then
+
+        newModel2 =
+          if keyCode == 38 then
             { newModel |
               candidateIndex = Basics.max -1 (model.candidateIndex - 1)
             }
@@ -123,7 +137,8 @@ update message model =
             { newModel |
               candidateIndex = -1
             }
-        , event )
+      in
+        ( { newModel2 | caretPosition = selectionStart }, event )
 
     SelectCandidate objectId personId ->
       ( { model | editingObject = Nothing }
@@ -167,28 +182,27 @@ forceFinish model =
 
 insertText : (Msg -> msg) -> String -> ObjectNameInput -> Cmd msg
 insertText toMsg text model =
-  case model.editingObject of
-    Just (objectId, name) ->
-      InputName objectId (name ++ text)
-        |> Task.succeed
-        |> Task.perform toMsg
+   model.editingObject
+     |> Maybe.map (\(objectId, name) ->
+       insertInput ("name-input", model.caretPosition, objectId, text)
+     )
+     |> Maybe.withDefault Cmd.none
 
-    Nothing ->
-      Cmd.none
+
+subscriptions : (Msg -> msg) -> Sub msg
+subscriptions toMsg =
+   receiveInputValue (\(objectId, value, caretPosition) -> InputName objectId value caretPosition)
+     |> Sub.map toMsg
 
 
 view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
 view deskInfoOf transitionDisabled candidates model =
-  case model.editingObject of
-    Just (objectId, name) ->
-      case deskInfoOf objectId of
-        Just (screenRect, maybePerson) ->
-          view_ objectId name maybePerson screenRect transitionDisabled candidates model
-
-        Nothing -> text ""
-
-    Nothing ->
-      text ""
+  model.editingObject
+    |> Maybe.andThen (\(objectId, name) -> deskInfoOf objectId
+    |> Maybe.map (\(screenRect, maybePerson) ->
+      view_ objectId name maybePerson screenRect transitionDisabled candidates model
+    ))
+    |> Maybe.withDefault (text "")
 
 
 view_ : ObjectId -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
@@ -217,18 +231,20 @@ view_ objectId name maybePerson screenRectOfDesk transitionDisabled candidates m
       else
         text ""
   in
-    -- this is a workaround for unexpectedly remaining input.defaultValue
     Keyed.node "div"
       [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
       , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
       ]
       [ ("nameInput" ++ objectId, input
         ([ Html.Attributes.id "name-input"
-        -- , Html.Attributes.property "selectionStart" (Encode.int 9999)
-        -- , Html.Attributes.attribute "selection-start" "9999"
         , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
-        ] ++ (inputAttributes (InputName objectId) (KeydownOnNameInput candidates_) KeyupOnNameInput name))
-        [ ])
+        , onInput_ objectId
+        , on "click" (Decode.map CaretPosition targetSelectionStart)
+        , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map (KeydownOnNameInput candidates_) decodeKeyCodeAndSelectionStart)
+        , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map KeyupOnNameInput decodeKeyCode)
+        , defaultValue name
+        ])
+        [])
       , ("candidatesViewContainer", div
           [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
           [ reletedpersonView_
@@ -236,6 +252,15 @@ view_ objectId name maybePerson screenRectOfDesk transitionDisabled candidates m
           ])
       , ("pointer", pointer)
       ]
+
+
+onInput_ : String -> Attribute Msg
+onInput_ objectId =
+  onWithOptions
+    "input"
+    { stopPropagation = True, preventDefault = True }
+    decodeTargetValueAndSelectionStart
+      |> Html.Attributes.map (\(value, pos) -> InputName objectId value pos)
 
 
 reletedpersonView : ObjectId -> Person -> Html Msg
@@ -288,15 +313,3 @@ mail person =
         [ style Styles.personDetailPopupPersonIconText ]
         [ text (Maybe.withDefault "" person.mail) ]
     ]
-
-
--- TODO duplicated
-inputAttributes : (String -> msg) -> ((Int, Int) -> msg) -> (Int -> msg) -> String -> List (Attribute msg)
-inputAttributes toInputMsg toKeydownMsg toKeyupMsg value_ =
-  [ onInput_ toInputMsg
-  -- , autofocus True
-  , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map toKeydownMsg decodeKeyCodeAndSelectionStart)
-  , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map toKeyupMsg decodeKeyCode)
-  , defaultValue value_
-  -- , value value_
-  ]
