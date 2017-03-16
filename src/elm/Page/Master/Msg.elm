@@ -16,6 +16,8 @@ type Msg
   = NoOp
   | Loaded UserState User ColorPalette (List Prototype) (List User)
   | HeaderMsg Header.Msg
+  | AddColor Bool
+  | DeleteColor Bool Int
   | InputColor Bool Int String
   | UpdatePrototype Int PrototypeForm
   | SaveColorDebounceMsg Debounce.Msg

@@ -112,24 +112,33 @@ update removeToken message model =
     HeaderMsg msg ->
       { model | header = Header.update msg model.header } ! []
 
+    AddColor isBackground ->
+      let
+        colorPalette =
+          (if isBackground then ColorPalette.addBackgroundColorToLast else ColorPalette.addTextColorToLast)
+            "#fff"
+            model.colorPalette
+      in
+        updatePalette colorPalette model
+
+    DeleteColor isBackground index ->
+      let
+        colorPalette =
+          (if isBackground then ColorPalette.deleteBackgroundColorAt else ColorPalette.deleteTextColorAt)
+            index
+            model.colorPalette
+      in
+        updatePalette colorPalette model
+
     InputColor isBackground index color ->
       let
         colorPalette =
-          (if isBackground then ColorPalette.setBackgroundColorAt else ColorPalette.setColorAt)
+          (if isBackground then ColorPalette.setBackgroundColorAt else ColorPalette.setTextColorAt)
             index
             color
             model.colorPalette
-
-        (saveColorDebounce, cmd) =
-          Debounce.push
-            saveColorDebounceConfig
-            colorPalette
-            model.saveColorDebounce
       in
-        { model
-        | colorPalette = colorPalette
-        , saveColorDebounce = saveColorDebounce
-        } ! [ cmd ]
+        updatePalette colorPalette model
 
     UpdatePrototype index prototype ->
       let
@@ -180,6 +189,21 @@ update removeToken message model =
 
     APIError e ->
       { model | error = Just (toString e) } ! []
+
+
+updatePalette : ColorPalette -> Model -> (Model, Cmd Msg)
+updatePalette colorPalette model =
+  let
+    (saveColorDebounce, cmd) =
+      Debounce.push
+        saveColorDebounceConfig
+        colorPalette
+        model.saveColorDebounce
+  in
+    { model
+    | colorPalette = colorPalette
+    , saveColorDebounce = saveColorDebounce
+    } ! [ cmd ]
 
 
 subscriptions : Model -> Sub Msg

@@ -60,8 +60,10 @@ colorMasterView : Model -> List (Html Msg)
 colorMasterView model =
   [ h2 [] [ text "Background Colors (for desks and labels)"]
   , div [] <| List.indexedMap (colorMasterRow True) model.colorPalette.backgroundColors
+  , button [ onClick (AddColor True) ] [ text "Add" ]
   , h2 [] [ text "Text Colors (for labels)"]
   , div [] <| List.indexedMap (colorMasterRow False) model.colorPalette.textColors
+  , button [ onClick (AddColor False) ] [ text "Add" ]
   ]
 
 
@@ -70,7 +72,15 @@ colorMasterRow isBackgroundColor index color =
   div [ style [("height", "30px"), ("display", "flex")] ]
     [ colorSample color
     , input [ onInput (InputColor isBackgroundColor index), value color ] []
+    , button [ onClick (DeleteColor isBackgroundColor index) ] [ text "Delete" ]
     ]
+
+
+colorSample : String -> Html Msg
+colorSample color =
+  div
+    [ style [("background-color", color), ("width", "30px"), ("border", "solid 1px #aaa")] ]
+    [ ]
 
 
 prototypeMasterView : Model -> List (Html Msg)
@@ -142,11 +152,6 @@ prototypeParameter label value_ validate =
       , errHtml
       , input [ style CS.input, value value_, onInput identity ] []
       ]
-
-
-colorSample : String -> Html Msg
-colorSample color =
-  div [ style [("background-color", color), ("width", "30px")] ] [ ]
 
 
 messageBar : Model -> Html Msg
