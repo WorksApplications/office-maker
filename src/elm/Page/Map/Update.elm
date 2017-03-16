@@ -52,6 +52,7 @@ import Component.FloorDeleter as FloorDeleter
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
+import Page.Map.LinkCopy as LinkCopy
 
 
 type alias ObjectId = String
@@ -1592,8 +1593,10 @@ update removeToken setSelectionStart msg model =
     InsertEmoji text ->
       model !
         [ ObjectNameInput.insertText ObjectNameInputMsg text model.objectNameInput
-        -- , focusCmd
         ]
+
+    LinkCopyMsg msg ->
+      model ! [ LinkCopy.copy msg ]
 
     Error e ->
       { model | error = e } ! []

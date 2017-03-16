@@ -32,6 +32,7 @@ import Component.FloorDeleter as FloorDeleter
 
 import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
+import Page.Map.LinkCopy as LinkCopy
 
 
 type alias Size =
@@ -126,4 +127,5 @@ type Msg
   | FloorDeleterMsg FloorDeleter.Msg
   | FloorDeleted Floor
   | InsertEmoji String
+  | LinkCopyMsg LinkCopy.Msg
   | Error GlobalError

@@ -159,7 +159,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , searchResult = Nothing
     , clickEmulator = []
     , searchCandidateDebounce = Debounce.init
-    , personPopupSize = (300, 160)
+    , personPopupSize = (300, 180)
     , lang = lang
     , cache = Cache.cache
     , header = Header.init
