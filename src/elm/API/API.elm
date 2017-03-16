@@ -202,7 +202,7 @@ search config withPrivate query =
   let
     url =
       makeUrl
-        (config.apiRoot ++ "/1/search/" ++ Http.encodeUri query)
+        (config.apiRoot ++ "/1/search/" ++ Http.encodeUri (String.join "" <| String.split "/" query))
         (if withPrivate then [("all", "true")] else [])
   in
     HttpUtil.get
