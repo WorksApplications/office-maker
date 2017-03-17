@@ -669,7 +669,16 @@ update removeToken setSelectionStart msg model =
       in
         case event of
           ObjectNameInput.OnInput id name ->
-            model_ ! [ requestCandidate id name ]
+            model_.floor
+              |> Maybe.andThen (EditingFloor.present >> Floor.getObject id)
+              |> Maybe.andThen (\object ->
+                if Object.isLabel object then
+                  Nothing
+                else
+                  Just <| requestCandidate id name
+              )
+              |> Maybe.withDefault Cmd.none
+              |> (,) model_
 
           ObjectNameInput.OnFinish objectId name candidateId ->
             case candidateId of

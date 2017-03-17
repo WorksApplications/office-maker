@@ -195,29 +195,53 @@ subscriptions toMsg =
      |> Sub.map toMsg
 
 
-view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
+view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person, Bool)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
 view deskInfoOf transitionDisabled candidates model =
   model.editingObject
     |> Maybe.andThen (\(objectId, name) -> deskInfoOf objectId
-    |> Maybe.map (\(screenRect, maybePerson) ->
-      view_ objectId name maybePerson screenRect transitionDisabled candidates model
+    |> Maybe.map (\(screenRect, maybePerson, showSuggestion) ->
+      view_ showSuggestion objectId name maybePerson screenRect transitionDisabled candidates model
     ))
     |> Maybe.withDefault (text "")
 
 
-view_ : ObjectId -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
-view_ objectId name maybePerson screenRectOfDesk transitionDisabled candidates model =
+view_ : Bool -> ObjectId -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
+view_ showSuggestion objectId name maybePerson screenRectOfDesk transitionDisabled candidates model =
   let
     candidates_ =
       List.filter (\candidate -> Just candidate /= maybePerson) (List.take 15 candidates)
+  in
+    Keyed.node "div"
+      [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
+      , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
+      ]
+      ([ ("nameInput" ++ objectId, input
+        ([ Html.Attributes.id "name-input"
+        , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
+        , onInput_ objectId
+        , on "click" (Decode.map CaretPosition targetSelectionStart)
+        , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map (KeydownOnNameInput candidates_) decodeKeyCodeAndSelectionStart)
+        , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map KeyupOnNameInput decodeKeyCode)
+        , defaultValue name
+        ])
+        [])
+      ] ++ (if showSuggestion then viewSuggestion objectId maybePerson screenRectOfDesk candidates_ model else []))
+
+
+viewSuggestion : String -> Maybe Person -> (Int, Int, Int, Int) -> List Person -> ObjectNameInput -> List (String, Html Msg)
+viewSuggestion objectId maybePerson screenRectOfDesk candidates model =
+  let
+    candidates_ =
+      candidates
+        |> List.take 15
+        |> List.filter (\candidate -> Just candidate /= maybePerson)
 
     (relatedPersonExists, reletedpersonView_) =
-      case maybePerson of
-        Just person ->
-          (True, Lazy.lazy2 reletedpersonView objectId person)
-
-        Nothing ->
-          (False, text "")
+      maybePerson
+        |> Maybe.map (\person ->
+            (True, Lazy.lazy2 reletedpersonView objectId person)
+        )
+        |> Maybe.withDefault (False, text "")
 
     candidatesLength =
       List.length candidates_
@@ -231,27 +255,15 @@ view_ objectId name maybePerson screenRectOfDesk transitionDisabled candidates m
       else
         text ""
   in
-    Keyed.node "div"
-      [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
-      , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
-      ]
-      [ ("nameInput" ++ objectId, input
-        ([ Html.Attributes.id "name-input"
-        , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
-        , onInput_ objectId
-        , on "click" (Decode.map CaretPosition targetSelectionStart)
-        , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map (KeydownOnNameInput candidates_) decodeKeyCodeAndSelectionStart)
-        , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map KeyupOnNameInput decodeKeyCode)
-        , defaultValue name
-        ])
-        [])
-      , ("candidatesViewContainer", div
-          [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
-          [ reletedpersonView_
-          , candidatesView model.candidateIndex objectId candidates_
-          ])
-      , ("pointer", pointer)
-      ]
+    [ ("name-input-suggestion"
+      , div
+        [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
+        [ reletedpersonView_
+        , candidatesView model.candidateIndex objectId candidates_
+        ]
+      )
+    , ("pointer", pointer)
+    ]
 
 
 onInput_ : String -> Attribute Msg

@@ -193,6 +193,7 @@ canvasView model floor =
             ( Scale.imageToScreenForRect scale (Object.rect object)
             , relatedPerson object
                 |> Maybe.andThen (\personId -> Dict.get personId personInfo)
+            , not (Object.isLabel object)
             )
           )
 
