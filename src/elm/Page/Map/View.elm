@@ -1,5 +1,7 @@
 module Page.Map.View exposing (view)
 
+import Dict
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Lazy as Lazy exposing (..)
@@ -13,6 +15,7 @@ import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
 import View.Common exposing (..)
 import View.SearchInputView as SearchInputView
+import View.ProfilePopup as ProfilePopup
 
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
@@ -120,8 +123,25 @@ subViewForEdit model editingMode =
   in
     [ card False "#eee" Nothing Nothing <| drawingView model editingMode
     , card False "#eee" Nothing Nothing <| PropertyView.view model
+    , viewProfile model
     , card False "#eee" Nothing Nothing <| floorView
     ]
+
+
+viewProfile : Model -> Html msg
+viewProfile model =
+  model.floor
+    |> Maybe.andThen (\floor -> Model.primarySelectedObject model
+    |> Maybe.andThen Object.relatedPerson
+    |> Maybe.andThen (\personId -> Dict.get personId model.personInfo
+    |> Maybe.map (\person ->
+      ProfilePopup.innerView Nothing person
+    )))
+    |> Maybe.map (\inner ->
+      card False "#eee" Nothing Nothing <|
+        [ div [ style [ ("position", "relative"), ("height", "180px") ] ] inner ]
+    )
+    |> Maybe.withDefault (text "")
 
 
 fileLoadButton : Language -> User -> Html Msg

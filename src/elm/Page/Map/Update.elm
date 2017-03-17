@@ -889,17 +889,18 @@ update msg model =
           List.map .id people
 
         newSelectedObjects =
-          List.filterMap (\obj ->
-            case Object.relatedPerson obj of
-              Just personId ->
-                if List.member personId personIds then
-                  Just (idOf obj)
-                else
-                  Nothing
-
-              Nothing ->
-                Nothing
-          ) (Floor.objects <| Model.getEditingFloorOrDummy model)
+          model
+            |> Model.getEditingFloorOrDummy
+            |> Floor.objects
+            |> List.filterMap (\obj ->
+              Object.relatedPerson obj
+                |> Maybe.andThen (\personId ->
+                  if List.member personId personIds then
+                    Just (idOf obj)
+                  else
+                    Nothing
+                )
+            )
 
         newModel =
           { model |
@@ -1350,14 +1351,11 @@ update msg model =
 
         Just floor ->
           let
-            maybePersonId =
+            cmd =
               Floor.getObject objectId (EditingFloor.present floor)
                 |> Maybe.andThen Object.relatedPerson
-
-            cmd =
-              case maybePersonId of
-                Just personId -> regesterPerson model.apiConfig personId
-                Nothing -> Cmd.none
+                |> Maybe.map (regesterPerson model.apiConfig)
+                |> Maybe.withDefault Cmd.none
           in
             ({ model |
               selectedResult = Just objectId
