@@ -2087,9 +2087,18 @@ updateOnFinishNameInput continueEditing objectId name model =
             |> Maybe.withDefault []
 
         (newFloor, objectsChange) =
-          EditingFloor.updateObjects
-            (Floor.changeObjectName [objectId] name)
-            efloor
+          Floor.getObject objectId floor
+            |> Maybe.map (\object ->
+              if Object.isLabel object && String.trim name == "" then
+                EditingFloor.updateObjects
+                  (Floor.removeObjects [objectId])
+                  efloor
+              else
+                EditingFloor.updateObjects
+                  (Floor.changeObjectName [objectId] name)
+                  efloor
+            )
+            |> Maybe.withDefault (efloor, ObjectsChange.empty)
 
         saveCmd =
           requestSaveObjectsCmd objectsChange
@@ -2187,6 +2196,7 @@ updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEvent event model =
   -- Patterns are separated because of the worst-case performance of pattern match.
   -- https://github.com/elm-lang/elm-compiler/issues/1362
+  -- This will be fixed when Elm 0.19 is out.
   if model.keys.ctrl then
     updateByKeyEventWithCtrl event model
   else if model.keys.shift then
