@@ -97,18 +97,6 @@ diffObjects newObjects oldObjects =
     Dict.empty
 
 
-objectPropertyChange : (a -> a -> b) -> (Object -> a) -> Object -> Object -> Maybe b
-objectPropertyChange f toProperty new old =
-  let
-    newProp = toProperty new
-    oldProp = toProperty old
-  in
-    if newProp /= oldProp then
-      Just (f newProp oldProp)
-    else
-      Nothing
-
-
 diffObjectProperty : Object -> Object -> List ObjectPropertyChange
 diffObjectProperty new old =
   List.filterMap
@@ -123,5 +111,16 @@ diffObjectProperty new old =
     , objectPropertyChange Person Object.relatedPerson new old
     ]
 
+
+objectPropertyChange : (a -> a -> b) -> (Object -> a) -> Object -> Object -> Maybe b
+objectPropertyChange f toProperty new old =
+  let
+    newProp = toProperty new
+    oldProp = toProperty old
+  in
+    if newProp /= oldProp then
+      Just (f newProp oldProp)
+    else
+      Nothing
 
 --
