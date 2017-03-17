@@ -209,7 +209,9 @@ view_ : Bool -> ObjectId -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bo
 view_ showSuggestion objectId name maybePerson screenRectOfDesk transitionDisabled candidates model =
   let
     candidates_ =
-      List.filter (\candidate -> Just candidate /= maybePerson) (List.take 15 candidates)
+      candidates
+        |> List.take 15
+        |> List.filter (\candidate -> Just candidate /= maybePerson)
   in
     Keyed.node "div"
       [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
@@ -231,11 +233,6 @@ view_ showSuggestion objectId name maybePerson screenRectOfDesk transitionDisabl
 viewSuggestion : String -> Maybe Person -> (Int, Int, Int, Int) -> List Person -> ObjectNameInput -> List (String, Html Msg)
 viewSuggestion objectId maybePerson screenRectOfDesk candidates model =
   let
-    candidates_ =
-      candidates
-        |> List.take 15
-        |> List.filter (\candidate -> Just candidate /= maybePerson)
-
     (relatedPersonExists, reletedpersonView_) =
       maybePerson
         |> Maybe.map (\person ->
@@ -244,7 +241,7 @@ viewSuggestion objectId maybePerson screenRectOfDesk candidates model =
         |> Maybe.withDefault (False, text "")
 
     candidatesLength =
-      List.length candidates_
+      List.length candidates
 
     viewExists =
       relatedPersonExists || candidatesLength > 0
@@ -259,7 +256,7 @@ viewSuggestion objectId maybePerson screenRectOfDesk candidates model =
       , div
         [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
         [ reletedpersonView_
-        , candidatesView model.candidateIndex objectId candidates_
+        , candidatesView model.candidateIndex objectId candidates
         ]
       )
     , ("pointer", pointer)
