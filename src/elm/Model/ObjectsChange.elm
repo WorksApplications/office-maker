@@ -53,7 +53,23 @@ isEmpty change =
 
 merge : ObjectsChange -> ObjectsChange -> ObjectsChange
 merge new old =
-  Dict.union new old
+  Dict.merge
+    (\id new dict -> Dict.insert id new dict)
+    (\id new old dict ->
+      case (new, old) of
+        (Deleted _, Added _) ->
+          dict
+
+        (Modified object, Added _) ->
+          Dict.insert id (Added object) dict
+
+        _ ->
+          Dict.insert id new dict
+    )
+    (\id old dict -> Dict.insert id old dict)
+    new
+    old
+    Dict.empty
 
 
 fromList : List (ObjectId, ObjectChange a) -> ObjectsChange_ a
