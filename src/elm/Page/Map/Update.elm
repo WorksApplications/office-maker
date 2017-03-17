@@ -884,80 +884,59 @@ update msg model =
         }
 
     GotSamePostPeople people ->
-      let
-        personIds =
-          List.map .id people
-
-        newSelectedObjects =
-          model
-            |> Model.getEditingFloorOrDummy
-            |> Floor.objects
-            |> List.filterMap (\obj ->
-              Object.relatedPerson obj
-                |> Maybe.andThen (\personId ->
-                  if List.member personId personIds then
-                    Just (idOf obj)
-                  else
-                    Nothing
-                )
-            )
-
-        newModel =
-          { model |
-            selectedObjects = newSelectedObjects
-          } |> Model.cachePeople people
-      in
-        newModel ! []
+      model
+        |> Model.getEditingFloorOrDummy
+        |> Floor.objects
+        |> List.filterMap (\obj -> Object.relatedPerson obj
+        |> Maybe.andThen (\personId ->
+          if List.member personId (List.map .id people) then
+            Just (idOf obj)
+          else
+            Nothing
+        ))
+        |> (\newSelectedObjects ->
+          { model | selectedObjects = newSelectedObjects }
+        )
+        |> Model.cachePeople people
+        |> (flip (,) Cmd.none)
 
     SelectIsland id ->
-      case model.floor of
-        Just editingFloor ->
+      model.floor
+        |> Maybe.map EditingFloor.present
+        |> Maybe.andThen (\floor -> Floor.getObject id floor
+        |> Maybe.map (\object ->
           let
-            floor =
-              EditingFloor.present editingFloor
-
-            newModel =
-              case Floor.getObject id floor of
-                Just object ->
-                  let
-                    island =
-                      ObjectsOperation.island
-                        [object]
-                        (List.filter (\e -> (Object.idOf e) /= id) (Floor.objects floor))
-                  in
-                    { model |
-                      selectedObjects = List.map Object.idOf island
-                    }
-
-                Nothing ->
-                  model
+            island =
+              ObjectsOperation.island
+                [object]
+                (List.filter (\e -> (Object.idOf e) /= id) (Floor.objects floor))
           in
-            newModel ! []
-
-        Nothing ->
-          model ! []
+            { model |
+              selectedObjects = List.map Object.idOf island
+            }
+        ))
+        |> Maybe.map (flip (,) Cmd.none)
+        |> Maybe.withDefault (model, Cmd.none)
 
     SelectSameColor objectId ->
       model.floor
         |> Maybe.map EditingFloor.present
-        |> Maybe.andThen (\floor ->
-          Floor.getObject objectId floor
-            |> Maybe.map (\object ->
-              let
-                backgroundColor =
-                  Object.backgroundColorOf object
+        |> Maybe.andThen (\floor -> Floor.getObject objectId floor
+        |> Maybe.map (\object ->
+          let
+            backgroundColor =
+              Object.backgroundColorOf object
 
-                target =
-                  List.filter
-                    (\e -> (backgroundColorOf e) == backgroundColor)
-                    (Floor.objects floor)
-              in
-                { model |
-                  selectedObjects = List.map Object.idOf target
-                } ! []
-            )
-          )
-        |> Maybe.withDefault (model ! [])
+            target =
+              List.filter
+                (\e -> (backgroundColorOf e) == backgroundColor)
+                (Floor.objects floor)
+          in
+            { model |
+              selectedObjects = List.map Object.idOf target
+            } ! []
+        ))
+        |> Maybe.withDefault (model, Cmd.none)
 
     KeyCodeMsg isDown keyCode ->
       let
