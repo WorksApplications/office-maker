@@ -1,4 +1,4 @@
-module Page.Map.Update exposing (..)
+port module Page.Map.Update exposing (..)
 
 import Maybe
 import Task exposing (Task, andThen, onError)
@@ -55,6 +55,19 @@ import Page.Map.URL as URL exposing (URL)
 import Page.Map.LinkCopy as LinkCopy
 
 
+port removeToken : {} -> Cmd msg
+
+port setSelectionStart : {} -> Cmd msg
+
+port tokenRemoved : ({} -> msg) -> Sub msg
+
+port undo : ({} -> msg) -> Sub msg
+
+port redo : ({} -> msg) -> Sub msg
+
+port clipboard : (String -> msg) -> Sub msg
+
+
 type alias ObjectId = String
 type alias PersonId = String
 
@@ -71,14 +84,8 @@ type alias Flags =
   }
 
 
-subscriptions
-  :  (({} -> Msg) -> Sub Msg)
-  -> (({} -> Msg) -> Sub Msg)
-  -> (({} -> Msg) -> Sub Msg)
-  -> ((String -> Msg) -> Sub Msg)
-  -> Model
-  -> Sub Msg
-subscriptions tokenRemoved undo redo clipboard model =
+subscriptions : Model -> Sub Msg
+subscriptions model =
   Sub.batch
     [ Window.resizes WindowSize
     , Keyboard.downs (KeyCodeMsg True)
@@ -200,8 +207,8 @@ searchCandidateDebounceConfig =
   }
 
 
-update : ({} -> Cmd Msg) -> ({} -> Cmd Msg) -> Msg -> Model -> (Model, Cmd Msg)
-update removeToken setSelectionStart msg model =
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
   case debugMsg msg of
     NoOp ->
       model ! []
