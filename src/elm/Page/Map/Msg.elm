@@ -98,7 +98,7 @@ type Msg
   | SelectSearchResult SearchResult
   | StartDraggingFromMissingPerson String String
   | StartDraggingFromExistingObject Id String (Maybe String) String Time
-  | RegisterPeople (List Person)
+  | CachePeople (List Person)
   | RequestCandidate Id String
   | SearchCandidateDebounceMsg Debounce.Msg
   | GotCandidateSelection Id (List Person)

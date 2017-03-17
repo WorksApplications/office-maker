@@ -905,7 +905,7 @@ update msg model =
         newModel =
           { model |
             selectedObjects = newSelectedObjects
-          } |> Model.registerPeople people
+          } |> Model.cachePeople people
       in
         newModel ! []
 
@@ -1215,7 +1215,7 @@ update msg model =
         ( { model |
             searchResult = searchResult
           , selectedResult = selectedResult
-          } |> Model.registerPeople people
+          } |> Model.cachePeople people
         ) ! []
 
     SelectSearchResult result ->
@@ -1282,8 +1282,8 @@ update msg model =
               objectId
         } ! []
 
-    RegisterPeople people ->
-      Model.registerPeople people model ! []
+    CachePeople people ->
+      Model.cachePeople people model ! []
 
     UpdatePersonCandidate objectId personIds ->
       case model.floor of
@@ -1693,7 +1693,7 @@ updateOnMouseUp pos model =
                     |> Maybe.map (SearchResult.mergeObjectInfo (EditingFloor.present newFloor).id (Floor.objects <| EditingFloor.present newFloor))
                     |> Maybe.map (SearchResult.moveObject oldFloorId newObjects)
 
-                registerPersonCmd =
+                cachePersonCmd =
                   newObjects
                     |> List.filterMap Object.relatedPerson
                     |> List.head
@@ -1704,7 +1704,7 @@ updateOnMouseUp pos model =
                   | seed = newSeed
                   , floor = Just newFloor
                   , searchResult = searchResult
-                } ! [ saveCmd, registerPersonCmd ]
+                } ! [ saveCmd, cachePersonCmd ]
 
             _ ->
               model ! []
@@ -1998,7 +1998,7 @@ getAndCachePersonIfNotCached personId model =
 
     Nothing ->
       performAPI
-        (\person -> RegisterPeople [person])
+        (\person -> CachePeople [person])
         (API.getPersonByUser model.apiConfig personId)
 
 
@@ -2049,7 +2049,7 @@ regesterPersonOfObject apiConfig e =
 regesterPerson : API.Config -> PersonId -> Cmd Msg
 regesterPerson apiConfig personId =
   API.getPerson apiConfig personId
-    |> performAPI (\person -> RegisterPeople [person])
+    |> performAPI (\person -> CachePeople [person])
 
 
 regesterPersonIfNotCached : API.Config -> Dict PersonId Person -> PersonId -> Cmd Msg
@@ -2093,9 +2093,9 @@ updateOnFinishNameInput continueEditing objectId name model =
             )
             |> Maybe.withDefault (model.objectNameInput, Cmd.none)
 
-        registerPersonDetailCmd =
+        cachePersonCmd =
           Floor.getObject objectId floor
-            |> Maybe.map (registerPersonDetailIfAPersonIsNotRelatedTo model.apiConfig)
+            |> Maybe.map (cachePersonIfAPersonIsNotRelatedTo model.apiConfig)
             |> Maybe.withDefault Cmd.none
 
         selectedObjects =
@@ -2128,15 +2128,15 @@ updateOnFinishNameInput continueEditing objectId name model =
           , selectedObjects = selectedObjects
           }
       in
-        newModel ! [ requestCandidateCmd, registerPersonDetailCmd, saveCmd, focusCmd ]
+        newModel ! [ requestCandidateCmd, cachePersonCmd, saveCmd, focusCmd ]
 
 
-registerPersonDetailIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg
-registerPersonDetailIfAPersonIsNotRelatedTo apiConfig object =
+cachePersonIfAPersonIsNotRelatedTo : API.Config -> Object -> Cmd Msg
+cachePersonIfAPersonIsNotRelatedTo apiConfig object =
   Object.relatedPerson object
     |> Maybe.map (\personId ->
       API.personCandidate apiConfig (nameOf object)
-        |> performAPI RegisterPeople
+        |> performAPI CachePeople
       )
     |> Maybe.withDefault Cmd.none
 

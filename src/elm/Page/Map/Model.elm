@@ -470,8 +470,8 @@ validateRect (left, top, right, bottom) =
       Nothing
 
 
-registerPeople : List Person -> Model -> Model
-registerPeople people model =
+cachePeople : List Person -> Model -> Model
+cachePeople people model =
   { model |
     personInfo =
       DictUtil.addAll (.id) people model.personInfo
