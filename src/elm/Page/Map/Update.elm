@@ -735,9 +735,12 @@ update msg model =
     SearchCandidateDebounceMsg msg ->
       let
         search (objectId, name) =
-          performAPI
-            (GotCandidateSelection objectId)
-            (API.personCandidate model.apiConfig name)
+          if (String.trim >> String.length) name < 2 then
+            Cmd.none
+          else
+            performAPI
+              (GotCandidateSelection objectId)
+              (API.personCandidate model.apiConfig name)
 
         (searchCandidateDebounce, cmd) =
           Debounce.update
