@@ -527,7 +527,7 @@ update removeToken setSelectionStart msg model =
 
         (model__, cmd2) =
           if Mode.isLabelMode model.mode then
-            updateOnFinishLabel model_
+            updateOnPuttingLabel model_
           else
             (model_, Cmd.none)
 
@@ -1861,8 +1861,8 @@ updateOnFinishResize objectId fromScreen model =
     |> Maybe.withDefault (model ! [])
 
 
-updateOnFinishLabel : Model -> (Model, Cmd Msg)
-updateOnFinishLabel model =
+updateOnPuttingLabel : Model -> (Model, Cmd Msg)
+updateOnPuttingLabel model =
   case model.floor of
     Just floor ->
       let
@@ -2055,40 +2055,36 @@ updateOnFinishNameInput continueEditing objectId name model =
           EditingFloor.present efloor
 
         (objectNameInput, requestCandidateCmd) =
-          case Floor.getObject objectId floor of
-            Just object ->
-              if continueEditing then
-                case nextObjectToInput object (Floor.objects floor) of
-                  Just e ->
-                    ( ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
-                    , requestCandidate (idOf e) (nameOf e)
-                    )
-
-                  Nothing ->
-                    ( model.objectNameInput
-                    , requestCandidate objectId name
-                    )
+          Floor.getObject objectId floor
+            |> Maybe.andThen (\object ->
+              if continueEditing && not (Object.isLabel object) then
+                Just object
               else
-                (model.objectNameInput, Cmd.none)
+                Nothing
+            )
+            |> Maybe.map (\object ->
+              case nextObjectToInput object (Floor.objects floor) of
+                Just e ->
+                  ( ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
+                  , requestCandidate (idOf e) (nameOf e)
+                  )
 
-            Nothing ->
-              (model.objectNameInput, Cmd.none)
+                Nothing ->
+                  ( model.objectNameInput
+                  , requestCandidate objectId name
+                  )
+            )
+            |> Maybe.withDefault (model.objectNameInput, Cmd.none)
 
         registerPersonDetailCmd =
-          case Floor.getObject objectId floor of
-            Just object ->
-              registerPersonDetailIfAPersonIsNotRelatedTo model.apiConfig object
-
-            Nothing ->
-              Cmd.none
+          Floor.getObject objectId floor
+            |> Maybe.map (registerPersonDetailIfAPersonIsNotRelatedTo model.apiConfig)
+            |> Maybe.withDefault Cmd.none
 
         selectedObjects =
-          case objectNameInput.editingObject of
-            Just (id, _) ->
-              [id]
-
-            Nothing ->
-              []
+          objectNameInput.editingObject
+            |> Maybe.map (\(id, _) -> [id])
+            |> Maybe.withDefault []
 
         (newFloor, objectsChange) =
           EditingFloor.updateObjects
