@@ -35,14 +35,17 @@ viewEditingFloors toContextMenuAttribute goToFloorMsg onCreateNewFloor disableCo
 
     floorList =
       floorsInfo
-        |> FloorInfo.toEditingList
-        |> List.map
-          (\floor ->
+        |> FloorInfo.toValues
+        |> List.map (\floorInfo ->
+          let
+            floor =
+              FloorInfo.editingFloor floorInfo
+          in
             eachView
               (contextMenuMsg floor)
               (goToFloorMsg (floor.id, True))
               (currentFloorId == Just floor.id)
-              False -- TODO
+              (FloorInfo.isNeverPublished floorInfo)
               floor.name
           )
 

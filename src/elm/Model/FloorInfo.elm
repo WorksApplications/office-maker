@@ -13,11 +13,18 @@ type FloorInfo
 
 init : Maybe FloorBase -> FloorBase -> FloorInfo
 init publicFloor editingFloor =
-  -- if publicFloor.id /= editingFloor.id then
-  --   Debug.crash "IDs are not same: "
-  -- else
-    FloorInfo publicFloor editingFloor
+  FloorInfo publicFloor editingFloor
 
+
+isNeverPublished : FloorInfo -> Bool
+isNeverPublished floorsInfo =
+  case floorsInfo of
+    FloorInfo Nothing _ ->
+      True
+
+    _ ->
+      False
+      
 
 idOf : FloorInfo -> FloorId
 idOf (FloorInfo publicFloor editingFloor) =
@@ -61,17 +68,24 @@ mergeFloorHelp floor (FloorInfo publicFloor editingFloor) =
     FloorInfo (Just floor) editingFloor
 
 
+toValues : Dict FloorId FloorInfo -> List FloorInfo
+toValues floorsInfo =
+  floorsInfo
+    |> Dict.toList
+    |> List.map Tuple.second
+
+
 toPublicList : Dict FloorId FloorInfo -> List FloorBase
 toPublicList floorsInfo =
   floorsInfo
-    |> Dict.toList
-    |> List.filterMap (Tuple.second >> publicFloor)
+    |> toValues
+    |> List.filterMap publicFloor
     |> List.sortBy .ord
 
 
 toEditingList : Dict FloorId FloorInfo -> List FloorBase
 toEditingList floorsInfo =
   floorsInfo
-    |> Dict.toList
-    |> List.map (Tuple.second >> editingFloor)
+    |> toValues
+    |> List.map editingFloor
     |> List.sortBy .ord
