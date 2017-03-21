@@ -262,11 +262,8 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
       return Promise.reject('Editing floor not found: ' + floorId);
     }
     return getPublicFloor(conn, tenantId, floorId).then((lastPublicFloor) => {
-      if(!lastPublicFloor) {
-        return Promise.reject('Public floor not found: ' + floorId);
-      }
       var updateAt = Date.now();
-      var newFloorVersion = lastPublicFloor.version + 1;// たぶん +1 であるという前提はおかないほうがベター
+      var newFloorVersion = lastPublicFloor ? lastPublicFloor.version + 1 : 0;// better to increment by DB
 
       var sqls = [];
       editingFloor.updateBy = updateBy;
