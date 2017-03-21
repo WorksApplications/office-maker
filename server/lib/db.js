@@ -239,7 +239,6 @@ function updateEditingFloor(conn, tenantId, newFloor, updateAt) {
 
 function createEditingFloor(conn, tenantId, newFloor, updateAt) {
   newFloor.version = -1;
-  newFloor.public = true;
   return rdb.exec(
     conn,
     sql.insert('floors', schema.floorKeyValues(tenantId, newFloor, updateAt))
@@ -376,28 +375,6 @@ function search(conn, tenantId, query, all, people) {
   });
 }
 
-// function searchObjectsByName(conn, tenantId, name, all) {
-//   var filterByPublic =
-//     all ? '' : 'AND f.public = 1';
-//
-//   // TODO avoid injection
-//   var sql =
-//     `SELECT o.*
-//        FROM map2.objects AS o, map2.floors AS f
-//        WHERE o.name like "%${name}%" AND o.floorId = f.id AND o.floorVersion = f.version AND f.tenantId = "${tenantId}" ${filterByPublic}
-//        ORDER BY o.id, o.floorId, o.floorVersion`;
-//
-//   return rdb.exec(conn, sql).then((records) => {
-//     var objects = {};
-//     records.forEach(record => {
-//       objects[records.id] = record;// keep newest
-//     });
-//     return Promise.resolve(Object.keys(objects).map(objectId => {
-//       return objects[objectId];
-//     }));
-//   });
-// }
-
 function getPrototypes(conn, tenantId) {
   return rdb.exec(conn, sql.select('prototypes', sql.where('tenantId', tenantId)));
 }
@@ -442,7 +419,6 @@ module.exports = {
   getFloorsInfo: getFloorsInfo,
   saveFloor: saveFloor,
   saveObjectsChange: saveObjectsChange,
-  // saveObject: updateObject,//TODO currently, only UPDATE is supported
   publishFloor: publishFloor,
   deleteFloor: deleteFloor,
   deleteFloorWithObjects: deleteFloorWithObjects,

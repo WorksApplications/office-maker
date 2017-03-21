@@ -19,7 +19,6 @@ type alias FloorBase =
   , version : Int
   , name : String
   , ord : Int
-  , public : Bool
   }
 
 
@@ -48,7 +47,6 @@ init id =
   , height = 600
   , realSize = Nothing
   , image = Nothing
-  , public = False
   , update = Nothing
   }
 
@@ -58,8 +56,8 @@ empty = init ""
 
 
 baseOf : Floor -> FloorBase
-baseOf { id, version, name, ord, public } =
-  FloorBase id version name ord public
+baseOf { id, version, name, ord } =
+  FloorBase id version name ord
 
 
 initWithOrder : FloorId -> Int -> Floor
@@ -154,7 +152,6 @@ copy withEmptyObjects id floor =
     id = id
   , version = 0
   , name = "Copy of " ++ floor.name
-  , public = False
   , update = Nothing
   , objects = if withEmptyObjects then Dict.empty else Dict.empty -- TODO
   }

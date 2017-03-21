@@ -109,7 +109,6 @@ encodeFloor floor =
     , ("realWidth", Maybe.withDefault E.null <| Maybe.map (E.int << Tuple.first) floor.realSize)
     , ("realHeight", Maybe.withDefault E.null <| Maybe.map (E.int << Tuple.second) floor.realSize)
     , ("image", Maybe.withDefault E.null <| Maybe.map E.string floor.image)
-    , ("public", E.bool floor.public)
     ]
 
 
@@ -272,7 +271,7 @@ decodeSearchResults =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id version name ord objects width height realWidth realHeight image public updateBy updateAt ->
+    (\id version name ord objects width height realWidth realHeight image updateBy updateAt ->
       { id = id
       , version = version
       , name = name
@@ -282,7 +281,6 @@ decodeFloor =
       , height = height
       , image = image
       , realSize = Maybe.map2 (,) realWidth realHeight
-      , public = public
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
       } |> Floor.addObjects objects
     )
@@ -296,7 +294,6 @@ decodeFloor =
     |> optional_ "realWidth" D.int
     |> optional_ "realHeight" D.int
     |> optional_ "image" D.string
-    |> optional "public" D.bool False
     |> optional_ "updateBy" D.string
     |> optional_ "updateAt" D.float
 
@@ -304,18 +301,16 @@ decodeFloor =
 decodeFloorBase : Decoder FloorBase
 decodeFloorBase =
   decode
-    (\id version name ord public ->
+    (\id version name ord ->
       { id = id
       , version = version
       , name = name
       , ord = ord
-      , public = public
       })
     |> required "id" D.string
     |> required "version" D.int
     |> required "name" D.string
     |> required "ord" D.int
-    |> optional "public" D.bool False
 
 
 decodeFloorInfo : Decoder FloorInfo

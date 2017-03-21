@@ -42,7 +42,7 @@ viewEditingFloors toContextMenuAttribute goToFloorMsg onCreateNewFloor disableCo
               (contextMenuMsg floor)
               (goToFloorMsg (floor.id, True))
               (currentFloorId == Just floor.id)
-              (not floor.public)
+              False -- TODO
               floor.name
           )
 
@@ -67,7 +67,7 @@ viewPublicFloors goToFloorMsg currentFloorId floorsInfo =
               Nothing
               (goToFloorMsg (floor.id, False))
               (currentFloorId == Just floor.id)
-              False
+              False -- TODO
               floor.name
           )
   in
