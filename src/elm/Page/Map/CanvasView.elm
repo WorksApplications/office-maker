@@ -174,11 +174,11 @@ profilePopupView model floor =
           Just personId ->
             Dict.get personId model.personInfo
               |> Maybe.map (\person ->
-                ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object (Just person)
+                ProfilePopup.view ClosePopup model.scale model.offset object (Just person)
               )
 
           Nothing ->
-            Just (ProfilePopup.view ClosePopup model.personPopupSize model.scale model.offset object Nothing)
+            Just (ProfilePopup.view ClosePopup model.scale model.offset object Nothing)
         ))
       |> Maybe.withDefault (text "")
 

@@ -4,7 +4,6 @@ import Date exposing (Date)
 import Maybe
 import Dict exposing (Dict)
 import Time exposing (Time)
-import Mouse exposing (Position)
 import ContextMenu exposing (ContextMenu)
 import Debounce exposing (Debounce)
 
@@ -40,15 +39,11 @@ import Component.Header as Header
 import Component.FloorDeleter as FloorDeleter exposing (FloorDeleter)
 
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
+import CoreType exposing (..)
 
 
 type alias ObjectId = String
 type alias FloorId = String
-
-type alias Size =
-  { width : Int
-  , height : Int
-  }
 
 
 type alias Model =
@@ -85,7 +80,6 @@ type alias Model =
   , candidates : List Id
   , clickEmulator : List (ObjectId, Bool, Time)
   , searchCandidateDebounce : Debounce (Id, String)
-  , personPopupSize : (Int, Int)
   , lang : Language
   , cache : Cache
   , header : Header.Model
@@ -159,7 +153,6 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , searchResult = Nothing
     , clickEmulator = []
     , searchCandidateDebounce = Debounce.init
-    , personPopupSize = (300, 180)
     , lang = lang
     , cache = Cache.cache
     , header = Header.init
@@ -268,7 +261,7 @@ adjustOffset model =
             in
               ProfilePopupLogic.adjustOffset
                 (containerWidth, containerHeight)
-                model.personPopupSize
+                ProfilePopupLogic.personPopupSize
                 model.scale
                 model.offset
                 obj

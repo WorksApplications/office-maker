@@ -8,29 +8,55 @@ import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
 import Model.Person as Person exposing (Person)
-import Model.Object as Object exposing (..)
-import Model.ProfilePopupLogic exposing (..)
+import Model.Object as Object exposing (Object)
+import Model.ProfilePopupLogic as ProfilePopupLogic
+import CoreType exposing (..)
 
 
-view : msg -> (Int, Int) -> Scale -> Position -> Object -> Maybe Person -> Html msg
-view closeMsg (popupWidth, popupHeight) scale offsetScreenXY object person =
+personPopupSize : Size
+personPopupSize =
+  ProfilePopupLogic.personPopupSize
+
+
+view : msg -> Scale -> Position -> Object -> Maybe Person -> Html msg
+view closeMsg scale offsetScreenXY object person =
   let
     centerTopScreenXY =
-      centerTopScreenXYOfObject scale offsetScreenXY object
+      ProfilePopupLogic.centerTopScreenXYOfObject scale offsetScreenXY object
   in
     case person of
       Just person ->
         div
-          [ style (Styles.personDetailPopupDefault popupWidth popupHeight (centerTopScreenXY.x, centerTopScreenXY.y)) ]
-          (Lazy.lazy pointerDefault popupWidth :: innerView (Just closeMsg) person)
+          [ style (Styles.personDetailPopupDefault personPopupSize centerTopScreenXY) ]
+          (Lazy.lazy pointerDefault personPopupSize.width :: innerView (Just closeMsg) person)
 
       Nothing ->
-        if nameOf object == "" then
-          text ""
-        else
-          div
-            [ style (Styles.personDetailPopupSmall (centerTopScreenXY.x, centerTopScreenXY.y)) ]
-            (pointerSmall :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text (nameOf object) ] ])
+        let
+          name =
+            Object.nameOf object
+
+          (size, styles) =
+            if String.length name > 10 then
+              (middlePopupSize, Styles.personDetailPopupDefault middlePopupSize centerTopScreenXY)
+            else
+              (smallPopupSize, Styles.personDetailPopupSmall smallPopupSize centerTopScreenXY)
+        in
+          if name == "" then
+            text ""
+          else
+            div
+              [ style styles ]
+              (pointerSmall size :: [ div [ style (Styles.personDetailPopupNoPerson) ] [ text name ] ])
+
+
+middlePopupSize : Size
+middlePopupSize =
+  Size 300 100
+
+
+smallPopupSize : Size
+smallPopupSize =
+  Size 90 40
 
 
 innerView : Maybe msg -> Person -> List (Html msg)
@@ -71,9 +97,9 @@ pointerDefault width =
   div [ style (Styles.personDetailPopupPointerDefault width) ] []
 
 
-pointerSmall : Html msg
-pointerSmall =
-  div [ style (Styles.personDetailPopupPointerSmall) ] []
+pointerSmall : Size -> Html msg
+pointerSmall size =
+  div [ style (Styles.personDetailPopupPointerSmall size.width) ] []
 
 
 tel : Person -> Html msg

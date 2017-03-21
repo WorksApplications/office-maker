@@ -3,6 +3,7 @@ module View.Styles exposing (..)
 import Model.ProfilePopupLogic as ProfilePopupLogic
 import Util.StyleUtil exposing (..)
 import View.CommonStyles as Common exposing (..)
+import CoreType exposing (..)
 
 
 type alias S = List (String, String)
@@ -816,25 +817,25 @@ diffPopupInnerContainer =
   ]
 
 
-personDetailPopup : Int -> Int -> (Int, Int) -> S
-personDetailPopup width height (x, y) =
+personDetailPopup : Size -> Position -> S
+personDetailPopup size pos =
   shadow ++
-    [ ("width", px width)
-    , ("height", px height)
-    , ("left", px (ProfilePopupLogic.calcPopupLeftFromObjectCenter width x))
-    , ("top", px (ProfilePopupLogic.calcPopupTopFromObjectTop height y))
+    [ ("width", px size.width)
+    , ("height", px size.height)
+    , ("left", px (ProfilePopupLogic.calcPopupLeftFromObjectCenter size.width pos.x))
+    , ("top", px (ProfilePopupLogic.calcPopupTopFromObjectTop size.height pos.y))
     , ("z-index", zIndex.personDetailPopup)
     ]
 
 
-personDetailPopupDefault : Int -> Int -> (Int, Int) -> S
-personDetailPopupDefault width height (x, y) =
-  defaultPopup ++ personDetailPopup width height (x, y)
+personDetailPopupDefault : Size -> Position -> S
+personDetailPopupDefault size pos =
+  defaultPopup ++ personDetailPopup size pos
 
 
-personDetailPopupSmall : (Int, Int) -> S
-personDetailPopupSmall (x, y) =
-  smallPopup ++ personDetailPopup 80 40 (x, y)
+personDetailPopupSmall : Size -> Position -> S
+personDetailPopupSmall size pos =
+  smallPopup ++ personDetailPopup size pos
 
 
 personDetailPopupNoPerson : S
@@ -882,9 +883,9 @@ personDetailPopupPointerDefault width =
   personDetailPopupPointer width
 
 
-personDetailPopupPointerSmall : S
-personDetailPopupPointerSmall =
-  personDetailPopupPointer 80
+personDetailPopupPointerSmall : Int -> S
+personDetailPopupPointerSmall width =
+  personDetailPopupPointer width
 
 
 personDetailPopupClose : S

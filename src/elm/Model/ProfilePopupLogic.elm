@@ -2,12 +2,12 @@ module Model.ProfilePopupLogic exposing (..)
 
 import Model.Scale as Scale exposing (Scale)
 import Model.Object as Object exposing (Object)
+import CoreType exposing (..)
 
 
-type alias Position =
-    { x : Int
-    , y : Int
-    }
+personPopupSize : Size
+personPopupSize =
+  Size 300 180
 
 
 centerTopScreenXYOfObject : Scale -> Position -> Object -> Position
@@ -47,20 +47,20 @@ calcPopupTopFromObjectTop popupHeight objTop =
   objTop - (popupHeight + 10)
 
 
-adjustOffset : (Int, Int) -> (Int, Int) -> Scale -> Position -> Object -> Position
-adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale offset object =
+adjustOffset : (Int, Int) -> Size -> Scale -> Position -> Object -> Position
+adjustOffset (containerWidth, containerHeight) popupSize scale offset object =
   let
     objCenterTop =
       centerTopScreenXYOfObject scale offset object
 
     left =
-      calcPopupLeftFromObjectCenter popupWidth objCenterTop.x
+      calcPopupLeftFromObjectCenter popupSize.width objCenterTop.x
 
     top =
-      calcPopupTopFromObjectTop popupHeight objCenterTop.y
+      calcPopupTopFromObjectTop popupSize.height objCenterTop.y
 
     right =
-      calcPopupRightFromObjectCenter popupWidth objCenterTop.x
+      calcPopupRightFromObjectCenter popupSize.width objCenterTop.x
 
     bottom =
       bottomScreenYOfObject scale offset object
@@ -71,9 +71,7 @@ adjustOffset (containerWidth, containerHeight) (popupWidth, popupHeight) scale o
     offsetY_ =
       adjust scale containerHeight top bottom offset.y
   in
-    { x = offsetX_
-    , y = offsetY_
-    }
+    Position offsetX_ offsetY_
 
 
 adjust : Scale -> Int -> Int -> Int -> Int -> Int

@@ -10,7 +10,7 @@ import Dict exposing (Dict)
 import Navigation exposing (Location)
 import Time exposing (Time, second)
 import Dom
-import Mouse exposing (Position)
+import Mouse
 import Debounce exposing (Debounce)
 import ContextMenu
 
@@ -54,6 +54,8 @@ import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
 import Page.Map.LinkCopy as LinkCopy
 
+import CoreType exposing (..)
+
 
 port removeToken : {} -> Cmd msg
 
@@ -77,7 +79,7 @@ type alias Flags =
   , accountServiceRoot : String
   , authToken : String
   , title : String
-  , initialSize : Model.Size
+  , initialSize : Size
   , randomSeed : (Int, Int)
   , visitDate : Float
   , lang : String
