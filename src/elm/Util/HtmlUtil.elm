@@ -105,11 +105,6 @@ onMouseWheel toMsg =
     (Decode.map (\(value, pos) -> toMsg value pos) decodeWheelEvent)
 
 
-mouseDownDefence : a -> Attribute a
-mouseDownDefence e =
-  onMouseDown_ e
-
-
 decodeWheelEvent : Decoder (Float, Position)
 decodeWheelEvent =
     (oneOf
