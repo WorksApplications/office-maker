@@ -56,12 +56,11 @@ type alias ObjectViewOption =
   , position : Position
   , size : Size
   , contextMenuDisabled: Bool
-  , disableTransition: Bool
   }
 
 
 objectView : ObjectViewOption -> Html Msg
-objectView { mode, scale, selected, isGhost, object, position, size, contextMenuDisabled, disableTransition } =
+objectView { mode, scale, selected, isGhost, object, position, size, contextMenuDisabled } =
   let
     id =
       Object.idOf object
@@ -107,7 +106,6 @@ objectView { mode, scale, selected, isGhost, object, position, size, contextMenu
         isGhost
         (Mode.isEditMode mode)
         scale
-        disableTransition
     else
       ObjectView.viewDesk
         eventOptions
@@ -120,13 +118,7 @@ objectView { mode, scale, selected, isGhost, object, position, size, contextMenu
         selected
         isGhost
         scale
-        disableTransition
         personMatched
-
-
-transitionDisabled : Model -> Bool
-transitionDisabled model =
-  not model.scaling
 
 
 view : Model -> Html Msg
@@ -198,7 +190,6 @@ canvasView model floor =
       Html.map ObjectNameInputMsg <|
         ObjectNameInput.view
           (deskInfoOf model.scale model.personInfo)
-          (transitionDisabled model)
           (Model.candidatesOf model)
           model.objectNameInput
 
@@ -245,7 +236,7 @@ canvasViewStyles model floor =
     -- if (Mode.isPrintMode model.mode) then
     --   S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
     -- else
-      S.canvasView (Mode.isViewMode model.mode) (transitionDisabled model) position size
+      S.canvasView (Mode.isViewMode model.mode) position size
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)
@@ -272,7 +263,6 @@ objectsView model floor =
                   , isGhost = True -- alpha
                   , object = object
                   , contextMenuDisabled = False --model.keys.ctrl
-                  , disableTransition = transitionDisabled model
                   }
               )
             )
@@ -307,7 +297,6 @@ objectsView model floor =
                   , isGhost = False
                   , object = object
                   , contextMenuDisabled = model.keys.ctrl
-                  , disableTransition = transitionDisabled model
                   }
               )
             )
@@ -339,7 +328,6 @@ objectsView model floor =
                 , isGhost = True
                 , object = object
                 , contextMenuDisabled = model.keys.ctrl
-                , disableTransition = transitionDisabled model
                 }
               )
             )
@@ -366,7 +354,6 @@ objectsView model floor =
                 , isGhost = False
                 , object = object
                 , contextMenuDisabled = model.keys.ctrl
-                , disableTransition = transitionDisabled model
                 }
               )
             )
@@ -387,7 +374,6 @@ objectsView model floor =
             , isGhost = False
             , object = object
             , contextMenuDisabled = model.keys.ctrl
-            , disableTransition = transitionDisabled model
             }
           )
         )
@@ -423,7 +409,6 @@ temporaryStampView scale selected (prototype, pos) =
       selected
       False -- alpha
       scale
-      True -- disableTransition
       False -- personMatched
   )
 
@@ -445,7 +430,6 @@ temporaryPenView model =
             False -- selected
             False -- alpha
             model.scale
-            True -- disableTransition
             False -- personMatched
 
         _ -> text ""
@@ -460,7 +444,6 @@ selectorRectView model =
       div
         [ style
             ( S.selectorRect
-                (transitionDisabled model)
                 (Scale.imageToScreenForPosition model.scale pos)
                 (Scale.imageToScreenForSize model.scale size)
             )

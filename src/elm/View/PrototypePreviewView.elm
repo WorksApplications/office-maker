@@ -56,5 +56,4 @@ eachView containerSize selectedIndex index prototype =
       False -- selected
       False -- alpha
       Scale.default
-      True -- disableTransition
       False -- personMatched

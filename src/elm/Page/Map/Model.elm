@@ -70,7 +70,6 @@ type alias Model =
   , windowSize : Size
   , scale : Scale
   , offset : Position
-  , scaling : Bool
   , prototypes : Prototypes
   , error : GlobalError
   , floorProperty : FloorProperty
@@ -143,7 +142,6 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , windowSize = initialSize
     , scale = scale
     , offset = offset
-    , scaling = False
     , prototypes = Prototypes.init []
     , error = NoError
     , floorProperty = FloorProperty.init initialFloor.name 0 0 0

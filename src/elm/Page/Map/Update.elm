@@ -900,7 +900,7 @@ update msg model =
           { model | selectedObjects = newSelectedObjects }
         )
         |> Model.cachePeople people
-        |> (flip (,) Cmd.none)
+        |> flip (,) Cmd.none
 
     SelectIsland id ->
       model.floor
@@ -980,21 +980,13 @@ update msg model =
           { model0 |
             scale = newScale
           , offset = newOffset
-          , scaling = True
           }
 
         saveUserStateCmd =
           putUserState newModel
             |> Task.perform (always NoOp)
-
-        scaleEndCmd =
-          Process.sleep 200.0
-            |> Task.perform (always ScaleEnd)
       in
-        newModel ! [ saveUserStateCmd, scaleEndCmd ]
-
-    ScaleEnd ->
-      { model | scaling = False } ! []
+        newModel ! [ saveUserStateCmd ]
 
     WindowSize size ->
       { model | windowSize = size } ! []

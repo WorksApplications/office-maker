@@ -39,8 +39,8 @@ noEvents =
   }
 
 
-viewDesk : EventOptions msg -> Bool -> Position -> Size -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Bool -> Html msg
-viewDesk eventOptions showPersonMatch pos size color name fontSize selected alpha scale disableTransition personMatched =
+viewDesk : EventOptions msg -> Bool -> Position -> Size -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Html msg
+viewDesk eventOptions showPersonMatch pos size color name fontSize selected alpha scale personMatched =
   let
     personMatchIcon =
       if showPersonMatch then
@@ -52,25 +52,25 @@ viewDesk eventOptions showPersonMatch pos size color name fontSize selected alph
       Scale.imageToScreenForRect scale pos size
 
     styles =
-      [ style (S.deskObject screenPos screenSize color selected alpha disableTransition) ]
+      [ style (S.deskObject screenPos screenSize color selected alpha) ]
 
     nameView =
-      objectLabelView False "" fontSize scale disableTransition screenPos screenSize name
+      objectLabelView False "" fontSize scale screenPos screenSize name
   in
     viewInternal selected eventOptions styles nameView personMatchIcon
 
 
-viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Bool -> Html msg
-viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale disableTransition =
+viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Html msg
+viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale =
   let
     (screenPos, screenSize) =
       Scale.imageToScreenForRect scale pos size
 
     styles =
-      [ style (S.labelObject isEllipse screenPos screenSize backgroundColor fontColor selected isGhost rectVisible disableTransition) ]
+      [ style (S.labelObject isEllipse screenPos screenSize backgroundColor fontColor selected isGhost rectVisible) ]
 
     nameView =
-      objectLabelView True fontColor fontSize scale disableTransition screenPos screenSize name
+      objectLabelView True fontColor fontSize scale screenPos screenSize name
   in
     viewInternal selected eventOptions styles nameView (text "")
 
@@ -153,8 +153,8 @@ personMatchingView scale name personMatched =
       text ""
 
 
-objectLabelView : Bool -> String -> Float -> Scale -> Bool -> Position -> Size -> String -> Html msg
-objectLabelView canBeEmoji color fontSize scale disableTransition screenPos screenSize name =
+objectLabelView : Bool -> String -> Float -> Scale -> Position -> Size -> String -> Html msg
+objectLabelView canBeEmoji color fontSize scale screenPos screenSize name =
   let
     trimed =
       String.trim name
@@ -167,7 +167,6 @@ objectLabelView canBeEmoji color fontSize scale disableTransition screenPos scre
         color
         ratio
         fontSize
-        disableTransition  --TODO
   in
     div
       [ style styles ]

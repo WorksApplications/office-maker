@@ -74,7 +74,6 @@ type Msg
   | WindowSize Size
   | MouseWheel Float Position
   | ChangeMode EditingMode
-  | ScaleEnd
   | PrototypesMsg Prototypes.Msg
   | RegisterPrototype Id
   | FloorPropertyMsg FloorProperty.Msg

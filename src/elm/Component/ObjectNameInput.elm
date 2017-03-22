@@ -198,18 +198,18 @@ subscriptions toMsg =
      |> Sub.map toMsg
 
 
-view : (String -> Maybe (Position, Size, Maybe Person, Bool)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
-view deskInfoOf transitionDisabled candidates model =
+view : (String -> Maybe (Position, Size, Maybe Person, Bool)) -> List Person -> ObjectNameInput -> Html Msg
+view deskInfoOf candidates model =
   model.editingObject
     |> Maybe.andThen (\(objectId, name) -> deskInfoOf objectId
     |> Maybe.map (\(screenPosOfDesk, screenSizeOfDesk, maybePerson, showSuggestion) ->
-      view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk transitionDisabled candidates model
+      view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk candidates model
     ))
     |> Maybe.withDefault (text "")
 
 
-view_ : Bool -> ObjectId -> String -> Maybe Person -> Position -> Size -> Bool -> List Person -> ObjectNameInput -> Html Msg
-view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk transitionDisabled candidates model =
+view_ : Bool -> ObjectId -> String -> Maybe Person -> Position -> Size -> List Person -> ObjectNameInput -> Html Msg
+view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk candidates model =
   let
     candidates_ =
       candidates
@@ -222,7 +222,7 @@ view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk 
       ]
       ([ ("nameInput" ++ objectId, input
         ([ Html.Attributes.id "name-input"
-        , style (Styles.nameInputTextArea transitionDisabled screenPosOfDesk screenSizeOfDesk)
+        , style (Styles.nameInputTextArea screenPosOfDesk screenSizeOfDesk)
         , onInput_ objectId
         , on "click" (Decode.map CaretPosition targetSelectionStart)
         , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map (KeydownOnNameInput candidates_) decodeKeyCodeAndSelectionStart)

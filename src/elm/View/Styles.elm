@@ -109,13 +109,13 @@ deskInput pos size =
       ]
 
 
-nameInputTextArea : Bool -> Position -> Size -> S
-nameInputTextArea transitionDisabled screenPos screenSize =
-  deskInput screenPos screenSize ++ transition ["left"] transitionDisabled
+nameInputTextArea : Position -> Size -> S
+nameInputTextArea screenPos screenSize =
+  deskInput screenPos screenSize
 
 
-deskObject : Position -> Size -> String -> Bool -> Bool -> Bool -> S
-deskObject pos size backgroundColor selected isGhost disableTransition =
+deskObject : Position -> Size -> String -> Bool -> Bool -> S
+deskObject pos size backgroundColor selected isGhost =
   (absoluteRect pos size) ++
   [ ("opacity", if isGhost then "0.5" else "1.0")
   , ("display", "table")
@@ -128,11 +128,11 @@ deskObject pos size backgroundColor selected isGhost disableTransition =
   , ("border-left-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
   , ("border-bottom-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
   , ("border-right-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
-  ] ++ noUserSelect ++ transition ["width", "height", "top", "left"] disableTransition
+  ] ++ noUserSelect
 
 
-labelObject : Bool -> Position -> Size -> String -> String -> Bool -> Bool -> Bool -> Bool -> S
-labelObject isEllipse pos size backgroundColor fontColor selected isGhost rectVisible disableTransition =
+labelObject : Bool -> Position -> Size -> String -> String -> Bool -> Bool -> Bool -> S
+labelObject isEllipse pos size backgroundColor fontColor selected isGhost rectVisible =
   absoluteRect pos size ++
   [ ("opacity", if isGhost then "0.5" else "1.0")
   , ("display", "table")
@@ -149,7 +149,7 @@ labelObject isEllipse pos size backgroundColor fontColor selected isGhost rectVi
   , ("border-width", if selected  then "2px" else "1px")
   , ("border-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
   , ("border-radius", if isEllipse  then "50%" else "")
-  ] ++ noUserSelect ++ transition ["width", "height", "top", "left"] disableTransition
+  ] ++ noUserSelect
 
 
 deskResizeGrip : Bool -> S
@@ -172,14 +172,14 @@ deskResizeGrip selected =
   )
 
 
-selectorRect : Bool -> Position -> Size -> S
-selectorRect disableTransition pos size =
+selectorRect : Position -> Size -> S
+selectorRect pos size =
   absoluteRect pos size ++
     [ ("z-index", zIndex.selectorRect)
     , ("border-style", "solid")
     , ("border-width", "2px")
     , ("border-color", selectColor)
-    ] ++ transition ["width", "height", "top", "left"] disableTransition
+    ]
 
 
 colorProperties : S
@@ -234,13 +234,12 @@ subView =
     ]
 
 
-canvasView : Bool -> Bool -> Position -> Size -> S
-canvasView isViewing disableTransition pos size =
+canvasView : Bool -> Position -> Size -> S
+canvasView isViewing pos size =
   absoluteRect pos size ++
     [ ("font-family", "default")
     , ("background-color", "#fff")
-    ] ++ noUserSelect ++ (if isViewing then [("overflow", "hidden")] else []) ++
-    transition ["width", "height", "top", "left"] disableTransition
+    ] ++ noUserSelect ++ (if isViewing then [("overflow", "hidden")] else [])
 
 
 canvasViewForPrint : Size -> Size -> S
@@ -307,8 +306,8 @@ gridLayerHorizontalLine top =
   ]
 
 
-nameLabel : String -> Float -> number -> Bool -> S
-nameLabel color scale fontSize disableTransition =
+nameLabel : String -> Float -> number -> S
+nameLabel color scale fontSize =
   [ ("color", color)
   , ("text-align", "center")
   , ("position", "absolute")
@@ -319,20 +318,12 @@ nameLabel color scale fontSize disableTransition =
   , ("top", "50%")
   , ("transform", "translateY(-50%) scale(" ++ toString scale ++ ")")
   , ("transform-origin", "left")
-  ] ++ transition ["transform"] disableTransition ++ noMargin
+  ] ++ noMargin
 
 
 shadow : S
 shadow =
   [ ("box-shadow", "0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12)") ]
-
-
-transition : List String -> Bool -> S
-transition properties disabled =
-  if disabled then [] else
-    [ ("transition-property", String.join ", " properties)
-    , ("transition-duration", "0.2s")
-    ]
 
 
 modeSelectionView : S
