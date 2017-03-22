@@ -175,8 +175,11 @@ canvasView model floor =
         |> Maybe.map
           (\object ->
             let
-              (screenPos, screenSize) =
-                Scale.imageToScreenForRect scale (Object.positionOf object) (Object.sizeOf object)
+              screenPos =
+                Scale.imageToScreenForPosition scale (Object.positionOf object)
+
+              screenSize =
+                Scale.imageToScreenForSize scale (Object.sizeOf object)
             in
               ( screenPos
               , screenSize
@@ -206,7 +209,7 @@ canvasView model floor =
       Just ("canvas-image", Lazy.lazy canvasImage floor) ::
       (if isEditMode then Just ("grid-layer", gridLayer) else Nothing) ::
       (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) ::
-      (if isEditMode then Just ("canvas-selector-rect", selectorRectView model) else Nothing) :: []
+      (if isEditMode then Just ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect) else Nothing) :: []
       |> List.filterMap identity
 
     children2 =
@@ -227,10 +230,14 @@ canvasView model floor =
 canvasViewStyles : Model -> Floor -> List (String, String)
 canvasViewStyles model floor =
   let
-    (position, size) =
-      Scale.imageToScreenForRect
+    position =
+      Scale.imageToScreenForPosition
         model.scale
         model.offset
+
+    size =
+      Scale.imageToScreenForSize
+        model.scale
         (Size (Floor.width floor) (Floor.height floor))
   in
     -- if (Mode.isPrintMode model.mode) then
@@ -268,20 +275,16 @@ objectsView model floor =
             )
             (List.filter isSelected objectList)
 
-        adjustRect object leftTop size =
+        adjustPosition object leftTop =
           if isSelected object then
-            let
-              xy =
-                adjustImagePositionOfMovingObject
-                  model.gridSize
-                  model.scale
-                  start
-                  model.mousePosition
-                  leftTop
-            in
-              (xy, size)
+            adjustImagePositionOfMovingObject
+              model.gridSize
+              model.scale
+              start
+              model.mousePosition
+              leftTop
           else
-            (leftTop, size)
+            leftTop
 
         normalView =
           List.map
@@ -291,8 +294,8 @@ objectsView model floor =
                 objectView
                   { mode = model.mode
                   , scale = model.scale
-                  , position = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.first -- TODO
-                  , size = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.second -- TODO
+                  , position = adjustPosition object (Object.positionOf object)
+                  , size = Object.sizeOf object
                   , selected = isSelected object
                   , isGhost = False
                   , object = object
@@ -359,7 +362,7 @@ objectsView model floor =
             )
             objectList
       in
-        (normalView ++ ghostsView)
+        normalView ++ ghostsView
 
     _ ->
       List.map
@@ -437,15 +440,15 @@ temporaryPenView model =
     _ -> text ""
 
 
-selectorRectView : Model -> Html msg
-selectorRectView model =
-  case (Mode.isSelectMode model.mode, model.selectorRect) of
+selectorRectView : Mode -> Scale -> Maybe (Position, Size) -> Html msg
+selectorRectView mode scale selectorRect =
+  case (Mode.isSelectMode mode, selectorRect) of
     (True, Just (pos, size)) ->
       div
         [ style
             ( S.selectorRect
-                (Scale.imageToScreenForPosition model.scale pos)
-                (Scale.imageToScreenForSize model.scale size)
+                (Scale.imageToScreenForPosition scale pos)
+                (Scale.imageToScreenForSize scale size)
             )
         ]
         []

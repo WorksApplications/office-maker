@@ -48,8 +48,11 @@ viewDesk eventOptions showPersonMatch pos size color name fontSize selected alph
       else
         text ""
 
-    (screenPos, screenSize) =
-      Scale.imageToScreenForRect scale pos size
+    screenPos =
+      Scale.imageToScreenForPosition scale pos
+
+    screenSize =
+      Scale.imageToScreenForSize scale size
 
     styles =
       [ style (S.deskObject screenPos screenSize color selected alpha) ]
@@ -63,8 +66,11 @@ viewDesk eventOptions showPersonMatch pos size color name fontSize selected alph
 viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Html msg
 viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale =
   let
-    (screenPos, screenSize) =
-      Scale.imageToScreenForRect scale pos size
+    screenPos =
+      Scale.imageToScreenForPosition scale pos
+
+    screenSize =
+      Scale.imageToScreenForSize scale size
 
     styles =
       [ style (S.labelObject isEllipse screenPos screenSize backgroundColor fontColor selected isGhost rectVisible) ]
