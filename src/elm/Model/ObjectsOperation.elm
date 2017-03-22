@@ -4,44 +4,41 @@ module Model.ObjectsOperation exposing (..)
 import Model.Direction exposing (..)
 import Model.Object as Object exposing (Object)
 
+import CoreType exposing (..)
+
 
 type alias FloorId = String
 type alias ObjectId = String
-type alias Position =
-  { x : Int
-  , y : Int
-  }
 
 
-rectFloat : Object -> (Float, Float, Float, Float)
-rectFloat e =
+centerOf : Object -> PositionFloat
+centerOf object =
   let
-    (x, y, w, h) = Object.rect e
+    { x, y } =
+      Object.positionOf object
+
+    { width, height } =
+      Object.sizeOf object
   in
-    (toFloat x, toFloat y, toFloat w, toFloat h)
+    PositionFloat (toFloat x + toFloat width / 2) (toFloat y + toFloat height / 2)
 
 
-center : Object -> (Float, Float)
-center e =
-  let
-    (x, y, w, h) = rectFloat e
-  in
-    ((x + w / 2), (y + h / 2))
-
-
-linked : (comparable, comparable, comparable, comparable) -> (comparable, comparable, comparable, comparable) -> Bool
-linked (x1, y1, w1, h1) (x2, y2, w2, h2) =
-  x1 <= x2+w2 && x2 <= x1+w1 && y1 <= y2+h2 && y2 <= y1+h1
+linked : (Position, Size) -> (Position, Size) -> Bool
+linked (pos1, size1) (pos2, size2) =
+  pos1.x <= pos2.x + size2.width &&
+  pos2.x <= pos1.x + size1.width &&
+  pos1.y <= pos2.y + size2.height &&
+  pos2.y <= pos1.y + size1.height
 
 
 linkedByAnyOf : List Object -> Object -> Bool
 linkedByAnyOf list newObject =
   let
     newRect =
-      Object.rect newObject
+      (Object.positionOf newObject, Object.sizeOf newObject)
   in
-    List.any (\e ->
-      linked (Object.rect e) newRect
+    List.any (\object ->
+      linked (Object.positionOf object, Object.sizeOf object) newRect
     ) list
 
 
@@ -60,27 +57,27 @@ island current rest =
 compareBy : Direction -> Object -> Object -> Order
 compareBy direction from new =
   let
-    (centerX, centerY) = center from
+    center = centerOf from
 
-    (newCenterX, newCenterY) = center new
+    newCenter = centerOf new
   in
-    if centerX == newCenterX && centerY == newCenterY then
+    if center.x == newCenter.x && center.y == newCenter.y then
       EQ
     else
       let
         greater =
           case direction of
             Up ->
-              (newCenterX < centerX) || (newCenterX == centerX && newCenterY < centerY)
+              (newCenter.x < center.x) || (newCenter.x == center.x && newCenter.y < center.y)
 
             Down ->
-              (newCenterX > centerX) || (newCenterX == centerX && newCenterY > centerY)
+              (newCenter.x > center.x) || (newCenter.x == center.x && newCenter.y > center.y)
 
             Left ->
-              (newCenterY < centerY) || (newCenterY == centerY && newCenterX < centerX)
+              (newCenter.y < center.y) || (newCenter.y == center.y && newCenter.x < center.x)
 
             Right ->
-              (newCenterY > centerY) || (newCenterY == centerY && newCenterX > centerX)
+              (newCenter.y > center.y) || (newCenter.y == center.y && newCenter.x > center.x)
       in
         if greater then GT else LT
 
@@ -134,32 +131,30 @@ nearest direction from list =
 
 
 withinRange : (Object, Object) -> List Object -> List Object
-withinRange range list =
+withinRange (startObject, endObject) list =
   let
-    (start, end) = range
+    start = centerOf startObject
 
-    (startX, startY) = center start
+    end = centerOf endObject
 
-    (endX, endY) = center end
+    left = min start.x end.x
 
-    left = min startX endX
+    right = max start.x end.x
 
-    right = max startX endX
+    top = min start.y end.y
 
-    top = min startY endY
-
-    bottom = max startY endY
+    bottom = max start.y end.y
   in
     withinRect (left, top) (right, bottom) list
 
 
 withinRect : (Float, Float) -> (Float, Float) -> List Object -> List Object
 withinRect (left, top) (right, bottom) list =
-  List.filter (\object -> isInRect (left, top, right, bottom) (center object)) list
+  List.filter (\object -> isInRect (left, top, right, bottom) (centerOf object)) list
 
 
-isInRect : (comparable, comparable, comparable, comparable) -> (comparable, comparable) -> Bool
-isInRect (left, top, right, bottom) (x, y) =
+isInRect : (Float, Float, Float, Float) -> PositionFloat -> Bool
+isInRect (left, top, right, bottom) { x, y } =
   x >= left &&
   x <= right &&
   y >= top &&
@@ -287,19 +282,19 @@ expandOrShrinkToward direction primary current all =
       restOfMaximumPartsOf (opposite direction) current
 
 
-pasteObjects : FloorId -> (Int, Int) -> List (Object, ObjectId) -> List Object
-pasteObjects floorId (baseX, baseY) copiedWithNewIds =
+pasteObjects : FloorId -> Position -> List (Object, ObjectId) -> List Object
+pasteObjects floorId base copiedWithNewIds =
   let
-    (minX, minY) =
+    min =
       copiedWithNewIds
-        |> List.map (\(object, newId) -> Object.position object)
+        |> List.map (\(object, newId) -> Object.positionOf object)
         |> minBoundsOf
 
     newObjects =
       List.map (\(object, newId) ->
         let
-          (x, y) = Object.position object
-          pos = (baseX + (x - minX), baseY + (y - minY))
+          { x, y } = Object.positionOf object
+          pos = Position (base.x + (x - min.x)) (base.y + (y - min.y))
         in
           object
             |> Object.move pos
@@ -310,25 +305,22 @@ pasteObjects floorId (baseX, baseY) copiedWithNewIds =
     newObjects
 
 
-minBoundsOf : List (Int, Int) -> (Int, Int)
+minBoundsOf : List Position -> Position
 minBoundsOf positions =
-  List.foldl (\(x, y) (minX, minY) ->
-    (Basics.min minX x, Basics.min minY y)
-  ) (99999, 99999) positions
+  positions
+    |> List.foldl (\{ x, y } min ->
+        Position (Basics.min min.x x) (Basics.min min.y y)
+      ) (Position 99999 99999)
 
 
 fitPositionToGrid : Int -> Position -> Position
 fitPositionToGrid gridSize { x, y } =
-  { x = x // gridSize * gridSize
-  , y = y // gridSize * gridSize
-  }
+  Position (x // gridSize * gridSize) (y // gridSize * gridSize)
 
 
-fitSizeToGrid : Int -> (Int, Int) -> (Int, Int)
-fitSizeToGrid gridSize (x, y) =
-  ( x // gridSize * gridSize
-  , y // gridSize * gridSize
-  )
+fitSizeToGrid : Int -> Size -> Size
+fitSizeToGrid gridSize size =
+  Size (size.width // gridSize * gridSize) (size.height // gridSize * gridSize)
 
 
 backgroundColorProperty : List Object -> Maybe String

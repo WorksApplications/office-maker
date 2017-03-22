@@ -8,6 +8,8 @@ import Model.Object as Object exposing (Object)
 import Model.ObjectsOperation as ObjectsOperation
 import Model.ObjectsChange as ObjectsChange exposing (DetailedObjectsChange, ObjectModification)
 
+import CoreType exposing (..)
+
 
 type alias ObjectId = String
 type alias PersonId = String
@@ -171,23 +173,21 @@ move ids gridSize (dx, dy) floor =
 moveObjects : Int -> (Int, Int) -> Object -> Object
 moveObjects gridSize (dx, dy) object =
   let
-    (x, y, _, _) =
-      Object.rect object
+    pos =
+      Object.positionOf object
 
     new =
       ObjectsOperation.fitPositionToGrid
         gridSize
-        { x = x + dx
-        , y = y + dy
-        }
+        (Position (pos.x + dx) (pos.y + dy))
   in
-    Object.move (new.x, new.y) object
+    Object.move new object
 
 
-paste : List (Object, ObjectId) -> (Int, Int) -> Floor -> Floor
-paste copiedWithNewIds (baseX, baseY) floor =
+paste : List (Object, ObjectId) -> Position -> Floor -> Floor
+paste copiedWithNewIds base floor =
   addObjects
-    (ObjectsOperation.pasteObjects floor.id (baseX, baseY) copiedWithNewIds)
+    (ObjectsOperation.pasteObjects floor.id base copiedWithNewIds)
     floor
 
 
@@ -270,7 +270,7 @@ removeSpaces ids floor =
     partiallyChangeObjects f ids floor
 
 
-resizeObject : ObjectId -> (Int, Int) -> Floor -> Floor
+resizeObject : ObjectId -> Size -> Floor -> Floor
 resizeObject id size floor =
   partiallyChangeObjects (Object.changeSize size) [id] floor
 

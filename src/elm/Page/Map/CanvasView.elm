@@ -31,11 +31,7 @@ import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.ContextMenuContext exposing (ContextMenuContext(ObjectContextMenu))
 import Page.Map.Msg exposing (..)
 
-
-type alias Position =
-  { x : Int
-  , y : Int
-  }
+import CoreType exposing (..)
 
 
 adjustImagePositionOfMovingObject : Int -> Scale -> Position -> Position -> Position -> Position
@@ -44,15 +40,11 @@ adjustImagePositionOfMovingObject gridSize scale start end from =
     shift =
       Scale.screenToImageForPosition
         scale
-        { x = end.x - start.x
-        , y = end.y - start.y
-        }
+        (Position (end.x - start.x) (end.y - start.y))
   in
     ObjectsOperation.fitPositionToGrid
       gridSize
-      { x = from.x + shift.x
-      , y = from.y + shift.y
-      }
+      (Position (from.x + shift.x) (from.y + shift.y))
 
 
 type alias ObjectViewOption =
@@ -61,20 +53,18 @@ type alias ObjectViewOption =
   , selected: Bool
   , isGhost: Bool
   , object: Object
-  , rect: (Int, Int, Int, Int)
+  , position : Position
+  , size : Size
   , contextMenuDisabled: Bool
   , disableTransition: Bool
   }
 
 
 objectView : ObjectViewOption -> Html Msg
-objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, disableTransition} =
+objectView { mode, scale, selected, isGhost, object, position, size, contextMenuDisabled, disableTransition } =
   let
     id =
       Object.idOf object
-
-    (x, y, width, height) =
-      rect
 
     eventOptions =
       if Mode.isViewMode mode then
@@ -106,7 +96,8 @@ objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, d
     if Object.isLabel object then
       ObjectView.viewLabel
         eventOptions
-        (x, y, width, height)
+        position
+        size
         (backgroundColorOf object)
         (colorOf object)
         (nameOf object)
@@ -121,7 +112,8 @@ objectView {mode, scale, selected, isGhost, object, rect, contextMenuDisabled, d
       ObjectView.viewDesk
         eventOptions
         (Mode.isEditMode mode)
-        (x, y, width, height)
+        position
+        size
         (backgroundColorOf object)
         (nameOf object)
         (fontSizeOf object)
@@ -190,11 +182,16 @@ canvasView model floor =
       Floor.getObject objectId floor
         |> Maybe.map
           (\object ->
-            ( Scale.imageToScreenForRect scale (Object.rect object)
-            , relatedPerson object
-                |> Maybe.andThen (\personId -> Dict.get personId personInfo)
-            , not (Object.isLabel object)
-            )
+            let
+              (screenPos, screenSize) =
+                Scale.imageToScreenForRect scale (Object.positionOf object) (Object.sizeOf object)
+            in
+              ( screenPos
+              , screenSize
+              , relatedPerson object
+                  |> Maybe.andThen (\personId -> Dict.get personId personInfo)
+              , not (Object.isLabel object)
+              )
           )
 
     nameInput =
@@ -239,15 +236,16 @@ canvasView model floor =
 canvasViewStyles : Model -> Floor -> List (String, String)
 canvasViewStyles model floor =
   let
-    rect =
+    (position, size) =
       Scale.imageToScreenForRect
         model.scale
-        (model.offset.x, model.offset.y, Floor.width floor, Floor.height floor)
+        model.offset
+        (Size (Floor.width floor) (Floor.height floor))
   in
     -- if (Mode.isPrintMode model.mode) then
     --   S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
     -- else
-      S.canvasView (Mode.isViewMode model.mode) (transitionDisabled model) rect
+      S.canvasView (Mode.isViewMode model.mode) (transitionDisabled model) position size
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)
@@ -268,7 +266,8 @@ objectsView model floor =
               , lazy objectView
                   { mode = model.mode
                   , scale = model.scale
-                  , rect = rect object
+                  , position = Object.positionOf object
+                  , size = Object.sizeOf object
                   , selected = True
                   , isGhost = True -- alpha
                   , object = object
@@ -279,20 +278,20 @@ objectsView model floor =
             )
             (List.filter isSelected objectList)
 
-        adjustRect object (left, top, width, height) =
+        adjustRect object leftTop size =
           if isSelected object then
             let
-              { x, y } =
+              xy =
                 adjustImagePositionOfMovingObject
                   model.gridSize
                   model.scale
                   start
                   model.mousePosition
-                  { x = left, y = top }
+                  leftTop
             in
-              (x, y, width, height)
+              (xy, size)
           else
-            (left, top, width, height)
+            (leftTop, size)
 
         normalView =
           List.map
@@ -302,7 +301,8 @@ objectsView model floor =
                 objectView
                   { mode = model.mode
                   , scale = model.scale
-                  , rect = adjustRect object (rect object)
+                  , position = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.first -- TODO
+                  , size = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.second -- TODO
                   , selected = isSelected object
                   , isGhost = False
                   , object = object
@@ -333,7 +333,8 @@ objectsView model floor =
               , lazy objectView
                 { mode = model.mode
                 , scale = model.scale
-                , rect = rect object
+                , position = Object.positionOf object
+                , size = Object.sizeOf object
                 , selected = True
                 , isGhost = True
                 , object = object
@@ -344,13 +345,13 @@ objectsView model floor =
             )
             (List.filter isResizing objectList)
 
-        adjustRect object (left, top, width, height) =
+        adjustRect object pos size =
           if isResizing object then
-            case Model.temporaryResizeRect model from (left, top, width, height) of
+            case Model.temporaryResizeRect model from pos size of
               Just rect -> rect
-              _ -> (0,0,0,0)
+              _ -> (Position 0 0, Size 0 0)
           else
-            (left, top, width, height)
+            (pos, size)
 
         normalView =
           List.map
@@ -359,7 +360,8 @@ objectsView model floor =
               , lazy objectView
                 { mode = model.mode
                 , scale = model.scale
-                , rect = adjustRect object (rect object)
+                , position = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.first -- TODO
+                , size = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.second -- TODO
                 , selected = isResizing object --TODO seems not selected?
                 , isGhost = False
                 , object = object
@@ -379,7 +381,8 @@ objectsView model floor =
           , lazy objectView
             { mode = model.mode
             , scale = model.scale
-            , rect = (rect object)
+            , position = Object.positionOf object
+            , size = Object.sizeOf object
             , selected = Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects
             , isGhost = False
             , object = object
@@ -401,19 +404,19 @@ canvasImage floor =
 
 temporaryStampsView : Model -> List (String, Html msg)
 temporaryStampsView model =
-  List.map
-    (temporaryStampView model.scale False)
-    (Model.getPositionedPrototype model)
+  Model.getPositionedPrototype model
+    |> List.map (temporaryStampView model.scale False)
 
 
 temporaryStampView : Scale -> Bool -> PositionedPrototype -> (String, Html msg)
-temporaryStampView scale selected (prototype, (left, top)) =
+temporaryStampView scale selected (prototype, pos) =
   -- TODO How about using prototype.id?
-  ( "temporary_" ++ toString left ++ "_" ++ toString top ++ "_" ++ toString prototype.width ++ "_" ++ toString prototype.height
+  ( "temporary_" ++ toString pos.x ++ "_" ++ toString pos.y ++ "_" ++ toString prototype.width ++ "_" ++ toString prototype.height
   , ObjectView.viewDesk
       ObjectView.noEvents
       False
-      (left, top, prototype.width, prototype.height)
+      pos
+      (Size prototype.width prototype.height)
       prototype.backgroundColor
       prototype.name --name
       Object.defaultFontSize
@@ -430,11 +433,12 @@ temporaryPenView model =
   case model.draggingContext of
     PenFromScreenPos start ->
       case Model.temporaryPen model start of
-        Just (color, name, (left, top, width, height)) ->
+        Just (color, name, pos, size) ->
           ObjectView.viewDesk
             ObjectView.noEvents
             False
-            (left, top, width, height)
+            pos
+            size
             color
             name --name
             Object.defaultFontSize
@@ -452,9 +456,14 @@ temporaryPenView model =
 selectorRectView : Model -> Html msg
 selectorRectView model =
   case (Mode.isSelectMode model.mode, model.selectorRect) of
-    (True, Just rect) ->
+    (True, Just (pos, size)) ->
       div
-        [ style (S.selectorRect (transitionDisabled model) (Scale.imageToScreenForRect model.scale rect) )
+        [ style
+            ( S.selectorRect
+                (transitionDisabled model)
+                (Scale.imageToScreenForPosition model.scale pos)
+                (Scale.imageToScreenForSize model.scale size)
+            )
         ]
         []
 

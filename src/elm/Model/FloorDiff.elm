@@ -101,14 +101,14 @@ diffObjectProperty : Object -> Object -> List ObjectPropertyChange
 diffObjectProperty new old =
   List.filterMap
     identity
-    [ objectPropertyChange Name Object.nameOf new old
-    , objectPropertyChange Size Object.sizeOf new old
-    , objectPropertyChange Position Object.positionOf new old
-    , objectPropertyChange BackgroundColor Object.backgroundColorOf new old
-    , objectPropertyChange Color Object.colorOf new old
-    , objectPropertyChange FontSize Object.fontSizeOf new old
-    , objectPropertyChange Shape Object.shapeOf new old
-    , objectPropertyChange Person Object.relatedPerson new old
+    [ objectPropertyChange ChangeName Object.nameOf new old
+    , objectPropertyChange ChangeSize Object.sizeOf new old
+    , objectPropertyChange ChangePosition Object.positionOf new old
+    , objectPropertyChange ChangeBackgroundColor Object.backgroundColorOf new old
+    , objectPropertyChange ChangeColor Object.colorOf new old
+    , objectPropertyChange ChangeFontSize Object.fontSizeOf new old
+    , objectPropertyChange ChangeShape Object.shapeOf new old
+    , objectPropertyChange ChangePerson Object.relatedPerson new old
     ]
 
 

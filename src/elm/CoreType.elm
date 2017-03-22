@@ -1,9 +1,15 @@
-module CoreType exposing (Position, Size)
+module CoreType exposing (Position, PositionFloat, Size)
 
 
 type alias Position =
   { x : Int
   , y : Int
+  }
+
+
+type alias PositionFloat =
+  { x : Float
+  , y : Float
   }
 
 

@@ -4,8 +4,11 @@ import Model.Prototype exposing (Prototype)
 import HtmlParser exposing (..)
 import HtmlParser.Util exposing (..)
 
+import CoreType exposing (..)
+
+
 type alias PositionedPrototype =
-  (Prototype, (Int, Int))
+  (Prototype, Position)
 
 
 type alias Cell =
@@ -15,8 +18,8 @@ type alias Cell =
   }
 
 
-toObjectCandidates : Prototype -> (Int, Int) -> String -> List PositionedPrototype
-toObjectCandidates prototype (left, top) s =
+toObjectCandidates : Prototype -> Position -> String -> List PositionedPrototype
+toObjectCandidates prototype pos s =
   let
     rows =
       if String.toLower s |> String.contains "</table>" then
@@ -32,7 +35,7 @@ toObjectCandidates prototype (left, top) s =
               ( { prototype |
                   name = cell.text
                 }
-              , calcPosition prototype (left, top) rowIndex colIndex
+              , calcPosition prototype pos rowIndex colIndex
               )
             )
             maybeCell
@@ -81,8 +84,8 @@ getIntValueWithDefault attrName attrs value =
     |> Maybe.withDefault value
 
 
-calcPosition : Prototype -> (Int, Int) -> Int -> Int -> (Int, Int)
-calcPosition prototype (left, top) rowIndex colIndex =
-  ( left + colIndex * prototype.width
-  , top + rowIndex * prototype.height
-  )
+calcPosition : Prototype -> Position -> Int -> Int -> Position
+calcPosition prototype pos rowIndex colIndex =
+  Position
+    (pos.x + colIndex * prototype.width)
+    (pos.y + rowIndex * prototype.height)

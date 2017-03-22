@@ -1,7 +1,6 @@
 module Page.Map.Msg exposing (..)
 
 import Time exposing (Time)
-import Mouse exposing (Position)
 import Debounce exposing (Debounce)
 import ContextMenu exposing (ContextMenu)
 
@@ -34,11 +33,7 @@ import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 import Page.Map.LinkCopy as LinkCopy
 
-
-type alias Size =
-  { width : Int
-  , height : Int
-  }
+import CoreType exposing (..)
 
 
 type Msg

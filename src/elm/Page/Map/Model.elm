@@ -14,7 +14,7 @@ import Util.DictUtil as DictUtil
 import Model.Direction exposing (..)
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
-import Model.Object as Object exposing (..)
+import Model.Object as Object exposing (Object)
 import Model.ObjectsOperation as ObjectsOperation
 import Model.Scale as Scale exposing (Scale)
 import Model.Prototype as Prototype exposing (Prototype)
@@ -42,6 +42,8 @@ import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 import CoreType exposing (..)
 
 
+type alias Id = String
+type alias PersonId = String
 type alias ObjectId = String
 type alias FloorId = String
 
@@ -58,7 +60,7 @@ type alias Model =
   , copiedObjects : List Object
   , objectNameInput : ObjectNameInput
   , gridSize : Int
-  , selectorRect : Maybe (Int, Int, Int, Int)
+  , selectorRect : Maybe (Position, Size)
   , keys : ShortCut.Model
   , mode : Mode
   , colorPalette : ColorPalette
@@ -77,7 +79,7 @@ type alias Model =
   , selectedResult : Maybe ObjectId
   , personInfo : Dict String Person
   , diff : Maybe (Floor, Maybe Floor)
-  , candidates : List Id
+  , candidates : List PersonId
   , clickEmulator : List (ObjectId, Bool, Time)
   , searchCandidateDebounce : Debounce (Id, String)
   , lang : Language
@@ -191,7 +193,7 @@ updateSelectorRect canvasPosition model =
   { model |
     selectorRect =
       case model.selectorRect of
-        Just (x, y, _, _) ->
+        Just (pos, size) ->
           let
             leftTop =
               screenToImageWithOffset
@@ -199,13 +201,10 @@ updateSelectorRect canvasPosition model =
                 canvasPosition
                 model.offset
 
-            width =
-              leftTop.x - x
-
-            height =
-              leftTop.y - y
+            size =
+              Size (leftTop.x - pos.x) (leftTop.y - pos.y)
           in
-            Just (x, y, width, height)
+            Just (pos, size)
 
         _ ->
           model.selectorRect
@@ -217,15 +216,15 @@ syncSelectedByRect model =
   { model |
     selectedObjects =
       case (model.selectorRect, model.floor) of
-        (Just (left, top, width, height), Just efloor) ->
+        (Just (pos, size), Just efloor) ->
           let
             floor =
               EditingFloor.present efloor
 
             objects =
               ObjectsOperation.withinRect
-                (toFloat left, toFloat top)
-                (toFloat (left + width), toFloat (top + height))
+                (toFloat pos.x, toFloat pos.y)
+                (toFloat (pos.x + size.width), toFloat (pos.y + size.height))
                 (Floor.objects floor)
           in
             List.map Object.idOf objects
@@ -239,7 +238,7 @@ startEdit : Object -> Model -> Model
 startEdit e model =
   { model |
     objectNameInput =
-      ObjectNameInput.start (idOf e, nameOf e) model.objectNameInput
+      ObjectNameInput.start (Object.idOf e, Object.nameOf e) model.objectNameInput
   }
 
 
@@ -250,17 +249,16 @@ adjustOffset model =
       model.selectedResult
         |> Maybe.andThen (\id -> model.floor
         |> Maybe.andThen (\efloor -> Floor.getObject id (EditingFloor.present efloor)
-        |> Maybe.andThen (\obj -> relatedPerson obj
+        |> Maybe.andThen (\obj -> Object.relatedPerson obj
         |> Maybe.map (\personId ->
             let
-              containerWidth =
-                model.windowSize.width - sideMenuWidth
-
-              containerHeight =
-                model.windowSize.height - headerHeight
+              containerSize =
+                Size
+                  ( model.windowSize.width - sideMenuWidth )
+                  ( model.windowSize.height - headerHeight )
             in
               ProfilePopupLogic.adjustOffset
-                (containerWidth, containerHeight)
+                containerSize
                 ProfilePopupLogic.personPopupSize
                 model.scale
                 model.offset
@@ -279,22 +277,21 @@ nextObjectToInput object allObjects =
     island =
       ObjectsOperation.island
         [object]
-        (List.filter (\o -> (Object.idOf o) /= (Object.idOf object)) allObjects)
+        (List.filter (\o -> Object.idOf o /= Object.idOf object) allObjects)
   in
-    case ObjectsOperation.nearest Down object island of
-      Just o ->
+    ObjectsOperation.nearest Down object island
+      |> Maybe.andThen (\o ->
         if Object.idOf object == Object.idOf o then
           Nothing
         else
           Just o
-
-      _ ->
-        Nothing
+      )
 
 
 candidatesOf : Model -> List Person
 candidatesOf model =
-  List.filterMap (\personId -> Dict.get personId model.personInfo) model.candidates
+  model.candidates
+    |> List.filterMap (\personId -> Dict.get personId model.personInfo)
 
 
 shiftSelectionToward : Direction -> Model -> Model
@@ -371,22 +368,18 @@ getPositionedPrototype model =
           fitted =
             ObjectsOperation.fitPositionToGrid
               model.gridSize
-              { x = xy2.x - prototype.width // 2
-              , y = xy2.y - prototype.height // 2
-              }
+              (Position (xy2.x - prototype.width // 2) (xy2.y - prototype.height // 2))
         in
-          [ (prototype, (fitted.x, fitted.y)) ]
+          [ (prototype, fitted) ]
 
       (_, MoveExistingObjectFromSearchResult floorId _ prototype _) ->
         let
           fitted =
             ObjectsOperation.fitPositionToGrid
               model.gridSize
-              { x = xy2.x - prototype.width // 2
-              , y = xy2.y - prototype.height // 2
-              }
+              (Position (xy2.x - prototype.width // 2) (xy2.y - prototype.height // 2))
         in
-          [ (prototype, (fitted.x, fitted.y)) ]
+          [ (prototype, fitted) ]
 
       (True, StampFromScreenPos start) ->
         let
@@ -400,23 +393,20 @@ getPositionedPrototype model =
           fitted =
             ObjectsOperation.fitPositionToGrid
               model.gridSize
-              { x = xy2.x - prototype.width // 2
-              , y = xy2.y - prototype.height // 2
-              }
+              (Position (xy2.x - prototype.width // 2) (xy2.y - prototype.height // 2))
         in
-          [ (prototype, (fitted.x, fitted.y)) ]
+          [ (prototype, fitted) ]
 
       _ -> []
 
 
-temporaryPen : Model -> Position -> Maybe (String, String, (Int, Int, Int, Int))
+temporaryPen : Model -> Position -> Maybe (String, String, Position, Size)
 temporaryPen model from =
-  Maybe.map
-    (\rect -> ("#fff", "", rect)) -- TODO color
-    (temporaryPenRect model from)
+  temporaryPenRect model from
+    |> Maybe.map (\(pos, size) -> ("#fff", "", pos, size)) -- TODO color
 
 
-temporaryPenRect : Model -> Position -> Maybe (Int, Int, Int, Int)
+temporaryPenRect : Model -> Position -> Maybe (Position, Size)
 temporaryPenRect model from =
   let
     leftTop =
@@ -427,11 +417,11 @@ temporaryPenRect model from =
       ObjectsOperation.fitPositionToGrid model.gridSize <|
         screenToImageWithOffset model.scale (canvasPosition model) model.offset
   in
-    validateRect (leftTop.x, leftTop.y, rightBottom.x, rightBottom.y)
+    validateRect leftTop rightBottom
 
 
-temporaryResizeRect : Model -> Position -> (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
-temporaryResizeRect model fromScreen (objLeft, objTop, objWidth, objHeight) =
+temporaryResizeRect : Model -> Position -> Position -> Size -> Maybe (Position, Size)
+temporaryResizeRect model fromScreen objPos objSize =
   let
     toScreen =
       canvasPosition model
@@ -444,21 +434,22 @@ temporaryResizeRect model fromScreen (objLeft, objTop, objWidth, objHeight) =
 
     rightBottom =
       ObjectsOperation.fitPositionToGrid model.gridSize <|
-        { x = objLeft + objWidth + Scale.screenToImage model.scale dx
-        , y = objTop + objHeight + Scale.screenToImage model.scale dy
-        }
+        ( Position
+            (objPos.x + objSize.width + Scale.screenToImage model.scale dx)
+            (objPos.y + objSize.height + Scale.screenToImage model.scale dy)
+        )
   in
-    validateRect (objLeft, objTop, rightBottom.x, rightBottom.y)
+    validateRect objPos rightBottom
 
 
-validateRect : (Int, Int, Int, Int) -> Maybe (Int, Int, Int, Int)
-validateRect (left, top, right, bottom) =
+validateRect : Position -> Position -> Maybe (Position, Size)
+validateRect leftTop rightBottom =
   let
-    width = right - left
-    height = bottom - top
+    width = rightBottom.x - leftTop.x
+    height = rightBottom.y - leftTop.y
   in
     if width > 0 && height > 0 then
-      Just (left, top, width, height)
+      Just (leftTop, Size width height)
     else
       Nothing
 

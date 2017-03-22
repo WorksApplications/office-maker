@@ -5,26 +5,16 @@ import Model.ObjectsOperation as ObjectsOperation
 
 import Util.ListUtil exposing (..)
 
+import CoreType exposing (..)
+
 
 type alias PositionedPrototype =
-  (Prototype, (Int, Int))
+  (Prototype, Position)
 
 
 type alias Prototypes =
   { data : List Prototype
   , selected : Int
-  }
-
-
-type alias Position =
-  { x : Int
-  , y : Int
-  }
-
-
-type alias Size =
-  { width : Int
-  , height : Int
   }
 
 
@@ -96,45 +86,46 @@ findPrototypeByIndex index list =
 
 prototypes : Prototypes -> List (Prototype, Bool)
 prototypes model =
-  List.indexedMap (\index prototype ->
-      (prototype, model.selected == index)
-    ) model.data
+  model.data
+    |> List.indexedMap (\index prototype ->
+        (prototype, model.selected == index)
+      )
 
 
-stampIndices : Bool -> (Int, Int) -> (Int, Int) -> (Int, Int) -> (List Int, List Int)
-stampIndices horizontal (deskWidth, deskHeight) (x1_, y1_) (x2_, y2_) =
+stampIndices : Bool -> Size -> Position -> Position -> (List Int, List Int)
+stampIndices horizontal deskSize pos1 pos2 =
   let
     (amountX, amountY) =
       if horizontal then
         let
-          amountX = (abs (x2_ - x1_) + deskWidth // 2) // deskWidth
+          amountX = (abs (pos2.x - pos1.x) + deskSize.width // 2) // deskSize.width
 
-          amountY = if abs (y2_ - y1_) > (deskHeight // 2) then 1 else 0
+          amountY = if abs (pos2.y - pos1.y) > (deskSize.height // 2) then 1 else 0
         in
          (amountX, amountY)
       else
         let
-          amountX = if abs (x2_ - x1_) > (deskWidth // 2) then 1 else 0
+          amountX = if abs (pos2.x - pos1.x) > (deskSize.width // 2) then 1 else 0
 
-          amountY = (abs (y2_ - y1_) + deskHeight // 2) // deskHeight
+          amountY = (abs (pos2.y - pos1.y) + deskSize.height // 2) // deskSize.height
         in
           (amountX, amountY)
   in
-    ( List.map (\i -> if x2_ > x1_ then i else -i) (List.range 0 amountX)
-    , List.map (\i -> if y2_ > y1_ then i else -i) (List.range 0 amountY)
+    ( List.map (\i -> if pos2.x > pos1.x then i else -i) (List.range 0 amountX)
+    , List.map (\i -> if pos2.y > pos1.y then i else -i) (List.range 0 amountY)
     )
 
 
-generateAllCandidatePosition : (Int, Int) -> (Int, Int) -> (List Int, List Int) -> List (Int, Int)
-generateAllCandidatePosition (deskWidth, deskHeight) (centerLeft, centerTop) (indicesX, indicesY) =
+generateAllCandidatePosition : Size -> Position -> (List Int, List Int) -> List Position
+generateAllCandidatePosition deskSize centerPos (indicesX, indicesY) =
   let
     lefts =
-      List.map (\index -> centerLeft + deskWidth * index) indicesX
+      List.map (\index -> centerPos.x + deskSize.width * index) indicesX
 
     tops =
-      List.map (\index -> centerTop + deskHeight * index) indicesY
+      List.map (\index -> centerPos.y + deskSize.height * index) indicesY
   in
-    List.concatMap (\left -> List.map (\top -> (left, top)) tops) lefts
+    List.concatMap (\left -> List.map (\top -> Position left top) tops) lefts
 
 
 positionedPrototypesOnDragging : Int -> Prototype -> Position -> Position -> List PositionedPrototype
@@ -156,25 +147,23 @@ positionedPrototypesOnDragging gridSize prototype xy1 xy2 = -- imagePos
       if horizontal then flip deskSize else deskSize
 
     (indicesX, indicesY) =
-      stampIndices horizontal (deskWidth, deskHeight) (x1, y1) (x2, y2)
+      stampIndices horizontal (Size deskWidth deskHeight) xy1 xy2
 
     center =
       ObjectsOperation.fitPositionToGrid
         gridSize
-        { x = x1 - Tuple.first deskSize // 2
-        , y = y1 - Tuple.second deskSize // 2
-        }
+        (Position (x1 - Tuple.first deskSize // 2) (y1 - Tuple.second deskSize // 2))
 
     all =
       generateAllCandidatePosition
-        (deskWidth, deskHeight)
-        (center.x, center.y)
+        (Size deskWidth deskHeight)
+        center
         (indicesX, indicesY)
 
     prototype_ =
       { prototype
-      | width = deskWidth
-      , height = deskHeight
+        | width = deskWidth
+        , height = deskHeight
       }
   in
     List.map ((,) prototype_) all

@@ -15,13 +15,12 @@ import View.Styles as S
 import View.PrototypePreviewView as PrototypePreviewView
 
 import Page.Map.Msg exposing (..)
+import CoreType exposing (..)
 
 
 containerSize : Size
 containerSize =
-  { width = 320 - (20 * 2) -- TODO
-  , height = 238
-  }
+  (Size (320 - (20 * 2)) 238) -- TODO
 
 
 view : List (Prototype, Bool) -> Html Msg

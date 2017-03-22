@@ -9,8 +9,7 @@ import View.ObjectView as ObjectView
 import Model.Scale as Scale exposing (Scale)
 import Model.Prototype exposing (Prototype)
 
-type alias Size =
-  { width : Int, height : Int }
+import CoreType exposing (..)
 
 
 view : Size -> Int -> List Prototype -> Html msg
@@ -49,7 +48,8 @@ eachView containerSize selectedIndex index prototype =
     ObjectView.viewDesk
       ObjectView.noEvents
       False
-      (left, top, prototype.width, prototype.height)
+      (Position left top)
+      (Size prototype.width prototype.height)
       prototype.backgroundColor
       prototype.name --name
       prototype.fontSize

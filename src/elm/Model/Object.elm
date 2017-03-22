@@ -2,6 +2,9 @@ module Model.Object exposing (..)
 
 import Time exposing (Time)
 
+import CoreType exposing (..)
+
+
 type alias Id = String
 type alias FloorId = String
 type alias PersonId = String
@@ -18,7 +21,8 @@ type Object =
     { id : Id
     , floorId : FloorId
     , floorVersion : Maybe FloorVersion
-    , rect : (Int, Int, Int, Int) -- (x, y, width, height)
+    , position : Position
+    , size : Size
     , backgroundColor : String
     , name : String
     , fontSize : Float
@@ -33,14 +37,14 @@ type ObjectExtension
 
 
 type ObjectPropertyChange
-  = Name String String
-  | Size (Int, Int) (Int, Int)
-  | Position (Int, Int) (Int, Int)
-  | BackgroundColor String String
-  | Color String String
-  | FontSize Float Float
-  | Shape Shape Shape
-  | Person (Maybe PersonId) (Maybe PersonId)
+  = ChangeName String String
+  | ChangeSize Size Size
+  | ChangePosition Position Position
+  | ChangeBackgroundColor String String
+  | ChangeColor String String
+  | ChangeFontSize Float Float
+  | ChangeShape Shape Shape
+  | ChangePerson (Maybe PersonId) (Maybe PersonId)
 
 
 modifyAll : List ObjectPropertyChange -> Object -> Object
@@ -52,28 +56,28 @@ modifyAll changes object =
 modify : ObjectPropertyChange -> Object -> Object
 modify change object =
   case change of
-    Name new old ->
+    ChangeName new old ->
       changeName new object
 
-    Size new old ->
+    ChangeSize new old ->
       changeSize new object
 
-    Position new old ->
+    ChangePosition new old ->
       move new object
 
-    BackgroundColor new old ->
+    ChangeBackgroundColor new old ->
       changeBackgroundColor new object
 
-    Color new old ->
+    ChangeColor new old ->
       changeColor new object
 
-    FontSize new old ->
+    ChangeFontSize new old ->
       changeFontSize new object
 
-    Shape new old ->
+    ChangeShape new old ->
       changeShape new object
 
-    Person new old ->
+    ChangePerson new old ->
       setPerson new object
 
 
@@ -107,13 +111,14 @@ isLabel (Object object) =
       False
 
 
-initDesk : Id -> FloorId -> Maybe FloorVersion -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Time -> Maybe PersonId -> Object
-initDesk id floorId floorVersion rect backgroundColor name fontSize updateAt personId =
+initDesk : Id -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> Maybe PersonId -> Object
+initDesk id floorId floorVersion position size backgroundColor name fontSize updateAt personId =
   Object
     { id = id
     , floorId = floorId
     , floorVersion = floorVersion
-    , rect = rect
+    , position = position
+    , size = size
     , backgroundColor = backgroundColor
     , name = name
     , fontSize = fontSize
@@ -122,26 +127,20 @@ initDesk id floorId floorVersion rect backgroundColor name fontSize updateAt per
     }
 
 
-initLabel : Id -> FloorId -> Maybe FloorVersion -> (Int, Int, Int, Int) -> String -> String -> Float -> Maybe Time -> String -> Shape -> Object
-initLabel id floorId floorVersion rect backgroundColor name fontSize updateAt color shape =
+initLabel : Id -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> String -> Shape -> Object
+initLabel id floorId floorVersion position size backgroundColor name fontSize updateAt color shape =
   Object
     { id = id
     , floorId = floorId
     , floorVersion = floorVersion
-    , rect = rect
+    , position = position
+    , size = size
     , backgroundColor = backgroundColor
     , name = name
     , fontSize = fontSize
     , updateAt = updateAt
     , extension = Label color shape
     }
-
-
-position : Object -> (Int, Int)
-position (Object object) =
-  case object.rect of
-    (x, y, _, _) ->
-      (x, y)
 
 
 changeId : Id -> Object -> Object
@@ -184,25 +183,19 @@ changeName name (Object object) =
   Object { object | name = name }
 
 
-changeSize : (Int, Int) -> Object -> Object
-changeSize (w, h) (Object object) =
-  case object.rect of
-    (x, y, _, _) ->
-      Object { object | rect = (x, y, w, h) }
+changeSize : Size -> Object -> Object
+changeSize size (Object object) =
+  Object { object | size = size }
 
 
-move : (Int, Int) -> Object -> Object
-move (x, y) (Object object) =
-  case object.rect of
-    (_, _, w, h) ->
-      Object { object | rect = (x, y, w, h) }
+move : Position -> Object -> Object
+move position (Object object) =
+  Object { object | position = position }
 
 
 rotate : Object -> Object
 rotate (Object object) =
-  case object.rect of
-    (x, y, w, h) ->
-      Object { object | rect = (x, y, h, w) }
+  Object { object | size = Size object.size.height object.size.width }
 
 
 setPerson : Maybe PersonId -> Object -> Object
@@ -279,61 +272,34 @@ shapeOf (Object object) =
       shape
 
 
-rect : Object -> (Int, Int, Int, Int)
-rect (Object object) =
-  object.rect
+sizeOf : Object -> Size
+sizeOf (Object object) =
+  object.size
 
 
-sizeOf : Object -> (Int, Int)
-sizeOf object =
-  let
-    (x, y, w, h) =
-      rect object
-  in
-    (w, h)
-
-
-positionOf : Object -> (Int, Int)
-positionOf object =
-  let
-    (x, y, w, h) =
-      rect object
-  in
-    (x, y)
+positionOf : Object -> Position
+positionOf (Object object) =
+  object.position
 
 
 left : Object -> Int
 left object =
-  Tuple.first <| positionOf object
+  .x <| positionOf object
 
 
 top : Object -> Int
 top object =
-  Tuple.second <| positionOf object
+  .y <| positionOf object
 
 
 right : Object -> Int
-right object =
-  let
-    (x, y) =
-      positionOf object
-
-    (w, h) =
-      sizeOf object
-  in
-    x + w
+right (Object object) =
+  object.position.x + object.size.width
 
 
 bottom : Object -> Int
-bottom object =
-  let
-    (x, y) =
-      positionOf object
-
-    (w, h) =
-      sizeOf object
-  in
-    y + h
+bottom (Object object) =
+  object.position.y + object.size.height
 
 
 relatedPerson : Object -> Maybe PersonId

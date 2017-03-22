@@ -1,18 +1,15 @@
 module Model.Scale exposing (..)
 
 
+import CoreType exposing (..)
+
+
 type Msg = ScaleUp | ScaleDown
 
 
 type alias Scale =
   { scaleDown : Int
   }
-
-
-type alias Position =
-    { x : Int
-    , y : Int
-    }
 
 
 default : Scale
@@ -37,33 +34,39 @@ update msg scale =
 
 screenToImageForPosition : Scale -> Position -> Position
 screenToImageForPosition scale screenPosition =
-  { x = screenToImage scale screenPosition.x
-  , y = screenToImage scale screenPosition.y
-  }
+  Position
+    (screenToImage scale screenPosition.x)
+    (screenToImage scale screenPosition.y)
 
 
 imageToScreenForPosition : Scale -> Position -> Position
 imageToScreenForPosition scale imagePosition =
-  { x = imageToScreen scale imagePosition.x
-  , y = imageToScreen scale imagePosition.y
-  }
+  Position
+    (imageToScreen scale imagePosition.x)
+    (imageToScreen scale imagePosition.y)
 
 
-imageToScreenForRect : Scale -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
-imageToScreenForRect scale (x, y, w, h) =
-  ( imageToScreen scale x
-  , imageToScreen scale y
-  , imageToScreen scale w
-  , imageToScreen scale h
+imageToScreenForSize : Scale -> Size -> Size
+imageToScreenForSize scale { width, height } =
+  Size (imageToScreen scale width) (imageToScreen scale height)
+
+
+screenToImageForSize : Scale -> Size -> Size
+screenToImageForSize scale { width, height } =
+  Size (screenToImage scale width) (screenToImage scale height)
+
+
+imageToScreenForRect : Scale -> Position -> Size -> (Position, Size)
+imageToScreenForRect scale pos size =
+  ( imageToScreenForPosition scale pos
+  , imageToScreenForSize scale size
   )
 
 
-screenToImageForRect : Scale -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
-screenToImageForRect scale (x, y, w, h) =
-  ( screenToImage scale x
-  , screenToImage scale y
-  , screenToImage scale w
-  , screenToImage scale h
+screenToImageForRect : Scale -> Position -> Size -> (Position, Size)
+screenToImageForRect scale pos size =
+  ( screenToImageForPosition scale pos
+  , screenToImageForSize scale size
   )
 
 

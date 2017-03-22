@@ -1,6 +1,7 @@
 module View.CommonStyles exposing (..)
 
 import Util.StyleUtil exposing (..)
+import CoreType exposing (..)
 
 type alias S = List (String, String)
 
@@ -49,18 +50,18 @@ flex =
   [ ( "display", "flex") ]
 
 
-rect : (Int, Int, Int, Int) -> S
-rect (x, y, w, h) =
+rect : Position -> Size -> S
+rect { x, y } { width, height } =
   [ ("top", px y)
   , ("left", px x)
-  , ("width", px w)
-  , ("height", px h)
+  , ("width", px width)
+  , ("height", px height)
   ]
 
 
-absoluteRect : (Int, Int, Int, Int) -> S
-absoluteRect rect_ =
-  ("position", "absolute") :: (rect rect_)
+absoluteRect : Position -> Size -> S
+absoluteRect pos size =
+  ("position", "absolute") :: (rect pos size)
 
 
 card : S

@@ -16,6 +16,9 @@ import View.ProfilePopup as ProfilePopup
 
 import InlineHover exposing (hover)
 
+import CoreType exposing (..)
+
+
 type alias ObjectNameInput =
   { editingObject : Maybe (String, String)
   , ctrl : Bool
@@ -195,18 +198,18 @@ subscriptions toMsg =
      |> Sub.map toMsg
 
 
-view : (String -> Maybe ((Int, Int, Int, Int), Maybe Person, Bool)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
+view : (String -> Maybe (Position, Size, Maybe Person, Bool)) -> Bool -> List Person -> ObjectNameInput -> Html Msg
 view deskInfoOf transitionDisabled candidates model =
   model.editingObject
     |> Maybe.andThen (\(objectId, name) -> deskInfoOf objectId
-    |> Maybe.map (\(screenRect, maybePerson, showSuggestion) ->
-      view_ showSuggestion objectId name maybePerson screenRect transitionDisabled candidates model
+    |> Maybe.map (\(screenPosOfDesk, screenSizeOfDesk, maybePerson, showSuggestion) ->
+      view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk transitionDisabled candidates model
     ))
     |> Maybe.withDefault (text "")
 
 
-view_ : Bool -> ObjectId -> String -> Maybe Person -> (Int, Int, Int, Int) -> Bool -> List Person -> ObjectNameInput -> Html Msg
-view_ showSuggestion objectId name maybePerson screenRectOfDesk transitionDisabled candidates model =
+view_ : Bool -> ObjectId -> String -> Maybe Person -> Position -> Size -> Bool -> List Person -> ObjectNameInput -> Html Msg
+view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk transitionDisabled candidates model =
   let
     candidates_ =
       candidates
@@ -219,7 +222,7 @@ view_ showSuggestion objectId name maybePerson screenRectOfDesk transitionDisabl
       ]
       ([ ("nameInput" ++ objectId, input
         ([ Html.Attributes.id "name-input"
-        , style (Styles.nameInputTextArea transitionDisabled screenRectOfDesk)
+        , style (Styles.nameInputTextArea transitionDisabled screenPosOfDesk screenSizeOfDesk)
         , onInput_ objectId
         , on "click" (Decode.map CaretPosition targetSelectionStart)
         , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map (KeydownOnNameInput candidates_) decodeKeyCodeAndSelectionStart)
@@ -227,11 +230,11 @@ view_ showSuggestion objectId name maybePerson screenRectOfDesk transitionDisabl
         , defaultValue name
         ])
         [])
-      ] ++ (if showSuggestion then viewSuggestion objectId maybePerson screenRectOfDesk candidates_ model else []))
+      ] ++ (if showSuggestion then viewSuggestion objectId maybePerson screenPosOfDesk screenSizeOfDesk candidates_ model else []))
 
 
-viewSuggestion : String -> Maybe Person -> (Int, Int, Int, Int) -> List Person -> ObjectNameInput -> List (String, Html Msg)
-viewSuggestion objectId maybePerson screenRectOfDesk candidates model =
+viewSuggestion : String -> Maybe Person -> Position -> Size -> List Person -> ObjectNameInput -> List (String, Html Msg)
+viewSuggestion objectId maybePerson screenPosOfDesk screenSizeOfDesk candidates model =
   let
     (relatedPersonExists, reletedpersonView_) =
       maybePerson
@@ -248,13 +251,13 @@ viewSuggestion objectId maybePerson screenRectOfDesk candidates model =
 
     pointer =
       if viewExists then
-        div [ style (Styles.candidateViewPointer screenRectOfDesk) ] []
+        div [ style (Styles.candidateViewPointer screenPosOfDesk screenSizeOfDesk) ] []
       else
         text ""
   in
     [ ("name-input-suggestion"
       , div
-        [ style (Styles.candidatesViewContainer screenRectOfDesk relatedPersonExists candidatesLength) ]
+        [ style (Styles.candidatesViewContainer screenPosOfDesk screenSizeOfDesk relatedPersonExists candidatesLength) ]
         [ reletedpersonView_
         , candidatesView model.candidateIndex objectId candidates
         ]

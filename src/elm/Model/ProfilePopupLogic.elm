@@ -13,23 +13,27 @@ personPopupSize =
 centerTopScreenXYOfObject : Scale -> Position -> Object -> Position
 centerTopScreenXYOfObject scale offset object =
   let
-    (x, y, w, h) =
-      Object.rect object
+    { x, y } =
+      Object.positionOf object
+
+    { width } =
+      Object.sizeOf object
   in
     Scale.imageToScreenForPosition
       scale
-      { x = offset.x + x + w//2
-      , y = offset.y + y
-      }
+      (Position (offset.x + x + width // 2) (offset.y + y))
 
 
 bottomScreenYOfObject : Scale -> Position -> Object -> Int
 bottomScreenYOfObject scale offset object =
   let
-    (x, y, w, h) =
-      Object.rect object
+    { x, y } =
+      Object.positionOf object
+
+    { height } =
+      Object.sizeOf object
   in
-    Scale.imageToScreen scale (offset.y + y + h)
+    Scale.imageToScreen scale (offset.y + y + height)
 
 
 calcPopupLeftFromObjectCenter : Int -> Int -> Int
@@ -47,8 +51,8 @@ calcPopupTopFromObjectTop popupHeight objTop =
   objTop - (popupHeight + 10)
 
 
-adjustOffset : (Int, Int) -> Size -> Scale -> Position -> Object -> Position
-adjustOffset (containerWidth, containerHeight) popupSize scale offset object =
+adjustOffset : Size -> Size -> Scale -> Position -> Object -> Position
+adjustOffset containerSize popupSize scale offset object =
   let
     objCenterTop =
       centerTopScreenXYOfObject scale offset object
@@ -66,10 +70,10 @@ adjustOffset (containerWidth, containerHeight) popupSize scale offset object =
       bottomScreenYOfObject scale offset object
 
     offsetX_ =
-      adjust scale containerWidth left right offset.x
+      adjust scale containerSize.width left right offset.x
 
     offsetY_ =
-      adjust scale containerHeight top bottom offset.y
+      adjust scale containerSize.height top bottom offset.y
   in
     Position offsetX_ offsetY_
 

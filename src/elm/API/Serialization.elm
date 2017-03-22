@@ -13,11 +13,13 @@ import Model.Floor as Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
 import Model.Person exposing (Person)
-import Model.Object as Object exposing (..)
+import Model.Object as Object exposing (Object, Shape(..))
 import Model.Prototype exposing (Prototype)
 import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.ColorPalette as ColorPalette exposing (ColorPalette)
 import Model.ObjectsChange as ObjectsChange exposing (..)
+
+import CoreType exposing (..)
 
 
 decodeAuthToken : Decoder String
@@ -53,8 +55,11 @@ decodePeople =
 encodeObject : Object -> Value
 encodeObject object =
   let
-    (x, y, w, h) =
-      Object.rect object
+    { x, y } =
+      Object.positionOf object
+
+    { width, height } =
+      Object.sizeOf object
   in
     E.object
       [ ("id", E.string (Object.idOf object))
@@ -64,8 +69,8 @@ encodeObject object =
       , ("type", E.string (if Object.isDesk object then "desk" else "label"))
       , ("x", E.int x)
       , ("y", E.int y)
-      , ("width", E.int w)
-      , ("height", E.int h)
+      , ("width", E.int width)
+      , ("height", E.int height)
       , ("backgroundColor", E.string (Object.backgroundColorOf object))
       , ("color", E.string (Object.colorOf object))
       , ("shape", E.string (encodeShape (Object.shapeOf object)))
@@ -217,9 +222,9 @@ decodeObject =
   decode
     (\id floorId floorVersion updateAt tipe x y width height backgroundColor name personId fontSize color shape ->
       if tipe == "desk" then
-        Object.initDesk id floorId floorVersion (x, y, width, height) backgroundColor name fontSize (Just updateAt) personId
+        Object.initDesk id floorId floorVersion (Position x y) (Size width height) backgroundColor name fontSize (Just updateAt) personId
       else
-        Object.initLabel id floorId floorVersion (x, y, width, height) backgroundColor name fontSize (Just updateAt) color
+        Object.initLabel id floorId floorVersion (Position x y) (Size width height) backgroundColor name fontSize (Just updateAt) color
           (if shape == "rectangle" then
             Object.Rectangle
           else

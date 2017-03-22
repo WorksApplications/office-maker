@@ -502,7 +502,7 @@ update msg model =
                 ObjectsOperation.fitPositionToGrid model0.gridSize <|
                   Model.screenToImageWithOffset model0.scale canvasPosition model0.offset
             in
-              Just (fitted.x, fitted.y, model0.gridSize, model0.gridSize)
+              Just (fitted, Size model0.gridSize model0.gridSize)
           else
             model0.selectorRect
 
@@ -1021,7 +1021,7 @@ update msg model =
         case object of
           Just o ->
             let
-              (_, _, width, height) = Object.rect o
+              { width, height } = Object.sizeOf o
 
               (newId, seed) = IdGenerator.new model.seed
 
@@ -1475,13 +1475,13 @@ update msg model =
 
     PasteFromClipboard s ->
       case (model.floor, model.selectorRect) of
-        (Just floor, Just (left, top, _, _)) ->
+        (Just floor, Just (pos, _)) ->
           let
             prototype =
               Prototypes.selectedPrototype model.prototypes
 
             candidates =
-              ClipboardData.toObjectCandidates prototype (left, top) s
+              ClipboardData.toObjectCandidates prototype pos s
 
             ((newModel, cmd), newObjects) =
               updateOnFinishStamp_ candidates model floor
@@ -1784,12 +1784,13 @@ updateOnFinishStampWithoutEffects maybeObjectId prototypes model floor =
 
     newObjects =
       List.map
-        (\((prototype, (x, y)), newId) ->
+        (\((prototype, pos), newId) ->
             Object.initDesk
               (Maybe.withDefault newId maybeObjectId)
               (EditingFloor.present floor).id
               Nothing
-              (x, y, prototype.width, prototype.height)
+              pos
+              (Size prototype.width prototype.height)
               prototype.backgroundColor
               prototype.name
               prototype.fontSize
@@ -1807,7 +1808,7 @@ updateOnFinishStampWithoutEffects maybeObjectId prototypes model floor =
 updateOnFinishPen : Position -> Model -> (Model, Cmd Msg)
 updateOnFinishPen from model =
   case (model.floor, Model.temporaryPen model from) of
-    (Just floor, Just (color, name, (left, top, width, height))) ->
+    (Just floor, Just (color, name, pos, size)) ->
       let
         (newId, newSeed) =
           IdGenerator.new model.seed
@@ -1817,7 +1818,8 @@ updateOnFinishPen from model =
             newId
             (EditingFloor.present floor).id
             Nothing
-            (left, top, width, height)
+            pos
+            size
             color
             name
             Object.defaultFontSize
@@ -1845,11 +1847,11 @@ updateOnFinishResize : ObjectId -> Position -> Model -> (Model, Cmd Msg)
 updateOnFinishResize objectId fromScreen model =
   model.floor
     |> Maybe.andThen (\editingFloor -> Floor.getObject objectId (EditingFloor.present editingFloor)
-    |> Maybe.andThen (\o -> Model.temporaryResizeRect model fromScreen (Object.rect o)
-    |> Maybe.map (\(_, _, width, height) ->
+    |> Maybe.andThen (\o -> Model.temporaryResizeRect model fromScreen (Object.positionOf o) (Object.sizeOf o)
+    |> Maybe.map (\(_, size) ->
         let
           (newFloor, objectsChange) =
-            EditingFloor.updateObjects (Floor.resizeObject objectId (width, height)) editingFloor
+            EditingFloor.updateObjects (Floor.resizeObject objectId size) editingFloor
 
           saveCmd =
             requestSaveObjectsCmd objectsChange
@@ -1874,14 +1876,8 @@ updateOnPuttingLabel model =
               canvasPosition
               model.offset
 
-        left =
-          fitted.x
-
-        top =
-          fitted.y
-
-        (width, height) =
-          ObjectsOperation.fitSizeToGrid model.gridSize (100, 100) -- TODO configure?
+        size =
+          ObjectsOperation.fitSizeToGrid model.gridSize (Size 100 100) -- TODO configure?
 
         bgColor = "transparent" -- TODO configure?
 
@@ -1899,7 +1895,8 @@ updateOnPuttingLabel model =
             newId
             (EditingFloor.present floor).id
             Nothing
-            (left, top, width, height)
+            fitted
+            size
             bgColor
             name
             fontSize
@@ -2219,10 +2216,8 @@ updateByKeyEventWithCtrl event model =
 
     (Just floor, ShortCut.V) ->
       case model.selectorRect of
-        Just (x, y, w, h) ->
+        Just (base, _) ->
           let
-            base = (x, y)
-
             (copiedIdsWithNewIds, newSeed) =
               IdGenerator.zipWithNewIds model.seed model.copiedObjects
 

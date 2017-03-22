@@ -97,25 +97,26 @@ header printMode =
       )
 
 
-deskInput : (Int, Int, Int, Int) -> S
-deskInput (x, y, w, h) =
+deskInput : Position -> Size -> S
+deskInput pos size =
   let
-    w_ = max w 100
-    h_ = max h 15
+    size_ =
+      Size (max size.width 100) (max size.height 15)
   in
-    (absoluteRect (x, y, w_, h_)) ++ noPadding ++ [ ("z-index", zIndex.deskInput)
-    , ("box-sizing", "border-box")
-    ]
+    absoluteRect pos size_ ++ noPadding ++
+      [ ("z-index", zIndex.deskInput)
+      , ("box-sizing", "border-box")
+      ]
 
 
-nameInputTextArea : Bool -> (Int, Int, Int, Int) -> S
-nameInputTextArea transitionDisabled screenRect =
-  deskInput screenRect ++ transition ["left"] transitionDisabled
+nameInputTextArea : Bool -> Position -> Size -> S
+nameInputTextArea transitionDisabled screenPos screenSize =
+  deskInput screenPos screenSize ++ transition ["left"] transitionDisabled
 
 
-deskObject : (Int, Int, Int, Int) -> String -> Bool -> Bool -> Bool -> S
-deskObject rect backgroundColor selected isGhost disableTransition =
-  (absoluteRect rect) ++
+deskObject : Position -> Size -> String -> Bool -> Bool -> Bool -> S
+deskObject pos size backgroundColor selected isGhost disableTransition =
+  (absoluteRect pos size) ++
   [ ("opacity", if isGhost then "0.5" else "1.0")
   , ("display", "table")
   , ("background-color", backgroundColor)
@@ -130,9 +131,9 @@ deskObject rect backgroundColor selected isGhost disableTransition =
   ] ++ noUserSelect ++ transition ["width", "height", "top", "left"] disableTransition
 
 
-labelObject : Bool -> (Int, Int, Int, Int) -> String -> String -> Bool -> Bool -> Bool -> Bool -> S
-labelObject isEllipse rect backgroundColor fontColor selected isGhost rectVisible disableTransition =
-  (absoluteRect rect) ++
+labelObject : Bool -> Position -> Size -> String -> String -> Bool -> Bool -> Bool -> Bool -> S
+labelObject isEllipse pos size backgroundColor fontColor selected isGhost rectVisible disableTransition =
+  absoluteRect pos size ++
   [ ("opacity", if isGhost then "0.5" else "1.0")
   , ("display", "table")
   , ("background-color",
@@ -171,13 +172,14 @@ deskResizeGrip selected =
   )
 
 
-selectorRect : Bool -> (Int, Int, Int, Int) -> S
-selectorRect disableTransition rect =
-  (absoluteRect rect) ++ [("z-index", zIndex.selectorRect)
-  , ("border-style", "solid")
-  , ("border-width", "2px")
-  , ("border-color", selectColor)
-  ] ++ transition ["width", "height", "top", "left"] disableTransition
+selectorRect : Bool -> Position -> Size -> S
+selectorRect disableTransition pos size =
+  absoluteRect pos size ++
+    [ ("z-index", zIndex.selectorRect)
+    , ("border-style", "solid")
+    , ("border-width", "2px")
+    , ("border-color", selectColor)
+    ] ++ transition ["width", "height", "top", "left"] disableTransition
 
 
 colorProperties : S
@@ -232,33 +234,30 @@ subView =
     ]
 
 
-canvasView : Bool -> Bool -> (Int, Int, Int, Int) -> S
-canvasView isViewing disableTransition rect =
-  (absoluteRect rect) ++
+canvasView : Bool -> Bool -> Position -> Size -> S
+canvasView isViewing disableTransition pos size =
+  absoluteRect pos size ++
     [ ("font-family", "default")
     , ("background-color", "#fff")
-    -- TODO on select person
-    -- , ("transition-property", "top, left")
-    -- , ("transition-duration", "0.2s")
     ] ++ noUserSelect ++ (if isViewing then [("overflow", "hidden")] else []) ++
     transition ["width", "height", "top", "left"] disableTransition
 
 
-canvasViewForPrint : (Int, Int) -> (Int, Int, Int, Int) -> S
-canvasViewForPrint (windowWidth, windowHeight) (_, _, w, h) =
+canvasViewForPrint : Size -> Size -> S
+canvasViewForPrint windowSize size =
   let
     scale =
       toString
         ( min
-            (toFloat windowWidth / toFloat w)
-            (toFloat windowHeight / toFloat h)
+            (toFloat windowSize.width / toFloat size.width)
+            (toFloat windowSize.height / toFloat size.height)
         )
   in
     [ ("background-color", "#fff")
     , ("font-family", "default")
     , ("position", "absolute")
-    , ("width", px w)
-    , ("height", px h)
+    , ("width", px size.width)
+    , ("height", px size.height)
     , ("transform", "scale(" ++ scale ++ ")")
     , ("transform-origin", "top left")
     , ("overflow", "hidden")
@@ -952,21 +951,18 @@ candidateItemHeight : Int
 candidateItemHeight = 55
 
 
-candidatesViewContainer : (Int, Int, Int, Int) -> Bool -> Int -> S
-candidatesViewContainer screenRectOfDesk relatedPersonExists candidateLength =
+candidatesViewContainer : Position -> Size -> Bool -> Int -> S
+candidatesViewContainer screenPosOfDesk screenSizeOfDesk relatedPersonExists candidateLength =
   let
-    (x, y, w, h) =
-      screenRectOfDesk
-
     totalHeight =
       (if relatedPersonExists then 160 else 0) +
       (candidateItemHeight * candidateLength)
 
     left =
-      x + (max w 100) + 15
+      screenPosOfDesk.x + (max screenSizeOfDesk.width 100) + 15
 
     top =
-      Basics.max 10 (y - totalHeight // 2)
+      Basics.max 10 (screenPosOfDesk.y - totalHeight // 2)
   in
     [ ("position", "absolute")
     , ("top", px top)
@@ -975,18 +971,17 @@ candidatesViewContainer screenRectOfDesk relatedPersonExists candidateLength =
     ] ++ shadow
 
 
-candidateViewPointer : (Int, Int, Int, Int) -> S
-candidateViewPointer screenRectOfDesk =
+candidateViewPointer : Position -> Size -> S
+candidateViewPointer screenPosOfDesk screenSizeOfDesk =
   let
-    (x, y, w, h) = screenRectOfDesk
-    left = x + w + 5
-    top = y + 10
+    left = screenPosOfDesk.x + screenSizeOfDesk.width + 5
+    top = screenPosOfDesk.y + 10
   in
     popupPointerLeft ++
       [ ("top", px top)
       , ("left", px left)
-      -- , ("z-index", zIndex.candidatesView)
       ]
+
 
 candidatesView : S
 candidatesView =
@@ -1002,6 +997,7 @@ candidatesViewRelatedPerson =
   , ("background-color", "#fff")
   , ("border-bottom", "solid 1px #ddd")
   ]
+
 
 candidateItem : Bool -> S
 candidateItem selected =

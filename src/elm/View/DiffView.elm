@@ -59,28 +59,28 @@ view lang visitDate personInfo options (current, prev) =
 viewObjectPropertyChange : ObjectPropertyChange -> String
 viewObjectPropertyChange change =
   case change of
-    Name new old ->
+    ChangeName new old ->
       "name chaged: " ++ old ++ " -> " ++ new
 
-    Size new old ->
+    ChangeSize new old ->
       "size chaged: " ++ toString old ++ " -> " ++ toString new
 
-    Position new old ->
+    ChangePosition new old ->
       "position chaged: " ++ toString old ++ " -> " ++ toString new
 
-    BackgroundColor new old ->
+    ChangeBackgroundColor new old ->
       "background color chaged: " ++ old ++ " -> " ++ new
 
-    Color new old ->
+    ChangeColor new old ->
       "color chaged: " ++ old ++ " -> " ++ new
 
-    FontSize new old ->
+    ChangeFontSize new old ->
       "font size chaged: " ++ toString old ++ " -> " ++ toString new
 
-    Shape new old ->
+    ChangeShape new old ->
       "shape chaged: " ++ toString old ++ " -> " ++ toString new
 
-    Person new old ->
+    ChangePerson new old ->
       "person chaged: " ++ toString old ++ " -> " ++ toString new
 
 

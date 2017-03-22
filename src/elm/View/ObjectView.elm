@@ -5,12 +5,15 @@ import Html exposing (..)
 import Html.Attributes as Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Lazy as Lazy
-import Mouse exposing (Position)
+import Mouse
 
 import View.Styles as S
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
 import Page.Map.Emoji as Emoji
+
+import CoreType exposing (..)
+
 
 type alias Id = String
 
@@ -36,8 +39,8 @@ noEvents =
   }
 
 
-viewDesk : EventOptions msg -> Bool -> (Int, Int, Int, Int) -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Bool -> Html msg
-viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha scale disableTransition personMatched =
+viewDesk : EventOptions msg -> Bool -> Position -> Size -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Bool -> Html msg
+viewDesk eventOptions showPersonMatch pos size color name fontSize selected alpha scale disableTransition personMatched =
   let
     personMatchIcon =
       if showPersonMatch then
@@ -45,29 +48,29 @@ viewDesk eventOptions showPersonMatch rect color name fontSize selected alpha sc
       else
         text ""
 
-    screenRect =
-      Scale.imageToScreenForRect scale rect
+    (screenPos, screenSize) =
+      Scale.imageToScreenForRect scale pos size
 
     styles =
-      [ style (S.deskObject screenRect color selected alpha disableTransition) ]
+      [ style (S.deskObject screenPos screenSize color selected alpha disableTransition) ]
 
     nameView =
-      objectLabelView False "" fontSize scale disableTransition screenRect name
+      objectLabelView False "" fontSize scale disableTransition screenPos screenSize name
   in
     viewInternal selected eventOptions styles nameView personMatchIcon
 
 
-viewLabel : EventOptions msg -> (Int, Int, Int, Int) -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Bool -> Html msg
-viewLabel eventOptions rect backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale disableTransition =
+viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Bool -> Html msg
+viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale disableTransition =
   let
-    screenRect =
-      Scale.imageToScreenForRect scale rect
+    (screenPos, screenSize) =
+      Scale.imageToScreenForRect scale pos size
 
     styles =
-      [ style (S.labelObject isEllipse screenRect backgroundColor fontColor selected isGhost rectVisible disableTransition) ]
+      [ style (S.labelObject isEllipse screenPos screenSize backgroundColor fontColor selected isGhost rectVisible disableTransition) ]
 
     nameView =
-      objectLabelView True fontColor fontSize scale disableTransition screenRect name
+      objectLabelView True fontColor fontSize scale disableTransition screenPos screenSize name
   in
     viewInternal selected eventOptions styles nameView (text "")
 
@@ -150,12 +153,9 @@ personMatchingView scale name personMatched =
       text ""
 
 
-objectLabelView : Bool -> String -> Float -> Scale -> Bool -> (Int, Int, Int, Int) -> String -> Html msg
-objectLabelView canBeEmoji color fontSize scale disableTransition screenRect name =
+objectLabelView : Bool -> String -> Float -> Scale -> Bool -> Position -> Size -> String -> Html msg
+objectLabelView canBeEmoji color fontSize scale disableTransition screenPos screenSize name =
   let
-    (_, _, _, height) =
-      screenRect
-
     trimed =
       String.trim name
 
