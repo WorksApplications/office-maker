@@ -1,35 +1,38 @@
-module View.FloorsInfoView exposing(view)
+module Page.Map.FloorsInfoView exposing (view)
 
 import Dict exposing (Dict)
-import InlineHover exposing (hover)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Html.Lazy as Lazy
+import Html.Lazy exposing (..)
+import InlineHover exposing (hover)
+import ContextMenu
 import View.Styles as Styles
 
 import Model.User as User exposing (User)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
 
+import Page.Map.Msg exposing (Msg(..))
+import Page.Map.ContextMenuContext as ContextMenuContext
 
 type alias FloorId = String
 
 
-view : (FloorId -> Attribute msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Bool -> Maybe String -> Dict FloorId FloorInfo -> Html msg
-view toContextMenuAttribute goToFloorMsg onCreateNewFloor disableContextmenu user isEditMode currentFloorId floorsInfo =
+view : Bool -> User -> Bool -> Maybe String -> Dict FloorId FloorInfo -> Html Msg
+view disableContextmenu user isEditMode currentFloorId floorsInfo =
   if isEditMode then
-    viewEditingFloors toContextMenuAttribute goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo
+    viewEditingFloors disableContextmenu user currentFloorId floorsInfo
   else
-    viewPublicFloors goToFloorMsg currentFloorId floorsInfo
+    viewPublicFloors currentFloorId floorsInfo
 
 
-viewEditingFloors : (FloorId -> Attribute msg) -> ((FloorId, Bool) -> msg) -> msg -> Bool -> User -> Maybe FloorId -> Dict FloorId FloorInfo -> Html msg
-viewEditingFloors toContextMenuAttribute goToFloorMsg onCreateNewFloor disableContextmenu user currentFloorId floorsInfo =
+viewEditingFloors : Bool -> User -> Maybe FloorId -> Dict FloorId FloorInfo -> Html Msg
+viewEditingFloors disableContextmenu user currentFloorId floorsInfo =
   let
     contextMenuMsg floor =
       if not disableContextmenu && not (User.isGuest user) then
-        Just (toContextMenuAttribute floor.id)
+        Just (ContextMenu.open ContextMenuMsg (ContextMenuContext.FloorInfoContextMenu floor.id))
       else
         Nothing
 
@@ -43,7 +46,7 @@ viewEditingFloors toContextMenuAttribute goToFloorMsg onCreateNewFloor disableCo
           in
             eachView
               (contextMenuMsg floor)
-              (goToFloorMsg (floor.id, True))
+              (GoToFloor <| Just (floor.id, True))
               (currentFloorId == Just floor.id)
               (FloorInfo.isNeverPublished floorInfo)
               floor.name
@@ -51,15 +54,15 @@ viewEditingFloors toContextMenuAttribute goToFloorMsg onCreateNewFloor disableCo
 
     create =
       if User.isAdmin user then
-        [ Lazy.lazy createButton onCreateNewFloor ]
+        [ createButton ]
       else
         []
   in
     wrapList ( floorList ++ create )
 
 
-viewPublicFloors : ((FloorId, Bool) -> msg) -> Maybe FloorId -> Dict FloorId FloorInfo -> Html msg
-viewPublicFloors goToFloorMsg currentFloorId floorsInfo =
+viewPublicFloors : Maybe FloorId -> Dict FloorId FloorInfo -> Html Msg
+viewPublicFloors currentFloorId floorsInfo =
   let
     floorList =
       floorsInfo
@@ -68,7 +71,7 @@ viewPublicFloors goToFloorMsg currentFloorId floorsInfo =
           (\floor ->
             eachView
               Nothing
-              (goToFloorMsg (floor.id, False))
+              (GoToFloor <| Just (floor.id, False))
               (currentFloorId == Just floor.id)
               False -- TODO
               floor.name
@@ -93,10 +96,10 @@ eachView maybeOpenContextMenu onClickMsg selected markAsPrivate floorName =
     [ text floorName ]
 
 
-createButton : msg -> Html msg
-createButton msg =
+createButton : Html Msg
+createButton =
   linkBox
-    msg
+    CreateNewFloor
     (Styles.floorsInfoViewItem False False)
     (Styles.floorsInfoViewItemHover False)
     Styles.floorsInfoViewItemLink

@@ -6,12 +6,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Lazy as Lazy exposing (..)
 
-import ContextMenu
-
 import View.Styles as S
 import View.Icons as Icons
 import View.MessageBarForMainView as MessageBar
-import View.FloorsInfoView as FloorsInfoView
 import View.DiffView as DiffView
 import View.Common exposing (..)
 import View.SearchInputView as SearchInputView
@@ -33,7 +30,6 @@ import Model.User as User exposing (User)
 import Model.Object as Object
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
-import Page.Map.ContextMenuContext exposing (ContextMenuContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.CanvasView as CanvasView
 import Page.Map.PropertyView as PropertyView
@@ -42,6 +38,7 @@ import Page.Map.PrototypePreviewView as PrototypePreviewView
 import Page.Map.SearchResultView as SearchResultView
 import Page.Map.FloorUpdateInfoView as FloorUpdateInfoView
 import Page.Map.Emoji as Emoji
+import Page.Map.FloorsInfoView as FloorsInfoView
 
 
 mainView : Model -> Html Msg
@@ -71,9 +68,6 @@ floorInfoView model =
     text ""
   else
     FloorsInfoView.view
-      (\id -> ContextMenu.open ContextMenuMsg (FloorInfoContextMenu id))
-      (Just >> GoToFloor)
-      CreateNewFloor
       model.keys.ctrl
       model.user
       (Mode.isEditMode model.mode)
