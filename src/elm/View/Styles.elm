@@ -715,11 +715,6 @@ floorsInfoViewItem selected private =
     ]
 
 
-floorsInfoViewItemHover : Bool -> S
-floorsInfoViewItemHover private =
-  [ ("background-color", if private then "#ddd" else "#eee") ]
-
-
 floorsInfoViewItemLink : S
 floorsInfoViewItemLink =
     [ ("display", "block")

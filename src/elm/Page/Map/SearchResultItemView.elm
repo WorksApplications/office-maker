@@ -1,4 +1,4 @@
-module View.SearchResultItemView exposing (Item(..), view)
+module Page.Map.SearchResultItemView exposing (Item(..), view)
 
 import Time exposing (Time)
 import Html exposing (..)

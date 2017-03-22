@@ -6,8 +6,6 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Lazy as Lazy
 
-import InlineHover exposing (hover)
-
 import Model.Object as Object exposing (..)
 import Model.Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
@@ -17,12 +15,12 @@ import Model.SearchResult as SearchResult exposing (SearchResult)
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n exposing (Language)
 
-import View.SearchResultItemView as SearchResultItemView exposing (Item(..))
 import View.Icons as I
 import View.Styles as S
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
+import Page.Map.SearchResultItemView as SearchResultItemView exposing (Item(..))
 
 
 type alias FloorId = String

@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Html.Lazy exposing (..)
 import InlineHover exposing (hover)
 import ContextMenu
 import View.Styles as Styles
@@ -61,21 +60,18 @@ viewEditingFloors disableContextmenu user currentFloorId floorsInfo =
 
 viewPublicFloors : Maybe FloorId -> Dict FloorId FloorInfo -> Html Msg
 viewPublicFloors currentFloorId floorsInfo =
-  let
-    floorList =
-      floorsInfo
-        |> FloorInfo.toPublicList
-        |> List.map
-          (\floor ->
-            eachView
-              Nothing
-              (GoToFloor <| Just (floor.id, False))
-              (currentFloorId == Just floor.id)
-              False -- TODO
-              floor.name
-          )
-  in
-    wrapList floorList
+  floorsInfo
+    |> FloorInfo.toPublicList
+    |> List.map
+      (\floor ->
+        eachView
+          Nothing
+          (GoToFloor <| Just (floor.id, False))
+          (currentFloorId == Just floor.id)
+          False -- TODO
+          floor.name
+      )
+    |> wrapList
 
 
 wrapList : List (Html msg) -> Html msg
@@ -88,7 +84,6 @@ eachView maybeOpenContextMenu onClickMsg selected markAsPrivate floorName =
   linkBox
     onClickMsg
     (Styles.floorsInfoViewItem selected markAsPrivate)
-    (Styles.floorsInfoViewItemHover markAsPrivate)
     Styles.floorsInfoViewItemLink
     maybeOpenContextMenu
     [ text floorName ]
@@ -99,15 +94,13 @@ createButton =
   linkBox
     CreateNewFloor
     (Styles.floorsInfoViewItem False False)
-    (Styles.floorsInfoViewItemHover False)
     Styles.floorsInfoViewItemLink
     Nothing
     [ text "+" ]
 
 
-linkBox : msg -> List (String, String) -> List (String, String) -> List (String, String) -> Maybe (Attribute msg) -> List (Html msg) -> Html msg
-linkBox clickMsg liStyle hoverStyle innerStyle maybeOpenContextMenu inner =
-  -- hover hoverStyle
+linkBox : msg -> List (String, String) -> List (String, String) -> Maybe (Attribute msg) -> List (Html msg) -> Html msg
+linkBox clickMsg liStyle innerStyle maybeOpenContextMenu inner =
   li
     ( style liStyle ::
       onClick clickMsg ::

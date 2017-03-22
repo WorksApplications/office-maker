@@ -43,23 +43,13 @@ import Page.Map.FloorsInfoView as FloorsInfoView
 
 mainView : Model -> Html Msg
 mainView model =
-  let
-    sub =
-      if Mode.isPrintMode model.mode then
-        text ""
-      else
-        subView model
-
-    floorInfo =
-      floorInfoView model
-  in
-    main_ [ style (S.mainView model.windowSize.height) ]
-      [ floorInfo
-      , Lazy.lazy2 MessageBar.view model.lang model.error
-      , CanvasView.view model
-      , sub
-      , FloorUpdateInfoView.view model
-      ]
+  main_ [ style (S.mainView model.windowSize.height) ]
+    [ floorInfoView model
+    , Lazy.lazy2 MessageBar.view model.lang model.error
+    , CanvasView.view model
+    , if Mode.isPrintMode model.mode then text "" else subView model
+    , FloorUpdateInfoView.view model
+    ]
 
 
 floorInfoView : Model -> Html Msg
