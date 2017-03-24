@@ -2,6 +2,7 @@ module API.API exposing (
       getAuth
     , search
     , saveFloor
+    , getObject
     , saveObjects
     , publishFloor
     , deleteEditingFloor
@@ -58,6 +59,18 @@ type alias Config =
   , accountServiceRoot : String
   , token : String
   }
+
+
+getObject : Config -> ObjectId -> Task Error (Maybe Object)
+getObject config objectId =
+  let
+    url =
+      makeUrl
+        (config.apiRoot ++ "/1/objects/" ++ objectId)
+        []
+  in
+    get decodeObject url [authorization config.token]
+      |> recover404
 
 
 saveObjects : Config -> ObjectsChange -> Task Error ObjectsChange

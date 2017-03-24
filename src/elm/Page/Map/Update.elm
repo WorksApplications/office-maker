@@ -249,14 +249,14 @@ update msg model =
                   model.mousePosition.y - prev.y
 
                 newOffset =
-                  { x = model.offset.x + Scale.screenToImage model.scale dx
-                  , y = model.offset.y + Scale.screenToImage model.scale dy
-                  }
+                  Position
+                    ( model.offset.x + Scale.screenToImage model.scale dx )
+                    ( model.offset.y + Scale.screenToImage model.scale dy )
               in
                 { model_
-                | offset = newOffset
-                , draggingContext =
-                    ShiftOffset model.mousePosition
+                  | offset = newOffset
+                  , draggingContext =
+                      ShiftOffset model.mousePosition
                 }
 
             _ ->
@@ -300,6 +300,20 @@ update msg model =
           else
             Cmd.none
 
+        focusObjectCmd =
+          model.selectedResult
+            |> Maybe.map (\objectId ->
+              API.getObject model.apiConfig objectId
+                |> performAPI (\maybeObject ->
+                  maybeObject
+                    |> Maybe.map (\object ->
+                      SelectSearchResult objectId (Object.floorIdOf object) (Object.relatedPerson object)
+                    )
+                    |> Maybe.withDefault NoOp
+                )
+            )
+            |> Maybe.withDefault Cmd.none
+
         loadFloorCmd =
           selectedFloor
             |> Maybe.map (\floorId -> loadFloor model.apiConfig requestPrivateFloors floorId)
@@ -322,7 +336,8 @@ update msg model =
         , lang = userState.lang
         , mode = mode
         }
-        ! [ searchCmd
+        ! [ focusObjectCmd
+          , searchCmd
           , performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
           , loadFloorCmd
           , loadSettingsCmd
@@ -546,9 +561,9 @@ update msg model =
 
         newModel =
           { model__
-          | selectorRect = selectorRect
-          --  selectedObjects = []
-          , draggingContext = draggingContext
+            | selectorRect = selectorRect
+            --  selectedObjects = []
+            , draggingContext = draggingContext
           }
       in
         newModel ! [ cmd, cmd2 ]

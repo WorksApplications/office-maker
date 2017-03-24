@@ -381,6 +381,20 @@ app.delete('/api/1/floors/:id', inTransaction((conn, req, res) => {
   });
 }));
 
+app.get('/api/1/objects/:id', inTransaction((conn, req, res) => {
+  var options = url.parse(req.url, true).query;
+  return getSelf(conn, getAuthToken(req)).then(user => {
+    var tenantId = user ? user.tenantId : '';
+    var id = req.params.id;
+    return db.getObjectByIdFromPublicFloor(conn, id).then(object => {
+      if(!object) {
+        return Promise.reject(404);
+      }
+      return Promise.resolve(object);
+    });
+  });
+}));
+
 app.patch('/api/1/objects', inTransaction((conn, req, res) => {
   return getSelf(conn, getAuthToken(req)).then((user) => {
     if(!user) {

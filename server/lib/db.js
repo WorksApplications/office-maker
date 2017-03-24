@@ -81,6 +81,11 @@ function deleteObject(conn, object) {
   });
 }
 
+function getObjectByIdFromPublicFloor(conn, objectId) {
+  var q = sql.select('objects', sql.whereList([['id', objectId]]) + ' AND floorVersion >= 0 ORDER BY floorVersion DESC LIMIT 1');
+  return rdb.one(conn, q);
+}
+
 function getObjects(conn, floorId, floorVersion) {
   var q = sql.select('objects', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]]));
   return rdb.exec(conn, q);
@@ -415,6 +420,7 @@ module.exports = {
   getFloorOfVersionWithObjects: getFloorOfVersionWithObjects,
   getFloorsInfo: getFloorsInfo,
   saveFloor: saveFloor,
+  getObjectByIdFromPublicFloor: getObjectByIdFromPublicFloor,
   saveObjectsChange: saveObjectsChange,
   publishFloor: publishFloor,
   deleteFloor: deleteFloor,
