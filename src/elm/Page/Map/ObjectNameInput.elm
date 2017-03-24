@@ -1,4 +1,4 @@
-port module Component.ObjectNameInput exposing (..)
+port module Page.Map.ObjectNameInput exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -12,11 +12,13 @@ import Util.HtmlUtil exposing (..)
 import Model.Person exposing (Person)
 
 import View.Styles as Styles
-import View.ProfilePopup as ProfilePopup
 
 import InlineHover exposing (hover)
 
 import CoreType exposing (..)
+
+import Page.Map.ProfilePopup as ProfilePopup
+import Page.Map.Msg exposing (ObjectNameInputMsg(..))
 
 
 type alias ObjectNameInput =
@@ -46,14 +48,8 @@ init =
   }
 
 
-type Msg
-  = NoOp
-  | CaretPosition Int
-  | InputName ObjectId String Int
-  | KeydownOnNameInput (List Person) (Int, Int)
-  | KeyupOnNameInput Int
-  | SelectCandidate ObjectId PersonId
-  | UnsetPerson ObjectId
+type alias Msg =
+  Page.Map.Msg.ObjectNameInputMsg
 
 
 type Event
@@ -72,7 +68,7 @@ isEditing model =
 update : Msg -> ObjectNameInput -> (ObjectNameInput, Event)
 update message model =
   case message of
-    NoOp ->
+    NoOperation ->
       (model, None)
 
     CaretPosition caretPosition ->
@@ -198,7 +194,7 @@ subscriptions toMsg =
      |> Sub.map toMsg
 
 
-view : (String -> Maybe (Position, Size, Maybe Person, Bool)) -> List Person -> ObjectNameInput -> Html Msg
+view : (String -> Maybe (Position, Size, Maybe Person, Bool)) -> List Person -> ObjectNameInput -> Html Page.Map.Msg.Msg
 view deskInfoOf candidates model =
   model.editingObject
     |> Maybe.andThen (\(objectId, name) -> deskInfoOf objectId
@@ -208,7 +204,7 @@ view deskInfoOf candidates model =
     |> Maybe.withDefault (text "")
 
 
-view_ : Bool -> ObjectId -> String -> Maybe Person -> Position -> Size -> List Person -> ObjectNameInput -> Html Msg
+view_ : Bool -> ObjectId -> String -> Maybe Person -> Position -> Size -> List Person -> ObjectNameInput -> Html Page.Map.Msg.Msg
 view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk candidates model =
   let
     candidates_ =
@@ -217,29 +213,37 @@ view_ showSuggestion objectId name maybePerson screenPosOfDesk screenSizeOfDesk 
         |> List.filter (\candidate -> Just candidate /= maybePerson)
   in
     Keyed.node "div"
-      [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
-      , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed NoOp)
+      [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } (Decode.succeed Page.Map.Msg.NoOp)
+      , onWithOptions "mousemove" { stopPropagation = True, preventDefault = False } (Decode.succeed Page.Map.Msg.NoOp)
       ]
-      ([ ("nameInput" ++ objectId, input
-        ([ Html.Attributes.id "name-input"
-        , style (Styles.nameInputTextArea screenPosOfDesk screenSizeOfDesk)
-        , onInput_ objectId
-        , on "click" (Decode.map CaretPosition targetSelectionStart)
-        , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map (KeydownOnNameInput candidates_) decodeKeyCodeAndSelectionStart)
-        , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map KeyupOnNameInput decodeKeyCode)
-        , defaultValue name
-        ])
-        [])
-      ] ++ (if showSuggestion then viewSuggestion objectId maybePerson screenPosOfDesk screenSizeOfDesk candidates_ model else []))
+      ( ("nameInput" ++ objectId
+        , input
+            [ Html.Attributes.id "name-input"
+            , style (Styles.nameInputTextArea screenPosOfDesk screenSizeOfDesk)
+            , onInput_ objectId
+            , on "click" (Decode.map CaretPosition targetSelectionStart)
+            , onWithOptions "keydown" { stopPropagation = True, preventDefault = False } (Decode.map (KeydownOnNameInput candidates_) decodeKeyCodeAndSelectionStart)
+            , onWithOptions "keyup" { stopPropagation = True, preventDefault = False } (Decode.map KeyupOnNameInput decodeKeyCode)
+            , defaultValue name
+            ]
+            []
+            |> Html.map tagger
+        )
+       :: (if showSuggestion then viewSuggestion objectId maybePerson screenPosOfDesk screenSizeOfDesk candidates_ model else [])
+      )
 
 
-viewSuggestion : String -> Maybe Person -> Position -> Size -> List Person -> ObjectNameInput -> List (String, Html Msg)
+
+tagger = Page.Map.Msg.ObjectNameInputMsg
+
+
+viewSuggestion : String -> Maybe Person -> Position -> Size -> List Person -> ObjectNameInput -> List (String, Html Page.Map.Msg.Msg)
 viewSuggestion objectId maybePerson screenPosOfDesk screenSizeOfDesk candidates model =
   let
     (relatedPersonExists, reletedpersonView_) =
       maybePerson
         |> Maybe.map (\person ->
-            (True, Lazy.lazy2 reletedpersonView objectId person)
+            (True, Lazy.lazy3 reletedpersonView tagger objectId person)
         )
         |> Maybe.withDefault (False, text "")
 
@@ -259,7 +263,7 @@ viewSuggestion objectId maybePerson screenPosOfDesk screenSizeOfDesk candidates 
       , div
         [ style (Styles.candidatesViewContainer screenPosOfDesk screenSizeOfDesk relatedPersonExists candidatesLength) ]
         [ reletedpersonView_
-        , candidatesView model.candidateIndex objectId candidates
+        , Html.map tagger (candidatesView model.candidateIndex objectId candidates)
         ]
       )
     , ("pointer", pointer)
@@ -275,11 +279,11 @@ onInput_ objectId =
       |> Html.Attributes.map (\(value, pos) -> InputName objectId value pos)
 
 
-reletedpersonView : ObjectId -> Person -> Html Msg
-reletedpersonView objectId person =
+reletedpersonView : (Msg -> Page.Map.Msg.Msg) -> ObjectId -> Person -> Html Page.Map.Msg.Msg
+reletedpersonView tagger objectId person =
   div
     [ style (Styles.candidatesViewRelatedPerson) ]
-    ( Lazy.lazy unsetButton objectId :: ProfilePopup.innerView Nothing person )
+    ( Html.map tagger (Lazy.lazy unsetButton objectId) :: ProfilePopup.innerView Nothing objectId person )
 
 
 unsetButton : ObjectId -> Html Msg

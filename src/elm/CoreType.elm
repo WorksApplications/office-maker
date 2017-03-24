@@ -1,4 +1,4 @@
-module CoreType exposing (Position, PositionFloat, Size)
+module CoreType exposing (..)
 
 
 type alias Position =
@@ -17,3 +17,15 @@ type alias Size =
   { width : Int
   , height : Int
   }
+
+
+type alias ObjectId =
+  String
+
+
+type alias PersonId =
+  String
+
+
+type alias FloorId =
+  String

@@ -3,10 +3,7 @@ module Model.ObjectsChange exposing(..)
 import Dict exposing (Dict)
 
 import Model.Object as Object exposing (..)
-
-
-type alias ObjectId = String
-type alias PersonId = String
+import CoreType exposing (..)
 
 
 type alias ObjectModification =

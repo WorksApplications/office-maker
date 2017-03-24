@@ -1,8 +1,8 @@
 module Model.FloorDiff exposing(..)
 
-import Maybe
 import Dict exposing (Dict)
 
+import CoreType exposing (..)
 import Model.Object as Object exposing (..)
 import Model.Floor as Floor exposing (Floor)
 import Model.ObjectsChange as ObjectsChange exposing (..)

@@ -4,10 +4,6 @@ import Time exposing (Time)
 
 import CoreType exposing (..)
 
-
-type alias Id = String
-type alias FloorId = String
-type alias PersonId = String
 type alias FloorVersion = Int
 
 
@@ -18,7 +14,7 @@ type Shape
 
 type Object =
   Object
-    { id : Id
+    { id : ObjectId
     , floorId : FloorId
     , floorVersion : Maybe FloorVersion
     , position : Position
@@ -111,7 +107,7 @@ isLabel (Object object) =
       False
 
 
-initDesk : Id -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> Maybe PersonId -> Object
+initDesk : ObjectId -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> Maybe PersonId -> Object
 initDesk id floorId floorVersion position size backgroundColor name fontSize updateAt personId =
   Object
     { id = id
@@ -127,7 +123,7 @@ initDesk id floorId floorVersion position size backgroundColor name fontSize upd
     }
 
 
-initLabel : Id -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> String -> Shape -> Object
+initLabel : ObjectId -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> String -> Shape -> Object
 initLabel id floorId floorVersion position size backgroundColor name fontSize updateAt color shape =
   Object
     { id = id
@@ -143,7 +139,7 @@ initLabel id floorId floorVersion position size backgroundColor name fontSize up
     }
 
 
-changeId : Id -> Object -> Object
+changeId : ObjectId -> Object -> Object
 changeId id (Object object) =
   Object { object | id = id }
 
@@ -213,7 +209,7 @@ changeFontSize fontSize (Object object) =
   Object { object | fontSize = fontSize }
 
 
-idOf : Object -> Id
+idOf : Object -> ObjectId
 idOf (Object object) =
   object.id
 

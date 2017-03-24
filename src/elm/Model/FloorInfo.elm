@@ -1,10 +1,9 @@
 module Model.FloorInfo exposing (..)
 
 import Dict exposing (Dict)
+
+import CoreType exposing (..)
 import Model.Floor exposing (FloorBase)
-
-
-type alias FloorId = String
 
 
 type FloorInfo
@@ -24,7 +23,7 @@ isNeverPublished floorsInfo =
 
     _ ->
       False
-      
+
 
 idOf : FloorInfo -> FloorId
 idOf (FloorInfo publicFloor editingFloor) =

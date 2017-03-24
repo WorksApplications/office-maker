@@ -33,6 +33,7 @@ import Task exposing (Task)
 import Util.HttpUtil as HttpUtil exposing (..)
 import Util.File exposing (File)
 
+import CoreType exposing (..)
 import Model.Floor as Floor exposing (Floor, FloorBase)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo)
 import Model.User as User exposing (User)
@@ -46,7 +47,6 @@ import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
 import API.Serialization exposing (..)
 
 
-type alias PersonId = String
 type alias ImageId = String
 type alias UserId = String
 

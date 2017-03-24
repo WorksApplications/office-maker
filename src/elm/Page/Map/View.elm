@@ -12,13 +12,11 @@ import View.MessageBarForMainView as MessageBar
 import View.DiffView as DiffView
 import View.Common exposing (..)
 import View.SearchInputView as SearchInputView
-import View.ProfilePopup as ProfilePopup
 
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
 import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
-import Component.ObjectNameInput as ObjectNameInput
 
 import Util.HtmlUtil exposing (..)
 
@@ -39,6 +37,8 @@ import Page.Map.SearchResultView as SearchResultView
 import Page.Map.FloorUpdateInfoView as FloorUpdateInfoView
 import Page.Map.Emoji as Emoji
 import Page.Map.FloorsInfoView as FloorsInfoView
+import Page.Map.ObjectNameInput as ObjectNameInput
+import Page.Map.ProfilePopup as ProfilePopup
 
 
 mainView : Model -> Html Msg
@@ -112,15 +112,15 @@ subViewForEdit model editingMode =
     ]
 
 
-viewProfile : Model -> Html msg
+viewProfile : Model -> Html Msg
 viewProfile model =
   model.floor
     |> Maybe.andThen (\floor -> Model.primarySelectedObject model
-    |> Maybe.andThen Object.relatedPerson
+    |> Maybe.andThen (\object -> Object.relatedPerson object
     |> Maybe.andThen (\personId -> Dict.get personId model.personInfo
     |> Maybe.map (\person ->
-      ProfilePopup.innerView Nothing person
-    )))
+      ProfilePopup.innerView Nothing (Object.idOf object) person
+    ))))
     |> Maybe.map (\inner ->
       card False "#eee" Nothing Nothing <|
         [ div [ style [ ("position", "relative"), ("height", "180px") ] ] inner ]

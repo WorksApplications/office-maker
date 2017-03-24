@@ -34,11 +34,12 @@ import API.API as API
 import API.Cache as Cache exposing (Cache, UserState)
 
 import Component.FloorProperty as FloorProperty exposing (FloorProperty)
-import Component.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Component.Header as Header
 import Component.FloorDeleter as FloorDeleter exposing (FloorDeleter)
 
+import Page.Map.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
+import Page.Map.URL as URL exposing (URL)
 import CoreType exposing (..)
 
 
@@ -474,5 +475,22 @@ getEditingFloor model =
     |> Maybe.map EditingFloor.present
 
 
+toUrl : Model -> URL
+toUrl model =
+  { floorId = Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor
+  , query =
+      if String.length model.searchQuery == 0 then
+        Nothing
+      else
+        Just model.searchQuery
+  , objectId =
+      model.selectedResult
+  , editMode =
+      Mode.isEditMode model.mode
+  }
 
+
+encodeToUrl : Model -> String
+encodeToUrl =
+  (URL.stringify ".") << toUrl
 --

@@ -12,12 +12,8 @@ import Html.Keyed as Keyed
 import Html.Lazy as Lazy exposing (..)
 import ContextMenu
 
-import Component.ObjectNameInput as ObjectNameInput
 import View.Styles as S
 import View.ObjectView as ObjectView
-import View.ProfilePopup as ProfilePopup
-import Page.Map.GridLayer as GridLayer
-
 import Util.HtmlUtil exposing (..)
 
 import Model.Mode as Mode exposing (Mode(..))
@@ -30,6 +26,10 @@ import Model.Prototypes as Prototypes exposing (PositionedPrototype)
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.ContextMenuContext exposing (ContextMenuContext(ObjectContextMenu))
 import Page.Map.Msg exposing (..)
+import Page.Map.ObjectNameInput as ObjectNameInput
+import Page.Map.ProfilePopup as ProfilePopup
+import Page.Map.GridLayer as GridLayer
+
 
 import CoreType exposing (..)
 
@@ -190,11 +190,10 @@ canvasView model floor =
           )
 
     nameInput =
-      Html.map ObjectNameInputMsg <|
-        ObjectNameInput.view
-          (deskInfoOf model.scale model.personInfo)
-          (Model.candidatesOf model)
-          model.objectNameInput
+      ObjectNameInput.view
+        (deskInfoOf model.scale model.personInfo)
+        (Model.candidatesOf model)
+        model.objectNameInput
 
     gridLayer =
       if Mode.isEditMode model.mode then

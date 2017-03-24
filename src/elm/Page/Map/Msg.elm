@@ -25,15 +25,27 @@ import API.Cache as Cache exposing (Cache, UserState)
 
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header exposing (..)
-import Component.ObjectNameInput as ObjectNameInput
 import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
 
 import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 import Page.Map.LinkCopy as LinkCopy
+-- import Page.Map.ObjectNameInput as ObjectNameInput
 
 import CoreType exposing (..)
+
+type alias Id = String
+
+{- TODO temporary here for sefe refactoring -}
+type ObjectNameInputMsg
+  = NoOperation
+  | CaretPosition Int
+  | InputName ObjectId String Int
+  | KeydownOnNameInput (List Person) (Int, Int)
+  | KeyupOnNameInput Int
+  | SelectCandidate ObjectId PersonId
+  | UnsetPerson ObjectId
 
 
 type Msg
@@ -62,7 +74,7 @@ type Msg
   | SelectColor String
   | SelectShape Object.Shape
   | SelectFontSize Float
-  | ObjectNameInputMsg ObjectNameInput.Msg
+  | ObjectNameInputMsg ObjectNameInputMsg
   | BeforeContextMenuOnObject Id Msg
   | ContextMenuMsg (ContextMenu.Msg ContextMenuContext)
   | GoToFloor (Maybe (String, Bool))
@@ -122,4 +134,5 @@ type Msg
   | FloorDeleted Floor
   | InsertEmoji String
   | LinkCopyMsg LinkCopy.Msg
+  | ChangeToObjectUrl ObjectId
   | Error GlobalError

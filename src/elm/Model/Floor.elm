@@ -11,11 +11,6 @@ import Model.ObjectsChange as ObjectsChange exposing (DetailedObjectsChange, Obj
 import CoreType exposing (..)
 
 
-type alias ObjectId = String
-type alias PersonId = String
-type alias FloorId = String
-
-
 type alias FloorBase =
   { id : FloorId
   , version : Int

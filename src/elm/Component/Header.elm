@@ -1,6 +1,5 @@
 module Component.Header exposing (..)
 
--- import Mouse
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -14,7 +13,6 @@ import View.Styles as S
 import View.Icons as Icons
 import View.HeaderView as HeaderView
 
-import InlineHover exposing (hover)
 
 type alias Model = Bool
 

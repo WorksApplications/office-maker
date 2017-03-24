@@ -4,11 +4,7 @@ import Dict
 
 import Navigation exposing (Location)
 
-import Model.EditingFloor as EditingFloor
-import Model.Mode as Mode exposing (Mode(..))
 import Util.UrlParser as UrlParser
-
-import Page.Map.Model as Model exposing (Model)
 
 
 type alias URL =
@@ -91,27 +87,6 @@ stringifyParams params =
       ( String.join "&" <|
         List.map (\(k, v) -> k ++ "=" ++ v) params
       )
-
-
-fromModel : Model -> URL
-fromModel model =
-  { floorId = Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor
-  , query =
-      if String.length model.searchQuery == 0 then
-        Nothing
-      else
-        Just model.searchQuery
-  , objectId =
-      model.selectedResult
-  , editMode =
-      Mode.isEditMode model.mode
-  }
-
-
-serialize : Model -> String
-serialize =
-  (stringify ".") << fromModel
-
 
 
 --

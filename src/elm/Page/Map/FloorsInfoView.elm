@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import InlineHover exposing (hover)
 import ContextMenu
 import View.Styles as Styles
 

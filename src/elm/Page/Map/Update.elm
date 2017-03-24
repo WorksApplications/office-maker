@@ -45,7 +45,6 @@ import API.Cache as Cache exposing (Cache, UserState)
 
 import Component.FloorProperty as FloorProperty
 import Component.Header as Header
-import Component.ObjectNameInput as ObjectNameInput
 import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
 
@@ -53,8 +52,12 @@ import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
 import Page.Map.LinkCopy as LinkCopy
+import Page.Map.ObjectNameInput as ObjectNameInput
 
 import CoreType exposing (..)
+
+
+type alias Id = String
 
 
 port removeToken : {} -> Cmd msg
@@ -854,7 +857,7 @@ update msg model =
       in
         model !
           [ loadCmd
-          , Navigation.modifyUrl (URL.serialize model)
+          , Navigation.modifyUrl (Model.encodeToUrl model)
           ]
 
     SelectSamePost postName ->
@@ -1150,7 +1153,7 @@ update msg model =
       in
         newModel !
           [ loadFloorCmd
-          , Navigation.modifyUrl (URL.serialize newModel)
+          , Navigation.modifyUrl (Model.encodeToUrl newModel)
           ]
 
     TogglePrintView ->
@@ -1365,7 +1368,7 @@ update msg model =
       in
         newModel !
           [ cmd
-          , Navigation.modifyUrl (URL.serialize newModel)
+          , Navigation.modifyUrl (Model.encodeToUrl newModel)
           ]
 
     CopyFloor floorId withEmptyObjects ->
@@ -1405,7 +1408,7 @@ update msg model =
           in
             newModel !
               [ saveCmd
-              , Navigation.modifyUrl (URL.serialize newModel)
+              , Navigation.modifyUrl (Model.encodeToUrl newModel)
               ]
 
     EmulateClick id down time ->
@@ -1578,7 +1581,7 @@ update msg model =
               |> performAPI FloorsInfoLoaded
           , Process.sleep 3000.0
               |> Task.perform (\_ -> Error NoError)
-          , Navigation.modifyUrl (URL.serialize newModel)
+          , Navigation.modifyUrl (Model.encodeToUrl newModel)
           ]
 
     InsertEmoji text ->
@@ -1588,6 +1591,9 @@ update msg model =
 
     LinkCopyMsg msg ->
       model ! [ LinkCopy.copy msg ]
+
+    ChangeToObjectUrl objectId ->
+      model ! [ Navigation.modifyUrl ("?object=" ++ objectId) ]
 
     Error e ->
       { model | error = e } ! []
@@ -1607,7 +1613,7 @@ submitSearch model =
   in
     model !
       [ searchCmd
-      , Navigation.modifyUrl (URL.serialize model)
+      , Navigation.modifyUrl (Model.encodeToUrl model)
       ]
 
 
@@ -1951,14 +1957,14 @@ updateOnFloorLoaded maybeFloor model =
             _ ->
               Cmd.none
       in
-        newModel ! [ cmd, Navigation.modifyUrl (URL.serialize newModel) ]
+        newModel ! [ cmd, Navigation.modifyUrl (Model.encodeToUrl newModel) ]
 
     Nothing ->
       let
         newModel =
           { model | floor = Nothing }
       in
-        newModel ! [ Navigation.modifyUrl (URL.serialize newModel) ]
+        newModel ! [ Navigation.modifyUrl (Model.encodeToUrl newModel) ]
 
 
 getAndCachePersonIfNotCached : PersonId -> Model -> Cmd Msg
