@@ -1,6 +1,5 @@
-module Page.Map.ProfilePopup exposing(view, innerView)
+module Page.Map.ProfilePopup exposing(view, personView)
 
-import Color
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -35,30 +34,35 @@ view closeMsg scale offsetScreenXY object person =
           , style (Styles.personDetailPopupDefault personPopupSize centerTopScreenXY)
           ]
           ( Lazy.lazy pointerDefault personPopupSize.width ::
-            innerView (Just closeMsg) (Object.idOf object) person
+            personView (Just closeMsg) (Object.idOf object) person
           )
 
       Nothing ->
-        let
-          name =
-            Object.nameOf object
+        nonPersonView centerTopScreenXY (Object.idOf object) (Object.nameOf object)
 
-          (size, styles) =
-            if String.length name > 10 then
-              (middlePopupSize, Styles.personDetailPopupDefault middlePopupSize centerTopScreenXY)
-            else
-              (smallPopupSize, Styles.personDetailPopupSmall smallPopupSize centerTopScreenXY)
-        in
-          if name == "" then
-            text ""
-          else
-            div
-              [ class "profile-popup"
-              , style styles
-              ]
-              ( pointerSmall size ::
-                [ div [ style (Styles.personDetailPopupNoPerson) ] [ text name ] ]
-              )
+
+nonPersonView : Position -> ObjectId -> String -> Html Msg
+nonPersonView centerTopScreenXY objectId name =
+  if name == "" then
+    text ""
+  else
+    let
+      (size, styles) =
+        if String.length name > 10 then
+          (middlePopupSize, Styles.personDetailPopupDefault middlePopupSize centerTopScreenXY)
+        else
+          (smallPopupSize, Styles.personDetailPopupSmall smallPopupSize centerTopScreenXY)
+    in
+      div
+        [ class "profile-popup"
+        , style styles
+        ]
+        ( pointerSmall size ::
+          [ div
+              [ style (Styles.personDetailPopupNoPerson) ]
+              [ text name, objectLink [ ("margin-left", "5px") ] objectId ]
+          ]
+        )
 
 
 middlePopupSize : Size
@@ -71,8 +75,8 @@ smallPopupSize =
   Size 90 40
 
 
-innerView : Maybe Msg -> String -> Person -> List (Html Msg)
-innerView maybeCloseMsg objectId person =
+personView : Maybe Msg -> String -> Person -> List (Html Msg)
+personView maybeCloseMsg objectId person =
   let
     url =
       Maybe.withDefault "./images/users/default.png" person.image
@@ -91,22 +95,30 @@ innerView maybeCloseMsg objectId person =
   in
     [ closeButton
     , Lazy.lazy photo url
-    -- , div [ style Styles.popupPersonNo ] [ text person.no ]
-    , div [ style Styles.personDetailPopupPersonName ] [ text person.name, objectLink objectId ]
+    , div
+        [ style Styles.personDetailPopupPersonName ]
+        [ text person.name
+        , objectLink
+            [ ("position", "absolute")
+            , ("top", "4px")
+            , ("margin-left", "5px")
+            ]
+            objectId
+        ]
     , Lazy.lazy tel person
     , Lazy.lazy mail person
     , div [ style Styles.personDetailPopupPersonPost ] [ text person.post ]
     ]
 
 
-objectLink : String -> Html Msg
-objectLink objectId =
+objectLink : List (String, String) -> String -> Html Msg
+objectLink styles objectId =
   a
     [ HtmlUtil.onPreventDefaultClick (ChangeToObjectUrl objectId)
     , href ("?object=" ++ objectId)
-    , style [ ("position", "absolute"), ("top", "4px"), ("margin-left", "5px") ]
+    , style styles
     ]
-    [ Icons.link Color.gray 16 ]
+    [ Icons.link ]
 
 
 photo : String -> Html msg

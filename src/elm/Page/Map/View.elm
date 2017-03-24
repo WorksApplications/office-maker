@@ -119,7 +119,7 @@ viewProfile model =
     |> Maybe.andThen (\object -> Object.relatedPerson object
     |> Maybe.andThen (\personId -> Dict.get personId model.personInfo
     |> Maybe.map (\person ->
-      ProfilePopup.innerView Nothing (Object.idOf object) person
+      ProfilePopup.personView Nothing (Object.idOf object) person
     ))))
     |> Maybe.map (\inner ->
       card False "#eee" Nothing Nothing <|

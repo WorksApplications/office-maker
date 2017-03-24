@@ -15,9 +15,9 @@ modeColor =
   Color.rgb 90 90 90
 
 
-link : Color -> Int -> Svg msg
+link : Svg msg
 link =
-  FontAwesome.link
+  FontAwesome.link defaultColor 16
 
 
 mode : (Color -> Int -> Svg msg) -> (Bool -> Svg msg)

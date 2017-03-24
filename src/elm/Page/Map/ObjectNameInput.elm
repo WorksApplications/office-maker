@@ -283,7 +283,7 @@ reletedpersonView : (Msg -> Page.Map.Msg.Msg) -> ObjectId -> Person -> Html Page
 reletedpersonView tagger objectId person =
   div
     [ style (Styles.candidatesViewRelatedPerson) ]
-    ( Html.map tagger (Lazy.lazy unsetButton objectId) :: ProfilePopup.innerView Nothing objectId person )
+    ( Html.map tagger (Lazy.lazy unsetButton objectId) :: ProfilePopup.personView Nothing objectId person )
 
 
 unsetButton : ObjectId -> Html Msg
