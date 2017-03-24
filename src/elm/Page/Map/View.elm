@@ -116,15 +116,16 @@ viewProfile : Model -> Html Msg
 viewProfile model =
   model.floor
     |> Maybe.andThen (\floor -> Model.primarySelectedObject model
-    |> Maybe.andThen (\object -> Object.relatedPerson object
+    |> Maybe.map (\object -> Object.relatedPerson object
     |> Maybe.andThen (\personId -> Dict.get personId model.personInfo
     |> Maybe.map (\person ->
-      ProfilePopup.personView Nothing (Object.idOf object) person
-    ))))
-    |> Maybe.map (\inner ->
       card False "#eee" Nothing Nothing <|
-        [ div [ style [ ("position", "relative"), ("height", "180px") ] ] inner ]
-    )
+        [ div [ style [ ("position", "relative"), ("height", "180px") ] ] (ProfilePopup.personView Nothing (Object.idOf object) person) ]
+    ))
+    |> Maybe.withDefault (
+      card False "#eee" Nothing Nothing <|
+        [ div [ style [ ("position", "relative"), ("height", "80px") ] ] (ProfilePopup.nonPersonView (Object.idOf object) (Object.nameOf object)) ]
+    )))
     |> Maybe.withDefault (text "")
 
 

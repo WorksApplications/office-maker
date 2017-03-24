@@ -301,18 +301,21 @@ update msg model =
             Cmd.none
 
         focusObjectCmd =
-          model.selectedResult
-            |> Maybe.map (\objectId ->
-              API.getObject model.apiConfig objectId
-                |> performAPI (\maybeObject ->
-                  maybeObject
-                    |> Maybe.map (\object ->
-                      SelectSearchResult objectId (Object.floorIdOf object) (Object.relatedPerson object)
-                    )
-                    |> Maybe.withDefault NoOp
-                )
-            )
-            |> Maybe.withDefault Cmd.none
+          if Mode.isEditMode mode then
+            Cmd.none
+          else
+            model.selectedResult
+              |> Maybe.map (\objectId ->
+                API.getObject model.apiConfig objectId
+                  |> performAPI (\maybeObject ->
+                    maybeObject
+                      |> Maybe.map (\object ->
+                        SelectSearchResult objectId (Object.floorIdOf object) (Object.relatedPerson object)
+                      )
+                      |> Maybe.withDefault NoOp
+                  )
+              )
+              |> Maybe.withDefault Cmd.none
 
         loadFloorCmd =
           selectedFloor

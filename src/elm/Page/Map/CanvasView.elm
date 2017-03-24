@@ -137,7 +137,7 @@ view model =
           , onMouseWheel MouseWheel
           ]
           [ canvasView model floor
-          , profilePopupView model floor
+          , {- if Mode.isEditMode model.mode then text "" else -} profilePopupView model floor
           ]
 
     Nothing ->

@@ -18,12 +18,6 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
-svg {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 ul {
   list-style-type: none;
   padding-left: 0;
@@ -44,8 +38,4 @@ img.emoji {
   width: 1.4em;
   margin: 0 .05em 0 .1em;
   vertical-align: -0.1em;
-}
-
-.profile-popup svg {
-  display: inline;
 }

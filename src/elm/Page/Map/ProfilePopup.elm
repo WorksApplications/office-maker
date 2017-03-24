@@ -1,9 +1,9 @@
-module Page.Map.ProfilePopup exposing(view, personView)
+module Page.Map.ProfilePopup exposing(view, personView, nonPersonView)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Html.Lazy as Lazy
+import Html.Lazy as Lazy exposing (..)
 import View.Styles as Styles
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
@@ -30,19 +30,18 @@ view closeMsg scale offsetScreenXY object person =
     case person of
       Just person ->
         div
-          [ class "profile-popup"
-          , style (Styles.personDetailPopupDefault personPopupSize centerTopScreenXY)
+          [ style (Styles.personDetailPopupDefault personPopupSize centerTopScreenXY)
           ]
-          ( Lazy.lazy pointerDefault personPopupSize.width ::
+          ( lazy pointerDefault personPopupSize.width ::
             personView (Just closeMsg) (Object.idOf object) person
           )
 
       Nothing ->
-        nonPersonView centerTopScreenXY (Object.idOf object) (Object.nameOf object)
+        nonPersonPopup centerTopScreenXY (Object.idOf object) (Object.nameOf object)
 
 
-nonPersonView : Position -> ObjectId -> String -> Html Msg
-nonPersonView centerTopScreenXY objectId name =
+nonPersonPopup : Position -> ObjectId -> String -> Html Msg
+nonPersonPopup centerTopScreenXY objectId name =
   if name == "" then
     text ""
   else
@@ -54,15 +53,16 @@ nonPersonView centerTopScreenXY objectId name =
           (smallPopupSize, Styles.personDetailPopupSmall smallPopupSize centerTopScreenXY)
     in
       div
-        [ class "profile-popup"
-        , style styles
-        ]
-        ( pointerSmall size ::
-          [ div
-              [ style (Styles.personDetailPopupNoPerson) ]
-              [ text name, objectLink [ ("margin-left", "5px") ] objectId ]
-          ]
-        )
+        [ style styles ]
+        ( pointerSmall size :: nonPersonView objectId name )
+
+
+nonPersonView : ObjectId -> String -> List (Html Msg)
+nonPersonView objectId name =
+  [ div
+      [ style (Styles.personDetailPopupNoPerson) ]
+      [ text name, objectLink [ ("margin-left", "5px") ] objectId ]
+  ]
 
 
 middlePopupSize : Size
@@ -94,7 +94,7 @@ personView maybeCloseMsg objectId person =
           text ""
   in
     [ closeButton
-    , Lazy.lazy photo url
+    , lazy photo url
     , div
         [ style Styles.personDetailPopupPersonName ]
         [ text person.name
@@ -105,8 +105,8 @@ personView maybeCloseMsg objectId person =
             ]
             objectId
         ]
-    , Lazy.lazy tel person
-    , Lazy.lazy mail person
+    , lazy tel person
+    , lazy mail person
     , div [ style Styles.personDetailPopupPersonPost ] [ text person.post ]
     ]
 
