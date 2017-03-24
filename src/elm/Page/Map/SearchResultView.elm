@@ -98,26 +98,29 @@ viewListForOnePost model (maybePostName, results) =
     children =
       results
         |> List.filterMap (\result ->
-          case toItemViewModel model.lang floorsInfo model.personInfo model.selectedResult result of
-            Just item ->
+          toItemViewModel model.lang floorsInfo model.personInfo model.selectedResult result
+            |> Maybe.map (\item ->
               let
                 onSelectResultMsg =
-                  SelectSearchResult result
-              in
-                Just <|
-                  SearchResultItemView.view
-                    thisFloorId
-                    onSelectResultMsg
-                    onStartDraggingMsg
-                    onStartDraggingExistingObjectMsg
-                    model.lang
-                    item
+                  case result of
+                    SearchResult.Object object floorId ->
+                      SelectSearchResult (Object.idOf object) floorId (SearchResult.getPersonId result)
 
-            Nothing ->
-              Nothing
+                    _ ->
+                      NoOp
+              in
+                SearchResultItemView.view
+                  thisFloorId
+                  onSelectResultMsg
+                  onStartDraggingMsg
+                  onStartDraggingExistingObjectMsg
+                  model.lang
+                  item
+            )
         )
   in
-    div [ style S.searchResultGroup ]
+    div
+      [ style S.searchResultGroup ]
       [ Lazy.lazy2 groupHeader model.lang maybePostName
       , div [] children
       ]

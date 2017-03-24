@@ -1195,37 +1195,26 @@ update msg model =
           } |> Model.cachePeople people
         ) ! []
 
-    SelectSearchResult result ->
+    SelectSearchResult objectId floorId maybePersonId ->
       let
-        (newModel, cmd1) =
-          case result of
-            SearchResult.Object object floorId ->
-              let
-                model_ =
-                  Model.adjustOffset
-                    { model |
-                      selectedResult = Just (Object.idOf object)
-                    }
+        requestPrivateFloors =
+          Mode.isEditMode model.mode && not (User.isGuest model.user)
 
-                requestPrivateFloors =
-                  Mode.isEditMode model_.mode && not (User.isGuest model_.user)
-
-                goToFloor =
-                  Task.perform
-                    GoToFloor
-                    (Task.succeed (Just (floorId, requestPrivateFloors)))
-              in
-                model_ ! [ goToFloor ]
-
-            _ ->
-              (model, Cmd.none)
+        goToFloor =
+          GoToFloor (Just (floorId, requestPrivateFloors))
 
         regesterPersonCmd =
-          SearchResult.getPersonId result
+          maybePersonId
             |> Maybe.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
             |> Maybe.withDefault Cmd.none
       in
-        newModel ! [ cmd1, regesterPersonCmd ]
+        ( Model.adjustOffset
+            { model
+                | selectedResult = Just objectId
+            }
+        , regesterPersonCmd
+        )
+          |> andThen (update goToFloor)
 
     StartDraggingFromMissingPerson personId personName ->
       let
@@ -1597,6 +1586,15 @@ update msg model =
 
     Error e ->
       { model | error = e } ! []
+
+
+andThen : (Model -> (Model, Cmd Msg)) -> (Model, Cmd Msg) -> (Model, Cmd Msg)
+andThen update (model, cmd) =
+  let
+    (newModel, newCmd) =
+      update model
+  in
+    newModel ! [ cmd, newCmd ]
 
 
 submitSearch : Model -> (Model, Cmd Msg)

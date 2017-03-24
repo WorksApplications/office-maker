@@ -101,7 +101,7 @@ type Msg
   | UpdateSearchQuery String
   | SubmitSearch
   | GotSearchResult (List SearchResult) (List Person)
-  | SelectSearchResult SearchResult
+  | SelectSearchResult ObjectId FloorId (Maybe PersonId)
   | StartDraggingFromMissingPerson String String
   | StartDraggingFromExistingObject Id String (Maybe String) String Time
   | CachePeople (List Person)

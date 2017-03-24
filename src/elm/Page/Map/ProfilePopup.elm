@@ -104,8 +104,9 @@ objectLink objectId =
   a
     [ HtmlUtil.onPreventDefaultClick (ChangeToObjectUrl objectId)
     , href ("?object=" ++ objectId)
+    , style [ ("position", "absolute"), ("top", "4px"), ("margin-left", "5px") ]
     ]
-    [ Icons.link Color.gray 14 ]
+    [ Icons.link Color.gray 16 ]
 
 
 photo : String -> Html msg
