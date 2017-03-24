@@ -81,14 +81,21 @@ function deleteObject(conn, object) {
   });
 }
 
+function fixBool(obj) {
+  if(obj) {
+    obj.bold = !!obj.bold;
+  }
+  return obj;
+}
+
 function getObjectByIdFromPublicFloor(conn, objectId) {
   var q = sql.select('objects', sql.whereList([['id', objectId]]) + ' AND floorVersion >= 0 ORDER BY floorVersion DESC LIMIT 1');
-  return rdb.one(conn, q);
+  return rdb.one(conn, q).then(obj => fixBool(obj));
 }
 
 function getObjects(conn, floorId, floorVersion) {
   var q = sql.select('objects', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]]));
-  return rdb.exec(conn, q);
+  return rdb.exec(conn, q).then(objs => objs.map(fixBool));
 }
 
 function getPublicFloorWithObjects(conn, tenantId, id) {

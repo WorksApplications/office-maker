@@ -73,6 +73,8 @@ encodeObject object =
       , ("height", E.int height)
       , ("backgroundColor", E.string (Object.backgroundColorOf object))
       , ("color", E.string (Object.colorOf object))
+      , ("bold", E.bool (Object.isBold object))
+      , ("url", E.string (Object.urlOf object))
       , ("shape", E.string (encodeShape (Object.shapeOf object)))
       , ("name", E.string (Object.nameOf object))
       , ("fontSize", E.float (Object.fontSizeOf object))
@@ -220,15 +222,17 @@ decodePerson =
 decodeObject : Decoder Object
 decodeObject =
   decode
-    (\id floorId floorVersion updateAt tipe x y width height backgroundColor name personId fontSize color shape ->
+    (\id floorId floorVersion updateAt tipe x y width height backgroundColor name personId fontSize color bold url shape ->
       if tipe == "desk" then
         Object.initDesk id floorId floorVersion (Position x y) (Size width height) backgroundColor name fontSize (Just updateAt) personId
       else
-        Object.initLabel id floorId floorVersion (Position x y) (Size width height) backgroundColor name fontSize (Just updateAt) color
-          (if shape == "rectangle" then
-            Object.Rectangle
-          else
-            Object.Ellipse
+        Object.initLabel id floorId floorVersion (Position x y) (Size width height) backgroundColor name fontSize (Just updateAt)
+          ( Object.LabelFields color bold url
+              (if shape == "rectangle" then
+                Object.Rectangle
+              else
+                Object.Ellipse
+              )
           )
     )
     |> required "id" D.string
@@ -245,6 +249,8 @@ decodeObject =
     |> optional_ "personId" D.string
     |> optional "fontSize" D.float Object.defaultFontSize
     |> required "color" D.string
+    |> required "bold" D.bool
+    |> required "url" D.string
     |> required "shape" D.string
 
 

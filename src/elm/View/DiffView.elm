@@ -77,6 +77,12 @@ viewObjectPropertyChange change =
     ChangeFontSize new old ->
       "font size chaged: " ++ toString old ++ " -> " ++ toString new
 
+    ChangeBold new old ->
+      "bold chaged: " ++ toString old ++ " -> " ++ toString new
+
+    ChangeUrl new old ->
+      "url chaged: " ++ toString old ++ " -> " ++ toString new
+
     ChangeShape new old ->
       "shape chaged: " ++ toString old ++ " -> " ++ toString new
 

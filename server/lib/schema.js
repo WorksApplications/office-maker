@@ -41,6 +41,8 @@ function objectKeyValues(object, updateAt) {
     ["backgroundColor", object.backgroundColor],
     ["fontSize", object.fontSize],
     ["color", object.color],
+    ["bold", object.bold ? 1 : 0],
+    ["url", object.url],
     ["shape", object.shape],
     ["personId", object.personId],
     ["floorId", object.floorId],

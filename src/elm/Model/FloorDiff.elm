@@ -107,6 +107,8 @@ diffObjectProperty new old =
     , objectPropertyChange ChangeBackgroundColor Object.backgroundColorOf new old
     , objectPropertyChange ChangeColor Object.colorOf new old
     , objectPropertyChange ChangeFontSize Object.fontSizeOf new old
+    , objectPropertyChange ChangeBold Object.isBold new old
+    , objectPropertyChange ChangeUrl Object.urlOf new old
     , objectPropertyChange ChangeShape Object.shapeOf new old
     , objectPropertyChange ChangePerson Object.relatedPerson new old
     ]

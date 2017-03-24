@@ -1916,8 +1916,7 @@ updateOnPuttingLabel model =
             name
             fontSize
             Nothing
-            color
-            Object.Rectangle
+            (Object.LabelFields color False "" Object.Rectangle)
 
         (newFloor, objectsChange) =
           EditingFloor.updateObjects

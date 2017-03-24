@@ -27,9 +27,17 @@ type Object =
     }
 
 
+type alias LabelFields =
+  { color : String
+  , bold : Bool
+  , url : String
+  , shape : Shape
+  }
+
+
 type ObjectExtension
   = Desk (Maybe PersonId)
-  | Label String Shape
+  | Label LabelFields
 
 
 type ObjectPropertyChange
@@ -39,6 +47,8 @@ type ObjectPropertyChange
   | ChangeBackgroundColor String String
   | ChangeColor String String
   | ChangeFontSize Float Float
+  | ChangeBold Bool Bool
+  | ChangeUrl String String
   | ChangeShape Shape Shape
   | ChangePerson (Maybe PersonId) (Maybe PersonId)
 
@@ -70,6 +80,12 @@ modify change object =
     ChangeFontSize new old ->
       changeFontSize new object
 
+    ChangeBold new old ->
+      changeBold new object
+
+    ChangeUrl new old ->
+      changeUrl new object
+
     ChangeShape new old ->
       changeShape new object
 
@@ -100,7 +116,7 @@ isDesk (Object object) =
 isLabel : Object -> Bool
 isLabel (Object object) =
   case object.extension of
-    Label _ _ ->
+    Label _ ->
       True
 
     _ ->
@@ -123,8 +139,8 @@ initDesk id floorId floorVersion position size backgroundColor name fontSize upd
     }
 
 
-initLabel : ObjectId -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> String -> Shape -> Object
-initLabel id floorId floorVersion position size backgroundColor name fontSize updateAt color shape =
+initLabel : ObjectId -> FloorId -> Maybe FloorVersion -> Position -> Size -> String -> String -> Float -> Maybe Time -> LabelFields -> Object
+initLabel id floorId floorVersion position size backgroundColor name fontSize updateAt extension =
   Object
     { id = id
     , floorId = floorId
@@ -135,7 +151,7 @@ initLabel id floorId floorVersion position size backgroundColor name fontSize up
     , name = name
     , fontSize = fontSize
     , updateAt = updateAt
-    , extension = Label color shape
+    , extension = Label extension
     }
 
 
@@ -160,18 +176,8 @@ changeColor color (Object object) =
     Desk _ ->
       Object object
 
-    Label _ shape ->
-      Object { object | extension = Label color shape }
-
-
-changeShape : Shape -> Object -> Object
-changeShape shape (Object object) =
-  case object.extension of
-    Desk _ ->
-      Object object
-
-    Label color _ ->
-      Object { object | extension = Label color shape }
+    Label additionalFields ->
+      Object { object | extension = Label { additionalFields | color = color } }
 
 
 changeName : String -> Object -> Object
@@ -195,18 +201,48 @@ rotate (Object object) =
 
 
 setPerson : Maybe PersonId -> Object -> Object
-setPerson personId (Object object) =
+setPerson personId (Object object as obj) =
   case object.extension of
     Desk _ ->
       Object { object | extension = Desk personId }
 
     _ ->
-      Object object
+      obj
 
 
 changeFontSize : Float -> Object -> Object
 changeFontSize fontSize (Object object) =
   Object { object | fontSize = fontSize }
+
+
+changeBold : Bool -> Object -> Object
+changeBold bold (Object object as obj) =
+  case object.extension of
+    Desk _ ->
+      obj
+
+    Label fields ->
+      Object { object | extension = Label { fields | bold = bold } }
+
+
+changeUrl : String -> Object -> Object
+changeUrl url (Object object as obj) =
+  case object.extension of
+    Desk _ ->
+      obj
+
+    Label fields ->
+      Object { object | extension = Label { fields | url = url } }
+
+
+changeShape : Shape -> Object -> Object
+changeShape shape (Object object as obj) =
+  case object.extension of
+    Desk _ ->
+      obj
+
+    Label additionalFields ->
+      Object { object | extension = Label { additionalFields | shape = shape } }
 
 
 idOf : Object -> ObjectId
@@ -245,7 +281,7 @@ colorOf (Object object) =
     Desk _ ->
       "#000"
 
-    Label color _ ->
+    Label { color } ->
       color
 
 
@@ -258,13 +294,33 @@ fontSizeOf (Object object) =
   object.fontSize
 
 
+isBold : Object -> Bool
+isBold (Object object) =
+  case object.extension of
+    Desk _ ->
+      False
+
+    Label { bold } ->
+      bold
+
+
+urlOf : Object -> String
+urlOf (Object object) =
+  case object.extension of
+    Desk _ ->
+      ""
+
+    Label { url } ->
+      url
+
+
 shapeOf : Object -> Shape
 shapeOf (Object object) =
   case object.extension of
     Desk _ ->
       Rectangle
 
-    Label _ shape ->
+    Label { shape } ->
       shape
 
 

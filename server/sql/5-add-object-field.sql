@@ -1,0 +1,3 @@
+ALTER TABLE `map2`.`objects`
+ADD COLUMN `bold` TINYINT(1) NOT NULL AFTER `shape`,
+ADD COLUMN `url` VARCHAR(1024) NOT NULL AFTER `bold`;
