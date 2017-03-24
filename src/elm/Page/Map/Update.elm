@@ -139,6 +139,7 @@ init flags location =
         flags.visitDate
         url.editMode
         (Maybe.withDefault "" url.query)
+        url.objectId
         userState.scale
         userState.offset
         userState.lang
@@ -1427,9 +1428,9 @@ update msg model =
             )
 
     TokenRemoved ->
-      { model |
-        user = User.guest
-      , mode = Mode.init False
+      { model
+          | user = User.guest
+          , mode = Mode.init False
       } ! []
 
     Undo ->

@@ -109,12 +109,13 @@ init
   -> Time
   -> Bool
   -> String
+  -> Maybe String
   -> Scale
   -> Position
   -> Language
   -> ContextMenu ContextMenuContext
   -> Model
-init apiConfig title initialSize randomSeed visitDate isEditMode query scale offset lang contextMenu =
+init apiConfig title initialSize randomSeed visitDate isEditMode query objectId scale offset lang contextMenu =
   let
     initialFloor =
       Floor.empty
@@ -126,7 +127,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , seed = IdGenerator.init randomSeed
     , visitDate = Date.fromTime visitDate
     , user = User.guest
-    , mousePosition = { x = 0, y = 0 }
+    , mousePosition = (Position 0 0)
     , draggingContext = NoDragging
     , selectedObjects = []
     , copiedObjects = []
@@ -145,7 +146,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query scale off
     , prototypes = Prototypes.init []
     , error = NoError
     , floorProperty = FloorProperty.init initialFloor.name 0 0 0
-    , selectedResult = Nothing
+    , selectedResult = objectId
     , personInfo = Dict.empty
     , diff = Nothing
     , candidates = []
@@ -346,9 +347,9 @@ selectedObjects model =
 
 screenToImageWithOffset : Scale -> Position -> Position -> Position
 screenToImageWithOffset scale screenPosition offset =
-  { x = Scale.screenToImage scale screenPosition.x - offset.x
-  , y = Scale.screenToImage scale screenPosition.y - offset.y
-  }
+  Position
+    ( Scale.screenToImage scale screenPosition.x - offset.x )
+    ( Scale.screenToImage scale screenPosition.y - offset.y )
 
 
 getPositionedPrototype : Model -> List PositionedPrototype

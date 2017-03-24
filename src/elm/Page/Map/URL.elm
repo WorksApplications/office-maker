@@ -2,8 +2,7 @@ module Page.Map.URL exposing (..)
 
 import Dict
 
-
-import Navigation
+import Navigation exposing (Location)
 
 import Model.EditingFloor as EditingFloor
 import Model.Mode as Mode exposing (Mode(..))
@@ -15,58 +14,63 @@ import Page.Map.Model as Model exposing (Model)
 type alias URL =
   { floorId: Maybe String
   , query : Maybe String
+  , objectId : Maybe String
   , editMode : Bool
   }
 
 
-parse : Navigation.Location -> Result String URL
+parse : Location -> Result String URL
 parse location =
   let
     floorId =
-      if String.startsWith "#" location.hash then
-        let
-          id =
-            String.dropLeft 1 location.hash
-        in
-          if String.length id == 36 then
-            Ok (Just id)
-          else if String.length id == 0 then
-            Ok Nothing
-          else
-            Err ("invalid floorId: " ++ id)
-      else
-        Ok Nothing
+      getFloorId location
 
     dict =
       UrlParser.parseSearch location.search
   in
-    case floorId of
-      Ok floorId ->
-        Ok <|
-          { floorId = floorId
-          , query = Dict.get "q" dict
-          , editMode = Dict.member "edit" dict
-          }
+    Result.map (\floorId ->
+      URL
+        floorId
+        (Dict.get "q" dict)
+        (Dict.get "object" dict)
+        (Dict.member "edit" dict)
+    ) floorId
 
-      Err s ->
-        Err s
+
+getFloorId : Location -> Result String (Maybe String)
+getFloorId location =
+  if String.startsWith "#" location.hash then
+    let
+      id =
+        String.dropLeft 1 location.hash
+    in
+      if String.length id == 36 then
+        Ok (Just id)
+      else if String.length id == 0 then
+        Ok Nothing
+      else
+        Err ("invalid floorId: " ++ id)
+  else
+    Ok Nothing
 
 
 init : URL
 init =
   { floorId = Nothing
   , query = Nothing
+  , objectId = Nothing
   , editMode = False
   }
 
 
 stringify : String -> URL -> String
-stringify root { floorId, query, editMode } =
+stringify root { floorId, query, objectId, editMode } =
   let
     params =
       (List.filterMap
         (\(key, maybeValue) -> Maybe.map (\v -> (key, v)) maybeValue)
         [ ("q", query)
+        , ("object", objectId)
         ]
       ) ++ (if editMode then [ ("edit", "true") ] else [])
   in
@@ -97,6 +101,8 @@ fromModel model =
         Nothing
       else
         Just model.searchQuery
+  , objectId =
+      model.selectedResult
   , editMode =
       Mode.isEditMode model.mode
   }

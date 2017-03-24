@@ -338,9 +338,8 @@ objectsView model floor =
 
         adjustRect object pos size =
           if isResizing object then
-            case Model.temporaryResizeRect model from pos size of
-              Just rect -> rect
-              _ -> (Position 0 0, Size 0 0)
+            Model.temporaryResizeRect model from pos size
+              |> Maybe.withDefault (Position 0 0, Size 0 0)
           else
             (pos, size)
 
