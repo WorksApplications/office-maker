@@ -5,6 +5,7 @@ import Html.Attributes exposing (..)
 import Html.Lazy as Lazy
 
 import View.Styles as S
+import View.CommonStyles as CS
 import View.Icons as Icons
 import View.Common exposing (..)
 
@@ -39,6 +40,10 @@ view model =
           text ""
       , if List.all Object.fontSizeEditable selectedObjects then
           formControl [ Lazy.lazy label Icons.fontSizePropLabel, Lazy.lazy fontSizeView selectedObjects ]
+        else
+          text ""
+      , if List.all Object.urlEditable selectedObjects then
+          formControl [ label (text "URL"), urlView (List.head selectedObjects) ]
         else
           text ""
       ] -- TODO name, icon?
@@ -151,3 +156,14 @@ fontSizeViewEach toMsg match size =
     , onMouseDown_ (toMsg size)
     ]
     [ text (toString size) ]
+
+
+urlView : Maybe Object -> Html Msg
+urlView selectedObject =
+  selectedObject
+    |> Maybe.map (\object ->
+      div
+        [ onInput (InputObjectUrl [Object.idOf object]) ]
+        [ input [ style CS.input, value (Object.urlOf object) ] [] ]
+      )
+    |> Maybe.withDefault (text "")

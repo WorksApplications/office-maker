@@ -74,6 +74,7 @@ type Msg
   | SelectColor String
   | SelectShape Object.Shape
   | SelectFontSize Float
+  | InputObjectUrl (List ObjectId) String
   | ObjectNameInputMsg ObjectNameInputMsg
   | BeforeContextMenuOnObject Id Msg
   | ContextMenuMsg (ContextMenu.Msg ContextMenuContext)

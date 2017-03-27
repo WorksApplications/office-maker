@@ -380,4 +380,8 @@ fontSizeEditable : Object -> Bool
 fontSizeEditable _ = True
 
 
+urlEditable : Object -> Bool
+urlEditable = isLabel
+
+
 --

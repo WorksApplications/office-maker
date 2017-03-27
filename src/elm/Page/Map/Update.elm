@@ -688,6 +688,25 @@ update msg model =
               floor = Just newFloor
             } ! [ saveCmd ]
 
+    InputObjectUrl selectedObjects url ->
+      case model.floor of
+        Nothing ->
+          model ! []
+
+        Just editingFloor ->
+          let
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects
+                (Floor.changeObjectUrl selectedObjects url)
+                editingFloor
+
+            saveCmd =
+              requestSaveObjectsCmd objectsChange
+          in
+            { model |
+              floor = Just newFloor
+            } ! [ saveCmd ]
+
     ObjectNameInputMsg message ->
       let
         (objectNameInput, event) =

@@ -120,11 +120,17 @@ viewProfile model =
     |> Maybe.andThen (\personId -> Dict.get personId model.personInfo
     |> Maybe.map (\person ->
       card False "#eee" Nothing Nothing <|
-        [ div [ style [ ("position", "relative"), ("height", "180px") ] ] (ProfilePopup.personView Nothing (Object.idOf object) person) ]
+        [ div
+            [ style [ ("position", "relative"), ("height", "180px") ] ]
+            (ProfilePopup.personView Nothing (Object.idOf object) person)
+        ]
     ))
     |> Maybe.withDefault (
       card False "#eee" Nothing Nothing <|
-        [ div [ style [ ("position", "relative"), ("height", "80px") ] ] (ProfilePopup.nonPersonView (Object.idOf object) (Object.nameOf object)) ]
+        [ div
+            [ style [ ("position", "relative"), ("height", "80px") ] ]
+            (ProfilePopup.nonPersonView (Object.idOf object) (Object.nameOf object) (Object.urlOf object))
+        ]
     )))
     |> Maybe.withDefault (text "")
 

@@ -37,11 +37,15 @@ view closeMsg scale offsetScreenXY object person =
           )
 
       Nothing ->
-        nonPersonPopup centerTopScreenXY (Object.idOf object) (Object.nameOf object)
+        nonPersonPopup
+          centerTopScreenXY
+          (Object.idOf object)
+          (Object.nameOf object)
+          (Object.urlOf object)
 
 
-nonPersonPopup : Position -> ObjectId -> String -> Html Msg
-nonPersonPopup centerTopScreenXY objectId name =
+nonPersonPopup : Position -> ObjectId -> String -> String -> Html Msg
+nonPersonPopup centerTopScreenXY objectId name url =
   if name == "" then
     text ""
   else
@@ -54,14 +58,19 @@ nonPersonPopup centerTopScreenXY objectId name =
     in
       div
         [ style styles ]
-        ( pointerSmall size :: nonPersonView objectId name )
+        ( pointerSmall size :: nonPersonView objectId name url)
 
 
-nonPersonView : ObjectId -> String -> List (Html Msg)
-nonPersonView objectId name =
+nonPersonView : ObjectId -> String -> String -> List (Html Msg)
+nonPersonView objectId name url =
   [ div
       [ style (Styles.personDetailPopupNoPerson) ]
-      [ text name, objectLink [ ("margin-left", "5px") ] objectId ]
+      [ if url /= "" then
+          a [ target "_blank", href url, style [ ("text-decoration", "underline") ] ] [ text name ]
+        else
+          text name
+      , objectLink [ ("margin-left", "5px") ] objectId
+      ]
   ]
 
 

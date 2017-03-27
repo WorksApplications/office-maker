@@ -176,4 +176,8 @@ objectLabelView canBeEmoji color fontSize scale screenPos screenSize name =
   in
     div
       [ style styles ]
-      [ if canBeEmoji then Emoji.view [] trimed else span [] [ text trimed ]]
+      [ if canBeEmoji then
+          Emoji.view [] trimed
+        else
+          span [] [ text trimed ]
+      ]

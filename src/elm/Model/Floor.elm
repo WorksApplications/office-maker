@@ -216,6 +216,11 @@ changeObjectFontSize ids fontSize floor =
   partiallyChangeObjects (Object.changeFontSize fontSize) ids floor
 
 
+changeObjectUrl : List ObjectId -> String -> Floor -> Floor
+changeObjectUrl ids url floor =
+  partiallyChangeObjects (Object.changeUrl url) ids floor
+
+
 changeObjectsByChanges : DetailedObjectsChange -> Floor -> Floor
 changeObjectsByChanges change floor =
   let
