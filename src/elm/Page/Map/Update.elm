@@ -201,7 +201,7 @@ performAPI tagger task =
 
 saveFloorDebounceConfig : Debounce.Config Msg
 saveFloorDebounceConfig =
-  { strategy = Debounce.later (1 * second)
+  { strategy = Debounce.manual
   , transform = SaveFloorDebounceMsg
   }
 
@@ -411,9 +411,9 @@ update msg model =
         } ! [cmd]
 
     ObjectsSaved change ->
-      { model |
-        floor = Maybe.map (EditingFloor.syncObjects change) model.floor
-      }  ! []
+      { model
+        | floor = Maybe.map (EditingFloor.syncObjects change) model.floor
+      } ! [ Debounce.unlock saveFloorDebounceConfig ]
 
     FloorSaved floorBase ->
       { model
