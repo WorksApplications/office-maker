@@ -2236,12 +2236,6 @@ updateByKeyEvent event model =
 updateByKeyEventWithCtrl : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEventWithCtrl event model =
   case (model.floor, event) of
-    (Just floor, ShortCut.A) ->
-      { model |
-        selectedObjects =
-          List.map idOf <| Floor.objects (EditingFloor.present floor)
-      } ! []
-
     (Just floor, ShortCut.C) ->
       { model |
         copiedObjects = Model.selectedObjects model
