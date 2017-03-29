@@ -140,7 +140,7 @@ resizeGripViewHelp : Bool -> Html Position
 resizeGripViewHelp selected =
   div
     [ style (S.deskResizeGrip selected)
-    , onWithOptions "mousedown" { stopPropagation = True, preventDefault = False } Mouse.position
+    , onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position
     ]
     []
 
