@@ -75,11 +75,11 @@ subView model =
         []
 
     editView =
-      case Mode.currentEditMode model.mode of
-        Just editingMode ->
+      case (User.isAdmin model.user, Mode.currentEditMode model.mode) of
+        (True, Just editingMode) ->
           subViewForEdit model editingMode
 
-        Nothing ->
+        _ ->
           []
   in
     div [ style S.subView ] ( searchResultView ++ editView )
