@@ -1125,6 +1125,7 @@ searchResultGroupHeader =
   [ ("color", "#aaa")
   , ("margin-bottom", "5px")
   , ("cursor", "pointer")
+  , ("font-size", "smaller")
   ]
 
 
