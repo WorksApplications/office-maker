@@ -516,11 +516,8 @@ update msg model =
       let
         (newModel, cmd1) =
           updateOnMouseUp pos model
-
-        cmd2 =
-          Task.perform (always NoOp) (putUserState newModel)
       in
-        newModel ! [ cmd1, cmd2 ]
+        newModel ! [ cmd1, (putUserState newModel) ]
 
     MouseDownOnCanvas mousePosition ->
       let
@@ -1035,12 +1032,8 @@ update msg model =
             scale = newScale
           , offset = newOffset
           }
-
-        saveUserStateCmd =
-          putUserState newModel
-            |> Task.perform (always NoOp)
       in
-        newModel ! [ saveUserStateCmd ]
+        newModel ! [ (putUserState newModel) ]
 
     WindowSize size ->
       { model | windowSize = size } ! []
@@ -1216,7 +1209,7 @@ update msg model =
         newModel =
           { model | lang = lang }
       in
-        newModel ! [ Task.perform (always NoOp) (putUserState newModel) ]
+        newModel ! [ putUserState newModel ]
 
     UpdateSearchQuery searchQuery ->
       { model |
@@ -2411,7 +2404,7 @@ updateByMoveObjectEnd objectId start end model =
           model ! []
 
 
-putUserState : Model -> Task x ()
+putUserState : Model -> Cmd Msg
 putUserState model =
   Cache.put
     model.cache
@@ -2419,6 +2412,7 @@ putUserState model =
     , offset = model.offset
     , lang = model.lang
     }
+    |> Task.perform (always NoOp)
 
 
 loadFloor : API.Config -> Bool -> String -> Task API.Error (Maybe Floor)
