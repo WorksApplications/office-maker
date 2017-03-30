@@ -668,8 +668,7 @@ searchBoxContainer =
 searchBox : S
 searchBox =
   input ++
-    [ ("color", "white")
-    , ("outline", "none")
+    [ ("outline", "none")
     , ("box-shadow", "rgb(0, 0, 0) 0px 2px 6px -3px inset")
     , ("border", "solid 1px #445")
     , ("border-right", "none")
