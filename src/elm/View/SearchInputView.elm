@@ -14,7 +14,7 @@ view lang onInputMsg onSubmit query =
   HtmlUtil.form_ onSubmit
     [ style S.searchBoxContainer ]
     [ Lazy.lazy3 textInput lang onInputMsg query
-    , submitButton
+    , Lazy.lazy submitButton lang
     ]
 
 
@@ -22,7 +22,7 @@ textInput : Language -> (String -> msg) -> String -> Html msg
 textInput lang onInputMsg query =
   input
       [ type_ "input"
-      , placeholder (I18n.search lang)
+      , placeholder (I18n.searchPlaceHolder lang)
       , style S.searchBox
       , defaultValue query
       , HtmlUtil.onInput onInputMsg
@@ -30,11 +30,11 @@ textInput lang onInputMsg query =
       []
 
 
-submitButton : Html msg
-submitButton =
+submitButton : Language -> Html msg
+submitButton lang =
   input
     [ type_ "submit"
     , style S.searchBoxSubmit
-    , value "Search"
+    , value (I18n.search lang)
     ]
     []

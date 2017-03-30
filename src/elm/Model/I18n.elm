@@ -313,3 +313,10 @@ search lang =
   case lang of
     JA -> "検索"
     EN -> "Search"
+
+
+searchPlaceHolder : Language -> String
+searchPlaceHolder lang =
+  case lang of
+    JA -> "名前、社員番号、組織名、会議室、etc."
+    EN -> "Name, ID, Post, Room, etc."

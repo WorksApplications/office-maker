@@ -668,11 +668,11 @@ searchBoxContainer =
 searchBox : S
 searchBox =
   input ++
-    [ ("background-color", "#445")
-    , ("color", "white")
+    [ ("color", "white")
     , ("outline", "none")
-    , ("box-shadow", "rgba(0, 0, 0, 9.07451) 0px 1px 5px inset")
-    , ("border", "none")
+    , ("box-shadow", "rgb(0, 0, 0) 0px 2px 6px -3px inset")
+    , ("border", "solid 1px #445")
+    , ("border-right", "none")
     , ("border-bottom-left-radius", "15px")
     , ("border-top-left-radius", "15px")
     ]
