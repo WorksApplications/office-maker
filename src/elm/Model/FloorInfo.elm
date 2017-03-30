@@ -88,3 +88,13 @@ toEditingList floorsInfo =
     |> toValues
     |> List.map editingFloor
     |> List.sortBy .ord
+
+
+sortByPublicOrder : Dict FloorId FloorInfo -> Maybe FloorInfo
+sortByPublicOrder floorsInfo =
+  floorsInfo
+    |> toValues
+    |> List.map (\info -> publicFloor info |> Maybe.map .ord |> Maybe.withDefault 999999 |> (,) info)
+    |> List.sortBy Tuple.second
+    |> List.map Tuple.first
+    |> List.head

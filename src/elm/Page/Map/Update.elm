@@ -357,8 +357,13 @@ update msg model =
         requestPrivateFloors =
           Mode.isEditMode model.mode
 
+        floorsInfo =
+          floors
+            |> List.map (\floor -> (FloorInfo.idOf floor, floor))
+            |> Dict.fromList
+
         cmd =
-          case (List.head floors, model.floor == Nothing) of
+          case (FloorInfo.sortByPublicOrder floorsInfo, model.floor == Nothing) of
             (Just floor, True) ->
               loadFloor model.apiConfig requestPrivateFloors (FloorInfo.idOf floor)
                 |> performAPI FloorLoaded
@@ -367,10 +372,7 @@ update msg model =
               Cmd.none
       in
         { model
-          | floorsInfo =
-              floors
-                |> List.map (\floor -> (FloorInfo.idOf floor, floor))
-                |> Dict.fromList
+          | floorsInfo = floorsInfo
         } ! [ cmd ]
 
     FloorLoaded floor ->
