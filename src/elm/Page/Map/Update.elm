@@ -507,17 +507,6 @@ update msg model =
 
     ClickOnCanvas ->
       model ! []
-      -- { model
-      --   | selectedObjects = []
-      --   -- , selectedResult = Nothing
-      -- } ! []
-
-    MouseUpOnCanvas pos ->
-      let
-        (newModel, cmd1) =
-          updateOnMouseUp pos model
-      in
-        newModel ! [ cmd1, (putUserState newModel) ]
 
     MouseDownOnCanvas mousePosition ->
       let
@@ -575,11 +564,21 @@ update msg model =
         newModel =
           { model__
             | selectorRect = selectorRect
-            --  selectedObjects = []
             , draggingContext = draggingContext
           }
       in
-        newModel ! [ cmd, cmd2 ]
+        newModel ! [ cmd, cmd2, emulateClick "" True ]
+
+    MouseUpOnCanvas pos ->
+      let
+        (newModel, cmd1) =
+          updateOnMouseUp pos model
+      in
+        newModel
+          ! [ cmd1
+            , putUserState newModel
+            , emulateClick "" False
+            ]
 
     MouseDownOnResizeGrip id mousePosition ->
       let
@@ -1449,22 +1448,35 @@ update msg model =
 
     EmulateClick id down time ->
       let
+        nextDefault =
+          (List.take 4 <| (id, down, time) :: model.clickEmulator, "")
+
         (clickEmulator, event) =
           case (id, down, time) :: model.clickEmulator of
+            ("", False, time2) :: ("", True, time1) :: _ ->
+              if time2 - time1 < 200 then
+                ([], "unselectObject")
+              else
+                nextDefault
+
             (id4, False, time4) :: (id3, True, time3) :: (id2, False, time2) :: (id1, True, time1) :: _ ->
               if List.all ((==) id1) [id2, id3, id4] && (time4 - time1 < 400) then
                 ([], "dblclick")
               else
-                (List.take 4 <| (id, down, time) :: model.clickEmulator, "")
+                nextDefault
+
             _ ->
-              (List.take 4 <| (id, down, time) :: model.clickEmulator, "")
+              nextDefault
+
+        newModel =
+          { model | clickEmulator = clickEmulator }
       in
-        { model | clickEmulator = clickEmulator }
-        ! ( if event == "dblclick" then
-              [ Task.perform identity (Task.succeed (StartEditObject id)) ]
-            else
-              []
-            )
+        if event == "dblclick" then
+          newModel ! [ Task.perform identity (Task.succeed (StartEditObject id)) ] -- TODO can be update?
+        else if event == "unselectObject" then
+          { newModel | selectedObjects = [] } ! []
+        else
+          newModel ! []
 
     TokenRemoved ->
       { model

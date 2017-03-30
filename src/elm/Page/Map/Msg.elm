@@ -63,8 +63,8 @@ type Msg
   | FloorSaved FloorBase
   | FloorPublished Floor
   | ClickOnCanvas
-  | MouseUpOnCanvas Position
   | MouseDownOnCanvas Position
+  | MouseUpOnCanvas Position
   | MouseDownOnObject Id Position
   | MouseUpOnObject Id Position
   | MouseDownOnResizeGrip Id Position
