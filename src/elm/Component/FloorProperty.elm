@@ -173,17 +173,15 @@ ordInput user value =
 floorRealSizeInputView : Language -> User -> FloorProperty -> Html Msg
 floorRealSizeInputView lang user model =
   let
-    useReal = True -- TODO
-
     widthLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.widthMeter lang) ]
 
     heightLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.heightMeter lang) ]
   in
     div [ style Styles.floorSizeInputContainer ]
       [ widthLabel
-      , widthValueView user useReal model.realWidthInput
+      , widthValueView user model.realWidthInput
       , heightLabel
-      , heightValueView user useReal model.realHeightInput
+      , heightValueView user model.realHeightInput
       ]
 
 
@@ -204,13 +202,12 @@ onInput_ f =
   onWithOptions "input" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
 
-widthValueView : User -> Bool -> String -> Html Msg
-widthValueView user useReal value =
+widthValueView : User -> String -> Html Msg
+widthValueView user value =
   if User.isAdmin user then
     input
     ([ Html.Attributes.id "floor-real-width-input"
     , type_ "text"
-    , disabled (not useReal)
     , style Styles.realSizeInput
     ] ++ (inputAttributes InputFloorRealWidth (always NoOp) value Nothing))
     []
@@ -218,13 +215,12 @@ widthValueView user useReal value =
     div [ style Styles.floorWidthText ] [ text value ]
 
 
-heightValueView : User -> Bool -> String -> Html Msg
-heightValueView user useReal value =
+heightValueView : User -> String -> Html Msg
+heightValueView user value =
   if User.isAdmin user then
     input
     ([ Html.Attributes.id "floor-real-height-input"
     , type_ "text"
-    , disabled (not useReal)
     , style Styles.realSizeInput
     ] ++ (inputAttributes InputFloorRealHeight (always NoOp) value Nothing))
     []
