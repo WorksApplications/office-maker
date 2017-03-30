@@ -353,12 +353,25 @@ update msg model =
       { model | prototypes = Prototypes.init prototypeList } ! []
 
     FloorsInfoLoaded floors ->
-      { model
-        | floorsInfo =
-            floors
-              |> List.map (\floor -> (FloorInfo.idOf floor, floor))
-              |> Dict.fromList
-      } ! []
+      let
+        requestPrivateFloors =
+          Mode.isEditMode model.mode
+
+        cmd =
+          case (List.head floors, model.floor == Nothing) of
+            (Just floor, True) ->
+              loadFloor model.apiConfig requestPrivateFloors (FloorInfo.idOf floor)
+                |> performAPI FloorLoaded
+
+            _ ->
+              Cmd.none
+      in
+        { model
+          | floorsInfo =
+              floors
+                |> List.map (\floor -> (FloorInfo.idOf floor, floor))
+                |> Dict.fromList
+        } ! [ cmd ]
 
     FloorLoaded floor ->
       updateOnFloorLoaded floor model
