@@ -1215,22 +1215,26 @@ update msg model =
 
     GotSearchResult results people ->
       let
-        selectedResult =
+        maybeSelectMsg =
           case results of
             SearchResult.Object object floorId :: [] ->
-              Just (Object.idOf object)
+              Just (SelectSearchResult (Object.idOf object) floorId Nothing)
 
             _ ->
               Nothing
 
-        searchResult =
-          Just results
+        newModel =
+          { model |
+            searchResult = Just results
+          }
+            |> Model.adjustOffset
+            |> Model.cachePeople people
       in
-        ( { model |
-            searchResult = searchResult
-          , selectedResult = selectedResult
-          } |> Model.cachePeople people
-        ) ! []
+        maybeSelectMsg
+          |> Maybe.map (\msg ->
+            update msg newModel
+          )
+          |> Maybe.withDefault (newModel, Cmd.none)
 
     SelectSearchResult objectId floorId maybePersonId ->
       let
