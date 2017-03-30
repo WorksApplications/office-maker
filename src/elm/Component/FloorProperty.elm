@@ -230,7 +230,7 @@ heightValueView user value =
 
 view : (Msg -> msg) -> Language -> User -> Floor -> FloorProperty -> Html msg -> Html msg -> Html msg -> Html msg -> List (Html msg)
 view transform lang user floor model floorLoadButton publishButton deleteButton deleteDialog =
-  [ floorLoadButton
+  [ Lazy.lazy3 imageView lang floor floorLoadButton
   , Lazy.lazy3 floorNameInputView lang user model |> Html.map transform
   , Lazy.lazy3 floorOrdInputView lang user model |> Html.map transform
   , Lazy.lazy3 floorRealSizeInputView lang user model |> Html.map transform
@@ -238,3 +238,21 @@ view transform lang user floor model floorLoadButton publishButton deleteButton 
   , deleteButton
   , deleteDialog
   ]
+
+
+imageView : Language -> Floor -> Html msg -> Html msg
+imageView lang floor floorLoadButton =
+  div
+    [ style [ ( "display", "flex") ] ]
+    [ floorLoadButton
+    , floor.image
+        |> Maybe.map (\path ->
+            a
+              [ href ("./images/floors/" ++ path)
+              , attribute "download" (floor.name ++ ".png")
+              , style Styles.imageDownloadButton
+              ]
+              [ text <| I18n.download lang ]
+          )
+        |> Maybe.withDefault (text "")
+    ]

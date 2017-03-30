@@ -212,6 +212,14 @@ edit lang =
 
 ----
 
+
+download : Language -> String
+download lang =
+  case lang of
+    JA -> "ダウンロード"
+    EN -> "Download"
+
+
 name : Language -> String
 name lang =
   case lang of

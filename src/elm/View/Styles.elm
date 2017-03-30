@@ -418,9 +418,12 @@ floorPropertyText =
 
 imageLoadButton : S
 imageLoadButton =
-  formControl ++ defaultButton ++
-    [ ("width", "120px")
-    ]
+  formControl ++ defaultButton
+
+
+imageDownloadButton : S
+imageDownloadButton =
+  formControl ++ defaultButton
 
 
 publishButton : S
