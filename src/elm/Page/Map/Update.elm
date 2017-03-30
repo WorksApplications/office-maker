@@ -1472,7 +1472,7 @@ update msg model =
           { model | clickEmulator = clickEmulator }
       in
         if event == "dblclick" then
-          newModel ! [ Task.perform identity (Task.succeed (StartEditObject id)) ] -- TODO can be update?
+          newModel |> update (StartEditObject id)
         else if event == "unselectObject" then
           { newModel | selectedObjects = [] } ! []
         else
