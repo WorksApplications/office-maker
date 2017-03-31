@@ -343,7 +343,7 @@ update msg model =
         }
         ! [ focusObjectCmd
           , searchCmd
-          , performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
+          , performAPI (FloorsInfoLoaded (selectedFloor /= Nothing)) (API.getFloorsInfo model.apiConfig)
           , loadFloorCmd
           , loadSettingsCmd
           ]
@@ -354,7 +354,7 @@ update msg model =
     PrototypesLoaded prototypeList ->
       { model | prototypes = Prototypes.init prototypeList } ! []
 
-    FloorsInfoLoaded floors ->
+    FloorsInfoLoaded floorIsSelected floors ->
       let
         requestPrivateFloors =
           Mode.isEditMode model.mode
@@ -365,8 +365,8 @@ update msg model =
             |> Dict.fromList
 
         cmd =
-          case (FloorInfo.sortByPublicOrder floorsInfo, model.floor == Nothing) of
-            (Just floor, True) ->
+          case (floorIsSelected, FloorInfo.sortByPublicOrder floorsInfo, model.floor == Nothing) of
+            (False, Just floor, True) ->
               loadFloor model.apiConfig requestPrivateFloors (FloorInfo.idOf floor)
                 |> performAPI FloorLoaded
 
@@ -445,7 +445,7 @@ update msg model =
         floor = Maybe.map (\_ -> EditingFloor.init floor) model.floor
       , error = Success ("Successfully published " ++ floor.name)
       } !
-        [ performAPI FloorsInfoLoaded (API.getFloorsInfo model.apiConfig)
+        [ performAPI (FloorsInfoLoaded True) (API.getFloorsInfo model.apiConfig)
         , Process.sleep 3000.0
             |> Task.perform (\_ -> Error NoError)
         ]
@@ -1401,7 +1401,7 @@ update msg model =
         cmd =
           API.saveFloor model.apiConfig newFloor
             |> Task.andThen (\_ -> API.getFloorsInfo model.apiConfig)
-            |> performAPI FloorsInfoLoaded
+            |> performAPI (FloorsInfoLoaded True)
 
         newModel =
           { model
@@ -1439,7 +1439,7 @@ update msg model =
                     Task.succeed ObjectsChange.empty
                 )
                 |> Task.andThen (\_ -> API.getFloorsInfo model.apiConfig)
-                |> performAPI FloorsInfoLoaded
+                |> performAPI (FloorsInfoLoaded True)
 
 
             newModel =
@@ -1634,7 +1634,7 @@ update msg model =
       in
         newModel !
           [ API.getFloorsInfo model.apiConfig
-              |> performAPI FloorsInfoLoaded
+              |> performAPI (FloorsInfoLoaded False)
           , Process.sleep 3000.0
               |> Task.perform (\_ -> Error NoError)
           , Navigation.modifyUrl (Model.encodeToUrl newModel)

@@ -52,7 +52,7 @@ type Msg
   = NoOp
   | UrlUpdate (Result String URL)
   | Initialized (Maybe String) Bool UserState User
-  | FloorsInfoLoaded (List FloorInfo)
+  | FloorsInfoLoaded Bool (List FloorInfo)
   | FloorLoaded (Maybe Floor)
   | ColorsLoaded ColorPalette
   | PrototypesLoaded (List Prototype)

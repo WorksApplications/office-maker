@@ -44,9 +44,6 @@ import CoreType exposing (..)
 
 
 type alias Id = String
-type alias PersonId = String
-type alias ObjectId = String
-type alias FloorId = String
 
 
 type alias Model =
