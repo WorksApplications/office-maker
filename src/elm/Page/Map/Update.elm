@@ -410,9 +410,12 @@ update msg model =
     SaveFloorDebounceMsg msg ->
       let
         save head tail =
-          batchSave
-            model.apiConfig
-            (SaveRequest.reduceRequest (head :: tail))
+          if Mode.isEditMode model.mode then
+            batchSave
+              model.apiConfig
+              (SaveRequest.reduceRequest (head :: tail))
+          else
+            Cmd.none
 
         (saveFloorDebounce, cmd) =
           Debounce.update
