@@ -936,12 +936,7 @@ update msg model =
             model ! [ cmd ]
 
     SearchByPost postName ->
-      let
-        query =
-          "\"" ++ postName ++ "\""
-      in
-        submitSearch { model | searchQuery = query }
-          |> andThen (\model -> (model, setInput ("search-box-input", query)) )
+      searchBy ("\"" ++ postName ++ "\"") model
 
     GotSamePostPeople people ->
       model
@@ -1270,6 +1265,9 @@ update msg model =
         )
           |> andThen (update goToFloor)
 
+    CloseSearchResult ->
+      searchBy "" model
+
     StartDraggingFromMissingPerson personId personName ->
       let
         prototype =
@@ -1357,9 +1355,6 @@ update msg model =
             { model |
               diff = Nothing
             } ! [ cmd ]
-
-    HideSearchResult ->
-      { model | mode = Mode.hideSearchResult model.mode } ! []
 
     ClosePopup ->
       { model | selectedResult = Nothing } ! []
@@ -1662,6 +1657,12 @@ andThen update (model, cmd) =
       update model
   in
     newModel ! [ cmd, newCmd ]
+
+
+searchBy : String -> Model -> (Model, Cmd Msg)
+searchBy query model =
+  submitSearch { model | searchQuery = query }
+    |> andThen (\model -> (model, setInput ("search-box-input", query)) )
 
 
 submitSearch : Model -> (Model, Cmd Msg)

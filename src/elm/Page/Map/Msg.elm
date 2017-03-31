@@ -103,6 +103,7 @@ type Msg
   | SubmitSearch
   | GotSearchResult (List SearchResult) (List Person)
   | SelectSearchResult ObjectId FloorId (Maybe PersonId)
+  | CloseSearchResult
   | StartDraggingFromMissingPerson String String
   | StartDraggingFromExistingObject Id String (Maybe String) String Time
   | CachePeople (List Person)
@@ -115,7 +116,6 @@ type Msg
   | GotDiffSource (Floor, Maybe Floor)
   | CloseDiff
   | ConfirmDiff
-  | HideSearchResult
   | ClosePopup
   | ShowDetailForObject Id
   | CreateNewFloor

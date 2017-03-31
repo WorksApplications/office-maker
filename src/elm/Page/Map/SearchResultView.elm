@@ -63,7 +63,7 @@ closeButton : Html Msg
 closeButton =
   div
     [ style S.searchResultClose
-    , onClick HideSearchResult
+    , onClick CloseSearchResult
     ]
     [ I.searchResultClose
     , text "Close"
