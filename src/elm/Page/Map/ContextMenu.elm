@@ -46,7 +46,6 @@ toItemGroups model context =
             [ (ContextMenu.item (I18n.selectIsland model.lang), SelectIsland id)
             , (ContextMenu.item (I18n.selectSameColor model.lang), SelectSameColor id)
             , (ContextMenu.item (I18n.registerAsStamp model.lang), RegisterPrototype id)
-            , (ContextMenu.item (I18n.rotate model.lang), Rotate id)
             ]
           else
             []
@@ -54,6 +53,7 @@ toItemGroups model context =
         common =
           [ (ContextMenu.item (I18n.pickupFirstWord model.lang), FirstNameOnly model.selectedObjects)
           , (ContextMenu.item (I18n.removeSpaces model.lang), RemoveSpaces model.selectedObjects)
+          , (ContextMenu.item (I18n.rotate model.lang), RotateObjects model.selectedObjects)
           ]
 
         items =

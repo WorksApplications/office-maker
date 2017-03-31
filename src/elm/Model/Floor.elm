@@ -186,9 +186,9 @@ paste copiedWithNewIds base floor =
     floor
 
 
-rotateObject : ObjectId -> Floor -> Floor
-rotateObject id floor =
-  partiallyChangeObjects (Object.rotate) [id] floor
+rotateObjects : List ObjectId -> Floor -> Floor
+rotateObjects ids floor =
+  partiallyChangeObjects (Object.rotate) ids floor
 
 
 changeObjectColor : List ObjectId -> String -> Floor -> Floor

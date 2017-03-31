@@ -90,7 +90,7 @@ type Msg
   | PrototypesMsg Prototypes.Msg
   | RegisterPrototype Id
   | FloorPropertyMsg FloorProperty.Msg
-  | Rotate Id
+  | RotateObjects (List ObjectId)
   | FirstNameOnly (List Id)
   | RemoveSpaces (List Id)
   | HeaderMsg Header.Msg

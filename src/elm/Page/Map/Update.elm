@@ -1109,7 +1109,7 @@ update msg model =
           in
             newModel ! [ saveCmd ]
 
-    Rotate id ->
+    RotateObjects ids ->
       case model.floor of
         Nothing ->
           model ! []
@@ -1118,7 +1118,7 @@ update msg model =
           let
             (newFloor, objectsChange) =
               EditingFloor.updateObjects
-                (Floor.rotateObject id)
+                (Floor.rotateObjects ids)
                 editingFloor
 
             saveCmd =
