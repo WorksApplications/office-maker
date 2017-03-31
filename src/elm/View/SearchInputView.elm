@@ -9,6 +9,7 @@ import View.Styles as S
 
 import Util.HtmlUtil as HtmlUtil
 
+
 view : Language -> (String -> msg) -> msg -> String -> Html msg
 view lang onInputMsg onSubmit query =
   HtmlUtil.form_ onSubmit

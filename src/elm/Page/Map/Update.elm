@@ -940,11 +940,7 @@ update msg model =
         query =
           "\"" ++ postName ++ "\""
       in
-        submitSearch
-          { model
-            | searchQuery = query
-            , mode = Mode.showSearchResult model.mode
-          }
+        submitSearch { model | searchQuery = query }
           |> andThen (\model -> (model, setInput ("search-box-input", query)) )
 
     GotSamePostPeople people ->
@@ -1228,7 +1224,7 @@ update msg model =
       } ! []
 
     SubmitSearch ->
-      submitSearch { model | mode = Mode.showSearchResult model.mode }
+      submitSearch model
 
     GotSearchResult results people ->
       let
@@ -1670,20 +1666,27 @@ andThen update (model, cmd) =
 
 submitSearch : Model -> (Model, Cmd Msg)
 submitSearch model =
-  let
-    withPrivate =
-      not (User.isGuest model.user)
+  if String.trim model.searchQuery == "" then
+    ( { model
+        | searchResult = Nothing
+        , mode = Mode.hideSearchResult model.mode
+      }
+    , Navigation.modifyUrl (Model.encodeToUrl model)
+    )
+  else
+    let
+      withPrivate =
+        not (User.isGuest model.user)
 
-    searchCmd =
-      if String.trim model.searchQuery == "" then
-        Cmd.none
-      else
+      searchCmd =
         search model.apiConfig withPrivate model.personInfo model.searchQuery
-  in
-    model !
-      [ searchCmd
-      , Navigation.modifyUrl (Model.encodeToUrl model)
-      ]
+    in
+      { model
+         | mode = Mode.showSearchResult model.mode
+      }
+        ! [ searchCmd
+          , Navigation.modifyUrl (Model.encodeToUrl model)
+          ]
 
 
 search : API.Config -> Bool -> Dict PersonId Person -> String -> Cmd Msg
