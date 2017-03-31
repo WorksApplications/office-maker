@@ -166,7 +166,6 @@ app.get('/api/1/admins', inTransaction((conn, req, res) => {
         });
         return Promise.resolve(list);
       });
-      console.log(admins);
       return Promise.resolve(admins);
     });
   });
