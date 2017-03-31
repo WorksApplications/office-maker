@@ -21,7 +21,7 @@ view lang onInputMsg onSubmit query =
 textInput : Language -> (String -> msg) -> String -> Html msg
 textInput lang onInputMsg query =
   input
-      [ type_ "input"
+      [ id "search-box-input"
       , placeholder (I18n.searchPlaceHolder lang)
       , style S.searchBox
       , defaultValue query

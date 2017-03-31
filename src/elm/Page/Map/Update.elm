@@ -72,6 +72,8 @@ port redo : ({} -> msg) -> Sub msg
 
 port clipboard : (String -> msg) -> Sub msg
 
+port setInput : (String, String) -> Cmd msg
+
 
 type alias ObjectId = String
 type alias PersonId = String
@@ -934,11 +936,16 @@ update msg model =
             model ! [ cmd ]
 
     SearchByPost postName ->
-      submitSearch
-        { model
-        | searchQuery = "\"" ++ postName ++ "\""
-        , mode = Mode.showSearchResult model.mode
-        }
+      let
+        query =
+          "\"" ++ postName ++ "\""
+      in
+        submitSearch
+          { model
+            | searchQuery = query
+            , mode = Mode.showSearchResult model.mode
+          }
+          |> andThen (\model -> (model, setInput ("search-box-input", query)) )
 
     GotSamePostPeople people ->
       model

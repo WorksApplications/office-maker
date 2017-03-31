@@ -43,6 +43,14 @@
 					main.ports.receiveInputValue.send([objectId, newValue, newPos]);
 				}
 			});
+			main.ports.setInput.subscribe(function(data) {
+				var id = data[0];
+				var str = data[1];
+				var element = document.getElementById(id);
+				if(element.id === id) {
+					element.value = str;
+				}
+			});
 			main.ports.removeToken.subscribe(function(token) {
 				localStorage.removeItem('authToken', token);
 			  main.ports.tokenRemoved.send();
