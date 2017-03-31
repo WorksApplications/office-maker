@@ -18,6 +18,7 @@ zIndex :
   , floorInfo : String
   , personDetailPopup : String
   , candidatesView : String
+  , lastUpdate : String
   , subView : String
   , headerForPrint : String
   , printGuide : String
@@ -33,6 +34,7 @@ zIndex =
   , selectorRect = "300"
   , floorInfo = "500"
   , personDetailPopup = "550"
+  , lastUpdate = "580"
   , subView = "600"
   , headerForPrint = "630"
   , printGuide = "650"
@@ -512,7 +514,8 @@ floorHeightText =
 
 floorPropertyLastUpdate : S
 floorPropertyLastUpdate =
-  [ ("position", "fixed")
+  [ ("z-index", zIndex.lastUpdate)
+  , ("position", "fixed")
   , ("left", "0")
   , ("bottom", "0")
   , ("background-color", "#fff")
