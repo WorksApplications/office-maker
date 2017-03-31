@@ -2344,22 +2344,31 @@ updateByKeyEventWithNoControlKeys event model =
       moveSelecedObjectsToward Right model floor
 
     (Just floor, ShortCut.Del) ->
-      let
-        (newFloor, objectsChange) =
-          EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
+      removeSelectedObjects model floor
 
-        saveCmd =
-          requestSaveObjectsCmd objectsChange
-      in
-        { model |
-          floor = Just newFloor
-        } ! [ saveCmd ]
+    -- a bit dangerous if one is also editing text field
+    -- (Just floor, ShortCut.BackSpace) ->
+    --   removeSelectedObjects model floor
 
     (Just floor, ShortCut.Other 9) ->
       Model.shiftSelectionToward Right model ! []
 
     _ ->
       model ! []
+
+
+removeSelectedObjects : Model -> EditingFloor -> (Model, Cmd Msg)
+removeSelectedObjects model floor =
+  let
+    (newFloor, objectsChange) =
+      EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
+
+    saveCmd =
+      requestSaveObjectsCmd objectsChange
+  in
+    { model |
+      floor = Just newFloor
+    } ! [ saveCmd ]
 
 
 moveSelecedObjectsToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg)
