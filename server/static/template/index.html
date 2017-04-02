@@ -73,21 +73,12 @@
 					document.execCommand('copy');
 				}
 			});
-			window.addEventListener('keydown', function(e) {
-			  if(e.ctrlKey && e.keyCode === 90) {
-					// Ctrl+Z
-					if(!document.querySelector(':focus')) {
-						e.preventDefault();
-						main.ports.undo.send();
-					}
-			  } else if(e.ctrlKey && e.keyCode === 89) {
-					// Ctrl+Y
-					if(!document.querySelector(':focus')) {
-						e.preventDefault();
-						main.ports.redo.send();
-					}
-			  }
-			}, true);
+			main.ports.focusCanvas.subscribe(function() {
+				var element = document.getElementById('paste-handler');
+				if(element) {
+					element.focus();
+				}
+			});
 			main.ports.copy.subscribe(function(s) {
 				var textArea = document.createElement("textarea");
 				textArea.value = s;

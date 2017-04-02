@@ -42,6 +42,22 @@ decodeTargetValueAndSelectionStart =
     (field "target" (field "selectionStart" int))
 
 
+
+decodeUndoRedo : msg -> msg -> Decoder msg
+decodeUndoRedo undo redo =
+  Decode.map2 (,)
+    (Decode.field "ctrlKey" Decode.bool)
+    (Decode.field "keyCode" Decode.int)
+    |> Decode.andThen (\(ctrl, keyCode) ->
+      if ctrl && keyCode == 89 then
+        Decode.succeed redo
+      else if ctrl && keyCode == 90 then
+        Decode.succeed undo
+      else
+        Decode.fail ""
+    )
+
+
 onMouseEnter_ : a -> Attribute a
 onMouseEnter_ e =
   onWithOptions

@@ -1,7 +1,7 @@
 module Page.Map.CanvasView exposing (view, temporaryStampView)
 
 import Dict exposing (..)
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 
 import Mouse
 import Html exposing (..)
@@ -13,7 +13,7 @@ import ContextMenu
 
 import View.Styles as S
 import View.ObjectView as ObjectView
-import Util.HtmlUtil exposing (..)
+import Util.HtmlUtil as HtmlUtil exposing (..)
 
 import Model.Mode as Mode exposing (Mode(..))
 import Model.Floor as Floor exposing (Floor)
@@ -150,7 +150,8 @@ view model =
 pasteHandler : Html Msg
 pasteHandler =
   div
-    [ attribute "contenteditable" ""
+    [ id "paste-handler"
+    , attribute "contenteditable" ""
     , style
         [ ("position", "absolute")
         , ("top", "0")
@@ -158,6 +159,7 @@ pasteHandler =
         , ("width", "100%")
         , ("height", "100%")
         ]
+    , on "keydown" (HtmlUtil.decodeUndoRedo Undo Redo)
     , onWithOptions "paste" { preventDefault = True, stopPropagation = True } (ClipboardData.decode PasteFromClipboard)
     ] []
 

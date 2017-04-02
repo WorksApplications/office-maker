@@ -65,16 +65,9 @@ port setSelectionStart : {} -> Cmd msg
 
 port tokenRemoved : ({} -> msg) -> Sub msg
 
-port undo : ({} -> msg) -> Sub msg
-
-port redo : ({} -> msg) -> Sub msg
-
 port setInput : (String, String) -> Cmd msg
 
-
-type alias ObjectId = String
-type alias PersonId = String
-
+port focusCanvas : {} -> Cmd msg
 
 type alias Flags =
   { apiRoot : String
@@ -95,8 +88,6 @@ subscriptions model =
     , Keyboard.downs (KeyCodeMsg True)
     , Keyboard.ups (KeyCodeMsg False)
     , tokenRemoved (always TokenRemoved)
-    , undo (always Undo)
-    , redo (always Redo)
     , if model.draggingContext == NoDragging then
         Sub.none
       else
@@ -499,7 +490,7 @@ update msg model =
           , selectorRect = Nothing
           }
       in
-        help model_ ! [ cmd, emulateClick lastTouchedId True ]
+        help model_ ! [ cmd, emulateClick lastTouchedId True, focusCanvas {} ]
 
     MouseUpOnObject lastTouchedId pos ->
       let
