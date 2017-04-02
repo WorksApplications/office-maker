@@ -1,6 +1,9 @@
 module CoreType exposing (..)
 
 
+import Json.Encode
+
+
 type alias Position =
   { x : Int
   , y : Int
@@ -19,13 +22,21 @@ type alias Size =
   }
 
 
-type alias ObjectId =
+type alias Id =
   String
+
+
+type alias ObjectId =
+  Id
 
 
 type alias PersonId =
-  String
+  Id
 
 
 type alias FloorId =
-  String
+  Id
+
+
+type alias Json =
+  Json.Encode.Value

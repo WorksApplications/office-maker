@@ -1,10 +1,20 @@
-module Model.ClipboardData exposing (..)
+port module Model.ClipboardData exposing (..)
 
-import Model.Prototype exposing (Prototype)
-import HtmlParser exposing (..)
+import Json.Encode as Encode
+import Json.Decode as Decode exposing (Decoder)
+
+import HtmlParser exposing (Attributes)
 import HtmlParser.Util exposing (..)
 
 import CoreType exposing (..)
+
+import Model.Prototype exposing (Prototype)
+import Model.Object exposing (Object)
+import API.Serialization as Serialization
+import Native.ClipboardData
+
+
+type alias ClipboardData = Json
 
 
 type alias PositionedPrototype =
@@ -16,6 +26,47 @@ type alias Cell =
   , rows : Int
   , text : String
   }
+
+
+getHtml : Json -> String
+getHtml =
+  Native.ClipboardData.getHtml
+
+
+getText : Json -> String
+getText =
+  Native.ClipboardData.getText
+
+
+decode : (String -> a) -> Decoder a
+decode f =
+  Decode.field "clipboardData" Decode.value
+    |> Decode.map (\clipboardData -> (getHtml clipboardData, getText clipboardData))
+    |> Decode.andThen (\(html, text) ->
+      if String.trim html /= "" then
+        Decode.succeed html
+      else if String.trim text /= "" then
+        Decode.succeed text
+      else
+        Decode.fail "no data"
+      )
+    |> Decode.map f
+
+
+port copy : String -> Cmd msg
+
+
+copyObjects : List Object -> Cmd msg
+copyObjects objects =
+  Encode.list (List.map Serialization.encodeObject objects)
+    |> Encode.encode 0
+    |> copy
+
+
+toObjects : String -> List Object
+toObjects s =
+  Decode.decodeString (Decode.list Serialization.decodeObject) s
+    |> Result.withDefault []
 
 
 toObjectCandidates : Prototype -> Position -> String -> List PositionedPrototype
@@ -57,7 +108,7 @@ parseString s =
 
 parseHtml : String -> List (List (Maybe Cell))
 parseHtml table =
-  parse table
+  HtmlParser.parse table
     |> getElementsByTagName "tr"
     |> mapElements
       (\_ _ innerTr ->

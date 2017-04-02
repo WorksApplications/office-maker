@@ -88,29 +88,15 @@
 					}
 			  }
 			}, true);
-			window.addEventListener('paste', function(e) {
-				if(document.activeElement.id == 'paste-from-spreadsheet') {
-					e.preventDefault();
-					// var items = e.clipboardData.items;
-				  // for (var i = 0 ; i < items.length ; i++) {
-				  //   var item = items[i];
-					// 	console.log(item.type);
-				  //   if (item.type.indexOf("image") != -1) {
-				  //     var file = item.getAsFile();
-				  //     console.log(file);
-				  //   }
-				  // }
-					// console.log(e.clipboardData.types);
-					// console.log(e.clipboardData.files[0]);
-					// console.log(e.clipboardData.items[0]);
-					// console.log(e.clipboardData.getData('text/html'));
-					// console.log(e.clipboardData.getData('text/rtf'));
-					// console.log(e.clipboardData.getData('text/plain'));
-					// console.log(e.clipboardData.getData('Files'));
-					// console.log(e.clipboardData.getData('image/png'));
-					main.ports.clipboard.send(e.clipboardData.getData('text/html') || e.clipboardData.getData('text'));
-				}
-			}, true);
+			main.ports.copy.subscribe(function(s) {
+				var textArea = document.createElement("textarea");
+				textArea.value = s;
+				document.body.appendChild(textArea);
+				textArea.select();
+				var result = document.execCommand("copy");
+				document.body.removeChild(textArea);
+				console.log(result);
+			});
 
 			// var dragging = null;
 			// window.addEventListener('mousedown', function(e) {

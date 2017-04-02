@@ -29,6 +29,8 @@ import Page.Map.ObjectNameInput as ObjectNameInput
 import Page.Map.ProfilePopup as ProfilePopup
 import Page.Map.GridLayer as GridLayer
 
+import Model.ClipboardData as ClipboardData
+
 
 import CoreType exposing (..)
 
@@ -145,6 +147,21 @@ view model =
         ] []
 
 
+pasteHandler : Html Msg
+pasteHandler =
+  div
+    [ attribute "contenteditable" ""
+    , style
+        [ ("position", "absolute")
+        , ("top", "0")
+        , ("left", "0")
+        , ("width", "100%")
+        , ("height", "100%")
+        ]
+    , onWithOptions "paste" { preventDefault = True, stopPropagation = True } (ClipboardData.decode PasteFromClipboard)
+    ] []
+
+
 profilePopupView : Model -> Floor -> Html Msg
 profilePopupView model floor =
   if Mode.isPrintMode model.mode then
@@ -206,6 +223,7 @@ canvasView model floor =
     children1 =
       Just ("canvas-image", Lazy.lazy canvasImage floor) ::
       (if isEditMode then Just ("grid-layer", gridLayer) else Nothing) ::
+      (if isEditMode then Just ("paste-handler", pasteHandler) else Nothing) ::
       (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) ::
       (if isEditMode then Just ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect) else Nothing) :: []
       |> List.filterMap identity

@@ -184,24 +184,12 @@ drawingView model editingMode =
         Emoji.selector
       else
         case editingMode of
-          Select ->
-            Lazy.lazy pasteInput model.lang
-
           Stamp ->
             Lazy.lazy PrototypePreviewView.view prototypes
 
           _ ->
             text ""
     ]
-
-
-pasteInput : Language -> Html msg
-pasteInput lang =
-  input
-    [ id "paste-from-spreadsheet"
-    , style S.pasteFromSpreadsheetInput
-    , placeholder (I18n.pasteFromSpreadsheet lang)
-    ] []
 
 
 modeSelectionView : EditingMode -> Html Msg

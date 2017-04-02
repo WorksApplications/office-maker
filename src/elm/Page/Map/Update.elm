@@ -69,8 +69,6 @@ port undo : ({} -> msg) -> Sub msg
 
 port redo : ({} -> msg) -> Sub msg
 
-port clipboard : (String -> msg) -> Sub msg
-
 port setInput : (String, String) -> Cmd msg
 
 
@@ -99,7 +97,6 @@ subscriptions model =
     , tokenRemoved (always TokenRemoved)
     , undo (always Undo)
     , redo (always Redo)
-    , clipboard PasteFromClipboard
     , if model.draggingContext == NoDragging then
         Sub.none
       else
@@ -1522,37 +1519,58 @@ update msg model =
     PasteFromClipboard s ->
       case (model.floor, model.selectorRect) of
         (Just floor, Just (pos, _)) ->
-          let
-            prototype =
-              Prototypes.selectedPrototype model.prototypes
+          if String.startsWith "[" s then
+            let
+              (copiedIdsWithNewIds, newSeed) =
+                IdGenerator.zipWithNewIds model.seed (ClipboardData.toObjects s)
 
-            candidates =
-              ClipboardData.toObjectCandidates prototype pos s
+              (newFloor, objectsChange) =
+                EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds pos) floor
 
-            ((newModel, cmd), newObjects) =
-              updateOnFinishStamp_ candidates model floor
+              saveCmd =
+                requestSaveObjectsCmd objectsChange
+            in
+              { model |
+                floor = Just newFloor
+              , seed = newSeed
+              , selectedObjects =
+                case List.map Tuple.second copiedIdsWithNewIds of
+                  [] -> model.selectedObjects -- for pasting from spreadsheet
+                  x -> x
+              , selectorRect = Nothing
+              } ! [ saveCmd ]
+          else
+            let
+              prototype =
+                Prototypes.selectedPrototype model.prototypes
 
-            task =
-              List.foldl
-                (\object prevTask ->
-                  prevTask
-                    |> Task.andThen (\list ->
-                      API.personCandidate model.apiConfig (Object.nameOf object)
-                        |> Task.map (\people ->
-                          (Object.idOf object, people) :: list
-                        )
-                    )
-                    -- TODO too many requests
-                ) (Task.succeed []) newObjects
+              candidates =
+                ClipboardData.toObjectCandidates prototype pos s
 
-            autoMatchingCmd =
-              Process.sleep 1000
-                |> Task.andThen (\_ -> task)
-                |> performAPI GotMatchingList
-          in
-            { newModel |
-              selectedObjects = List.map (Object.idOf) newObjects
-            } ! [ cmd, autoMatchingCmd ]
+              ((newModel, cmd), newObjects) =
+                updateOnFinishStamp_ candidates model floor
+
+              task =
+                List.foldl
+                  (\object prevTask ->
+                    prevTask
+                      |> Task.andThen (\list ->
+                        API.personCandidate model.apiConfig (Object.nameOf object)
+                          |> Task.map (\people ->
+                            (Object.idOf object, people) :: list
+                          )
+                      )
+                      -- TODO too many requests
+                  ) (Task.succeed []) newObjects
+
+              autoMatchingCmd =
+                Process.sleep 1000
+                  |> Task.andThen (\_ -> task)
+                  |> performAPI GotMatchingList
+            in
+              { newModel |
+                selectedObjects = List.map (Object.idOf) newObjects
+              } ! [ cmd, autoMatchingCmd ]
 
         _ ->
           model ! []
@@ -2274,35 +2292,33 @@ updateByKeyEventWithCtrl : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEventWithCtrl event model =
   case (model.floor, event) of
     (Just floor, ShortCut.C) ->
-      { model |
-        copiedObjects = Model.selectedObjects model
-      } ! []
+      model ! [ ClipboardData.copyObjects (Model.selectedObjects model) ]
 
-    (Just floor, ShortCut.V) ->
-      case model.selectorRect of
-        Just (base, _) ->
-          let
-            (copiedIdsWithNewIds, newSeed) =
-              IdGenerator.zipWithNewIds model.seed model.copiedObjects
-
-            (newFloor, objectsChange) =
-              EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds base) floor
-
-            saveCmd =
-              requestSaveObjectsCmd objectsChange
-          in
-            { model |
-              floor = Just newFloor
-            , seed = newSeed
-            , selectedObjects =
-              case List.map Tuple.second copiedIdsWithNewIds of
-                [] -> model.selectedObjects -- for pasting from spreadsheet
-                x -> x
-            , selectorRect = Nothing
-            } ! [ saveCmd ]
-
-        Nothing ->
-          model ! []
+    -- (Just floor, ShortCut.V) ->
+    --   case model.selectorRect of
+    --     Just (base, _) ->
+    --       let
+    --         (copiedIdsWithNewIds, newSeed) =
+    --           IdGenerator.zipWithNewIds model.seed model.copiedObjects
+    --
+    --         (newFloor, objectsChange) =
+    --           EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds base) floor
+    --
+    --         saveCmd =
+    --           requestSaveObjectsCmd objectsChange
+    --       in
+    --         { model |
+    --           floor = Just newFloor
+    --         , seed = newSeed
+    --         , selectedObjects =
+    --           case List.map Tuple.second copiedIdsWithNewIds of
+    --             [] -> model.selectedObjects -- for pasting from spreadsheet
+    --             x -> x
+    --         , selectorRect = Nothing
+    --         } ! [ saveCmd ]
+    --
+    --     Nothing ->
+    --       model ! []
 
     (Just floor, ShortCut.X) ->
       let
@@ -2312,11 +2328,10 @@ updateByKeyEventWithCtrl event model =
         saveCmd =
           requestSaveObjectsCmd objectsChange
       in
-        { model |
-          floor = Just newFloor
-        , copiedObjects = Model.selectedObjects model
-        , selectedObjects = []
-        } ! [ saveCmd ]
+        { model
+            | floor = Just newFloor
+            , selectedObjects = []
+        } ! [ saveCmd, ClipboardData.copyObjects (Model.selectedObjects model) ]
 
     _ ->
       model ! []

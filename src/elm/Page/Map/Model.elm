@@ -54,7 +54,6 @@ type alias Model =
   , mousePosition : Position
   , draggingContext : DraggingContext
   , selectedObjects : List ObjectId
-  , copiedObjects : List Object
   , objectNameInput : ObjectNameInput
   , gridSize : Int
   , selectorRect : Maybe (Position, Size)
@@ -127,7 +126,6 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query objectId 
     , mousePosition = (Position 0 0)
     , draggingContext = NoDragging
     , selectedObjects = []
-    , copiedObjects = []
     , objectNameInput = ObjectNameInput.init
     , gridSize = gridSize
     , selectorRect = Nothing

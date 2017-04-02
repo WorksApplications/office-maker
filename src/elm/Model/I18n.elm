@@ -76,14 +76,6 @@ copyFloorWithEmptyDesks lang =
 
 ----
 
-pasteFromSpreadsheet : Language -> String
-pasteFromSpreadsheet lang =
-  case lang of
-    JA -> "スプレッドシートから貼り付け"
-    EN -> "Paste from Spreadsheet"
-
-----
-
 cancel : Language -> String
 cancel lang =
   case lang of
