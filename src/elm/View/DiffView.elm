@@ -1,6 +1,5 @@
 module View.DiffView exposing (view)
 
-import Maybe
 import Dict exposing (Dict)
 import Date exposing (Date)
 import Html exposing (..)

@@ -1,7 +1,6 @@
 module Page.Map.Model exposing (..)
 
 import Date exposing (Date)
-import Maybe
 import Dict exposing (Dict)
 import Time exposing (Time)
 import ContextMenu exposing (ContextMenu)

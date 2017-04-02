@@ -1,6 +1,5 @@
 module Page.Map.ContextMenu exposing (view)
 
-import Maybe
 import Dict
 import Html exposing (..)
 import ContextMenu

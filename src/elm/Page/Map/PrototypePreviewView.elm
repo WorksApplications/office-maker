@@ -1,7 +1,5 @@
 module Page.Map.PrototypePreviewView exposing (view)
 
-import Maybe
-
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
@@ -20,7 +18,7 @@ import CoreType exposing (..)
 
 containerSize : Size
 containerSize =
-  (Size (320 - (20 * 2)) 238) -- TODO
+  Size (320 - (20 * 2)) 238 -- TODO
 
 
 view : List (Prototype, Bool) -> Html Msg

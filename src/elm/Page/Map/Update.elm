@@ -1,6 +1,5 @@
 port module Page.Map.Update exposing (..)
 
-import Maybe
 import Task exposing (Task, andThen, onError)
 import Window
 

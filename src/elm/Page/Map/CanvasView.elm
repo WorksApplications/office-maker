@@ -1,7 +1,6 @@
 module Page.Map.CanvasView exposing (view, temporaryStampView)
 
 import Dict exposing (..)
-import Maybe
 import Json.Decode as Decode
 
 import Mouse
