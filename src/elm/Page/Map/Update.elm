@@ -2294,32 +2294,6 @@ updateByKeyEventWithCtrl event model =
     (Just floor, ShortCut.C) ->
       model ! [ ClipboardData.copyObjects (Model.selectedObjects model) ]
 
-    -- (Just floor, ShortCut.V) ->
-    --   case model.selectorRect of
-    --     Just (base, _) ->
-    --       let
-    --         (copiedIdsWithNewIds, newSeed) =
-    --           IdGenerator.zipWithNewIds model.seed model.copiedObjects
-    --
-    --         (newFloor, objectsChange) =
-    --           EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds base) floor
-    --
-    --         saveCmd =
-    --           requestSaveObjectsCmd objectsChange
-    --       in
-    --         { model |
-    --           floor = Just newFloor
-    --         , seed = newSeed
-    --         , selectedObjects =
-    --           case List.map Tuple.second copiedIdsWithNewIds of
-    --             [] -> model.selectedObjects -- for pasting from spreadsheet
-    --             x -> x
-    --         , selectorRect = Nothing
-    --         } ! [ saveCmd ]
-    --
-    --     Nothing ->
-    --       model ! []
-
     (Just floor, ShortCut.X) ->
       let
         (newFloor, objectsChange) =
