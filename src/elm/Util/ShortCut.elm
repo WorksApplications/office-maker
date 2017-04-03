@@ -6,6 +6,7 @@ module Util.ShortCut exposing
   )
 
 import Char
+import CoreType exposing (..)
 
 type Event =
     Ctrl
@@ -21,10 +22,7 @@ type Event =
   | Y
   | Z
   | Enter
-  | LeftArrow
-  | UpArrow
-  | RightArrow
-  | DownArrow
+  | Arrow Direction
   | Other Int
   | None
 
@@ -63,10 +61,10 @@ update isDown keyCode model =
       else if keyCode == (Char.toCode 'X') then X
       else if keyCode == (Char.toCode 'Y') then Y
       else if keyCode == (Char.toCode 'Z') then Z
-      else if keyCode == 37 then LeftArrow
-      else if keyCode == 38 then UpArrow
-      else if keyCode == 39 then RightArrow
-      else if keyCode == 40 then DownArrow
+      else if keyCode == 37 then Arrow Left
+      else if keyCode == 38 then Arrow Up
+      else if keyCode == 39 then Arrow Right
+      else if keyCode == 40 then Arrow Down
       else Other keyCode
 
     newModel =

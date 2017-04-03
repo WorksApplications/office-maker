@@ -19,7 +19,6 @@ import Util.DictUtil as DictUtil
 import Util.File as File exposing (..)
 import Util.HttpUtil as HttpUtil
 
-import Model.Direction as Direction exposing (..)
 import Model.Mode as Mode exposing (Mode(..), EditingMode(..))
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
@@ -54,9 +53,6 @@ import Page.Map.LinkCopy as LinkCopy
 import Page.Map.ObjectNameInput as ObjectNameInput
 
 import CoreType exposing (..)
-
-
-type alias Id = String
 
 
 port removeToken : {} -> Cmd msg
@@ -2305,17 +2301,8 @@ updateByKeyEventWithCtrl event model =
 updateByKeyEventWithShift : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEventWithShift event model =
   case (model.floor, event) of
-    (Just floor, ShortCut.UpArrow) ->
-      Model.expandOrShrinkToward Up model ! []
-
-    (Just floor, ShortCut.DownArrow) ->
-      Model.expandOrShrinkToward Down model ! []
-
-    (Just floor, ShortCut.LeftArrow) ->
-      Model.expandOrShrinkToward Left model ! []
-
-    (Just floor, ShortCut.RightArrow) ->
-      Model.expandOrShrinkToward Right model ! []
+    (Just floor, ShortCut.Arrow direction) ->
+      Model.expandOrShrinkToward direction model ! []
 
     _ ->
       model ! []
@@ -2324,17 +2311,8 @@ updateByKeyEventWithShift event model =
 updateByKeyEventWithNoControlKeys : ShortCut.Event -> Model -> (Model, Cmd Msg)
 updateByKeyEventWithNoControlKeys event model =
   case (model.floor, event) of
-    (Just floor, ShortCut.UpArrow) ->
-      moveSelecedObjectsToward Up model floor
-
-    (Just floor, ShortCut.DownArrow) ->
-      moveSelecedObjectsToward Down model floor
-
-    (Just floor, ShortCut.LeftArrow) ->
-      moveSelecedObjectsToward Left model floor
-
-    (Just floor, ShortCut.RightArrow) ->
-      moveSelecedObjectsToward Right model floor
+    (Just floor, ShortCut.Arrow direction) ->
+      moveSelecedObjectsToward direction model floor
 
     (Just floor, ShortCut.Del) ->
       removeSelectedObjects model floor
@@ -2368,7 +2346,7 @@ moveSelecedObjectsToward : Direction -> Model -> EditingFloor -> (Model, Cmd Msg
 moveSelecedObjectsToward direction model editingFloor =
   let
     shift =
-      Direction.shiftTowards direction model.gridSize
+      shiftTowards direction model.gridSize
 
     (newFloor, objectsChange) =
       EditingFloor.updateObjects

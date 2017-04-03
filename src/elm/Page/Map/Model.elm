@@ -10,7 +10,6 @@ import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
 
-import Model.Direction exposing (..)
 import Model.User as User exposing (User)
 import Model.Person as Person exposing (Person)
 import Model.Object as Object exposing (Object)
@@ -40,9 +39,6 @@ import Page.Map.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 import Page.Map.URL as URL exposing (URL)
 import CoreType exposing (..)
-
-
-type alias Id = String
 
 
 type alias Model =

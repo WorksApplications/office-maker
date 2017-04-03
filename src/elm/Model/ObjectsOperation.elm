@@ -1,14 +1,8 @@
 module Model.ObjectsOperation exposing (..)
 
-
-import Model.Direction exposing (..)
 import Model.Object as Object exposing (Object)
 
 import CoreType exposing (..)
-
-
-type alias FloorId = String
-type alias ObjectId = String
 
 
 centerOf : Object -> PositionFloat
