@@ -1203,8 +1203,10 @@ printGuideItem width height =
   , ("left", "0")
   , ("width", px width)
   , ("height", px height)
-  , ("border", "dashed 1px #888")
-  , ("color", "#888")
+  , ("border", "dashed 5px rgb(200, 150, 220)")
+  , ("font-size", "x-large")
+  , ("font-weight", "bold")
+  , ("color", "rgb(200, 150, 220)")
   , ("text-align", "right")
   , ("padding-right", "3px")
   ]
