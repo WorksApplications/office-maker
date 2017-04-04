@@ -181,6 +181,13 @@ goToMaster lang =
     EN -> "Master maintenance"
 
 
+goToManual : Language -> String
+goToManual lang =
+  case lang of
+    JA -> "マニュアル (PDF)"
+    EN -> "Manual (PDF)"
+
+
 close : Language -> String
 close lang =
   case lang of
@@ -201,6 +208,12 @@ edit lang =
     JA -> "編集"
     EN -> "Edit"
 
+
+help : Language -> String
+help lang =
+  case lang of
+    JA -> "ヘルプ"
+    EN -> "Help"
 
 ----
 

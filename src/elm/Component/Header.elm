@@ -84,6 +84,7 @@ normalMenu context menuOpened =
         Just user ->
           editingToggle context.onToggleEditing context.lang user context.editing ::
           Lazy.lazy3 printButton context.onTogglePrintView context.lang user ::
+          helpView context.lang ::
           ( if user == Guest then
               [ Lazy.lazy2 signIn context.onSignInClicked context.lang ]
             else
@@ -115,6 +116,7 @@ userMenuView context =
     [ style S.userMenuView ]
     [ Lazy.lazy2 langSelectView context.onSelectLang context.lang
     , Lazy.lazy2 linkToMaster context.lang context.user
+    , Lazy.lazy2 linkToManual context.lang context.user
     , Lazy.lazy2 signOut context.onSignOutClicked context.lang
     ]
 
@@ -135,6 +137,23 @@ linkToMaster lang user =
       div
         [ style S.userMenuItem ]
         [ a [ href "./master" ] [ text ( I18n.goToMaster lang ) ] ]
+
+    _ ->
+      text ""
+
+
+linkToManual : Language -> Maybe User -> Html msg
+linkToManual lang user =
+  case user of
+    Just (Admin _) ->
+      div
+        [ style S.userMenuItem ]
+        [ a
+            [ href "./manual.pdf" -- TODO configuration
+            , target "_blank"
+            ]
+            [ text ( I18n.goToManual lang ) ]
+        ]
 
     _ ->
       text ""
@@ -173,8 +192,6 @@ signIn onSignInClicked lang =
 
 printButtonView : msg -> Language -> Bool -> Html msg
 printButtonView onTogglePrintView lang printMode =
-  -- iconView ToggleEditing (Icons.editingToggle False) "Print"
-  -- hover S.hoverHeaderIconHover
   div
     [ onClick onTogglePrintView
     , style (S.editingToggleContainer False)
@@ -187,10 +204,7 @@ printButtonView onTogglePrintView lang printMode =
 
 editingToggleView : msg -> Language -> Bool -> Html msg
 editingToggleView onToggleEditing lang editing =
-  -- iconView ToggleEditing (Icons.editingToggle editing) "Edit"
-  -- hover
-  --   S.hoverHeaderIconHover
-    div
+  div
     [ onClick onToggleEditing
     , style (S.editingToggleContainer editing)
     ]
@@ -198,15 +212,17 @@ editingToggleView onToggleEditing lang editing =
     , div [ style (S.editingToggleText) ] [ text (I18n.edit lang) ]
     ]
 
--- iconView : msg -> Html msg -> String -> Html msg
--- iconView onClickMessage icon text_ =
---   div
---     [ onClick onClickMessage
---     , style (S.editingToggleContainer)
---     ]
---     [ div [ style S.editingToggleIcon ] [ icon ]
---     , div [ style (S.editingToggleText editing) ] [ text text_ ]
---     ]
+
+helpView : Language -> Html msg
+helpView lang =
+  a
+    [ style (S.editingToggleContainer False)
+    , target "_blank"
+    , href "./doc" -- TODO configuration
+    ]
+    [ div [ style S.editingToggleIcon ] [ Icons.helpButton ]
+    , div [ style (S.editingToggleText) ] [ text (I18n.help lang) ]
+    ]
 
 
 greeting : User -> Bool -> Html msg
