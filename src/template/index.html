@@ -86,39 +86,7 @@
 				textArea.select();
 				var result = document.execCommand("copy");
 				document.body.removeChild(textArea);
-				console.log(result);
 			});
-
-			// var dragging = null;
-			// window.addEventListener('mousedown', function(e) {
-			// 	// if(e.target.id === 'canvas-view') {
-			// 		console.log('mousedown');
-			// 		dragging = [e.pageX, e.pageY];
-			// 		e.preventDefault();
-			// 	// }
-			// }, true);
-			// window.addEventListener('mouseup', function(e) {
-			// 	// if(e.target.id === 'canvas-view') {
-			// 		console.log('mouseup');
-			// 		dragging = null;
-			// 		e.preventDefault();
-			// 	// }
-			// }, true);
-			// window.addEventListener('mousemove', function(e) {
-			// 	// if(e.target.id === 'canvas-view') {
-			// 		var x = e.pageX;
-			// 		var y = e.pageY;
-			// 		console.log('mousemove');
-			// 		if(dragging) {
-			// 			var el = document.getElementById('canvas-view');
-			// 			console.log(el);
-			// 			el.style.left = (x - dragging[0]) + "px";
-			// 			el.style.top = (y - dragging[1]) + "px";
-			// 		}
-			// 		e.preventDefault();
-			// 	// }
-			// }, true);
-
 			setTimeout(function() {
 				document.getElementById('blink-style').innerHTML = '';
 			}, 1400);

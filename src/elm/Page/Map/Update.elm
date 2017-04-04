@@ -294,7 +294,7 @@ update msg model =
                 API.getObject model.apiConfig objectId
                   |> performAPI (\maybeObject ->
                     maybeObject
-                      |> Maybe.map (\object -> let _ = Debug.log "object" object in
+                      |> Maybe.map (\object ->
                         SelectSearchResult objectId (Object.floorIdOf object) (Object.relatedPerson object)
                       )
                       |> Maybe.withDefault NoOp
@@ -1218,7 +1218,7 @@ update msg model =
           searchResult = Just results
         }
           |> Model.cachePeople people
-          |> adjustOffset
+          |> adjustOffset True
           |> andThen (\newModel ->
             maybeSelectMsg
               |> Maybe.map (\msg ->
@@ -1240,7 +1240,8 @@ update msg model =
             |> Maybe.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
             |> Maybe.withDefault Cmd.none
       in
-        update goToFloor model
+        model
+          |> update goToFloor
           |> andThen (\model ->
             ( { model
                   | selectedResult = Just objectId
@@ -1248,14 +1249,7 @@ update msg model =
             , regesterPersonCmd
             )
           )
-          |> andThen adjustOffset
-        -- ( Model.adjustOffset
-        --     { model
-        --         | selectedResult = Just objectId
-        --     }
-        -- , regesterPersonCmd
-        -- )
-        --   |> andThen (update goToFloor)
+          |> andThen (adjustOffset True)
 
     CloseSearchResult ->
       searchBy "" model
@@ -1359,7 +1353,7 @@ update msg model =
         Just floor ->
           { model |
             selectedResult = Just objectId
-          } |> adjustOffset
+          } |> adjustOffset False
             |> andThen (\model ->
               let
                 cmd =
@@ -1678,10 +1672,10 @@ andThen update (model, cmd) =
     newModel ! [ cmd, newCmd ]
 
 
-adjustOffset : Model -> (Model, Cmd Msg)
-adjustOffset model =
+adjustOffset : Bool -> Model -> (Model, Cmd Msg)
+adjustOffset toCenter model =
   { model | transition = True }
-    |> Model.adjustOffset
+    |> Model.adjustOffset toCenter
     |> update (SetTransition True)
     |> andThen (\model ->
       ( model
@@ -2049,7 +2043,7 @@ updateOnFloorLoaded maybeFloor model = -- let _ = Debug.log "updateOnFloorLoaded
           , floor = Just (EditingFloor.init floor)
           , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
         }
-          |> adjustOffset
+          |> adjustOffset True
           |> andThen (\model ->
             model !
               [ case (User.isGuest model.user, floor.update) of

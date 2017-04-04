@@ -234,13 +234,13 @@ startEdit e model =
   }
 
 
-adjustOffset : Model -> Model
-adjustOffset model =
+adjustOffset : Bool -> Model -> Model
+adjustOffset toCenter model =
   model.selectedResult
     |> Maybe.andThen (\id -> model.floor
     |> Maybe.andThen (\efloor -> Floor.getObject id (EditingFloor.present efloor)
     |> Maybe.map (\obj ->
-      if True then
+      if toCenter then
         let
           objectSize =
             Object.sizeOf obj
@@ -261,8 +261,8 @@ adjustOffset model =
         let
           containerSize =
             Size
-              ( model.windowSize.width - sideMenuWidth )
-              ( model.windowSize.height - headerHeight )
+              ( model.windowSize.width )
+              ( model.windowSize.height - headerHeight - 30 )
         in
           ProfilePopupLogic.adjustOffset
             containerSize
