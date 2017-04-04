@@ -15,11 +15,8 @@ import Page.Map.Emoji as Emoji
 import CoreType exposing (..)
 
 
-type alias Id = String
-
-
 type alias EventOptions msg =
-  { onMouseDown : Maybe (Position -> msg)
+  { onMouseDown : Maybe (Attribute msg)
   , onMouseUp : Maybe (Position -> msg)
   , onClick : Maybe msg
   , onStartEditingName : Maybe msg
@@ -92,9 +89,8 @@ viewInternal selected eventOptions styles nameView personMatchIcon =
           Nothing -> []
       ) ++
       ( case eventOptions.onMouseDown of
-          Just msg ->
-            [ onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position |> Attributes.map msg
-            ]
+          Just attr ->
+            [ attr ]
 
           Nothing -> []
       ) ++

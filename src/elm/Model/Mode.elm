@@ -67,8 +67,8 @@ toStampMode (Mode mode) =
 
 
 isEditMode : Mode -> Bool
-isEditMode (Mode mode) =
-  mode.editing
+isEditMode (Mode mode as mode_) =
+  mode.editing && not (isPrintMode mode_)
 
 
 currentEditMode : Mode -> Maybe EditingMode

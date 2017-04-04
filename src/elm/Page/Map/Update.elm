@@ -1366,9 +1366,8 @@ update msg model =
                     |> Maybe.map (regesterPerson model.apiConfig)
                     |> Maybe.withDefault Cmd.none
               in
-                ( model, cmd )
+                (model, cmd )
             )
-
 
     CreateNewFloor ->
       let
@@ -1678,13 +1677,19 @@ andThen update (model, cmd) =
 
 adjustOffset : Bool -> Model -> (Model, Cmd Msg)
 adjustOffset toCenter model =
-  { model | transition = True }
+  model
     |> Model.adjustOffset toCenter
-    |> update (SetTransition True)
-    |> andThen (\model ->
-      ( model
-      , Process.sleep 800 |> Task.perform (\_ -> SetTransition False)
-      )
+    |> (\model ->
+      if toCenter then
+        model
+          |> update (SetTransition True)
+          |> andThen (\model ->
+            ( model
+            , Process.sleep 800 |> Task.perform (\_ -> SetTransition False)
+            )
+          )
+      else
+        (model, Cmd.none)
     )
 
 

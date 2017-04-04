@@ -72,8 +72,15 @@ objectView { mode, scale, selected, isGhost, object, position, size, contextMenu
           noEvents = ObjectView.noEvents
         in
           { noEvents |
-            onMouseDown = Just (always <| ShowDetailForObject id)
+            onMouseDown =
+              Just <|
+                onWithOptions
+                  "mousedown"
+                  { stopPropagation = True, preventDefault = True }
+                  ( Decode.succeed <| ShowDetailForObject id )
           }
+      else if Mode.isPrintMode mode then
+        ObjectView.noEvents
       else
         { onContextMenu =
             if contextMenuDisabled then
@@ -83,7 +90,12 @@ objectView { mode, scale, selected, isGhost, object, position, size, contextMenu
                 ( ContextMenu.open ContextMenuMsg (ObjectContextMenu id)
                     |> Attributes.map (BeforeContextMenuOnObject id)
                 )
-        , onMouseDown = Just (MouseDownOnObject id)
+        , onMouseDown =
+            Just <|
+              onWithOptions
+                "mousedown"
+                { stopPropagation = True, preventDefault = True }
+                ( Mouse.position |> Decode.map (MouseDownOnObject id) )
         , onMouseUp = Just (MouseUpOnObject id)
         , onClick = Just NoOp
         , onStartEditingName = Nothing -- Just (StartEditObject id)
