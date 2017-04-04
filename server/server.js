@@ -310,7 +310,7 @@ app.get('/api/1/search/:query', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
   var query = req.params.query;
   return getSelf(conn, token).then((user) => {
-    return profileService.search(config.profileServiceRoot, token, query).then((people) => {
+    return profileService.search(config.profileServiceRoot, token, query).then(people => {
       var tenantId = user ? user.tenantId : '';
       return db.search(conn, tenantId, query, options.all, people).then(result => {
         return Promise.resolve({

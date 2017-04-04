@@ -340,24 +340,36 @@ function resetImage(conn, dir) {
   return filestorage.empty(dir);
 }
 
+function matchToQuery(object, lowerQuery) {
+  var splitted = object.name.toLowerCase().split(' ');
+  for(var i = 0; i < splitted.length; i++) {
+    if(splitted[i].startsWith(lowerQuery)) {
+      console.log(object.name, lowerQuery)
+      return true;
+    }
+  }
+  return false;
+}
+
 function search(conn, tenantId, query, all, people) {
-  return getFloorsWithObjects(conn, tenantId, all).then((floors) => {
+  var lowerQuery = query.toLowerCase();
+  return getFloorsWithObjects(conn, tenantId, all).then(floors => {
     var results = {};
     var arr = [];
-    people.forEach((person) => {
+    people.forEach(person => {
       results[person.id] = [];
     });
-    floors.forEach((floor) => {
-      floor.objects.forEach((e) => {
-        if(e.personId) {
-          if(results[e.personId]) {
-            results[e.personId].push(e);
+    floors.forEach(floor => {
+      floor.objects.forEach(object => {
+        if(object.personId) {
+          if(results[object.personId]) {
+            results[object.personId].push(object);
           }
-        } else if(e.name.toLowerCase().indexOf(query.toLowerCase()) >= 0) {
+        } else if(matchToQuery(object, lowerQuery)) {
           // { Nothing, Just } -- objects that has no person
           arr.push({
             personId : null,
-            objectAndFloorId : [e, e.floorId]
+            objectAndFloorId : [object, object.floorId]
           });
         }
       });
@@ -365,11 +377,11 @@ function search(conn, tenantId, query, all, people) {
 
     Object.keys(results).forEach((personId) => {
       var objects = results[personId];
-      objects.forEach(e => {
+      objects.forEach(object => {
         // { Just, Just } -- people who exist in map
         arr.push({
           personId : personId,
-          objectAndFloorId : [e, e.floorId]
+          objectAndFloorId : [object, object.floorId]
         });
       })
       // { Just, Nothing } -- missing people

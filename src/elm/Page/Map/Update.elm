@@ -1343,7 +1343,11 @@ update msg model =
             } ! [ cmd ]
 
     ClosePopup ->
-      { model | selectedResult = Nothing } ! []
+      let
+        newModel =
+          { model | selectedResult = Nothing }
+      in
+        (newModel, Navigation.modifyUrl (Model.encodeToUrl newModel))
 
     ShowDetailForObject objectId ->
       case model.floor of
