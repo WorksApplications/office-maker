@@ -4,6 +4,7 @@ import Dict
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Html.Lazy as Lazy exposing (..)
 
 import View.Styles as S
@@ -264,20 +265,20 @@ view model =
       , mainView model
       , diffView
       , Page.Map.ContextMenu.view model
-      , printGuide printMode
+      , lazy2 printGuide model.lang printMode
       ]
 
 
-printGuide : Bool -> Html msg
-printGuide isPrintMode =
+printGuide : Language -> Bool -> Html Msg
+printGuide lang isPrintMode =
   if isPrintMode then
     div
       [ style S.printGuide
       , class "no-print"
       ]
-      [ div [ style ( S.printGuideItem 1122 793) ] [ text "A4" ]
+      [ div [ style ( S.printGuideItem 2245 1587) ] [ text "A2" ]
       , div [ style ( S.printGuideItem 1587 1122) ] [ text "A3" ]
-      , div [ style ( S.printGuideItem 2245 1587) ] [ text "A2" ]
+      , div [ style ( S.printGuideItem 1122 793) ] [ text "A4", div [ style S.printGuidePrintButton, onClick Print ] [ text (I18n.print lang) ] ]
       ]
   else
     text ""

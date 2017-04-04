@@ -87,6 +87,9 @@
 				var result = document.execCommand("copy");
 				document.body.removeChild(textArea);
 			});
+			main.ports.print.subscribe(function(s) {
+				window.print();
+			});
 			setTimeout(function() {
 				document.getElementById('blink-style').innerHTML = '';
 			}, 1400);

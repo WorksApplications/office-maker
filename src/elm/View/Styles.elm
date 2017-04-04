@@ -1186,6 +1186,12 @@ nameInputContainer =
   ]
 
 
+
+printGuideColor : String
+printGuideColor =
+  "rgb(200, 150, 220)"
+
+
 printGuide : List (String, String)
 printGuide =
   [ ("position", "fixed")
@@ -1203,10 +1209,33 @@ printGuideItem width height =
   , ("left", "0")
   , ("width", px width)
   , ("height", px height)
-  , ("border", "dashed 5px rgb(200, 150, 220)")
+  , ("border", "dashed 5px " ++ printGuideColor)
   , ("font-size", "x-large")
   , ("font-weight", "bold")
-  , ("color", "rgb(200, 150, 220)")
+  , ("color", printGuideColor)
   , ("text-align", "right")
   , ("padding-right", "3px")
+  ]
+
+
+printGuidePrintButton : List (String, String)
+printGuidePrintButton =
+  [ ("border", "2px solid " ++ printGuideColor)
+  , ("color", "white")
+  , ("margin", "auto")
+  , ("position", "absolute")
+  , ("top", "0")
+  , ("bottom", "0")
+  , ("left", "0")
+  , ("right", "0")
+  , ("width", "300px")
+  , ("height", "150px")
+  , ("line-height", "150px")
+  , ("text-align", "center")
+  , ("font-size", "3em")
+  , ("font-weight", "normal")
+  , ("cursor", "pointer")
+  , ("background-color", printGuideColor)
+  , ("opacity", "0.4")
+  , ("pointer-events", "all")
   ]

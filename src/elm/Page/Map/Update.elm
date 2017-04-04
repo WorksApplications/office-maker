@@ -65,6 +65,9 @@ port setInput : (String, String) -> Cmd msg
 
 port focusCanvas : {} -> Cmd msg
 
+port print : {} -> Cmd msg
+
+
 type alias Flags =
   { apiRoot : String
   , accountServiceRoot : String
@@ -1661,6 +1664,9 @@ update msg model =
 
     SetTransition transition ->
       { model | transition = transition } ! []
+
+    Print ->
+      ( model, print {} )
 
     Error e ->
       { model | error = e } ! []

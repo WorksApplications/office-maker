@@ -137,4 +137,5 @@ type Msg
   | LinkCopyMsg LinkCopy.Msg
   | ChangeToObjectUrl ObjectId
   | SetTransition Bool
+  | Print
   | Error GlobalError
