@@ -344,7 +344,6 @@ function matchToQuery(object, lowerQuery) {
   var splitted = object.name.toLowerCase().split(' ');
   for(var i = 0; i < splitted.length; i++) {
     if(splitted[i].startsWith(lowerQuery)) {
-      console.log(object.name, lowerQuery)
       return true;
     }
   }
