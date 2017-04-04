@@ -78,6 +78,7 @@ type alias Model =
   , header : Header.Model
   , saveFloorDebounce : Debounce SaveRequest
   , floorDeleter : FloorDeleter
+  , transition : Bool
   }
 
 
@@ -150,6 +151,7 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query objectId 
     , header = Header.init
     , saveFloorDebounce = Debounce.init
     , floorDeleter = FloorDeleter.init
+    , transition = False
     }
 
 
@@ -234,31 +236,43 @@ startEdit e model =
 
 adjustOffset : Model -> Model
 adjustOffset model =
-  let
-    shiftedOffset =
-      model.selectedResult
-        |> Maybe.andThen (\id -> model.floor
-        |> Maybe.andThen (\efloor -> Floor.getObject id (EditingFloor.present efloor)
-        |> Maybe.andThen (\obj -> Object.relatedPerson obj
-        |> Maybe.map (\personId ->
-            let
-              containerSize =
-                Size
-                  ( model.windowSize.width - sideMenuWidth )
-                  ( model.windowSize.height - headerHeight )
-            in
-              ProfilePopupLogic.adjustOffset
-                containerSize
-                ProfilePopupLogic.personPopupSize
-                model.scale
-                model.offset
-                obj
-          ))))
-        |> Maybe.withDefault model.offset
-  in
-    { model
-      | offset = shiftedOffset
-    }
+  model.selectedResult
+    |> Maybe.andThen (\id -> model.floor
+    |> Maybe.andThen (\efloor -> Floor.getObject id (EditingFloor.present efloor)
+    |> Maybe.map (\obj ->
+      if True then
+        let
+          objectSize =
+            Object.sizeOf obj
+
+          objectPosition =
+            Object.positionOf obj
+
+          objectCenter =
+            Position (objectPosition.x + objectSize.width // 2) (objectPosition.y + objectSize.height // 2)
+              |> Scale.imageToScreenForPosition model.scale
+
+          windowCenter =
+            Position (model.windowSize.width // 2) (model.windowSize.height // 2)
+        in
+          Position (windowCenter.x - objectCenter.x) (windowCenter.y - objectCenter.y)
+            |> Scale.screenToImageForPosition model.scale
+      else
+        let
+          containerSize =
+            Size
+              ( model.windowSize.width - sideMenuWidth )
+              ( model.windowSize.height - headerHeight )
+        in
+          ProfilePopupLogic.adjustOffset
+            containerSize
+            ProfilePopupLogic.personPopupSize
+            model.scale
+            model.offset
+            obj
+      )))
+    |> Maybe.withDefault model.offset
+    |> (\shiftedOffset -> { model | offset = shiftedOffset })
 
 
 nextObjectToInput : Object -> List Object -> Maybe Object

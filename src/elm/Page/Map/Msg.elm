@@ -136,4 +136,5 @@ type Msg
   | InsertEmoji String
   | LinkCopyMsg LinkCopy.Msg
   | ChangeToObjectUrl ObjectId
+  | SetTransition Bool
   | Error GlobalError

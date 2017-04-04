@@ -294,7 +294,7 @@ update msg model =
                 API.getObject model.apiConfig objectId
                   |> performAPI (\maybeObject ->
                     maybeObject
-                      |> Maybe.map (\object ->
+                      |> Maybe.map (\object -> let _ = Debug.log "object" object in
                         SelectSearchResult objectId (Object.floorIdOf object) (Object.relatedPerson object)
                       )
                       |> Maybe.withDefault NoOp
@@ -326,7 +326,7 @@ update msg model =
         }
         ! [ focusObjectCmd
           , searchCmd
-          , performAPI (FloorsInfoLoaded (selectedFloor /= Nothing)) (API.getFloorsInfo model.apiConfig)
+          , performAPI (FloorsInfoLoaded (selectedFloor /= Nothing || model.selectedResult /= Nothing)) (API.getFloorsInfo model.apiConfig)
           , loadFloorCmd
           , loadSettingsCmd
           ]
@@ -1213,19 +1213,19 @@ update msg model =
 
             _ ->
               Nothing
-
-        newModel =
-          { model |
-            searchResult = Just results
-          }
-            |> Model.adjustOffset
-            |> Model.cachePeople people
       in
-        maybeSelectMsg
-          |> Maybe.map (\msg ->
-            update msg newModel
+        { model |
+          searchResult = Just results
+        }
+          |> Model.cachePeople people
+          |> adjustOffset
+          |> andThen (\newModel ->
+            maybeSelectMsg
+              |> Maybe.map (\msg ->
+                update msg newModel
+              )
+              |> Maybe.withDefault (newModel, Cmd.none)
           )
-          |> Maybe.withDefault (newModel, Cmd.none)
 
     SelectSearchResult objectId floorId maybePersonId ->
       let
@@ -1240,13 +1240,22 @@ update msg model =
             |> Maybe.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
             |> Maybe.withDefault Cmd.none
       in
-        ( Model.adjustOffset
-            { model
-                | selectedResult = Just objectId
-            }
-        , regesterPersonCmd
-        )
-          |> andThen (update goToFloor)
+        update goToFloor model
+          |> andThen (\model ->
+            ( { model
+                  | selectedResult = Just objectId
+              }
+            , regesterPersonCmd
+            )
+          )
+          |> andThen adjustOffset
+        -- ( Model.adjustOffset
+        --     { model
+        --         | selectedResult = Just objectId
+        --     }
+        -- , regesterPersonCmd
+        -- )
+        --   |> andThen (update goToFloor)
 
     CloseSearchResult ->
       searchBy "" model
@@ -1348,17 +1357,20 @@ update msg model =
           model ! []
 
         Just floor ->
-          let
-            cmd =
-              Floor.getObject objectId (EditingFloor.present floor)
-                |> Maybe.andThen Object.relatedPerson
-                |> Maybe.map (regesterPerson model.apiConfig)
-                |> Maybe.withDefault Cmd.none
-          in
-            ({ model |
-              selectedResult = Just objectId
-            } |> Model.adjustOffset
-            ) ! [ cmd ]
+          { model |
+            selectedResult = Just objectId
+          } |> adjustOffset
+            |> andThen (\model ->
+              let
+                cmd =
+                  Floor.getObject objectId (EditingFloor.present floor)
+                    |> Maybe.andThen Object.relatedPerson
+                    |> Maybe.map (regesterPerson model.apiConfig)
+                    |> Maybe.withDefault Cmd.none
+              in
+                ( model, cmd )
+            )
+
 
     CreateNewFloor ->
       let
@@ -1650,6 +1662,9 @@ update msg model =
     ChangeToObjectUrl objectId ->
       model ! [ Navigation.modifyUrl ("?object=" ++ objectId) ]
 
+    SetTransition transition ->
+      { model | transition = transition } ! []
+
     Error e ->
       { model | error = e } ! []
 
@@ -1661,6 +1676,18 @@ andThen update (model, cmd) =
       update model
   in
     newModel ! [ cmd, newCmd ]
+
+
+adjustOffset : Model -> (Model, Cmd Msg)
+adjustOffset model =
+  { model | transition = True }
+    |> Model.adjustOffset
+    |> update (SetTransition True)
+    |> andThen (\model ->
+      ( model
+      , Process.sleep 800 |> Task.perform (\_ -> SetTransition False)
+      )
+    )
 
 
 searchBy : String -> Model -> (Model, Cmd Msg)
@@ -2010,30 +2037,30 @@ updateOnPuttingLabel model =
 
 
 updateOnFloorLoaded : Maybe Floor -> Model -> (Model, Cmd Msg)
-updateOnFloorLoaded maybeFloor model =
+updateOnFloorLoaded maybeFloor model = -- let _ = Debug.log "updateOnFloorLoaded" maybeFloor in
   case maybeFloor of
     Just floor ->
       let
         (realWidth, realHeight) =
           Floor.realSize floor
-
-        newModel =
-          Model.adjustOffset
-            { model |
-              floorsInfo = FloorInfo.mergeFloor (Floor.baseOf floor) model.floorsInfo
-            , floor = Just (EditingFloor.init floor)
-            , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
-            }
-
-        cmd =
-          case (User.isGuest model.user, floor.update) of
-            (False, Just { by }) ->
-              getAndCachePersonIfNotCached by model
-
-            _ ->
-              Cmd.none
       in
-        newModel ! [ cmd, Navigation.modifyUrl (Model.encodeToUrl newModel) ]
+        { model
+          | floorsInfo = FloorInfo.mergeFloor (Floor.baseOf floor) model.floorsInfo
+          , floor = Just (EditingFloor.init floor)
+          , floorProperty = FloorProperty.init floor.name realWidth realHeight floor.ord
+        }
+          |> adjustOffset
+          |> andThen (\model ->
+            model !
+              [ case (User.isGuest model.user, floor.update) of
+                (False, Just { by }) ->
+                  getAndCachePersonIfNotCached by model
+
+                _ ->
+                  Cmd.none
+              , Navigation.modifyUrl (Model.encodeToUrl model)
+              ]
+            )
 
     Nothing ->
       let

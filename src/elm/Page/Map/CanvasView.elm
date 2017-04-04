@@ -176,11 +176,11 @@ profilePopupView model floor =
           Just personId ->
             Dict.get personId model.personInfo
               |> Maybe.map (\person ->
-                ProfilePopup.view ClosePopup model.scale model.offset object (Just person)
+                ProfilePopup.view ClosePopup model.transition model.scale model.offset object (Just person)
               )
 
           Nothing ->
-            Just (ProfilePopup.view ClosePopup model.scale model.offset object Nothing)
+            Just (ProfilePopup.view ClosePopup model.transition model.scale model.offset object Nothing)
         ))
       |> Maybe.withDefault (text "")
 
@@ -261,7 +261,7 @@ canvasViewStyles model floor =
     -- if (Mode.isPrintMode model.mode) then
     --   S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
     -- else
-      S.canvasView (Mode.isViewMode model.mode) position size
+      S.canvasView model.transition (Mode.isViewMode model.mode) position size
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)

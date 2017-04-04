@@ -119,6 +119,22 @@
 			// 	// }
 			// }, true);
 
+			setTimeout(function() {
+				document.getElementById('blink-style').innerHTML = '';
+			}, 1400);
+
 		</script>
+		<style id="blink-style">
+			.popup-blink {
+			  animation: blink 0.2s 2;
+			  animation-delay: 0.35s;
+			}
+
+			@keyframes blink {
+			  50%{
+			    background-color: #fac;
+			  }
+			}
+		</style>
 	</body>
 </html>

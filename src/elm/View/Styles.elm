@@ -236,11 +236,12 @@ subView =
     ]
 
 
-canvasView : Bool -> Position -> Size -> S
-canvasView isViewing pos size =
+canvasView : Bool -> Bool -> Position -> Size -> S
+canvasView transition isViewing pos size =
   absoluteRect pos size ++
     [ ("font-family", "default")
     , ("background-color", "#fff")
+    , ("transition", if transition then "top 0.3s ease, left 0.3s ease" else "")
     ] ++ noUserSelect ++ (if isViewing then [("overflow", "hidden")] else [])
 
 
@@ -807,25 +808,26 @@ diffPopupInnerContainer =
   ]
 
 
-personDetailPopup : Size -> Position -> S
-personDetailPopup size pos =
+personDetailPopup : Bool -> Size -> Position -> S
+personDetailPopup transition size pos =
   shadow ++
     [ ("width", px size.width)
     , ("height", px size.height)
     , ("left", px (ProfilePopupLogic.calcPopupLeftFromObjectCenter size.width pos.x))
     , ("top", px (ProfilePopupLogic.calcPopupTopFromObjectTop size.height pos.y))
     , ("z-index", zIndex.personDetailPopup)
+    , ("transition", if transition then "top 0.3s ease, left 0.3s ease" else "")
     ]
 
 
-personDetailPopupDefault : Size -> Position -> S
-personDetailPopupDefault size pos =
-  defaultPopup ++ personDetailPopup size pos
+personDetailPopupDefault : Bool -> Size -> Position -> S
+personDetailPopupDefault transition size pos =
+  defaultPopup ++ personDetailPopup transition size pos
 
 
-personDetailPopupSmall : Size -> Position -> S
-personDetailPopupSmall size pos =
-  smallPopup ++ personDetailPopup size pos
+personDetailPopupSmall : Bool -> Size -> Position -> S
+personDetailPopupSmall transition size pos =
+  smallPopup ++ personDetailPopup transition size pos
 
 
 personDetailPopupNoPerson : S
@@ -860,22 +862,23 @@ popupPointerLeft =
       ]
 
 
-personDetailPopupPointer : Int -> S
-personDetailPopupPointer width =
+personDetailPopupPointer : Bool -> Int -> S
+personDetailPopupPointer transition width =
   popupPointerButtom ++
     [ ("bottom", "-10px")
     , ("left", px (width // 2 - 20 // 2))
+    , ("transition", if transition then "bottom 0.3s ease, left 0.3s ease" else "")
     ]
 
 
-personDetailPopupPointerDefault : Int -> S
-personDetailPopupPointerDefault width =
-  personDetailPopupPointer width
+personDetailPopupPointerDefault : Bool -> Int -> S
+personDetailPopupPointerDefault transition width =
+  personDetailPopupPointer transition width
 
 
-personDetailPopupPointerSmall : Int -> S
-personDetailPopupPointerSmall width =
-  personDetailPopupPointer width
+personDetailPopupPointerSmall : Bool -> Int -> S
+personDetailPopupPointerSmall transition width =
+  personDetailPopupPointer transition width
 
 
 personDetailPopupClose : S

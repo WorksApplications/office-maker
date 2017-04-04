@@ -21,8 +21,8 @@ personPopupSize =
   ProfilePopupLogic.personPopupSize
 
 
-view : Msg -> Scale -> Position -> Object -> Maybe Person -> Html Msg
-view closeMsg scale offsetScreenXY object person =
+view : Msg -> Bool -> Scale -> Position -> Object -> Maybe Person -> Html Msg
+view closeMsg transition scale offsetScreenXY object person =
   let
     centerTopScreenXY =
       ProfilePopupLogic.centerTopScreenXYOfObject scale offsetScreenXY object
@@ -30,43 +30,56 @@ view closeMsg scale offsetScreenXY object person =
     case person of
       Just person ->
         div
-          [ style (Styles.personDetailPopupDefault personPopupSize centerTopScreenXY)
+          [ style (Styles.personDetailPopupDefault transition personPopupSize centerTopScreenXY)
           ]
-          ( lazy pointerDefault personPopupSize.width ::
+          ( lazy2 pointerDefault transition personPopupSize.width ::
             personView (Just closeMsg) (Object.idOf object) person
           )
 
       Nothing ->
         nonPersonPopup
+          transition
           centerTopScreenXY
           (Object.idOf object)
           (Object.nameOf object)
           (Object.urlOf object)
 
 
-nonPersonPopup : Position -> ObjectId -> String -> String -> Html Msg
-nonPersonPopup centerTopScreenXY objectId name url =
+nonPersonPopup : Bool -> Position -> ObjectId -> String -> String -> Html Msg
+nonPersonPopup transition centerTopScreenXY objectId name url =
   if name == "" then
     text ""
   else
     let
       (size, styles) =
         if String.length name > 10 then
-          (middlePopupSize, Styles.personDetailPopupDefault middlePopupSize centerTopScreenXY)
+          (middlePopupSize, Styles.personDetailPopupDefault transition middlePopupSize centerTopScreenXY)
         else
-          (smallPopupSize, Styles.personDetailPopupSmall smallPopupSize centerTopScreenXY)
+          let
+            size =
+              smallPopupSize (String.length name)
+          in
+            (size, Styles.personDetailPopupSmall transition size centerTopScreenXY)
     in
       div
-        [ style styles ]
-        ( pointerSmall size :: nonPersonView objectId name url)
+        [ style styles
+        , classList [ ("popup-blink", transition) ]
+        ]
+        ( pointerSmall transition size :: nonPersonView objectId name url)
 
 
 nonPersonView : ObjectId -> String -> String -> List (Html Msg)
 nonPersonView objectId name url =
   [ div
-      [ style (Styles.personDetailPopupNoPerson) ]
+      [ style Styles.personDetailPopupNoPerson
+      ]
       [ if url /= "" then
-          a [ target "_blank", href url, style [ ("text-decoration", "underline") ] ] [ text name ]
+          a
+            [ target "_blank"
+            , href url
+            , style [ ("text-decoration", "underline") ]
+            ]
+            [ text name ]
         else
           text name
       , objectLink [ ("margin-left", "5px") ] objectId
@@ -79,9 +92,9 @@ middlePopupSize =
   Size 300 100
 
 
-smallPopupSize : Size
-smallPopupSize =
-  Size 90 40
+smallPopupSize : Int -> Size
+smallPopupSize charLength =
+  Size (charLength * 20 + 45) 40
 
 
 personView : Maybe Msg -> String -> Person -> List (Html Msg)
@@ -135,14 +148,18 @@ photo url =
   img [ style Styles.personDetailPopupPersonImage, src url ] []
 
 
-pointerDefault : Int -> Html msg
-pointerDefault width =
-  div [ style (Styles.personDetailPopupPointerDefault width) ] []
+pointerDefault : Bool -> Int -> Html msg
+pointerDefault transition width =
+  div [ style (Styles.personDetailPopupPointerDefault transition width) ] []
 
 
-pointerSmall : Size -> Html msg
-pointerSmall size =
-  div [ style (Styles.personDetailPopupPointerSmall size.width) ] []
+pointerSmall : Bool -> Size -> Html msg
+pointerSmall transition size =
+  div
+    [ style (Styles.personDetailPopupPointerSmall transition size.width)
+    , classList [ ("popup-blink", transition) ]
+    ]
+    []
 
 
 tel : Person -> Html msg
