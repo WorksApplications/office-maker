@@ -13,7 +13,7 @@ type alias Scale =
 
 
 default : Scale
-default = init 0
+default = init 2
 
 
 init : Int -> Scale

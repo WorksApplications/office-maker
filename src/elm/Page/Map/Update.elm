@@ -197,7 +197,7 @@ performAPI tagger task =
 
 saveFloorDebounceConfig : Debounce.Config Msg
 saveFloorDebounceConfig =
-  { strategy = Debounce.manual
+  { strategy = Debounce.later (1 * second)
   , transform = SaveFloorDebounceMsg
   }
 
@@ -427,7 +427,8 @@ update msg model =
     ObjectsSaved change ->
       { model
         | floor = Maybe.map (EditingFloor.syncObjects change) model.floor
-      } ! [ Process.sleep 1000 |> Task.perform (always UnlockSaveFloor) ]
+      } ! []
+      -- [ Process.sleep 1000 |> Task.perform (always UnlockSaveFloor) ]
 
     -- TODO: add "unlockAfter" to elm-debounce
     UnlockSaveFloor ->
