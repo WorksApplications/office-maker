@@ -164,16 +164,47 @@ pasteHandler =
   div
     [ id "paste-handler"
     , attribute "contenteditable" ""
-    , style
-        [ ("position", "absolute")
-        , ("top", "0")
-        , ("left", "0")
-        , ("width", "100%")
-        , ("height", "100%")
-        ]
-    , on "keydown" (HtmlUtil.decodeUndoRedo Undo Redo)
+    , maxlength 0
+    , style pasteHandlerStyle
+    , on "keydown" decodeShortCut
     , onWithOptions "paste" { preventDefault = True, stopPropagation = True } (ClipboardData.decode PasteFromClipboard)
     ] []
+
+
+decodeShortCut : Decoder Msg
+decodeShortCut =
+  decodeShortCutHelp (\ctrl shift keyCode ->
+    if ctrl && keyCode == 89 then
+      Just Redo
+    else if ctrl && keyCode == 90 then
+      Just Undo
+    else
+      Nothing
+  )
+
+
+decodeShortCutHelp : (Bool -> Bool -> Int -> Maybe msg) -> Decoder msg
+decodeShortCutHelp toMsg =
+  Decode.map3 toMsg
+    (Decode.field "ctrlKey" Decode.bool)
+    (Decode.field "shiftKey" Decode.bool)
+    (Decode.field "keyCode" Decode.int)
+      |> Decode.andThen (\maybeMsg ->
+        maybeMsg
+          |> Maybe.map Decode.succeed
+          |> Maybe.withDefault (Decode.fail "")
+      )
+
+
+pasteHandlerStyle : List (String, String)
+pasteHandlerStyle =
+  [ ("position", "absolute")
+  , ("top", "0")
+  , ("left", "0")
+  , ("width", "100%")
+  , ("height", "100%")
+  , ("color", "transparent")
+  ]
 
 
 profilePopupView : Model -> Floor -> Html Msg
