@@ -1,9 +1,10 @@
 module Model.SaveRequest exposing (..)
 
 import Model.Floor exposing (Floor)
+import Model.EditingFloor as EditingFloor exposing (EditingFloor)
 import Model.ObjectsChange as ObjectsChange exposing (ObjectsChange)
+import CoreType exposing (..)
 
-type alias FloorId = String
 
 type SaveRequest
   = SaveFloor Floor
@@ -26,13 +27,18 @@ emptyReducedSaveRequest =
   }
 
 
-reduceRequest : List SaveRequest -> ReducedSaveRequest
-reduceRequest list =
-  List.foldr reduceRequestHelp emptyReducedSaveRequest list
+reduceRequest : Maybe EditingFloor -> List SaveRequest -> ReducedSaveRequest
+reduceRequest maybeEditingFloor list =
+  case maybeEditingFloor of
+    Just efloor ->
+      List.foldr (reduceRequestHelp efloor) emptyReducedSaveRequest list
+
+    Nothing ->
+      emptyReducedSaveRequest
 
 
-reduceRequestHelp : SaveRequest -> ReducedSaveRequest -> ReducedSaveRequest
-reduceRequestHelp req reducedSaveRequest =
+reduceRequestHelp : EditingFloor -> SaveRequest -> ReducedSaveRequest -> ReducedSaveRequest
+reduceRequestHelp efloor req reducedSaveRequest =
   case req of
     SaveFloor floor ->
       { reducedSaveRequest |
@@ -46,5 +52,9 @@ reduceRequestHelp req reducedSaveRequest =
 
     SaveObjects objectsChange ->
       { reducedSaveRequest |
-        objects = ObjectsChange.merge objectsChange reducedSaveRequest.objects
+        objects =
+          ObjectsChange.merge
+            (EditingFloor.present efloor).objects
+            objectsChange
+            reducedSaveRequest.objects
       }

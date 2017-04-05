@@ -60,6 +60,7 @@ type Msg
   | RequestSave SaveRequest
   | SaveFloorDebounceMsg Debounce.Msg
   | ObjectsSaved ObjectsChange
+  | UnlockSaveFloor
   | FloorSaved FloorBase
   | FloorPublished Floor
   | ClickOnCanvas

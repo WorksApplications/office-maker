@@ -48,25 +48,48 @@ isEmpty change =
   Dict.isEmpty change
 
 
-merge : ObjectsChange -> ObjectsChange -> ObjectsChange
-merge new old =
+merge : Dict ObjectId Object -> ObjectsChange -> ObjectsChange -> ObjectsChange
+merge currentObjects new old =
   Dict.merge
-    (\id new dict -> Dict.insert id new dict)
+    (\id new dict -> insertToMergedDict currentObjects id new dict)
     (\id new old dict ->
       case (new, old) of
         (Deleted _, Added _) ->
           dict
 
         (Modified object, Added _) ->
-          Dict.insert id (Added object) dict
+          insertToMergedDict currentObjects id (Added object) dict
 
         _ ->
-          Dict.insert id new dict
+          insertToMergedDict currentObjects id new dict
     )
-    (\id old dict -> Dict.insert id old dict)
+    (\id old dict -> insertToMergedDict currentObjects id old dict)
     new
     old
     Dict.empty
+
+
+insertToMergedDict : Dict ObjectId Object -> ObjectId -> (ObjectChange Object) -> ObjectsChange -> ObjectsChange
+insertToMergedDict currentObjects id value dict =
+  currentObjects
+    |> Dict.get id
+    |> Maybe.map (\currentObject ->
+      Dict.insert id (copyCurrentUpdateAtToObjects currentObject value) dict
+    )
+    |> Maybe.withDefault dict
+
+
+copyCurrentUpdateAtToObjects : Object -> (ObjectChange Object) -> (ObjectChange Object)
+copyCurrentUpdateAtToObjects currentObject modification =
+  case modification of
+    Added object ->
+      Added (Object.copyUpdateAt currentObject object)
+
+    Modified object ->
+      Modified (Object.copyUpdateAt currentObject object)
+
+    Deleted object ->
+      Deleted (Object.copyUpdateAt currentObject object)
 
 
 fromList : List (ObjectId, ObjectChange a) -> ObjectsChange_ a

@@ -94,8 +94,8 @@ modify change object =
 
 
 copyUpdateAt : Object -> Object -> Object
-copyUpdateAt (Object old) (Object new) =
-  Object { new | updateAt = old.updateAt }
+copyUpdateAt (Object src) (Object dest) =
+  Object { dest | updateAt = src.updateAt }
 
 
 setUpdateAt : Time -> Object -> Object

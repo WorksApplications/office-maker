@@ -401,7 +401,7 @@ update msg model =
           if Mode.isEditMode model.mode then
             batchSave
               model.apiConfig
-              (SaveRequest.reduceRequest (head :: tail))
+              (SaveRequest.reduceRequest model.floor (head :: tail))
           else
             Cmd.none
 
@@ -419,7 +419,11 @@ update msg model =
     ObjectsSaved change ->
       { model
         | floor = Maybe.map (EditingFloor.syncObjects change) model.floor
-      } ! [ Debounce.unlock saveFloorDebounceConfig ]
+      } ! [ Process.sleep 1000 |> Task.perform (always UnlockSaveFloor) ]
+
+    -- TODO: add "unlockAfter" to elm-debounce
+    UnlockSaveFloor ->
+      model ! [ Debounce.unlock saveFloorDebounceConfig ]
 
     FloorSaved floorBase ->
       { model
