@@ -28,6 +28,7 @@ import Page.Map.Msg exposing (..)
 import Page.Map.ObjectNameInput as ObjectNameInput
 import Page.Map.ProfilePopup as ProfilePopup
 import Page.Map.GridLayer as GridLayer
+import Page.Map.KeyOperation as KeyOperation
 
 import Model.ClipboardData as ClipboardData
 
@@ -95,7 +96,12 @@ objectView { mode, scale, selected, isGhost, object, position, size, contextMenu
               onWithOptions
                 "mousedown"
                 { stopPropagation = True, preventDefault = True }
-                ( Mouse.position |> Decode.map (MouseDownOnObject id) )
+                ( Decode.map4 MouseDownOnObject
+                    KeyOperation.decodeCtrlOrCommand
+                    KeyOperation.decodeShift
+                    (Decode.succeed id)
+                    Mouse.position
+                )
         , onMouseUp = Just (MouseUpOnObject id)
         , onClick = Just NoOp
         , onStartEditingName = Nothing -- Just (StartEditObject id)
@@ -140,7 +146,7 @@ view model =
     Just floor ->
       let
         isRangeSelectMode =
-          Mode.isSelectMode model.mode && model.keys.ctrl
+          Mode.isSelectMode model.mode && model.ctrl
       in
         div
           [ style (canvasContainerStyle model.mode isRangeSelectMode)
@@ -166,34 +172,9 @@ pasteHandler =
     , attribute "contenteditable" ""
     , maxlength 0
     , style pasteHandlerStyle
-    , on "keydown" decodeShortCut
+    , on "keydown" KeyOperation.decodeOperation
     , onWithOptions "paste" { preventDefault = True, stopPropagation = True } (ClipboardData.decode PasteFromClipboard)
     ] []
-
-
-decodeShortCut : Decoder Msg
-decodeShortCut =
-  decodeShortCutHelp (\ctrl shift keyCode ->
-    if ctrl && keyCode == 89 then
-      Just Redo
-    else if ctrl && keyCode == 90 then
-      Just Undo
-    else
-      Nothing
-  )
-
-
-decodeShortCutHelp : (Bool -> Bool -> Int -> Maybe msg) -> Decoder msg
-decodeShortCutHelp toMsg =
-  Decode.map3 toMsg
-    (Decode.field "ctrlKey" Decode.bool)
-    (Decode.field "shiftKey" Decode.bool)
-    (Decode.field "keyCode" Decode.int)
-      |> Decode.andThen (\maybeMsg ->
-        maybeMsg
-          |> Maybe.map Decode.succeed
-          |> Maybe.withDefault (Decode.fail "")
-      )
 
 
 pasteHandlerStyle : List (String, String)
@@ -360,7 +341,7 @@ objectsView model floor =
                   , selected = isSelected object
                   , isGhost = False
                   , object = object
-                  , contextMenuDisabled = model.keys.ctrl
+                  , contextMenuDisabled = model.ctrl
                   }
               )
             )
@@ -391,7 +372,7 @@ objectsView model floor =
                 , selected = True
                 , isGhost = True
                 , object = object
-                , contextMenuDisabled = model.keys.ctrl
+                , contextMenuDisabled = model.ctrl
                 }
               )
             )
@@ -416,7 +397,7 @@ objectsView model floor =
                 , selected = isResizing object --TODO seems not selected?
                 , isGhost = False
                 , object = object
-                , contextMenuDisabled = model.keys.ctrl
+                , contextMenuDisabled = model.ctrl
                 }
               )
             )
@@ -436,7 +417,7 @@ objectsView model floor =
             , selected = Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects
             , isGhost = False
             , object = object
-            , contextMenuDisabled = model.keys.ctrl
+            , contextMenuDisabled = model.ctrl
             }
           )
         )

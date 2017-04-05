@@ -13,7 +13,6 @@ import Mouse
 import Debounce exposing (Debounce)
 import ContextMenu
 
-import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
 import Util.File as File exposing (..)
@@ -51,6 +50,7 @@ import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
 import Page.Map.LinkCopy as LinkCopy
 import Page.Map.ObjectNameInput as ObjectNameInput
+import Page.Map.KeyOperation as KeyOperation
 
 import CoreType exposing (..)
 
@@ -83,20 +83,28 @@ type alias Flags =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-    [ Window.resizes WindowSize
-    , Keyboard.downs (KeyCodeMsg True)
-    , Keyboard.ups (KeyCodeMsg False)
-    , tokenRemoved (always TokenRemoved)
-    , if model.draggingContext == NoDragging then
-        Sub.none
-      else
-        Mouse.moves MouseMove
+    -- KEYBOARD
+    [ Keyboard.downs (handleCtrl True)
+    , Keyboard.ups (handleCtrl False)
+    -- MOUSE
+    , if model.draggingContext == NoDragging then Sub.none else Mouse.moves MouseMove
     , Mouse.downs MouseMove
     , Mouse.ups (always MouseUp)
+    -- OTHERS
+    , Window.resizes WindowSize
+    , tokenRemoved (always TokenRemoved)
     , Sub.map ContextMenuMsg (ContextMenu.subscriptions model.contextMenu)
     , Sub.map HeaderMsg (Header.subscriptions)
     , ObjectNameInput.subscriptions ObjectNameInputMsg
     ]
+
+
+handleCtrl : Bool -> Int -> Msg
+handleCtrl down keyCode =
+  if KeyOperation.isCtrlOrCommand keyCode then
+    Ctrl down
+  else
+    NoOp
 
 
 parseURL : Location -> Msg
@@ -440,7 +448,7 @@ update msg model =
             |> Task.perform (\_ -> Error NoError)
         ]
 
-    MouseDownOnObject lastTouchedId mousePosition ->
+    MouseDownOnObject ctrl shift lastTouchedId mousePosition ->
       let
         model0 =
           { model | mousePosition = mousePosition }
@@ -467,11 +475,11 @@ update msg model =
         help model =
           { model
           | selectedObjects =
-              if model.keys.ctrl then
+              if ctrl then
                 if List.member lastTouchedId model.selectedObjects
                 then List.filter ((/=) lastTouchedId) model.selectedObjects
                 else lastTouchedId :: model.selectedObjects
-              else if model.keys.shift then
+              else if shift then
                 let
                   floor =
                     (Model.getEditingFloorOrDummy model)
@@ -536,7 +544,7 @@ update msg model =
               PenFromScreenPos canvasPosition
 
             Just Select ->
-              if model0.keys.ctrl then
+              if model0.ctrl then
                 Selector
               else
                 ShiftOffset model0.mousePosition
@@ -617,6 +625,9 @@ update msg model =
             )
         )
         |> Maybe.withDefault (model ! [])
+
+    Ctrl ctrl ->
+      { model | ctrl = ctrl } ! []
 
     SelectBackgroundColor color ->
       case model.floor of
@@ -982,16 +993,6 @@ update msg model =
             } ! []
         ))
         |> Maybe.withDefault (model, Cmd.none)
-
-    KeyCodeMsg isDown keyCode ->
-      let
-        (keys, event) =
-          ShortCut.update isDown keyCode model.keys
-
-        model_ =
-          { model | keys = keys }
-      in
-        updateByKeyEvent event model_
 
     MouseWheel value mousePosition ->
       let
@@ -1669,6 +1670,42 @@ update msg model =
     SetTransition transition ->
       { model | transition = transition } ! []
 
+    Copy ->
+      model ! [ ClipboardData.copyObjects (Model.selectedObjects model) ]
+
+    Cut ->
+      model.floor
+        |> Maybe.map (\floor ->
+          let
+            (newFloor, objectsChange) =
+              EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
+
+            saveCmd =
+              requestSaveObjectsCmd objectsChange
+          in
+            { model
+                | floor = Just newFloor
+                , selectedObjects = []
+            } ! [ saveCmd, ClipboardData.copyObjects (Model.selectedObjects model) ]
+        )
+        |> Maybe.withDefault ( model, Cmd.none )
+
+    Delete ->
+      model.floor
+        |> Maybe.map (removeSelectedObjects model)
+        |> Maybe.withDefault ( model, Cmd.none )
+
+    MoveSelecedObjectsToward direction ->
+      model.floor
+        |> Maybe.map (moveSelecedObjectsToward direction model)
+        |> Maybe.withDefault ( model, Cmd.none )
+
+    ShiftSelectionByTab ->
+      ( Model.shiftSelectionToward Right model, Cmd.none )
+
+    ExpandOrShrinkToward direction ->
+      Model.expandOrShrinkToward direction model ! []
+
     Print ->
       ( model, print {} )
 
@@ -2302,72 +2339,6 @@ batchSave apiConfig request =
     Cmd.batch [ publishFloorCmd, saveFloorCmd, saveObjectsCmd ]
 
 
-updateByKeyEvent : ShortCut.Event -> Model -> (Model, Cmd Msg)
-updateByKeyEvent event model =
-  -- Patterns are separated because of the worst-case performance of pattern match.
-  -- https://github.com/elm-lang/elm-compiler/issues/1362
-  -- This will be fixed when Elm 0.19 is out.
-  if model.keys.ctrl then
-    updateByKeyEventWithCtrl event model
-  else if model.keys.shift then
-    updateByKeyEventWithShift event model
-  else
-    updateByKeyEventWithNoControlKeys event model
-
-
-updateByKeyEventWithCtrl : ShortCut.Event -> Model -> (Model, Cmd Msg)
-updateByKeyEventWithCtrl event model =
-  case (model.floor, event) of
-    (Just floor, ShortCut.C) ->
-      model ! [ ClipboardData.copyObjects (Model.selectedObjects model) ]
-
-    (Just floor, ShortCut.X) ->
-      let
-        (newFloor, objectsChange) =
-          EditingFloor.updateObjects (Floor.removeObjects model.selectedObjects) floor
-
-        saveCmd =
-          requestSaveObjectsCmd objectsChange
-      in
-        { model
-            | floor = Just newFloor
-            , selectedObjects = []
-        } ! [ saveCmd, ClipboardData.copyObjects (Model.selectedObjects model) ]
-
-    _ ->
-      model ! []
-
-
-updateByKeyEventWithShift : ShortCut.Event -> Model -> (Model, Cmd Msg)
-updateByKeyEventWithShift event model =
-  case (model.floor, event) of
-    (Just floor, ShortCut.Arrow direction) ->
-      Model.expandOrShrinkToward direction model ! []
-
-    _ ->
-      model ! []
-
-
-updateByKeyEventWithNoControlKeys : ShortCut.Event -> Model -> (Model, Cmd Msg)
-updateByKeyEventWithNoControlKeys event model =
-  case (model.floor, event) of
-    (Just floor, ShortCut.Arrow direction) ->
-      moveSelecedObjectsToward direction model floor
-
-    (Just floor, ShortCut.Del) ->
-      removeSelectedObjects model floor
-
-    -- a bit dangerous if one is also editing text field
-    -- (Just floor, ShortCut.BackSpace) ->
-    --   removeSelectedObjects model floor
-
-    (Just floor, ShortCut.Other 9) ->
-      Model.shiftSelectionToward Right model ! []
-
-    _ ->
-      model ! []
-
-
 removeSelectedObjects : Model -> EditingFloor -> (Model, Cmd Msg)
 removeSelectedObjects model floor =
   let
@@ -2429,11 +2400,6 @@ updateByMoveObjectEnd objectId start end model =
             { model |
               floor = Just newFloor
             } ! [ saveCmd ]
-        -- comment out for contextmenu
-        -- else if not model.keys.ctrl && not model.keys.shift then
-        --   { model |
-        --     selectedObjects = [objectId]
-        --   } ! []
         else
           model ! []
 

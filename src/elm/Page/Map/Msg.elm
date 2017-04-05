@@ -66,11 +66,11 @@ type Msg
   | ClickOnCanvas
   | MouseDownOnCanvas Position
   | MouseUpOnCanvas Position
-  | MouseDownOnObject Id Position
+  | MouseDownOnObject Bool Bool Id Position
   | MouseUpOnObject Id Position
   | MouseDownOnResizeGrip Id Position
   | StartEditObject Id
-  | KeyCodeMsg Bool Int
+  | Ctrl Bool
   | SelectBackgroundColor String
   | SelectColor String
   | SelectShape Object.Shape
@@ -138,5 +138,11 @@ type Msg
   | LinkCopyMsg LinkCopy.Msg
   | ChangeToObjectUrl ObjectId
   | SetTransition Bool
+  | Copy
+  | Cut
+  | Delete
+  | MoveSelecedObjectsToward Direction
+  | ShiftSelectionByTab
+  | ExpandOrShrinkToward Direction
   | Print
   | Error GlobalError

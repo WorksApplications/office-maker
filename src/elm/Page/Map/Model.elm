@@ -6,7 +6,6 @@ import Time exposing (Time)
 import ContextMenu exposing (ContextMenu)
 import Debounce exposing (Debounce)
 
-import Util.ShortCut as ShortCut
 import Util.IdGenerator as IdGenerator exposing (Seed)
 import Util.DictUtil as DictUtil
 
@@ -53,7 +52,8 @@ type alias Model =
   , objectNameInput : ObjectNameInput
   , gridSize : Int
   , selectorRect : Maybe (Position, Size)
-  , keys : ShortCut.Model
+  , ctrl : Bool
+  , mapFocused : Bool
   , mode : Mode
   , colorPalette : ColorPalette
   , contextMenu : ContextMenu ContextMenuContext
@@ -126,7 +126,8 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query objectId 
     , objectNameInput = ObjectNameInput.init
     , gridSize = gridSize
     , selectorRect = Nothing
-    , keys = ShortCut.init
+    , ctrl = False
+    , mapFocused = False
     , mode = Mode.init False
     , colorPalette = ColorPalette.empty
     , contextMenu = contextMenu

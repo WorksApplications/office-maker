@@ -59,7 +59,7 @@ floorInfoView model =
     text ""
   else
     FloorsInfoView.view
-      model.keys.ctrl
+      model.ctrl
       model.user
       (Mode.isEditMode model.mode)
       (Maybe.map (\floor -> (EditingFloor.present floor).id) model.floor)
