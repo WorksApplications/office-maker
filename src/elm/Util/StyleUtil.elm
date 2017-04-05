@@ -1,6 +1,9 @@
 module Util.StyleUtil exposing (..)
 
 
+type alias Style = List (String, String)
+
+
 px : number -> String
 px num =
   toString num ++ "px"
@@ -9,6 +12,11 @@ px num =
 em : number -> String
 em num =
   toString num ++ "em"
+
+
+ch : number -> String
+ch num =
+  toString num ++ "ch"
 
 
 percent : number -> String

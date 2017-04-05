@@ -43,6 +43,8 @@ zIndex =
   , modalBackground = 900
   , userMenuView = "1000"
   }
+zPrintGuide : String
+zPrintGuide = "650"
 
 
 h1 : S
@@ -57,20 +59,6 @@ h1 =
 headerLink : S
 headerLink =
   []
-
-
--- TODO better name
-headerIconHover : S
-headerIconHover =
-  [ ("opacity", "0.5")
-  ]
-
-
--- TODO better name
-hoverHeaderIconHover : S
-hoverHeaderIconHover =
-  [ ("opacity", "0.7")
-  ]
 
 
 headerHeight : Int
@@ -1183,59 +1171,4 @@ searchResultItemIcon =
 nameInputContainer : S
 nameInputContainer =
   [ ("position", "relative")
-  ]
-
-
-
-printGuideColor : String
-printGuideColor =
-  "rgb(200, 150, 220)"
-
-
-printGuide : List (String, String)
-printGuide =
-  [ ("position", "fixed")
-  , ("z-index", zIndex.printGuide)
-  , ("top", "0")
-  , ("left", "0")
-  , ("pointer-events", "none")
-  ]
-
-
-printGuideItem : Int -> Int -> List (String, String)
-printGuideItem width height =
-  [ ("position", "fixed")
-  , ("top", "0")
-  , ("left", "0")
-  , ("width", px width)
-  , ("height", px height)
-  , ("border", "dashed 5px " ++ printGuideColor)
-  , ("font-size", "x-large")
-  , ("font-weight", "bold")
-  , ("color", printGuideColor)
-  , ("text-align", "right")
-  , ("padding-right", "3px")
-  ]
-
-
-printGuidePrintButton : List (String, String)
-printGuidePrintButton =
-  [ ("border", "2px solid " ++ printGuideColor)
-  , ("color", "white")
-  , ("margin", "auto")
-  , ("position", "absolute")
-  , ("top", "0")
-  , ("bottom", "0")
-  , ("left", "0")
-  , ("right", "0")
-  , ("width", "300px")
-  , ("height", "150px")
-  , ("line-height", "150px")
-  , ("text-align", "center")
-  , ("font-size", "3em")
-  , ("font-weight", "normal")
-  , ("cursor", "pointer")
-  , ("background-color", printGuideColor)
-  , ("opacity", "0.4")
-  , ("pointer-events", "all")
   ]

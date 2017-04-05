@@ -4,7 +4,6 @@ import Dict
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import Html.Lazy as Lazy exposing (..)
 
 import View.Styles as S
@@ -40,6 +39,7 @@ import Page.Map.Emoji as Emoji
 import Page.Map.FloorsInfoView as FloorsInfoView
 import Page.Map.ObjectNameInput as ObjectNameInput
 import Page.Map.ProfilePopup as ProfilePopup
+import Page.Map.PrintGuide as PrintGuide
 
 
 mainView : Model -> Html Msg
@@ -265,23 +265,6 @@ view model =
       , mainView model
       , diffView
       , Page.Map.ContextMenu.view model
-      , lazy2 printGuide model.lang printMode
+      , lazy2 PrintGuide.view model.lang printMode
       ]
-
-
-printGuide : Language -> Bool -> Html Msg
-printGuide lang isPrintMode =
-  if isPrintMode then
-    div
-      [ style S.printGuide
-      , class "no-print"
-      ]
-      [ div [ style ( S.printGuideItem 2245 1587) ] [ text "A2" ]
-      , div [ style ( S.printGuideItem 1587 1122) ] [ text "A3" ]
-      , div [ style ( S.printGuideItem 1122 793) ] [ text "A4", div [ style S.printGuidePrintButton, onClick Print ] [ text (I18n.print lang) ] ]
-      ]
-  else
-    text ""
-
-
 --
