@@ -1,8 +1,7 @@
 module Page.Map.ContextMenuContext exposing (..)
 
 
-type alias ObjectId = String
-type alias FloorId = String
+import CoreType exposing (..)
 
 
 type ContextMenuContext

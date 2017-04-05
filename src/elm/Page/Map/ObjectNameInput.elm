@@ -30,10 +30,6 @@ type alias ObjectNameInput =
   }
 
 
-type alias ObjectId = String
-type alias PersonId = String
-
-
 port insertInput : (String, Int, ObjectId, String) -> Cmd msg
 port receiveInputValue : ((ObjectId, String, Int) -> msg) -> Sub msg
 

@@ -5,16 +5,14 @@ import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import ContextMenu
-import View.Styles as Styles
 
+import ContextMenu
+import CoreType exposing (..)
+import View.Styles as Styles
 import Model.User as User exposing (User)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
-
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.ContextMenuContext as ContextMenuContext
-
-type alias FloorId = String
 
 
 view : Bool -> User -> Bool -> Maybe String -> Dict FloorId FloorInfo -> Html Msg

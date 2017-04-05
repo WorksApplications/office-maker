@@ -5,21 +5,21 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
+import CoreType exposing (..)
 import Model.I18n as I18n exposing (Language)
-
 import View.Icons as Icons
 import View.Styles as S
 
 
 type alias PostName = String
-type alias ObjectId = String
 type alias ObjectName = String
-type alias PersonId = String
 type alias PersonName = String
-type alias FloorId = String
 type alias FloorName = String
 
--- View Model
+
+
+-- VIEW MODEL
+
 
 type Item
   = Post PostName
@@ -137,5 +137,3 @@ postIcon =
 noIcon : Html msg
 noIcon =
   div [ style S.searchResultItemIcon ] []
-
---

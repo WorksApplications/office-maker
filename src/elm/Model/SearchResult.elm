@@ -1,13 +1,13 @@
 module Model.SearchResult exposing (..)
 
 import Dict exposing (Dict)
+import CoreType exposing (..)
 import Model.Object as Object exposing (Object)
 import Model.Person exposing (Person)
 
-type alias Id = String
-type alias FloorId = String
-type alias PersonId = String
+
 type alias PersonName = String
+
 
 type SearchResult
   = Object Object FloorId
@@ -36,20 +36,14 @@ groupByPostAndReorder thisFloorId personInfo results =
 
 groupByPost : Dict String Person -> List SearchResult -> List SearchResultsForOnePost
 groupByPost personInfo results =
-  Dict.values <|
-    groupBy (\result ->
-      case getPersonId result of
-        Just id ->
-          case Dict.get id personInfo of
-            Just person ->
-              (person.post, Just person.post)
-
-            Nothing ->
-              ("", Nothing)
-
-        Nothing ->
-          ("", Nothing)
-      ) results
+  results
+    |> groupBy (\result ->
+      getPersonId result
+        |> Maybe.andThen (\id -> Dict.get id personInfo)
+        |> Maybe.map (\person -> (person.post, Just person.post))
+        |> Maybe.withDefault ("", Nothing)
+      )
+    |> Dict.values
 
 
 groupBy : (a -> (comparable, b)) -> List a -> Dict comparable (b, List a)

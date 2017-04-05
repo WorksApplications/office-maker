@@ -18,8 +18,7 @@ default = init 2
 
 init : Int -> Scale
 init scaleDown =
-  { scaleDown = scaleDown
-  }
+  Scale scaleDown
 
 
 update : Msg -> Scale -> Scale
