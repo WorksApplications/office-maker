@@ -76,7 +76,7 @@ insertToMergedDict currentObjects id value dict =
     |> Maybe.map (\currentObject ->
       Dict.insert id (copyCurrentUpdateAtToObjects currentObject value) dict
     )
-    |> Maybe.withDefault dict
+    |> Maybe.withDefault (Dict.insert id value dict) -- current object does not exist if deleted
 
 
 copyCurrentUpdateAtToObjects : Object -> (ObjectChange Object) -> (ObjectChange Object)
