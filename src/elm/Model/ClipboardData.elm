@@ -1,5 +1,6 @@
 port module Model.ClipboardData exposing (..)
 
+import Dict exposing (Dict)
 import Json.Encode as Encode
 import Json.Decode as Decode exposing (Decoder)
 
@@ -78,35 +79,76 @@ toObjectCandidates prototype pos s =
       else
         parseString s
 
-    rows_ =
-      List.indexedMap (\rowIndex row ->
-        List.indexedMap (\colIndex maybeCell ->
-          Maybe.map
-            (\cell ->
-              ( { prototype |
-                  name = cell.text
-                }
-              , calcPosition prototype pos rowIndex colIndex
-              )
-            )
-            maybeCell
-        ) row
-      ) rows
+    cellSizePerDesk =
+      Size 1 1 -- TODO
   in
-    List.concatMap (List.filterMap identity) rows_
+    rows
+      |> List.foldl (consRow cellSizePerDesk prototype pos) (Dict.empty, 0, [])
+      |> (\(_, _, result) -> result)
+      |> List.reverse
+      |> List.concatMap identity
 
 
-parseString : String -> List (List (Maybe Cell))
+consRow : Size -> Prototype -> Position -> List Cell -> (Dict (Int, Int) Int, Int, List (List PositionedPrototype)) -> (Dict (Int, Int) Int, Int, List (List PositionedPrototype))
+consRow cellSizePerDesk prototype pos row (skipCells, rowIndex, resultRows) =
+  row
+    |> List.foldl (consCell cellSizePerDesk prototype pos rowIndex) (skipCells, 0, [])
+    |> (\(skipCells, _, result) ->
+      result
+        |> List.reverse
+        |> flip (::) resultRows
+        |> (,,) skipCells (rowIndex + 1)
+    )
+
+
+consCell : Size -> Prototype -> Position -> Int -> Cell -> (Dict (Int, Int) Int, Int, List PositionedPrototype) -> (Dict (Int, Int) Int, Int, List PositionedPrototype)
+consCell cellSizePerDesk prototype pos rowIndex cell (skipCells, colIndex, resultCols) =
+  skipCells
+    |> Dict.get (rowIndex, colIndex)
+    |> Maybe.map (\amount ->
+      (skipCells, colIndex + amount, resultCols)
+    )
+    |> Maybe.withDefault (
+      let
+        newSkipCells =
+          updateSkipCells rowIndex colIndex cell skipCells
+      in
+        if String.trim cell.text /= "" then
+          let
+            protoWithPos =
+              ( { prototype
+                    | name = cell.text
+                    , width = prototype.width * cell.cols // cellSizePerDesk.width
+                    , height = prototype.height * cell.rows // cellSizePerDesk.height
+                }
+              , calcPosition cellSizePerDesk prototype pos rowIndex colIndex
+              )
+          in
+            (newSkipCells, colIndex + cell.cols, protoWithPos :: resultCols)
+        else
+          (newSkipCells, colIndex + 1, resultCols)
+    )
+
+
+updateSkipCells : Int -> Int -> Cell -> Dict (Int, Int) Int -> Dict (Int, Int) Int
+updateSkipCells rowIndex colIndex cell skipCells =
+  List.range 0 (cell.rows - 1)
+    |> List.foldl (\row dict ->
+      Dict.insert (rowIndex + row, colIndex) cell.cols dict
+    ) skipCells
+
+
+parseString : String -> List (List Cell)
 parseString s =
   String.split "\n" s
     |> List.map
       (\s ->
          String.split "\t" s
-           |> List.map (Cell 1 1 >> Just)
+           |> List.map (Cell 1 1)
       )
 
 
-parseHtml : String -> List (List (Maybe Cell))
+parseHtml : String -> List (List Cell)
 parseHtml table =
   HtmlParser.parse table
     |> getElementsByTagName "tr"
@@ -120,10 +162,7 @@ parseHtml table =
                 rows = getIntValueWithDefault "rowspan" attrs 1
                 s = textContent innerTd
               in
-                if String.trim s /= "" then
-                  Just (Cell cols rows s)
-                else
-                  Nothing
+                Cell cols rows s
             )
       )
 
@@ -135,8 +174,8 @@ getIntValueWithDefault attrName attrs value =
     |> Maybe.withDefault value
 
 
-calcPosition : Prototype -> Position -> Int -> Int -> Position
-calcPosition prototype pos rowIndex colIndex =
+calcPosition : Size -> Prototype -> Position -> Int -> Int -> Position
+calcPosition cellSizePerDesk prototype pos rowIndex colIndex =
   Position
-    (pos.x + colIndex * prototype.width)
-    (pos.y + rowIndex * prototype.height)
+    (pos.x + colIndex * prototype.width // cellSizePerDesk.width)
+    (pos.y + rowIndex * prototype.height // cellSizePerDesk.height)
