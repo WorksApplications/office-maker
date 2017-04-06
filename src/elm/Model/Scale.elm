@@ -4,7 +4,28 @@ module Model.Scale exposing (..)
 import CoreType exposing (..)
 
 
-type Msg = ScaleUp | ScaleDown
+
+-- CONFIG
+
+
+minScale : Int
+minScale = 0
+
+
+maxScale : Int
+maxScale = 8
+
+
+defaultScale : Int
+defaultScale = 4
+
+
+step : Float
+step = 1.414
+
+
+
+-- TEA
 
 
 type alias Scale =
@@ -13,7 +34,8 @@ type alias Scale =
 
 
 default : Scale
-default = init 2
+default =
+  init defaultScale
 
 
 init : Int -> Scale
@@ -21,14 +43,22 @@ init scaleDown =
   Scale scaleDown
 
 
+type Msg = ScaleUp | ScaleDown
+
+
 update : Msg -> Scale -> Scale
 update msg scale =
   case msg of
     ScaleUp ->
-      { scale | scaleDown = max 0 (scale.scaleDown - 1) }
+      { scale | scaleDown = max minScale (scale.scaleDown - 1) }
 
     ScaleDown ->
-      { scale | scaleDown = min 4 (scale.scaleDown + 1) }
+      { scale | scaleDown = min maxScale (scale.scaleDown + 1) }
+
+
+
+
+-- FUNCTIONS
 
 
 screenToImageForPosition : Scale -> Position -> Position
@@ -57,19 +87,19 @@ screenToImageForSize scale { width, height } =
 
 screenToImage : Scale -> Int -> Int
 screenToImage scale imageLength =
-  imageLength * 2 ^ scale.scaleDown
+  round (toFloat imageLength * step ^ toFloat scale.scaleDown)
 
 
 imageToScreen : Scale -> Int -> Int
 imageToScreen scale screenLength =
-  screenLength // 2 ^ scale.scaleDown
+  round (toFloat screenLength / step ^ toFloat scale.scaleDown)
 
 
 imageToScreenRatio : Scale -> Float
 imageToScreenRatio scale =
-  1.0 / 2 ^ (toFloat scale.scaleDown)
+  1.0 / step ^ (toFloat scale.scaleDown)
 
 
 ratio : Scale -> Scale -> Float
 ratio old new =
-  toFloat (2 ^ old.scaleDown) / toFloat (2 ^ new.scaleDown)
+  (step ^ toFloat old.scaleDown) / (step ^ toFloat new.scaleDown)
