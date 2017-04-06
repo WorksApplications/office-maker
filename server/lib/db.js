@@ -5,6 +5,7 @@ var rdb = require('./mysql.js');
 var schema = require('./schema.js');
 var filestorage = require('../static/filestorage.js');
 var profileService = require('./profile-service.js');
+var searchOptimizer = require('./search-optimizer.js');
 
 
 function saveObjectsChange(conn, changes) {
@@ -340,10 +341,10 @@ function resetImage(conn, dir) {
   return filestorage.empty(dir);
 }
 
-function matchToQuery(object, lowerQuery) {
-  var splitted = object.name.toLowerCase().split(' ');
-  for(var i = 0; i < splitted.length; i++) {
-    if(splitted[i].startsWith(lowerQuery)) {
+function matchToQuery(object, normalizedQuery) {
+  var keys = searchOptimizer.getKeys(object);
+  for(var i = 0; i < keys.length; i++) {
+    if(keys[i].startsWith(normalizedQuery)) {
       return true;
     }
   }
@@ -351,7 +352,7 @@ function matchToQuery(object, lowerQuery) {
 }
 
 function search(conn, tenantId, query, all, people) {
-  var lowerQuery = query.toLowerCase();
+  var normalizedQuery = searchOptimizer.normalize(query);
   return getFloorsWithObjects(conn, tenantId, all).then(floors => {
     var results = {};
     var arr = [];
@@ -364,7 +365,7 @@ function search(conn, tenantId, query, all, people) {
           if(results[object.personId]) {
             results[object.personId].push(object);
           }
-        } else if(matchToQuery(object, lowerQuery)) {
+        } else if(matchToQuery(object, normalizedQuery)) {
           // { Nothing, Just } -- objects that has no person
           arr.push({
             personId : null,
