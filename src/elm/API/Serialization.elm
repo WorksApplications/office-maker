@@ -115,6 +115,7 @@ encodeFloor floor =
     , ("height", E.int floor.height)
     , ("realWidth", Maybe.withDefault E.null <| Maybe.map (E.int << Tuple.first) floor.realSize)
     , ("realHeight", Maybe.withDefault E.null <| Maybe.map (E.int << Tuple.second) floor.realSize)
+    , ("temporary", E.bool floor.temporary)
     , ("image", Maybe.withDefault E.null <| Maybe.map E.string floor.image)
     ]
 
@@ -151,7 +152,7 @@ encodeObjectChange change =
 
 decodeObjectsChange : Decoder ObjectsChange
 decodeObjectsChange =
-  (D.list decodeObjectChange)
+  D.list decodeObjectChange
     |> D.map ObjectsChange.fromList
 
 
@@ -282,7 +283,7 @@ decodeSearchResults =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id version name ord objects width height realWidth realHeight image updateBy updateAt ->
+    (\id version name ord objects width height realWidth realHeight image temporary updateBy updateAt ->
       { id = id
       , version = version
       , name = name
@@ -292,6 +293,7 @@ decodeFloor =
       , height = height
       , image = image
       , realSize = Maybe.map2 (,) realWidth realHeight
+      , temporary = temporary
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
       } |> Floor.addObjects objects
     )
@@ -305,6 +307,7 @@ decodeFloor =
     |> optional_ "realWidth" D.int
     |> optional_ "realHeight" D.int
     |> optional_ "image" D.string
+    |> required "temporary" D.bool
     |> optional_ "updateBy" D.string
     |> optional_ "updateAt" D.float
 

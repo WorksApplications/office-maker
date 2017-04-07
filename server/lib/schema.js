@@ -10,6 +10,7 @@ function floorKeyValues(tenantId, floor, updateAt) {
     ["height", floor.height],
     ["realWidth", floor.realWidth],
     ["realHeight", floor.realHeight],
+    ["temporary", floor.temporary ? 1 : 0],
     ["updateBy", floor.updateBy],
     ["updateAt", updateAt]
   ];

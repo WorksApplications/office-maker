@@ -20,13 +20,14 @@ type alias FloorBase =
 
 
 type alias Detailed a =
-  { a |
-    width : Int
-  , height : Int
-  , realSize : Maybe (Int, Int)
-  , image : Maybe String
-  , update : Maybe { by : PersonId, at : Date }
-  , objects: Dict ObjectId Object
+  { a
+    | width : Int
+    , height : Int
+    , realSize : Maybe (Int, Int)
+    , temporary : Bool
+    , image : Maybe String
+    , update : Maybe { by : PersonId, at : Date }
+    , objects: Dict ObjectId Object
   }
 
 
@@ -43,6 +44,7 @@ init id =
   , width = 800
   , height = 600
   , realSize = Nothing
+  , temporary = False
   , image = Nothing
   , update = Nothing
   }

@@ -164,7 +164,7 @@ function getPublicFloors(conn, tenantId) {
 
 function getEditingFloors(conn, tenantId) {
   return rdb.exec(conn,
-    sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1]]))
+    sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1]]) + ' AND temporary = 0')
   );
 }
 
@@ -201,6 +201,7 @@ function getFloorsInfo(conn, tenantId) {
       //   value[0] = value[0] || value[1];
       //   value[1] = value[1] || value[0];
       // });
+      console.log(values);
       return Promise.resolve(values);
     });
   });
@@ -210,7 +211,7 @@ function saveOrCreateFloor(conn, tenantId, newFloor) {
   validateFloor(newFloor);
   var oldUpdateAt = newFloor.updateAt;
   var updateAt = Date.now();
-  return getEditingFloor(conn, tenantId, newFloor.id).then((floor) => {
+  return getEditingFloor(conn, tenantId, newFloor.id).then(floor => {
     if(floor) {
       return updateEditingFloor(conn, tenantId, newFloor, updateAt);
     } else {
@@ -273,6 +274,9 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
   return getEditingFloorWithObjects(conn, tenantId, floorId).then((editingFloor) => {
     if(!editingFloor) {
       return Promise.reject('Editing floor not found: ' + floorId);
+    }
+    if(editingFloor.temporary) {
+      return Promise.reject('Temporary floor cannot be published');
     }
     return getPublicFloor(conn, tenantId, floorId).then((lastPublicFloor) => {
       var updateAt = Date.now();
