@@ -357,12 +357,12 @@ prototypePreviewView width height =
   ]
 
 
-prototypePreviewViewInner : Int -> Int -> S
-prototypePreviewViewInner containerWidth index =
-  [ ("height", "238px")
+prototypePreviewViewInner : Size -> Int -> S
+prototypePreviewViewInner containerSize index =
+  [ ("height", px containerSize.height)
   , ("position", "relative")
   , ("top", "0")
-  , ("left", px (index * -containerWidth))
+  , ("left", px (index * -containerSize.width))
   , ("transition-property", "left")
   , ("transition-duration", "0.2s")
   ]
@@ -377,7 +377,7 @@ prototypePreviewScroll isLeft =
   , ("font-weight", "bold")
   , ("line-height", "30px")
   , ("position", "absolute")
-  , ("top", "104px")
+  , ("top", "calc(50% - 15px)")
   , ("border-radius", "15px")
   , ("text-align", "center")
   , ("color", invertedTextColor)

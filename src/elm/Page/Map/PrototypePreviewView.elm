@@ -18,7 +18,7 @@ import CoreType exposing (..)
 
 containerSize : Size
 containerSize =
-  Size (320 - (20 * 2)) 238 -- TODO
+  Size (320 - (20 * 2)) 180 -- TODO
 
 
 view : List (Prototype, Bool) -> Html Msg

@@ -17,7 +17,7 @@ view containerSize selectedIndex prototypes =
   let
     inner =
       div
-        [ style (S.prototypePreviewViewInner containerSize.width selectedIndex) ]
+        [ style (S.prototypePreviewViewInner containerSize selectedIndex) ]
         (List.indexedMap (eachView containerSize selectedIndex) prototypes)
   in
     div [ style (S.prototypePreviewView containerSize.width containerSize.height) ] [ inner ]
