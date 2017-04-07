@@ -140,9 +140,7 @@ nameInput : User -> String -> Html Msg
 nameInput user value =
   if User.isAdmin user then
     input
-    ([ Html.Attributes.id "floor-name-input"
-    , type_ "text"
-    , style Styles.floorNameInput
+    ([ style Styles.floorNameInput
     ] ++ (inputAttributes InputFloorName (always NoOp) value Nothing))
     []
   else
@@ -161,9 +159,7 @@ ordInput : User -> String -> Html Msg
 ordInput user value =
   if User.isAdmin user then
     input
-    ([ Html.Attributes.id "floor-ord-input"
-    , type_ "text"
-    , style Styles.floorOrdInput
+    ([ style Styles.floorOrdInput
     ] ++ (inputAttributes InputFloorOrd (always NoOp) value Nothing))
     []
   else
@@ -173,15 +169,18 @@ ordInput user value =
 floorRealSizeInputView : Language -> User -> FloorProperty -> Html Msg
 floorRealSizeInputView lang user model =
   let
+    forEdit =
+      User.isAdmin user
+
     widthLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.widthMeter lang) ]
 
     heightLabel = label [ style Styles.widthHeightLabel ] [ text (I18n.heightMeter lang) ]
   in
     div [ style Styles.floorSizeInputContainer ]
       [ widthLabel
-      , widthValueView user model.realWidthInput
+      , widthOrHeightValueView InputFloorRealWidth forEdit model.realWidthInput
       , heightLabel
-      , heightValueView user model.realHeightInput
+      , widthOrHeightValueView InputFloorRealHeight forEdit model.realHeightInput
       ]
 
 
@@ -202,30 +201,15 @@ onInput_ f =
   onWithOptions "input" { stopPropagation = True, preventDefault = True } (Decode.map f Html.Events.targetValue)
 
 
-widthValueView : User -> String -> Html Msg
-widthValueView user value =
-  if User.isAdmin user then
+widthOrHeightValueView : (String -> Msg) -> Bool -> String -> Html Msg
+widthOrHeightValueView toMsg forEdit value =
+  if forEdit then
     input
-    ([ Html.Attributes.id "floor-real-width-input"
-    , type_ "text"
-    , style Styles.realSizeInput
-    ] ++ (inputAttributes InputFloorRealWidth (always NoOp) value Nothing))
+    ([ style Styles.realSizeInput
+    ] ++ (inputAttributes toMsg (always NoOp) value Nothing))
     []
   else
-    div [ style Styles.floorWidthText ] [ text value ]
-
-
-heightValueView : User -> String -> Html Msg
-heightValueView user value =
-  if User.isAdmin user then
-    input
-    ([ Html.Attributes.id "floor-real-height-input"
-    , type_ "text"
-    , style Styles.realSizeInput
-    ] ++ (inputAttributes InputFloorRealHeight (always NoOp) value Nothing))
-    []
-  else
-    div [ style Styles.floorHeightText ] [ text value ]
+    div [ style Styles.floorPropertyText ] [ text value ]
 
 
 view : (Msg -> msg) -> Language -> User -> Floor -> FloorProperty -> Html msg -> Html msg -> Html msg -> Html msg -> List (Html msg)

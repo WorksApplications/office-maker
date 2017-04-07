@@ -491,16 +491,6 @@ widthHeightLabel =
   [ ("width", "80px") ] ++ floorPropertyLabel
 
 
-floorWidthText : S
-floorWidthText =
-  floorPropertyText
-
-
-floorHeightText : S
-floorHeightText =
-  floorPropertyText
-
-
 floorPropertyLastUpdate : S
 floorPropertyLastUpdate =
   [ ("z-index", zIndex.lastUpdate)
