@@ -201,7 +201,6 @@ function getFloorsInfo(conn, tenantId) {
       //   value[0] = value[0] || value[1];
       //   value[1] = value[1] || value[0];
       // });
-      console.log(values);
       return Promise.resolve(values);
     });
   });
