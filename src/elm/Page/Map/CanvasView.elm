@@ -172,7 +172,7 @@ pasteHandler =
     , attribute "contenteditable" ""
     , maxlength 0
     , style pasteHandlerStyle
-    , on "keydown" KeyOperation.decodeOperation
+    , onWithOptions "keydown" { preventDefault = True, stopPropagation = True } KeyOperation.decodeOperation
     , onWithOptions "paste" { preventDefault = True, stopPropagation = True } (ClipboardData.decode PasteFromClipboard)
     ] []
 

@@ -309,12 +309,17 @@ minBoundsOf positions =
 
 fitPositionToGrid : Int -> Position -> Position
 fitPositionToGrid gridSize { x, y } =
-  Position (x // gridSize * gridSize) (y // gridSize * gridSize)
+  Position (fitToGrid gridSize x) (fitToGrid gridSize y)
 
 
 fitSizeToGrid : Int -> Size -> Size
 fitSizeToGrid gridSize size =
-  Size (size.width // gridSize * gridSize) (size.height // gridSize * gridSize)
+  Size (fitToGrid gridSize size.width) (fitToGrid gridSize size.height)
+
+
+fitToGrid : Int -> Int -> Int
+fitToGrid gridSize i =
+  i // gridSize * gridSize
 
 
 backgroundColorProperty : List Object -> Maybe String

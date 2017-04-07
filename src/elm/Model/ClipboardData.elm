@@ -11,6 +11,7 @@ import CoreType exposing (..)
 
 import Model.Prototype exposing (Prototype)
 import Model.Object exposing (Object)
+import Model.ObjectsOperation as ObjectsOperation
 import API.Serialization as Serialization
 import Native.ClipboardData
 
@@ -70,29 +71,26 @@ toObjects s =
     |> Result.withDefault []
 
 
-toObjectCandidates : Prototype -> Position -> String -> List PositionedPrototype
-toObjectCandidates prototype pos s =
+toObjectCandidates : Int -> Size -> Prototype -> Position -> String -> List PositionedPrototype
+toObjectCandidates gridSize cellSizePerDesk prototype pos s =
   let
     rows =
       if String.toLower s |> String.contains "</table>" then
         parseHtml s
       else
         parseString s
-
-    cellSizePerDesk =
-      Size 1 1 -- TODO
   in
     rows
-      |> List.foldl (consRow cellSizePerDesk prototype pos) (Dict.empty, 0, [])
+      |> List.foldl (consRow gridSize cellSizePerDesk prototype pos) (Dict.empty, 0, [])
       |> (\(_, _, result) -> result)
       |> List.reverse
       |> List.concatMap identity
 
 
-consRow : Size -> Prototype -> Position -> List Cell -> (Dict (Int, Int) Int, Int, List (List PositionedPrototype)) -> (Dict (Int, Int) Int, Int, List (List PositionedPrototype))
-consRow cellSizePerDesk prototype pos row (skipCells, rowIndex, resultRows) =
+consRow : Int -> Size -> Prototype -> Position -> List Cell -> (Dict (Int, Int) Int, Int, List (List PositionedPrototype)) -> (Dict (Int, Int) Int, Int, List (List PositionedPrototype))
+consRow gridSize cellSizePerDesk prototype pos row (skipCells, rowIndex, resultRows) =
   row
-    |> List.foldl (consCell cellSizePerDesk prototype pos rowIndex) (skipCells, 0, [])
+    |> List.foldl (consCell gridSize cellSizePerDesk prototype pos rowIndex) (skipCells, 0, [])
     |> (\(skipCells, _, result) ->
       result
         |> List.reverse
@@ -101,8 +99,8 @@ consRow cellSizePerDesk prototype pos row (skipCells, rowIndex, resultRows) =
     )
 
 
-consCell : Size -> Prototype -> Position -> Int -> Cell -> (Dict (Int, Int) Int, Int, List PositionedPrototype) -> (Dict (Int, Int) Int, Int, List PositionedPrototype)
-consCell cellSizePerDesk prototype pos rowIndex cell (skipCells, colIndex, resultCols) =
+consCell : Int -> Size -> Prototype -> Position -> Int -> Cell -> (Dict (Int, Int) Int, Int, List PositionedPrototype) -> (Dict (Int, Int) Int, Int, List PositionedPrototype)
+consCell gridSize cellSizePerDesk prototype pos rowIndex cell (skipCells, colIndex, resultCols) =
   skipCells
     |> Dict.get (rowIndex, colIndex)
     |> Maybe.map (\amount ->
@@ -118,10 +116,10 @@ consCell cellSizePerDesk prototype pos rowIndex cell (skipCells, colIndex, resul
             protoWithPos =
               ( { prototype
                     | name = cell.text
-                    , width = prototype.width * cell.cols // cellSizePerDesk.width
-                    , height = prototype.height * cell.rows // cellSizePerDesk.height
+                    , width = prototype.width * cell.cols // cellSizePerDesk.width |> ObjectsOperation.fitToGrid gridSize
+                    , height = prototype.height * cell.rows // cellSizePerDesk.height |> ObjectsOperation.fitToGrid gridSize
                 }
-              , calcPosition cellSizePerDesk prototype pos rowIndex colIndex
+              , calcPosition gridSize cellSizePerDesk prototype pos rowIndex colIndex
               )
           in
             (newSkipCells, colIndex + cell.cols, protoWithPos :: resultCols)
@@ -174,8 +172,9 @@ getIntValueWithDefault attrName attrs value =
     |> Maybe.withDefault value
 
 
-calcPosition : Size -> Prototype -> Position -> Int -> Int -> Position
-calcPosition cellSizePerDesk prototype pos rowIndex colIndex =
+calcPosition : Int -> Size -> Prototype -> Position -> Int -> Int -> Position
+calcPosition gridSize cellSizePerDesk prototype pos rowIndex colIndex =
   Position
     (pos.x + colIndex * prototype.width // cellSizePerDesk.width)
     (pos.y + rowIndex * prototype.height // cellSizePerDesk.height)
+    |> ObjectsOperation.fitPositionToGrid gridSize

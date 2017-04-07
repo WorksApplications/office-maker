@@ -1038,9 +1038,20 @@ update msg model =
     PrototypesMsg msg ->
       let
         newModel =
-          { model |
-            prototypes = Prototypes.update msg model.prototypes
-          , mode = Mode.toStampMode model.mode -- TODO if event == select
+          { model
+            | prototypes = Prototypes.update msg model.prototypes
+          }
+      in
+        newModel ! []
+
+    ClipboardOptionsMsg (clipboardOptionsForm, maybeCellSizePerDesk) ->
+      let
+        newModel =
+          { model
+            | clipboardOptionsForm = clipboardOptionsForm
+            , cellSizePerDesk =
+                maybeCellSizePerDesk
+                  |> Maybe.withDefault model.cellSizePerDesk
           }
       in
         newModel ! []
@@ -1550,7 +1561,7 @@ update msg model =
                 Prototypes.selectedPrototype model.prototypes
 
               candidates =
-                ClipboardData.toObjectCandidates prototype pos s
+                ClipboardData.toObjectCandidates model.gridSize model.cellSizePerDesk prototype pos s
 
               ((newModel, cmd), newObjects) =
                 updateOnFinishStamp_ candidates model floor

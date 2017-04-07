@@ -37,6 +37,7 @@ import Component.FloorDeleter as FloorDeleter exposing (FloorDeleter)
 import Page.Map.ObjectNameInput as ObjectNameInput exposing (ObjectNameInput)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 import Page.Map.URL as URL exposing (URL)
+import Page.Map.ClipboardOptionsView as ClipboardOptionsView
 import CoreType exposing (..)
 
 
@@ -63,6 +64,8 @@ type alias Model =
   , scale : Scale
   , offset : Position
   , prototypes : Prototypes
+  , clipboardOptionsForm : ClipboardOptionsView.Form
+  , cellSizePerDesk : Size
   , error : GlobalError
   , floorProperty : FloorProperty
   , searchQuery : String
@@ -137,6 +140,8 @@ init apiConfig title initialSize randomSeed visitDate isEditMode query objectId 
     , scale = scale
     , offset = offset
     , prototypes = Prototypes.init []
+    , clipboardOptionsForm = ClipboardOptionsView.init
+    , cellSizePerDesk = Size 1 1
     , error = NoError
     , floorProperty = FloorProperty.init initialFloor.name 0 0 0
     , selectedResult = objectId

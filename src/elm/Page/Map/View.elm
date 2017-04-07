@@ -40,6 +40,7 @@ import Page.Map.FloorsInfoView as FloorsInfoView
 import Page.Map.ObjectNameInput as ObjectNameInput
 import Page.Map.ProfilePopup as ProfilePopup
 import Page.Map.PrintGuide as PrintGuide
+import Page.Map.ClipboardOptionsView as ClipboardOptionsView
 
 
 mainView : Model -> Html Msg
@@ -185,11 +186,21 @@ drawingView model editingMode =
         Emoji.selector
       else
         case editingMode of
+          Select ->
+            Lazy.lazy PrototypePreviewView.view prototypes
+
           Stamp ->
             Lazy.lazy PrototypePreviewView.view prototypes
 
           _ ->
             text ""
+    , if editingMode == Select then
+        ClipboardOptionsView.view
+          ClipboardOptionsMsg
+          model.clipboardOptionsForm
+          model.cellSizePerDesk
+      else
+        text ""
     ]
 
 

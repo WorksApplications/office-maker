@@ -31,7 +31,7 @@ import Component.FloorDeleter as FloorDeleter
 import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
 import Page.Map.LinkCopy as LinkCopy
--- import Page.Map.ObjectNameInput as ObjectNameInput
+import Page.Map.ClipboardOptionsView as ClipboardOptionsView
 
 import CoreType exposing (..)
 
@@ -89,6 +89,7 @@ type Msg
   | MouseWheel Float Position
   | ChangeMode EditingMode
   | PrototypesMsg Prototypes.Msg
+  | ClipboardOptionsMsg (ClipboardOptionsView.Form, Maybe Size)
   | RegisterPrototype Id
   | FloorPropertyMsg FloorProperty.Msg
   | RotateObjects (List ObjectId)
