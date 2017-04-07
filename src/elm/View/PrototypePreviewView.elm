@@ -55,5 +55,5 @@ eachView containerSize selectedIndex index prototype =
       prototype.fontSize
       False -- selected
       False -- alpha
-      Scale.default
+      (Scale.init 0)
       False -- personMatched
