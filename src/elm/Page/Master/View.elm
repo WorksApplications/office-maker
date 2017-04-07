@@ -175,7 +175,7 @@ usersView model =
 
 userView : User -> Html Msg
 userView user =
-  case Debug.log "" user of
+  case user of
     User.Admin person ->
       div []
         [ text (person.name ++ " ( " ++ Maybe.withDefault "" person.mail ++ " )")
