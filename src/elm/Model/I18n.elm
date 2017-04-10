@@ -274,6 +274,13 @@ deleteFloor lang =
     EN -> "Delete this floor"
 
 
+flipFloor : Language -> String
+flipFloor lang =
+  case lang of
+    JA -> "フロアを反転"
+    EN -> "Flip this floor"
+
+
 lastUpdateByAt : Language -> String -> String -> String
 lastUpdateByAt lang by at =
   case lang of

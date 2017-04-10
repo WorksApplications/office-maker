@@ -291,7 +291,7 @@ pasteObjects floorId base copiedWithNewIds =
           pos = Position (base.x + (x - min.x)) (base.y + (y - min.y))
         in
           object
-            |> Object.move pos
+            |> Object.changePosition pos
             |> Object.changeId newId
             |> Object.changeFloorId floorId
       ) copiedWithNewIds
@@ -352,8 +352,8 @@ fontSizeProperty selectedObjects =
 -- [] -> Nothing
 collectSameProperty : (Object -> a) -> List Object -> Maybe a
 collectSameProperty getProp selectedObjects =
-  case List.head selectedObjects of
-    Just object ->
+  List.head selectedObjects
+    |> Maybe.andThen (\object ->
       let
         firstProp = getProp object
       in
@@ -361,15 +361,23 @@ collectSameProperty getProp selectedObjects =
           let
             prop = getProp object
           in
-            case maybeProp of
-              Just prop_ ->
+            maybeProp
+              |> Maybe.andThen (\prop_ ->
                 if prop == prop_ then Just prop else Nothing
-
-              Nothing -> Nothing
+              )
         ) (Just firstProp) selectedObjects
+    )
 
-    Nothing -> Nothing
 
+flipObject : Size -> Object -> Object
+flipObject floorSize object =
+  let
+    right = Object.right object
+    bottom = Object.bottom object
+    newLeft = floorSize.width - right
+    newTop = floorSize.height - bottom
+  in
+    Object.changePosition (Position newLeft newTop) object
 
 
 --

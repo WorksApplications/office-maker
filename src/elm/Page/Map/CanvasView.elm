@@ -427,7 +427,7 @@ objectsView model floor =
 canvasImage : Floor -> Html msg
 canvasImage floor =
   img
-    [ style S.canvasImage
+    [ style (S.canvasImage floor.flipImage)
     , src (Maybe.withDefault "" (Floor.src floor))
     ] []
 

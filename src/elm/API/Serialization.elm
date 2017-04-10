@@ -117,6 +117,7 @@ encodeFloor floor =
     , ("realHeight", Maybe.withDefault E.null <| Maybe.map (E.int << Tuple.second) floor.realSize)
     , ("temporary", E.bool floor.temporary)
     , ("image", Maybe.withDefault E.null <| Maybe.map E.string floor.image)
+    , ("flipImage", E.bool floor.flipImage)
     ]
 
 
@@ -283,7 +284,7 @@ decodeSearchResults =
 decodeFloor : Decoder Floor
 decodeFloor =
   decode
-    (\id version name ord objects width height realWidth realHeight image temporary updateBy updateAt ->
+    (\id version name ord objects width height realWidth realHeight image flipImage temporary updateBy updateAt ->
       { id = id
       , version = version
       , name = name
@@ -292,6 +293,7 @@ decodeFloor =
       , width = width
       , height = height
       , image = image
+      , flipImage = flipImage
       , realSize = Maybe.map2 (,) realWidth realHeight
       , temporary = temporary
       , update = Maybe.map2 (\by at -> { by = by, at = Date.fromTime at }) updateBy updateAt
@@ -307,6 +309,7 @@ decodeFloor =
     |> optional_ "realWidth" D.int
     |> optional_ "realHeight" D.int
     |> optional_ "image" D.string
+    |> required "flipImage" D.bool
     |> required "temporary" D.bool
     |> optional_ "updateBy" D.string
     |> optional_ "updateAt" D.float

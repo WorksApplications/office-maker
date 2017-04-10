@@ -18,6 +18,37 @@ init floor =
   }
 
 
+updateFloorAndObjects : (Floor -> Floor) -> EditingFloor -> (EditingFloor, Floor, ObjectsChange)
+updateFloorAndObjects f efloor =
+  let
+    floor =
+      efloor.undoList.present
+
+    newFloor =
+      f floor
+
+    propChanged =
+      FloorDiff.diffPropertyChanges newFloor (Just floor)
+
+    objectsChange =
+      FloorDiff.diffObjects newFloor.objects floor.objects
+        |> ObjectsChange.simplify
+
+    changed =
+      propChanged /= [] || ObjectsChange.isEmpty objectsChange
+
+    newUndoList =
+      if changed then
+        UndoList.new newFloor efloor.undoList
+      else
+        efloor.undoList
+  in
+    ( { efloor | undoList = newUndoList }
+    , newFloor
+    , objectsChange
+    )
+
+
 updateFloor : (Floor -> Floor) -> EditingFloor -> (EditingFloor, Floor)
 updateFloor f efloor =
   let

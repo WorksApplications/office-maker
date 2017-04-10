@@ -26,6 +26,7 @@ type alias Detailed a =
     , height : Int
     , realSize : Maybe (Int, Int)
     , image : Maybe String
+    , flipImage : Bool
     , update : Maybe { by : PersonId, at : Date }
     , objects: Dict ObjectId Object
   }
@@ -46,6 +47,7 @@ init id =
   , realSize = Nothing
   , temporary = False
   , image = Nothing
+  , flipImage = False
   , update = Nothing
   }
 
@@ -106,11 +108,11 @@ pixelToReal pixel =
   Basics.floor (toFloat pixel / 80)
 
 
-size : Floor -> (Int, Int)
+size : Floor -> Size
 size floor =
   case floor.realSize of
-    Just (w, h) -> (realToPixel w, realToPixel h)
-    Nothing -> (floor.width, floor.height)
+    Just (w, h) -> Size (realToPixel w) (realToPixel h)
+    Nothing -> Size floor.width floor.height
 
 
 name : Floor -> String
@@ -118,11 +120,11 @@ name floor = floor.name
 
 
 width : Floor -> Int
-width floor = size floor |> Tuple.first
+width floor = size floor |> .width
 
 
 height : Floor -> Int
-height floor = size floor |> Tuple.second
+height floor = size floor |> .height
 
 
 -- TODO confusing...
@@ -157,6 +159,14 @@ copy id temporary floor =
   }
 
 
+flip : Floor -> Floor
+flip floor =
+  { floor
+    | flipImage = not floor.flipImage
+  }
+    |> fullyChangeObjects (ObjectsOperation.flipObject <| size floor)
+
+
 -- OBJECT OPERATIONS
 
 
@@ -179,7 +189,7 @@ moveObjects gridSize (dx, dy) object =
         gridSize
         (Position (pos.x + dx) (pos.y + dy))
   in
-    Object.move new object
+    Object.changePosition new object
 
 
 paste : List (Object, ObjectId) -> Position -> Floor -> Floor
@@ -248,6 +258,14 @@ toFirstNameOnly ids floor =
       Object.changeName (change (Object.nameOf object)) object
   in
     partiallyChangeObjects f ids floor
+
+
+fullyChangeObjects : (Object -> Object) -> Floor -> Floor
+fullyChangeObjects f floor =
+  { floor
+    | objects =
+        Dict.map (\_ object -> f object) floor.objects
+  }
 
 
 partiallyChangeObjects : (Object -> Object) -> List ObjectId -> Floor -> Floor

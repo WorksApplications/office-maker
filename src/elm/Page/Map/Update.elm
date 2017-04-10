@@ -1720,6 +1720,22 @@ update msg model =
     Print ->
       ( model, print {} )
 
+    FlipFloor ->
+      model.floor
+        |> Maybe.map (\editingFloor ->
+          let
+            (newFloor, rawFloor, objectsChange) =
+              EditingFloor.updateFloorAndObjects
+                Floor.flip
+                editingFloor
+          in
+            { model | floor = Just newFloor } !
+              [ requestSaveFloorCmd rawFloor
+              , requestSaveObjectsCmd objectsChange
+              ]
+        )
+        |> Maybe.withDefault ( model, Cmd.none )
+
     Error e ->
       { model | error = e } ! []
 

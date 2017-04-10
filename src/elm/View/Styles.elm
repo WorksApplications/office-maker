@@ -258,14 +258,15 @@ canvasViewForPrint windowSize size =
     ]
 
 
-canvasImage : S
-canvasImage =
+canvasImage : Bool -> S
+canvasImage flipImage =
   [ ("position", "absolute")
   , ("top", "0")
   , ("left", "0")
   , ("width", "100%")
   , ("height", "100%")
   , ("pointer-events", "none")
+  , ("transform", if flipImage then "scale(-1,-1)" else "")
   ]
 
 
@@ -418,6 +419,11 @@ imageLoadButton =
 
 imageDownloadButton : S
 imageDownloadButton =
+  formControl ++ defaultButton
+
+
+flipButton : S
+flipButton =
   formControl ++ defaultButton
 
 

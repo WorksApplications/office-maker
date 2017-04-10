@@ -212,16 +212,22 @@ widthOrHeightValueView toMsg forEdit value =
     div [ style Styles.floorPropertyText ] [ text value ]
 
 
-view : (Msg -> msg) -> Language -> User -> Floor -> FloorProperty -> Html msg -> Html msg -> Html msg -> Html msg -> List (Html msg)
-view transform lang user floor model floorLoadButton publishButton deleteButton deleteDialog =
+view : (Msg -> msg) -> Language -> User -> Floor -> FloorProperty -> msg -> Html msg -> Html msg -> Html msg -> Html msg -> List (Html msg)
+view transform lang user floor model flipMsg floorLoadButton publishButton deleteButton deleteDialog =
   [ Lazy.lazy3 imageView lang floor floorLoadButton
   , Lazy.lazy3 floorNameInputView lang user model |> Html.map transform
   , if floor.temporary then text "" else Lazy.lazy3 floorOrdInputView lang user model |> Html.map transform
   , if floor.temporary then text "" else Lazy.lazy3 floorRealSizeInputView lang user model |> Html.map transform
   , if floor.temporary then text "" else publishButton
+  , if floor.temporary then Lazy.lazy2 flipButton lang flipMsg else text ""
   , deleteButton
   , deleteDialog
   ]
+
+
+flipButton : Language -> msg -> Html msg
+flipButton lang msg =
+  div [ onClick msg, style Styles.flipButton ] [ text (I18n.flipFloor lang) ]
 
 
 imageView : Language -> Floor -> Html msg -> Html msg

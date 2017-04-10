@@ -99,6 +99,7 @@ subViewForEdit model editingMode =
             model.user
             (EditingFloor.present editingFloor)
             model.floorProperty
+            FlipFloor
             (Lazy.lazy2 fileLoadButton model.lang model.user)
             (Lazy.lazy2 publishButton model.lang model.user)
             (FloorDeleter.button model.lang model.user (EditingFloor.present editingFloor) |> Html.map FloorDeleterMsg)

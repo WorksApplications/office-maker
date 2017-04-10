@@ -37,7 +37,7 @@ viewEditingFloors disableContextmenu user currentFloorId floorsInfo =
       floorsInfo
         |> FloorInfo.toValues
         |> List.map (\floorInfo -> (FloorInfo.isNeverPublished floorInfo, FloorInfo.editingFloor floorInfo))
-        -- |> List.sortBy (Tuple.second >> .ord)
+        |> List.sortBy (Tuple.second >> .ord)
         |> List.map (\(isNeverPublished, floor) ->
             eachView
               (contextMenuMsg floor)

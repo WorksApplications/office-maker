@@ -146,4 +146,5 @@ type Msg
   | ShiftSelectionByTab
   | ExpandOrShrinkToward Direction
   | Print
+  | FlipFloor
   | Error GlobalError

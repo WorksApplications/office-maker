@@ -6,6 +6,7 @@ function floorKeyValues(tenantId, floor, updateAt) {
     ["name", floor.name],
     ["ord", floor.ord],
     ["image", floor.image],
+    ["flipImage", floor.flipImage ? 1 : 0],
     ["width", floor.width],
     ["height", floor.height],
     ["realWidth", floor.realWidth],

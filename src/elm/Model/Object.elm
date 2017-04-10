@@ -69,7 +69,7 @@ modify change object =
       changeSize new object
 
     ChangePosition new old ->
-      move new object
+      changePosition new object
 
     ChangeBackgroundColor new old ->
       changeBackgroundColor new object
@@ -190,8 +190,8 @@ changeSize size (Object object) =
   Object { object | size = size }
 
 
-move : Position -> Object -> Object
-move position (Object object) =
+changePosition : Position -> Object -> Object
+changePosition position (Object object) =
   Object { object | position = position }
 
 

@@ -79,8 +79,14 @@ propertyChangesHelp current prev =
         [("Image", Maybe.withDefault "" current.image, Maybe.withDefault "" prev.image)]
       else
         []
+
+    flipImageChange =
+      if current.flipImage /= prev.flipImage then
+        [("FlipImage", toString current.flipImage, toString prev.flipImage)]
+      else
+        []
   in
-    nameChange ++ ordChange ++ sizeChange ++ imageChange
+    nameChange ++ ordChange ++ sizeChange ++ imageChange ++ flipImageChange
 
 
 diffObjects : Dict ObjectId Object -> Dict ObjectId Object -> DetailedObjectsChange
