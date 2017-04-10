@@ -145,14 +145,15 @@ changeId id floor =
   { floor | id = id }
 
 
-copy : Bool -> FloorId -> Floor -> Floor
-copy withEmptyObjects id floor =
-  { floor |
-    id = id
-  , version = 0
-  , name = "Copy of " ++ floor.name
-  , update = Nothing
-  , objects = if withEmptyObjects then Dict.empty else Dict.empty -- TODO
+copy : FloorId -> Bool -> Floor -> Floor
+copy id temporary floor =
+  { floor
+    | id = id
+    , version = 0
+    , name = if temporary then "Temporary from " ++ floor.name else "Copy of " ++ floor.name
+    , update = Nothing
+    , objects = Dict.empty
+    , temporary = temporary
   }
 
 

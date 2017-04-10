@@ -4,6 +4,7 @@ import Dict
 import Html exposing (..)
 import ContextMenu
 
+import Model.User as User
 import Model.Object as Object
 import Model.EditingFloor as EditingFloor
 import Model.I18n as I18n
@@ -61,13 +62,15 @@ toItemGroups model context =
         [ items ]
 
     FloorInfoContextMenu floorId ->
-      if Maybe.map (\efloor -> (EditingFloor.present efloor).id) model.floor == Just floorId then
-        let
-          items =
-            [ (ContextMenu.item (I18n.copyFloor model.lang), CopyFloor floorId False)
-            -- , (ContextMenu.item (I18n.copyFloorWithEmptyDesks model.lang), CopyFloor floorId True)
-            ]
-        in
-          [ items ]
+      if Maybe.map (EditingFloor.present >> .id) model.floor == Just floorId then
+        if User.isGuest model.user then
+          []
+        else if User.isAdmin model.user then
+          [[ (ContextMenu.item (I18n.copyFloor model.lang), CopyFloor floorId False)
+          , (ContextMenu.item (I18n.copyAndCreateTemporaryFloor model.lang), CopyFloor floorId True)
+          ]]
+        else
+          [[ (ContextMenu.item (I18n.copyAndCreateTemporaryFloor model.lang), CopyFloor floorId True)
+          ]]
       else
         []

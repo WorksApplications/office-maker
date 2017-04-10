@@ -1421,12 +1421,9 @@ update msg model =
           , Navigation.modifyUrl (Model.encodeToUrl newModel)
           ]
 
-    CopyFloor floorId withEmptyObjects ->
-      case model.floor of
-        Nothing ->
-          model ! []
-
-        Just editingFloor ->
+    CopyFloor floorId temporary ->
+      model.floor
+        |> Maybe.map (\editingFloor ->
           let
             floor =
               EditingFloor.present editingFloor
@@ -1435,31 +1432,37 @@ update msg model =
               IdGenerator.new model.seed
 
             newFloor =
-              Floor.copy withEmptyObjects newFloorId floor
+              Floor.copy newFloorId temporary floor
 
-            saveCmd =
+            (newObjects, newSeed2) =
+              if temporary then
+                IdGenerator.zipWithNewIds newSeed (Floor.objects floor)
+                  |> Tuple.mapFirst (List.map (\(obj, newId) -> (Object.changeId newId >> Object.changeFloorId newFloorId) obj))
+              else
+                ([], newSeed)
+
+            (newEditingFloor, objectsChange) =
+              EditingFloor.init newFloor
+                |> EditingFloor.updateObjects (Floor.addObjects newObjects)
+
+            saveAndLoadNewFloorCmd =
               API.saveFloor model.apiConfig newFloor
-                |> Task.andThen (\_ ->
-                  if withEmptyObjects then
-                    API.saveObjects model.apiConfig (ObjectsChange.added (Floor.objects newFloor))
-                  else
-                    Task.succeed ObjectsChange.empty
-                )
+                |> Task.andThen (\_ -> API.saveObjects model.apiConfig objectsChange )
                 |> Task.andThen (\_ -> API.getFloorsInfo model.apiConfig)
                 |> performAPI (FloorsInfoLoaded True)
 
-
             newModel =
               { model |
-                seed = newSeed
-              , floor = Just (EditingFloor.init newFloor)
+                seed = newSeed2
+              , floor = Just newEditingFloor
               }
-
           in
             newModel !
-              [ saveCmd
+              [ saveAndLoadNewFloorCmd
               , Navigation.modifyUrl (Model.encodeToUrl newModel)
               ]
+        )
+        |> Maybe.withDefault (model, Cmd.none)
 
     EmulateClick id down time ->
       let
@@ -1537,11 +1540,11 @@ update msg model =
         (Just floor, Just (pos, _)) ->
           if String.startsWith "[" s then
             let
-              (copiedIdsWithNewIds, newSeed) =
+              (copiedWithNewIds, newSeed) =
                 IdGenerator.zipWithNewIds model.seed (ClipboardData.toObjects s)
 
               (newFloor, objectsChange) =
-                EditingFloor.updateObjects (Floor.paste copiedIdsWithNewIds pos) floor
+                EditingFloor.updateObjects (Floor.paste copiedWithNewIds pos) floor
 
               saveCmd =
                 requestSaveObjectsCmd objectsChange
@@ -1550,7 +1553,7 @@ update msg model =
                 floor = Just newFloor
               , seed = newSeed
               , selectedObjects =
-                case List.map Tuple.second copiedIdsWithNewIds of
+                case List.map Tuple.second copiedWithNewIds of
                   [] -> model.selectedObjects -- for pasting from spreadsheet
                   x -> x
               , selectorRect = Nothing

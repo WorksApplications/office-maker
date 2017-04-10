@@ -67,6 +67,13 @@ copyFloor lang =
     EN -> "Copy floor"
 
 
+copyAndCreateTemporaryFloor : Language -> String
+copyAndCreateTemporaryFloor lang =
+  case lang of
+    JA -> "複製して一時フロアを作る"
+    EN -> "Copy and create temporary floor"
+
+
 copyFloorWithEmptyDesks : Language -> String
 copyFloorWithEmptyDesks lang =
   case lang of
