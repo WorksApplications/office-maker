@@ -79,7 +79,7 @@ type Msg
   | ObjectNameInputMsg ObjectNameInputMsg
   | BeforeContextMenuOnObject Id Msg
   | ContextMenuMsg (ContextMenu.Msg ContextMenuContext)
-  | GoToFloor (Maybe (String, Bool))
+  | GoToFloor String Bool
   | SelectSamePost String
   | SearchByPost String
   | GotSamePostPeople (List Person)

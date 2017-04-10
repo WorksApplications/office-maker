@@ -40,7 +40,7 @@ viewEditingFloors disableContextmenu user currentFloorId floorsInfo =
         |> List.map (\(isNeverPublished, floor) ->
             eachView
               (contextMenuMsg floor)
-              (GoToFloor <| Just (floor.id, True))
+              (GoToFloor floor.id True)
               (currentFloorId == Just floor.id)
               isNeverPublished
               floor.name
@@ -63,7 +63,7 @@ viewPublicFloors currentFloorId floorsInfo =
       (\floor ->
         eachView
           Nothing
-          (GoToFloor <| Just (floor.id, False))
+          (GoToFloor floor.id False)
           (currentFloorId == Just floor.id)
           False -- TODO
           floor.name
@@ -78,35 +78,18 @@ wrapList children =
 
 eachView : Maybe (Attribute msg) -> msg -> Bool -> Bool -> String -> Html msg
 eachView maybeOpenContextMenu onClickMsg selected markAsPrivate floorName =
-  linkBox
-    onClickMsg
-    (Styles.floorsInfoViewItem selected markAsPrivate)
-    Styles.floorsInfoViewItemLink
-    maybeOpenContextMenu
-    [ text floorName ]
+  li
+    ( style (Styles.floorsInfoViewItem selected markAsPrivate)
+    :: onClick onClickMsg
+    :: (maybeOpenContextMenu |> Maybe.map (List.singleton) |> Maybe.withDefault [])
+    )
+    [ span [ style Styles.floorsInfoViewItemLink ] [ text floorName ] ]
 
 
 createButton : Html Msg
 createButton =
-  linkBox
-    CreateNewFloor
-    (Styles.floorsInfoViewItem False False)
-    Styles.floorsInfoViewItemLink
-    Nothing
-    [ text "+" ]
-
-
-linkBox : msg -> List (String, String) -> List (String, String) -> Maybe (Attribute msg) -> List (Html msg) -> Html msg
-linkBox clickMsg liStyle innerStyle maybeOpenContextMenu inner =
   li
-    ( style liStyle ::
-      onClick clickMsg ::
-      ( case maybeOpenContextMenu of
-          Just attr ->
-            [ attr ]
-
-          Nothing ->
-            []
-      )
-    )
-    [ span [ style innerStyle ] inner ]
+    [ style (Styles.floorsInfoViewItem False False)
+    , onClick CreateNewFloor
+    ]
+    [ span [ style Styles.floorsInfoViewItemLink ] [ text "+" ] ]

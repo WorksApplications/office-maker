@@ -888,27 +888,22 @@ update msg model =
       in
         { model | contextMenu = contextMenu } ! [ Cmd.map ContextMenuMsg cmd ]
 
-    GoToFloor maybeNextFloor ->
+    GoToFloor floorId requestLastEdit ->
       let
         loadCmd =
-          maybeNextFloor
-            |> Maybe.andThen
-              (\(floorId, requestLastEdit) ->
-                let
-                  load =
-                    performAPI FloorLoaded (loadFloor model.apiConfig requestLastEdit floorId)
-                in
-                  case model.floor of
-                    Just efloor ->
-                      if (EditingFloor.present efloor).id == floorId then
-                        Nothing
-                      else
-                        Just load
+          let
+            load =
+              performAPI FloorLoaded (loadFloor model.apiConfig requestLastEdit floorId)
+          in
+            case model.floor of
+              Just efloor ->
+                if (EditingFloor.present efloor).id == floorId then
+                  Cmd.none
+                else
+                  load
 
-                    Nothing ->
-                      Just load
-              )
-            |> Maybe.withDefault Cmd.none
+              Nothing ->
+                load
       in
         model !
           [ loadCmd
@@ -1251,17 +1246,14 @@ update msg model =
       let
         requestPrivateFloors =
           Mode.isEditMode model.mode && not (User.isGuest model.user)
-
-        goToFloor =
-          GoToFloor (Just (floorId, requestPrivateFloors))
-
+          
         regesterPersonCmd =
           maybePersonId
             |> Maybe.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
             |> Maybe.withDefault Cmd.none
       in
         model
-          |> update goToFloor
+          |> update (GoToFloor floorId requestPrivateFloors)
           |> andThen (\model ->
             ( { model
                   | selectedResult = Just objectId
