@@ -216,9 +216,9 @@ view : (Msg -> msg) -> Language -> User -> Floor -> FloorProperty -> Html msg ->
 view transform lang user floor model floorLoadButton publishButton deleteButton deleteDialog =
   [ Lazy.lazy3 imageView lang floor floorLoadButton
   , Lazy.lazy3 floorNameInputView lang user model |> Html.map transform
-  , Lazy.lazy3 floorOrdInputView lang user model |> Html.map transform
-  , Lazy.lazy3 floorRealSizeInputView lang user model |> Html.map transform
-  , publishButton
+  , if floor.temporary then text "" else Lazy.lazy3 floorOrdInputView lang user model |> Html.map transform
+  , if floor.temporary then text "" else Lazy.lazy3 floorRealSizeInputView lang user model |> Html.map transform
+  , if floor.temporary then text "" else publishButton
   , deleteButton
   , deleteDialog
   ]
