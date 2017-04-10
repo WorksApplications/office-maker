@@ -315,14 +315,16 @@ decodeFloor =
 decodeFloorBase : Decoder FloorBase
 decodeFloorBase =
   decode
-    (\id version name ord ->
+    (\id version temporary name ord ->
       { id = id
       , version = version
+      , temporary = temporary
       , name = name
       , ord = ord
       })
     |> required "id" D.string
     |> required "version" D.int
+    |> required "temporary" D.bool
     |> required "name" D.string
     |> required "ord" D.int
 

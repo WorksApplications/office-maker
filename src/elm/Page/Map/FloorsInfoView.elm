@@ -8,6 +8,7 @@ import Html.Events exposing (..)
 
 import ContextMenu
 import CoreType exposing (..)
+import View.CommonStyles as CommonStyles
 import View.Styles as Styles
 import Model.User as User exposing (User)
 import Model.FloorInfo as FloorInfo exposing (FloorInfo(..))
@@ -36,13 +37,13 @@ viewEditingFloors disableContextmenu user currentFloorId floorsInfo =
       floorsInfo
         |> FloorInfo.toValues
         |> List.map (\floorInfo -> (FloorInfo.isNeverPublished floorInfo, FloorInfo.editingFloor floorInfo))
-        |> List.sortBy (Tuple.second >> .ord)
+        -- |> List.sortBy (Tuple.second >> .ord)
         |> List.map (\(isNeverPublished, floor) ->
             eachView
               (contextMenuMsg floor)
               (GoToFloor floor.id True)
               (currentFloorId == Just floor.id)
-              isNeverPublished
+              (if floor.temporary then Temporary else if isNeverPublished then Private else Public)
               floor.name
           )
 
@@ -65,7 +66,7 @@ viewPublicFloors currentFloorId floorsInfo =
           Nothing
           (GoToFloor floor.id False)
           (currentFloorId == Just floor.id)
-          False -- TODO
+          Public
           floor.name
       )
     |> wrapList
@@ -73,23 +74,70 @@ viewPublicFloors currentFloorId floorsInfo =
 
 wrapList : List (Html msg) -> Html msg
 wrapList children =
-  ul [ style Styles.floorsInfoView ] children
+  ul [ style floorsInfoViewStyle ] children
 
 
-eachView : Maybe (Attribute msg) -> msg -> Bool -> Bool -> String -> Html msg
-eachView maybeOpenContextMenu onClickMsg selected markAsPrivate floorName =
+eachView : Maybe (Attribute msg) -> msg -> Bool -> ColorType -> String -> Html msg
+eachView maybeOpenContextMenu onClickMsg selected colorType floorName =
   li
-    ( style (Styles.floorsInfoViewItem selected markAsPrivate)
+    ( style (floorsInfoViewItemStyle selected colorType)
     :: onClick onClickMsg
     :: (maybeOpenContextMenu |> Maybe.map (List.singleton) |> Maybe.withDefault [])
     )
-    [ span [ style Styles.floorsInfoViewItemLink ] [ text floorName ] ]
+    [ span [ style floorsInfoViewItemLinkStyle ] [ text floorName ] ]
 
 
 createButton : Html Msg
 createButton =
   li
-    [ style (Styles.floorsInfoViewItem False False)
+    [ style (floorsInfoViewItemStyle False Public)
     , onClick CreateNewFloor
     ]
-    [ span [ style Styles.floorsInfoViewItemLink ] [ text "+" ] ]
+    [ span [ style floorsInfoViewItemLinkStyle ] [ text "+" ] ]
+
+
+type alias Styles = List (String, String)
+
+
+floorsInfoViewStyle : Styles
+floorsInfoViewStyle =
+  [ ("position", "absolute")
+  , ("width", "calc(100% - 300px)")
+  , ("z-index", Styles.zFloorInfo)
+  ]
+
+
+type ColorType =
+  Public | Private | Temporary
+
+
+floorsInfoViewItemStyle : Bool -> ColorType -> Styles
+floorsInfoViewItemStyle selected colorType =
+  [ ( "background-color",
+      case colorType of
+        Public -> "#fff"
+        Private -> "#dbdbdb"
+        Temporary -> "#dbdbaa"
+    )
+  , ("border-right", if selected then "solid 2px " ++ CommonStyles.selectColor else "solid 1px #d0d0d0")
+  , ("border-bottom", if selected then "solid 2px " ++ CommonStyles.selectColor else "solid 1px #d0d0d0")
+  , ("border-top", if selected then "solid 2px " ++ CommonStyles.selectColor else "none")
+  , ("border-left", if selected then "solid 2px " ++ CommonStyles.selectColor else "none")
+  , ("min-width", "72px")
+  , ("box-sizing", "border-box")
+  , ("height", "30px")
+  , ("position", "relative")
+  , ("font-size", "12px")
+  , ("float", "left")
+  , ("cursor", "pointer")
+  ]
+
+
+floorsInfoViewItemLinkStyle : Styles
+floorsInfoViewItemLinkStyle =
+  [ ("display", "block")
+  , ("text-align", "center")
+  , ("vertical-align", "middle")
+  , ("line-height", "30px")
+  , ("padding", "0 8px")
+  ]

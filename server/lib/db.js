@@ -162,10 +162,16 @@ function getPublicFloors(conn, tenantId) {
   });
 }
 
-function getEditingFloors(conn, tenantId) {
-  return rdb.exec(conn,
-    sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1]]) + ' AND temporary = 0')
-  );
+function getEditingFloors(conn, tenantId, maybeUserId) {
+  if(maybeUserId) {
+    return rdb.exec(conn,
+      sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1]]) + " OR (temporary = 1 AND updateAt = '" + maybeUserId + "')")
+    );
+  } else {
+    return rdb.exec(conn,
+      sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1], ['temporary', 0]]))
+    );
+  }
 }
 
 function getFloorsWithObjects(conn, tenantId, withPrivate) {
@@ -181,9 +187,9 @@ function getFloorsWithObjects(conn, tenantId, withPrivate) {
   });
 }
 
-function getFloorsInfo(conn, tenantId) {
-  return getPublicFloors(conn, tenantId).then((publicFloors) => {
-    return getEditingFloors(conn, tenantId).then((editingFloors) => {
+function getFloorsInfo(conn, tenantId, userId) {
+  return getPublicFloors(conn, tenantId).then(publicFloors => {
+    return getEditingFloors(conn, tenantId, userId).then(editingFloors => {
       var floorInfos = {};
       publicFloors.forEach((floor) => {
         floorInfos[floor.id] = floorInfos[floor.id] || [];

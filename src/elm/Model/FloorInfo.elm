@@ -87,14 +87,24 @@ toEditingList floorsInfo =
   floorsInfo
     |> toValues
     |> List.map editingFloor
-    |> List.sortBy .ord
+    |> List.sortWith (\f1 f2 ->
+      if f1.temporary == f2.temporary then
+        intToOrd f1.ord f2.ord
+      else if f2.temporary then
+        GT
+      else
+        LT
+    )
+
+
+intToOrd : Int -> Int -> Order
+intToOrd i1 i2 =
+  if i1 > i2 then GT else if i1 < i2 then LT else EQ
 
 
 sortByPublicOrder : Dict FloorId FloorInfo -> Maybe FloorInfo
 sortByPublicOrder floorsInfo =
   floorsInfo
     |> toValues
-    |> List.map (\info -> publicFloor info |> Maybe.map .ord |> Maybe.withDefault 999999 |> (,) info)
-    |> List.sortBy Tuple.second
-    |> List.map Tuple.first
+    |> List.sortBy (\info -> publicFloor info |> Maybe.map .ord |> Maybe.withDefault 999999)
     |> List.head

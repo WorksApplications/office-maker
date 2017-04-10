@@ -15,7 +15,6 @@ zIndex :
   , selectedLabelObject : String
   , deskInput : String
   , selectorRect : String
-  , floorInfo : String
   , personDetailPopup : String
   , candidatesView : String
   , lastUpdate : String
@@ -32,7 +31,6 @@ zIndex =
   , selectedLabelObject = "100"
   , deskInput = "200"
   , selectorRect = "300"
-  , floorInfo = "500"
   , personDetailPopup = "550"
   , lastUpdate = "580"
   , subView = "600"
@@ -43,6 +41,12 @@ zIndex =
   , modalBackground = 900
   , userMenuView = "1000"
   }
+
+
+zFloorInfo : String
+zFloorInfo = "500"
+
+
 zPrintGuide : String
 zPrintGuide = "650"
 
@@ -671,42 +675,6 @@ searchBoxSubmit =
   , ("border-bottom-right-radius", "15px")
   , ("border-top-right-radius", "15px")
   ]
-
-
-floorsInfoView : S
-floorsInfoView =
-    [ ("position", "absolute")
-    -- , ("display", "flex")
-    , ("width", "calc(100% - 300px)")
-    , ("z-index", zIndex.floorInfo)
-    ]
-
-
-floorsInfoViewItem : Bool -> Bool -> S
-floorsInfoViewItem selected private =
-    [ ("background-color", if private then "#dbdbdb" else "#fff")
-    , ("border-right", if selected then "solid 2px " ++ selectColor else "solid 1px #d0d0d0")
-    , ("border-bottom", if selected then "solid 2px " ++ selectColor else "solid 1px #d0d0d0")
-    , ("border-top", if selected then "solid 2px " ++ selectColor else "none")
-    , ("border-left", if selected then "solid 2px " ++ selectColor else "none")
-    , ("min-width", "72px")
-    , ("box-sizing", "border-box")
-    , ("height", "30px")
-    , ("position", "relative")
-    , ("font-size", "12px")
-    , ("float", "left")
-    , ("cursor", "pointer")
-    ]
-
-
-floorsInfoViewItemLink : S
-floorsInfoViewItemLink =
-    [ ("display", "block")
-    , ("text-align", "center")
-    , ("vertical-align", "middle")
-    , ("line-height", "30px")
-    , ("padding", "0 8px")
-    ]
 
 
 personMatchingInfo : Float -> S

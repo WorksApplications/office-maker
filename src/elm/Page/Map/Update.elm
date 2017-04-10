@@ -1246,7 +1246,7 @@ update msg model =
       let
         requestPrivateFloors =
           Mode.isEditMode model.mode && not (User.isGuest model.user)
-          
+
         regesterPersonCmd =
           maybePersonId
             |> Maybe.map (regesterPersonIfNotCached model.apiConfig model.personInfo)
@@ -1429,7 +1429,11 @@ update msg model =
             (newObjects, newSeed2) =
               if temporary then
                 IdGenerator.zipWithNewIds newSeed (Floor.objects floor)
-                  |> Tuple.mapFirst (List.map (\(obj, newId) -> (Object.changeId newId >> Object.changeFloorId newFloorId) obj))
+                  |> Tuple.mapFirst (List.map (\(obj, newId) ->
+                    ( Object.changeId newId >>
+                      Object.changeFloorId newFloorId
+                    ) obj)
+                  )
               else
                 ([], newSeed)
 

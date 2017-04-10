@@ -14,6 +14,7 @@ import CoreType exposing (..)
 type alias FloorBase =
   { id : FloorId
   , version : Int
+  , temporary : Bool
   , name : String
   , ord : Int
   }
@@ -24,7 +25,6 @@ type alias Detailed a =
     | width : Int
     , height : Int
     , realSize : Maybe (Int, Int)
-    , temporary : Bool
     , image : Maybe String
     , update : Maybe { by : PersonId, at : Date }
     , objects: Dict ObjectId Object
@@ -55,8 +55,8 @@ empty = init ""
 
 
 baseOf : Floor -> FloorBase
-baseOf { id, version, name, ord } =
-  FloorBase id version name ord
+baseOf { id, version, temporary, name, ord } =
+  FloorBase id version temporary name ord
 
 
 initWithOrder : FloorId -> Int -> Floor
