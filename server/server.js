@@ -255,9 +255,9 @@ app.put('/api/1/colors', inTransaction((conn, req, res) => {
 
 app.get('/api/1/floors', inTransaction((conn, req, res) => {
   var options = url.parse(req.url, true).query;
-  return getSelf(conn, getAuthToken(req)).then((user) => {
+  return getSelf(conn, getAuthToken(req)).then(user => {
     var tenantId = user ? user.tenantId : '';
-    return db.getFloorsInfo(conn, tenantId, user.id).then((floorInfoList) => {
+    return db.getFloorsInfo(conn, tenantId, user && user.id).then(floorInfoList => {
       return Promise.resolve(floorInfoList);
     });
   });

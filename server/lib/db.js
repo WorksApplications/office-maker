@@ -187,9 +187,9 @@ function getFloorsWithObjects(conn, tenantId, withPrivate) {
   });
 }
 
-function getFloorsInfo(conn, tenantId, userId) {
+function getFloorsInfo(conn, tenantId, maybeUserId) {
   return getPublicFloors(conn, tenantId).then(publicFloors => {
-    return getEditingFloors(conn, tenantId, userId).then(editingFloors => {
+    return getEditingFloors(conn, tenantId, maybeUserId).then(editingFloors => {
       var floorInfos = {};
       publicFloors.forEach((floor) => {
         floorInfos[floor.id] = floorInfos[floor.id] || [];
