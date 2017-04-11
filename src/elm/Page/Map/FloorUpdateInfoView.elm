@@ -1,5 +1,6 @@
 module Page.Map.FloorUpdateInfoView exposing (view)
 
+import Dict
 import Date exposing (Date)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -21,8 +22,14 @@ view model =
     |> Maybe.map EditingFloor.present
     |> Maybe.andThen (\floor -> floor.update)
     |> Maybe.map (\{ by, at } ->
-        viewHelp model.lang model.visitDate by at (Mode.isPrintMode model.mode)
-      )
+      let
+        name =
+          Dict.get by model.personInfo
+            |> Maybe.map .name
+            |> Maybe.withDefault by
+      in
+        viewHelp model.lang model.visitDate name at (Mode.isPrintMode model.mode)
+    )
     |> Maybe.withDefault (text "")
 
 

@@ -2114,12 +2114,22 @@ updateOnPuttingLabel model =
 
 
 updateOnFloorLoaded : Maybe Floor -> Model -> (Model, Cmd Msg)
-updateOnFloorLoaded maybeFloor model = -- let _ = Debug.log "updateOnFloorLoaded" maybeFloor in
-  case maybeFloor of
-    Just floor ->
+updateOnFloorLoaded maybeFloor model =
+  maybeFloor
+    |> Maybe.map (\floor ->
       let
         (realWidth, realHeight) =
           Floor.realSize floor
+
+        getUpdatePerson =
+          if User.isGuest model.user then
+            Cmd.none
+          else
+            floor.update
+              |> Maybe.map (\{ by } ->
+                getAndCachePersonIfNotCached by model
+              )
+              |> Maybe.withDefault Cmd.none
       in
         { model
           | floorsInfo = FloorInfo.mergeFloor (Floor.baseOf floor) model.floorsInfo
@@ -2128,35 +2138,23 @@ updateOnFloorLoaded maybeFloor model = -- let _ = Debug.log "updateOnFloorLoaded
         }
           |> adjustOffset True
           |> andThen (\model ->
-            model !
-              [ case (User.isGuest model.user, floor.update) of
-                (False, Just { by }) ->
-                  getAndCachePersonIfNotCached by model
-
-                _ ->
-                  Cmd.none
-              , Navigation.modifyUrl (Model.encodeToUrl model)
-              ]
-            )
-
-    Nothing ->
-      let
-        newModel =
-          { model | floor = Nothing }
-      in
-        newModel ! [ Navigation.modifyUrl (Model.encodeToUrl newModel) ]
+            (model, getUpdatePerson)
+          )
+    )
+    |> Maybe.withDefault ({ model | floor = Nothing }, Cmd.none)
+    |> andThen (\model ->
+      (model, Navigation.modifyUrl (Model.encodeToUrl model))
+    )
 
 
 getAndCachePersonIfNotCached : PersonId -> Model -> Cmd Msg
 getAndCachePersonIfNotCached personId model =
-  case Dict.get personId model.personInfo of
-    Just _ ->
-      Cmd.none
-
-    Nothing ->
-      performAPI
-        (\person -> CachePeople [person])
-        (API.getPersonByUser model.apiConfig personId)
+  if Dict.member personId model.personInfo then
+    Cmd.none
+  else
+    performAPI
+      (\person -> CachePeople [person])
+      (API.getPersonByUser model.apiConfig personId)
 
 
 focusCmd : Cmd Msg
