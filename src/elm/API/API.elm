@@ -271,7 +271,8 @@ getPersonByUser config userId =
           , name = ""
           , post = ""
           , mail = Nothing
-          , tel = Nothing
+          , tel1 = Nothing
+          , tel2 = Nothing
           , image = Nothing
           }
       )

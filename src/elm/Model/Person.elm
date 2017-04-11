@@ -7,6 +7,7 @@ type alias Person =
   , name : String
   , post : String
   , mail : Maybe String
-  , tel : Maybe String
+  , tel1 : Maybe String
+  , tel2 : Maybe String
   , image : Maybe String
   }

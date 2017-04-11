@@ -48,7 +48,8 @@ function fixPerson(profile) {
     name: profile.name,
     empNo: profile.employeeId,
     post: profile.post || '',//TODO
-    tel: profile.cellPhone || profile.extensionPhone,
+    tel1: profile.extensionPhone,
+    tel2: profile.cellPhone,
     mail: profile.mail,
     image: profile.picture || ''//TODO or default.png
   };

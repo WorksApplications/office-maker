@@ -840,6 +840,7 @@ personDetailPopupClose =
   , ("right", "10px")
   ]
 
+
 personDetailPopupPersonImage : S
 personDetailPopupPersonImage =
   [ ("position", "absolute")
@@ -847,12 +848,14 @@ personDetailPopupPersonImage =
   , ("max-width", "60px")
   ]
 
+
 personDetailPopupPersonNo : S
 personDetailPopupPersonNo =
   [ ("position", "absolute")
   , ("fon-size", "small")
   , ("top", "5px")
   ]
+
 
 personDetailPopupPersonName : S
 personDetailPopupPersonName =
@@ -863,6 +866,7 @@ personDetailPopupPersonName =
   , ("left", "100px")
   ]
 
+
 personDetailPopupPersonPost : S
 personDetailPopupPersonPost =
   [ ("position", "absolute")
@@ -870,13 +874,15 @@ personDetailPopupPersonPost =
   , ("top", "105px")
   ]
 
-personDetailPopupPersonTel : S
-personDetailPopupPersonTel =
+
+personDetailPopupPersonTel : Bool -> S
+personDetailPopupPersonTel second =
   flex ++
     [ ("position", "absolute")
     , ("top", "50px")
-    , ("left", "100px")
+    , ("left", if second then "180px" else "100px")
     ]
+
 
 personDetailPopupPersonMail : S
 personDetailPopupPersonMail =
@@ -885,6 +891,7 @@ personDetailPopupPersonMail =
     , ("top", "70px")
     , ("left", "100px")
     ]
+
 
 personDetailPopupPersonIconText : S
 personDetailPopupPersonIconText =

@@ -127,7 +127,8 @@ personView maybeCloseMsg objectId person =
             ]
             objectId
         ]
-    , lazy tel person
+    , lazy2 viewTel False person.tel1
+    , lazy2 viewTel True person.tel2
     , lazy mail person
     , div [ style Styles.personDetailPopupPersonPost ] [ text person.post ]
     ]
@@ -162,14 +163,14 @@ pointerSmall transition size =
     []
 
 
-tel : Person -> Html msg
-tel person =
+viewTel : Bool -> Maybe String -> Html msg
+viewTel second tel =
   div
-    [ style Styles.personDetailPopupPersonTel ]
+    [ style (Styles.personDetailPopupPersonTel second) ]
     [ Icons.personDetailPopupPersonTel
     , div
         [ style Styles.personDetailPopupPersonIconText ]
-        [ text (Maybe.withDefault "" person.tel) ]
+        [ text (Maybe.withDefault "" tel) ]
     ]
 
 
