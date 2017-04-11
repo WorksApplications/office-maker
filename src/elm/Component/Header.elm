@@ -83,7 +83,7 @@ normalMenu context menuOpened =
       case context.user of
         Just user ->
           editingToggle context.onToggleEditing context.lang user context.editing ::
-          Lazy.lazy3 printButton context.onTogglePrintView context.lang user ::
+          Lazy.lazy2 printButton context.onTogglePrintView context.lang ::
           helpView context.lang ::
           ( if user == Guest then
               [ Lazy.lazy2 signIn context.onSignInClicked context.lang ]
@@ -177,12 +177,9 @@ editingToggle onToggleEditing lang user editing =
     editingToggleView onToggleEditing lang editing
 
 
-printButton : msg -> Language -> User -> Html msg
-printButton onTogglePrintView lang user =
-  if User.isGuest user then
-    text ""
-  else
-    Lazy.lazy3 printButtonView onTogglePrintView lang False
+printButton : msg -> Language -> Html msg
+printButton onTogglePrintView lang =
+  Lazy.lazy3 printButtonView onTogglePrintView lang False
 
 
 signIn : msg -> Language -> Html msg
