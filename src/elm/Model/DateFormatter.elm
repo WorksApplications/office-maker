@@ -1,7 +1,7 @@
-module Util.DateUtil exposing (..)
+module Model.DateFormatter exposing (formatDate, formatDateOrTime)
 
 import Date exposing (..)
-
+import Model.I18n exposing (Language(..))
 
 
 monthToInt : Month -> Int
@@ -54,23 +54,44 @@ ampm date =
   ++ (if am date then "a.m." else "p.m.")
 
 
+formatTime : Language -> Date -> String
+formatTime lang date =
+  case lang of
+    JA ->
+      fillZero2 (toString (hour date))
+      ++ ":"
+      ++ fillZero2 (toString (minute date))
+
+    EN ->
+      ampm date
+
+
 fillZero2 : String -> String
 fillZero2 s =
   String.right 2 ("0" ++ s)
 
 
-formatDate : Date -> String
-formatDate date =
-  toString (monthToInt <| Date.month date)
-  ++ "/"
-  ++ toString (Date.day date)
-  ++ "/"
-  ++ toString (Date.year date)
+formatDate : Language -> Date -> String
+formatDate lang date =
+  case lang of
+    JA ->
+      toString (Date.year date)
+      ++ "/"
+      ++ toString (monthToInt <| Date.month date)
+      ++ "/"
+      ++ toString (Date.day date)
+
+    EN ->
+      toString (monthToInt <| Date.month date)
+      ++ "/"
+      ++ toString (Date.day date)
+      ++ "/"
+      ++ toString (Date.year date)
 
 
-formatDateOrTime : Date -> Date -> String
-formatDateOrTime now date =
+formatDateOrTime : Language -> Date -> Date -> String
+formatDateOrTime lang now date =
   if sameDay now date then
-    ampm date
+    formatTime lang date
   else
-    formatDate date
+    formatDate lang date

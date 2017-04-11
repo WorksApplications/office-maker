@@ -5,18 +5,19 @@ import Date exposing (Date)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-
-import Util.DateUtil exposing (..)
+import Html.Lazy exposing (..)
 
 import View.Styles as Styles
 import View.DialogView as DialogView
 
+import Model.DateFormatter as DateFormatter
 import Model.Object as Object exposing (..)
-import Model.ObjectsChange as ObjectsChange
+import Model.ObjectsChange as ObjectsChange exposing (ObjectModification)
 import Model.Floor as Floor exposing (Floor)
 import Model.FloorDiff as FloorDiff
 import Model.Person exposing (Person)
 import Model.I18n as I18n exposing (Language)
+
 
 type alias Options msg =
   { onClose : msg
@@ -26,33 +27,69 @@ type alias Options msg =
 
 view : Language -> Date -> Dict String Person -> Options msg -> (Floor, Maybe Floor) -> Html msg
 view lang visitDate personInfo options (current, prev) =
-  let
-    header =
-      headerView lang visitDate current prev
+    popup options.onClose <|
+      [ viewHeader lang visitDate current prev
+      , lazy3 viewBody lang current prev
+      , lazy3 buttons lang options.onClose options.onConfirm
+      ]
 
+
+viewBody : Language -> Floor -> Maybe Floor -> Html msg
+viewBody lang current prev =
+  let
     (propertyChanges, objectsChange) =
       FloorDiff.diff current prev
 
     { added, modified, deleted } =
       ObjectsChange.separate objectsChange
-
-    body =
-      div [ style Styles.diffPopupBody ]
-        [ propertyChangesView lang propertyChanges
-        , if List.isEmpty added then text "" else h3 [] [ text ((toString (List.length added)) ++ " Additions") ]
-        , if List.isEmpty added then text "" else ul [] (List.map (\new -> li [] [ text (idOf new) ] ) added)
-        , if List.isEmpty modified then text "" else h3 [] [ text ((toString (List.length modified)) ++ " Modifications") ]
-        , if List.isEmpty modified then text "" else ul [] (List.map (\mod -> li [] [ text (toString (List.map viewObjectPropertyChange mod.changes)) ] ) modified)
-        , if List.isEmpty deleted then text "" else h3 [] [ text ((toString (List.length deleted)) ++ " Deletions") ]
-        , if List.isEmpty deleted then text "" else ul [] (List.map (\old -> li [] [ text (idOf old) ] ) deleted)
-        ]
-
   in
-    popup options.onClose <|
-      [ header
-      , body
-      , buttons lang options.onClose options.onConfirm
+    div [ style Styles.diffPopupBody ]
+      [ propertyChangesView lang propertyChanges
+      , viewAdditions lang added
+      , viewModifications lang modified
+      , viewDeletions lang deleted
       ]
+
+
+viewAdditions : Language -> List Object -> Html msg
+viewAdditions lang added =
+  if List.isEmpty added then
+    text ""
+  else
+    div []
+      [ h3 [] [ text (I18n.additions lang (List.length added)) ]
+      , ul [] (List.map (\new -> li [] [ text (nameHelp lang <| nameOf new) ] ) added)
+      ]
+
+
+viewModifications : Language -> List ObjectModification -> Html msg
+viewModifications lang modified =
+  if List.isEmpty modified then
+    text ""
+  else
+    div []
+      [ h3 [] [ text (I18n.modifications lang (List.length modified)) ]
+      , ul [] (List.map (\mod -> li [] [ text (toString (List.map viewObjectPropertyChange mod.changes)) ] ) modified)
+      ]
+
+
+viewDeletions : Language -> List Object -> Html msg
+viewDeletions lang deleted =
+  if List.isEmpty deleted then
+    text ""
+  else
+    div []
+      [ h3 [] [ text (I18n.deletions lang (List.length deleted)) ]
+      , ul [] (List.map (\old -> li [] [ text (nameHelp lang <| nameOf old) ] ) deleted)
+      ]
+
+
+nameHelp : Language -> String -> String
+nameHelp lang name =
+  if String.trim name == "" then
+    I18n.noName lang
+  else
+    name
 
 
 viewObjectPropertyChange : ObjectPropertyChange -> String
@@ -89,21 +126,21 @@ viewObjectPropertyChange change =
       "person chaged: " ++ toString old ++ " -> " ++ toString new
 
 
-headerView : Language -> Date -> Floor -> Maybe Floor -> Html msg
-headerView lang visitDate current prev =
+viewHeader : Language -> Date -> Floor -> Maybe Floor -> Html msg
+viewHeader lang visitDate current prev =
   h2 [ style Styles.diffPopupHeader ]
     [ text
         ( case prev of
           Just { update } ->
             case update of
               Just { by , at } ->
-                "Changes from " ++ formatDateOrTime visitDate at
+                I18n.changesFromDate lang (DateFormatter.formatDateOrTime lang visitDate at)
 
               Nothing ->
                 Debug.crash "this should never happen"
 
           Nothing ->
-            "Changes"
+            I18n.changes lang
         )
     ]
 

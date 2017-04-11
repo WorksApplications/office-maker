@@ -339,3 +339,48 @@ searchPlaceHolder lang =
   case lang of
     JA -> "名前、社員番号、組織名、会議室、etc."
     EN -> "Name, ID, Post, Room, etc."
+
+
+----
+
+
+changes : Language -> String
+changes lang =
+  case lang of
+    JA -> "変更"
+    EN -> "Changes"
+
+
+changesFromDate : Language -> String -> String
+changesFromDate lang date =
+  case lang of
+    JA -> date ++ " からの変更"
+    EN -> "Changes from " ++ date
+
+
+additions : Language -> Int -> String
+additions lang number =
+  case lang of
+    JA -> "追加: " ++ toString number ++ "件"
+    EN -> toString number ++ " additions"
+
+
+modifications : Language -> Int -> String
+modifications lang number =
+  case lang of
+    JA -> "更新: " ++ toString number ++ "件"
+    EN -> toString number ++ " modifications"
+
+
+deletions : Language -> Int -> String
+deletions lang number =
+  case lang of
+    JA -> "削除: " ++ toString number ++ "件"
+    EN -> toString number ++ " deletions"
+
+
+noName : Language -> String
+noName lang =
+  case lang of
+    JA -> "（名前なし）"
+    EN -> "(no name)"

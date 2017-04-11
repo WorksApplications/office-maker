@@ -5,12 +5,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Lazy as Lazy
 
-import Util.DateUtil exposing (..)
-
 import View.Styles as S
 
--- import Model.User as User exposing (User)
--- import Model.Floor exposing (Floor)
+import Model.DateFormatter as DateFormatter
 import Model.I18n as I18n exposing (Language)
 import Model.EditingFloor as EditingFloor
 import Model.Mode as Mode
@@ -31,7 +28,18 @@ view model =
 
 viewHelp : Language -> Date -> String -> Date -> Bool -> Html msg
 viewHelp lang visitDate by at printMode =
-  Lazy.lazy2 viewHelpHelp printMode (I18n.lastUpdateByAt lang by (formatDateOrTime visitDate at))
+  Lazy.lazy2
+    viewHelpHelp
+    printMode
+    (I18n.lastUpdateByAt lang by (formatDate lang printMode visitDate at))
+
+
+formatDate : Language -> Bool -> Date -> Date -> String
+formatDate lang printMode visitDate at =
+  if printMode then
+    DateFormatter.formatDate lang at
+  else
+    DateFormatter.formatDateOrTime lang visitDate at
 
 
 viewHelpHelp : Bool -> String -> Html msg
