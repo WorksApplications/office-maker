@@ -29,7 +29,7 @@ import Model.Object as Object
 
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
-import Page.Map.CanvasView as CanvasView
+import Page.Map.CanvasViewSvg as CanvasView
 import Page.Map.PropertyView as PropertyView
 import Page.Map.ContextMenu
 import Page.Map.PrototypePreviewView as PrototypePreviewView
