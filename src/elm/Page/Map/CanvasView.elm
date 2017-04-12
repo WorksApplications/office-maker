@@ -36,19 +36,6 @@ import Model.ClipboardData as ClipboardData
 import CoreType exposing (..)
 
 
-adjustImagePositionOfMovingObject : Int -> Scale -> Position -> Position -> Position -> Position
-adjustImagePositionOfMovingObject gridSize scale start end from =
-  let
-    shift =
-      Scale.screenToImageForPosition
-        scale
-        (Position (end.x - start.x) (end.y - start.y))
-  in
-    ObjectsOperation.fitPositionToGrid
-      gridSize
-      (Position (from.x + shift.x) (from.y + shift.y))
-
-
 viewModeEventOptions : ObjectId -> ObjectView.EventOptions Msg
 viewModeEventOptions id =
   let
@@ -64,16 +51,13 @@ viewModeEventOptions id =
     }
 
 
-editModeEventOptions : Bool -> ObjectId -> ObjectView.EventOptions Msg
-editModeEventOptions contextMenuDisabled id =
+editModeEventOptions : ObjectId -> ObjectView.EventOptions Msg
+editModeEventOptions id =
   { onContextMenu =
-      if contextMenuDisabled then
-        Nothing
-      else
-        Just
-          ( ContextMenu.open ContextMenuMsg (ObjectContextMenu id)
-              |> Attributes.map (BeforeContextMenuOnObject id)
-          )
+      Just
+        ( ContextMenu.open ContextMenuMsg (ObjectContextMenu id)
+            |> Attributes.map (BeforeContextMenuOnObject id)
+        )
   , onMouseDown =
       Just <|
         onWithOptions
@@ -92,47 +76,82 @@ editModeEventOptions contextMenuDisabled id =
   }
 
 
-objectView : Mode -> Bool -> Scale -> Bool -> Bool -> Object -> Html Msg
-objectView mode isGhost scale selected contextMenuDisabled object =
-  let
-    eventOptions =
-      if Mode.isViewMode mode then
-        viewModeEventOptions (Object.idOf object)
-      else if Mode.isPrintMode mode then
-        ObjectView.noEvents
-      else
-        editModeEventOptions contextMenuDisabled (Object.idOf object)
 
-    personMatched =
-      Object.relatedPerson object /= Nothing
-  in
-    if Object.isLabel object then
-      ObjectView.viewLabel
-        eventOptions
-        (positionOf object)
-        (sizeOf object)
-        (backgroundColorOf object)
-        (colorOf object)
-        (nameOf object)
-        (fontSizeOf object)
-        (shapeOf object == Object.Ellipse)
-        selected
-        isGhost
-        (Mode.isEditMode mode)
-        scale
-    else
-      ObjectView.viewDesk
-        eventOptions
-        (Mode.isEditMode mode)
-        (positionOf object)
-        (sizeOf object)
-        (backgroundColorOf object)
-        (nameOf object)
-        (fontSizeOf object)
-        selected
-        isGhost
-        scale
-        personMatched
+
+
+printModeObjectView : Scale -> Object -> Html Msg
+printModeObjectView scale object =
+  objectViewHelp
+    ObjectView.noEvents
+    False -- isGhost
+    False -- isEditMode
+    False -- selected
+    scale
+    object
+
+
+viewModeObjectView : Scale -> Object -> Html Msg
+viewModeObjectView scale object =
+  objectViewHelp
+    (viewModeEventOptions (Object.idOf object))
+    False -- isGhost
+    False -- isEditMode
+    False -- selected
+    scale
+    object
+
+
+ghostObjectView : Scale -> Object -> Html Msg
+ghostObjectView scale object =
+  objectViewHelp
+    ObjectView.noEvents
+    True -- isGhost
+    True -- isEditMode
+    True -- selected
+    scale
+    object
+
+
+nonGhostOjectView : Scale -> Bool -> Object -> Html Msg
+nonGhostOjectView scale selected object =
+  objectViewHelp
+    (editModeEventOptions (Object.idOf object))
+    True -- isGhost
+    False -- isEditMode
+    selected
+    scale
+    object
+
+
+objectViewHelp : ObjectView.EventOptions Msg -> Bool -> Bool -> Bool -> Scale -> Object -> Html Msg
+objectViewHelp eventOptions isEditMode isGhost selected scale object =
+  if Object.isLabel object then
+    ObjectView.viewLabel
+      eventOptions
+      (positionOf object)
+      (sizeOf object)
+      (backgroundColorOf object)
+      (colorOf object)
+      (nameOf object)
+      (fontSizeOf object)
+      (shapeOf object == Object.Ellipse)
+      selected
+      isGhost
+      isEditMode
+      scale
+  else
+    ObjectView.viewDesk
+      eventOptions
+      isEditMode
+      (positionOf object)
+      (sizeOf object)
+      (backgroundColorOf object)
+      (nameOf object)
+      (fontSizeOf object)
+      selected
+      isGhost
+      scale
+      (Object.relatedPerson object /= Nothing)
 
 
 view : Model -> Html Msg
@@ -285,125 +304,147 @@ canvasViewStyles model floor =
 
 objectsView : Model -> Floor -> List (String, Html Msg)
 objectsView model floor =
-  case model.draggingContext of
-    MoveObject _ start ->
-      let
-        objectList =
-          Floor.objects floor
+  if Mode.isPrintMode model.mode then
+    List.map
+      (\object ->
+        ( Object.idOf object
+        , lazy2 printModeObjectView model.scale object
+        )
+      )
+      (Floor.objects floor)
+  else if Mode.isViewMode model.mode then
+    List.map
+      (\object ->
+        ( Object.idOf object
+        , lazy2 viewModeObjectView model.scale object
+        )
+      )
+      (Floor.objects floor)
+  else
+    case model.draggingContext of
+      MoveObject _ start ->
+        objectsViewWhileMoving model floor start
 
-        isSelected object =
-          List.member (Object.idOf object) model.selectedObjects
+      ResizeFromScreenPos id from ->
+        objectsViewWhileResizing model floor id from
 
-        ghostsView =
-          List.map
-            (\object ->
-              ( Object.idOf object ++ "ghost"
-              , objectView
-                  model.mode
-                  True -- isGhost
-                  model.scale
-                  True -- selected
-                  False -- contextMenuDisabled
-                  object
-              )
+      _ ->
+        List.map
+          (\object ->
+            ( Object.idOf object
+            , lazy3 nonGhostOjectView
+                model.scale
+                (Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects)
+                object
             )
-            (List.filter isSelected objectList)
+          )
+          (Floor.objects floor)
 
-        adjustPosition object leftTop =
-          if isSelected object then
+
+objectsViewWhileMoving : Model -> Floor -> Position -> List (String, Html Msg)
+objectsViewWhileMoving model floor start =
+  let
+    objectList =
+      Floor.objects floor
+
+    isSelected object =
+      List.member (Object.idOf object) model.selectedObjects
+
+    ghostsView =
+      List.map
+        (\object ->
+          ( Object.idOf object ++ "ghost"
+          , lazy2 ghostObjectView model.scale object
+          )
+        )
+        (List.filter isSelected objectList)
+
+    adjustPosition object =
+      if isSelected object then
+        let
+          newPosition =
             adjustImagePositionOfMovingObject
               model.gridSize
               model.scale
               start
               model.mousePosition
-              leftTop
-          else
-            leftTop
+              (Object.positionOf object)
+        in
+          Object.changePosition newPosition object
+      else
+        object
 
-        normalView =
-          List.map
-            (\object ->
-              ( Object.idOf object
-              , objectView
-                  model.mode
-                  False -- isGhost
-                  model.scale
-                  (isSelected object)
-                  model.ctrl -- contextMenuDisabled
-                  (Object.changePosition (adjustPosition object (Object.positionOf object)) object)
-              )
-            )
-            objectList
-      in
-        (ghostsView ++ normalView)
-
-    ResizeFromScreenPos id from ->
-      let
-        objectList =
-          Floor.objects floor
-
-        isSelected object =
-          List.member (Object.idOf object) model.selectedObjects
-
-        isResizing object =
-          Object.idOf object == id
-
-        ghostsView =
-          List.map
-            (\object ->
-              ( Object.idOf object ++ "ghost"
-              , objectView
-                  model.mode
-                  True -- isGhost
-                  model.scale
-                  True -- selected
-                  model.ctrl -- contextMenuDisabled
-                  object
-              )
-            )
-            (List.filter isResizing objectList)
-
-        adjustRect object pos size =
-          if isResizing object then
-            Model.temporaryResizeRect model from pos size
-              |> Maybe.withDefault (Position 0 0, Size 0 0)
-          else
-            (pos, size)
-
-        normalView =
-          List.map
-            (\object ->
-              ( Object.idOf object
-              , objectView
-                  model.mode
-                  False -- isGhost
-                  model.scale
-                  (isResizing object) --TODO seems not selected?
-                  model.ctrl -- contextMenuDisabled
-                  ( object
-                      |> Object.changePosition (adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.first) -- TODO
-                      |> Object.changeSize (adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.second) -- TODO
-                  )
-              )
-            )
-            objectList
-      in
-        normalView ++ ghostsView
-
-    _ ->
+    normalView =
       List.map
         (\object ->
           ( Object.idOf object
-          , objectView
-              model.mode
-              False -- isGhost
+          , lazy3 nonGhostOjectView
               model.scale
-              (Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects)
-              model.ctrl -- contextMenuDisabled
-              object
+              (isSelected object)
+              (adjustPosition object)
           )
         )
-        (Floor.objects floor)
+        objectList
+  in
+    (ghostsView ++ normalView)
+
+
+adjustImagePositionOfMovingObject : Int -> Scale -> Position -> Position -> Position -> Position
+adjustImagePositionOfMovingObject gridSize scale start end from =
+  let
+    shift =
+      Scale.screenToImageForPosition
+        scale
+        (Position (end.x - start.x) (end.y - start.y))
+  in
+    ObjectsOperation.fitPositionToGrid
+      gridSize
+      (Position (from.x + shift.x) (from.y + shift.y))
+
+
+objectsViewWhileResizing : Model -> Floor -> ObjectId -> Position -> List (String, Html Msg)
+objectsViewWhileResizing model floor id from =
+  let
+    objectList =
+      Floor.objects floor
+
+    isSelected object =
+      List.member (Object.idOf object) model.selectedObjects
+
+    isResizing object =
+      Object.idOf object == id
+
+    ghostsView =
+      List.map
+        (\object ->
+          ( Object.idOf object ++ "ghost"
+          , lazy2 ghostObjectView model.scale object
+          )
+        )
+        (List.filter isResizing objectList)
+
+    adjustRect object =
+      if isResizing object then
+        Model.temporaryResizeRect model from (Object.positionOf object) (Object.sizeOf object)
+          |> Maybe.map (\(pos, size) -> object |> Object.changePosition pos |> Object.changeSize size)
+          |> Maybe.withDefault object -- TODO don't allow 0 width/height objects
+      else
+        object
+
+    normalView =
+      List.map
+        (\object ->
+          ( Object.idOf object
+          , lazy3 nonGhostOjectView
+              model.scale
+              (isResizing object) --TODO seems not selected?
+              (adjustRect object)
+          )
+        )
+        objectList
+  in
+    normalView ++ ghostsView
+
 
 
 canvasImage : Floor -> Html msg
