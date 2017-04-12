@@ -4,7 +4,10 @@ import Json.Decode as Decode
 import Svg exposing (..)
 import Svg.Attributes as Attributes exposing (..)
 import Svg.Events exposing (..)
-import Svg.Lazy as Lazy
+import Svg.Lazy exposing (..)
+import Html
+import Html.Attributes
+import Html.Events
 import Mouse
 
 import View.Styles as S
@@ -42,31 +45,26 @@ viewDesk eventOptions showPersonMatch pos size color name fontSize selected alph
   let
     personMatchIcon =
       if showPersonMatch then
-        Lazy.lazy3 personMatchingView scale name personMatched
+        lazy3 personMatchingView scale name personMatched
       else
         text ""
 
-    screenPos =
-      Scale.imageToScreenForPosition scale pos
-
-    screenSize =
-      Scale.imageToScreenForSize scale size
-
     rectStyles =
-      [ width (px screenSize.width)
-      , height (px screenSize.height)
+      [ width (px size.width)
+      , height (px size.height)
       , fill color
-      , stroke "black"
+      , stroke (if selected then "blue" else "black")
+      , strokeWidth (if selected then "2" else "1")
       ]
 
     ----style (S.deskObject screenPos screenSize color selected alpha)
     gStyles =
-      [ transform ("translate(" ++ toString screenPos.x ++ "," ++ toString screenPos.y ++ ")")
+      [ transform ("translate(" ++ toString pos.x ++ "," ++ toString pos.y ++ ")")
       , fillOpacity (if alpha then "0.5" else "1")
       ]
 
     nameView =
-      objectLabelView False "" fontSize scale screenPos screenSize name
+      objectLabelView False "" fontSize scale pos size name
   in
     viewInternal eventOptions selected gStyles rectStyles nameView personMatchIcon
 
@@ -74,30 +72,22 @@ viewDesk eventOptions showPersonMatch pos size color name fontSize selected alph
 viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Svg msg
 viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale =
   let
-    screenPos =
-      Scale.imageToScreenForPosition scale pos
-
-    screenSize =
-      Scale.imageToScreenForSize scale size
-
-    styles =
-      [ --style (S.labelObject isEllipse screenPos screenSize backgroundColor fontColor selected isGhost rectVisible)
-      ]
+    --style (S.labelObject isEllipse screenPos screenSize backgroundColor fontColor selected isGhost rectVisible)
 
     rectStyles =
-      [ width (px screenSize.width)
-      , height (px screenSize.height)
+      [ width (px size.width)
+      , height (px size.height)
       , fill backgroundColor
       , stroke "black"
       ]
 
     gStyles =
-      [ transform ("translate(" ++ toString screenPos.x ++ "," ++ toString screenPos.y ++ ")")
+      [ transform ("translate(" ++ toString pos.x ++ "," ++ toString pos.y ++ ")")
       , fillOpacity (if isGhost then "0.5" else "1")
       ]
 
     nameView =
-      objectLabelView True fontColor fontSize scale screenPos screenSize name
+      objectLabelView True fontColor fontSize scale pos size name
   in
     viewInternal eventOptions selected gStyles rectStyles nameView (text "")
 
@@ -120,52 +110,52 @@ viewInternal eventOptions selected gStyles rectStyles nameView personMatchIcon =
       ) ++
       ( case eventOptions.onMouseUp of
           Just msg ->
-            [ --onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } Mouse.position |> Attributes.map msg
-
+            [ Html.Events.onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } Mouse.position |> Html.Attributes.map msg
             ]
 
           Nothing -> []
       ) ++
       ( case eventOptions.onClick of
           Just msg ->
-            [ --onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            [ Html.Events.onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
             ]
 
           Nothing -> []
       ) ++
       ( case eventOptions.onStartEditingName of
-          Just msg -> --[ onDoubleClick msg ]
-          [onClick msg]
+          Just msg -> [ Html.Events.onDoubleClick msg ]
+
           Nothing -> []
       )
   in
     g
-      ( gStyles ++ eventHandlers )
-      [ rect rectStyles []
+      ( gStyles )
+      [ rect (rectStyles ++ eventHandlers) []
       , nameView
       , personMatchIcon
-      -- , Lazy.lazy2 resizeGripView selected eventOptions.onStartResize
+      , resizeGripView selected eventOptions.onStartResize
       ]
 
 
--- resizeGripView : Bool -> Maybe (Position -> msg) -> Svg msg
--- resizeGripView selected onStartResize =
---   case onStartResize of
---     Just msg ->
---       (Lazy.lazy resizeGripViewHelp selected)
---         |> Html.map msg
---
---     Nothing ->
---       text ""
+resizeGripView : Bool -> Maybe (Position -> msg) -> Svg msg
+resizeGripView selected onStartResize =
+  case onStartResize of
+    Just msg ->
+      (lazy resizeGripViewHelp selected)
+        |> Svg.map msg
+
+    Nothing ->
+      text ""
 
 
--- resizeGripViewHelp : Bool -> Svg Position
--- resizeGripViewHelp selected =
---   div
---     [ style (S.deskResizeGrip selected)
---     , onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position
---     ]
---     []
+resizeGripViewHelp : Bool -> Svg Position
+resizeGripViewHelp selected =
+  rect
+    [ width "8"
+    , height "8"
+    , Html.Events.onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position
+    ]
+    []
 
 
 personMatchingView : Scale -> String -> Bool -> Svg msg
@@ -193,13 +183,24 @@ objectLabelView canBeEmoji color fontSize scale screenPos screenSize name =
     ratio =
       Scale.imageToScreenRatio scale
 
-    -- styles =
-    --   S.nameLabel
-    --     color
-    --     ratio
-    --     fontSize
+    styles =
+      S.nameLabel
+        color
+        ratio
+        fontSize
   in
-    text_ [ x "0", y "0", fill "black" ] [ text trimed ]
+    foreignObject [ width "100", height "100", requiredExtensions "http://www.w3.org/1999/xhtml" ] [
+    Html.div
+      [ Html.Attributes.style styles
+      , Html.Attributes.attribute "xmlns" "http://www.w3.org/1999/xhtml"
+      ]
+      [ if canBeEmoji then
+          Emoji.view [] trimed
+        else
+          Html.span [] [ text trimed ]
+      ]
+    ]
+    -- text_ [ x "0", y "0", fill color ] [ text trimed ]
     -- div
     --   [ style styles ]
     --   [ if canBeEmoji then

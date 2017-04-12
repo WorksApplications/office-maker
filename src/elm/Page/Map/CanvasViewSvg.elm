@@ -274,9 +274,9 @@ canvasView model floor =
       [ ( "svg-canvas"
         , Svg.Keyed.node "svg"
             [ style [("position", "absolute"), ("top", "0")]
-            , Svg.Attributes.width "1200"
-            , Svg.Attributes.height "1200"
-            , Svg.Attributes.viewBox "0 0 1200 1200"
+            , Svg.Attributes.width (toString <| Scale.imageToScreen model.scale 4800 )
+            , Svg.Attributes.height (toString <| Scale.imageToScreen model.scale 9600 )
+            , Svg.Attributes.viewBox "0 0 4800 9600"
             ] (objectsView model floor)
         )
       ]
