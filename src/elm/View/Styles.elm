@@ -231,6 +231,11 @@ subView =
 canvasView : Bool -> Bool -> Position -> Size -> S
 canvasView transition isViewing pos size =
   absoluteRect pos size ++
+    -- [ ("position", "absolute")
+    -- , ("width", px size.width)
+    -- , ("height", px size.height)
+    -- , ("transform", "translate(" ++ px pos.x ++ "," ++ px pos.y ++ ")")
+    -- ] ++
     [ ("font-family", "default")
     , ("background-color", "#fff")
     , ("transition", if transition then "top 0.3s ease, left 0.3s ease" else "")
