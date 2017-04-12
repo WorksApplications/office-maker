@@ -1,4 +1,4 @@
-module View.ObjectView exposing (noEvents, viewDesk, viewLabel)
+module View.ObjectView exposing (EventOptions, noEvents, viewDesk, viewLabel)
 
 import Json.Decode as Decode
 import Html exposing (..)
@@ -57,7 +57,7 @@ viewDesk eventOptions showPersonMatch pos size color name fontSize selected alph
     nameView =
       objectLabelView False "" fontSize scale screenPos screenSize name
   in
-    viewInternal selected eventOptions styles nameView personMatchIcon
+    viewInternal eventOptions selected styles nameView personMatchIcon
 
 
 viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Html msg
@@ -75,11 +75,11 @@ viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllips
     nameView =
       objectLabelView True fontColor fontSize scale screenPos screenSize name
   in
-    viewInternal selected eventOptions styles nameView (text "")
+    viewInternal eventOptions selected styles nameView (text "")
 
 
-viewInternal : Bool -> EventOptions msg -> List (Html.Attribute msg) -> Html msg -> Html msg -> Html msg
-viewInternal selected eventOptions styles nameView personMatchIcon =
+viewInternal : EventOptions msg -> Bool -> List (Html.Attribute msg) -> Html msg -> Html msg -> Html msg
+viewInternal eventOptions selected styles nameView personMatchIcon =
   let
     eventHandlers =
       ( case eventOptions.onContextMenu of

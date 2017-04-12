@@ -49,64 +49,59 @@ adjustImagePositionOfMovingObject gridSize scale start end from =
       (Position (from.x + shift.x) (from.y + shift.y))
 
 
-type alias ObjectViewOption =
-  { mode: Mode
-  , scale: Scale
-  , selected: Bool
-  , isGhost: Bool
-  , object: Object
-  , position : Position
-  , size : Size
-  , contextMenuDisabled: Bool
+viewModeEventOptions : ObjectId -> ObjectView.EventOptions Msg
+viewModeEventOptions id =
+  let
+    noEvents = ObjectView.noEvents
+  in
+    { noEvents |
+      onMouseDown =
+        Just <|
+          onWithOptions
+            "mousedown"
+            { stopPropagation = True, preventDefault = True }
+            ( Decode.succeed <| ShowDetailForObject id )
+    }
+
+
+editModeEventOptions : Bool -> ObjectId -> ObjectView.EventOptions Msg
+editModeEventOptions contextMenuDisabled id =
+  { onContextMenu =
+      if contextMenuDisabled then
+        Nothing
+      else
+        Just
+          ( ContextMenu.open ContextMenuMsg (ObjectContextMenu id)
+              |> Attributes.map (BeforeContextMenuOnObject id)
+          )
+  , onMouseDown =
+      Just <|
+        onWithOptions
+          "mousedown"
+          { stopPropagation = True, preventDefault = True }
+          ( Decode.map4 MouseDownOnObject
+              KeyOperation.decodeCtrlOrCommand
+              KeyOperation.decodeShift
+              (Decode.succeed id)
+              Mouse.position
+          )
+  , onMouseUp = Just (MouseUpOnObject id)
+  , onClick = Just NoOp
+  , onStartEditingName = Nothing -- Just (StartEditObject id)
+  , onStartResize = Just (MouseDownOnResizeGrip id)
   }
 
 
-objectView : ObjectViewOption -> Html Msg
-objectView { mode, scale, selected, isGhost, object, position, size, contextMenuDisabled } =
+objectView : Mode -> Bool -> Scale -> Bool -> Bool -> Object -> Html Msg
+objectView mode isGhost scale selected contextMenuDisabled object =
   let
-    id =
-      Object.idOf object
-
     eventOptions =
       if Mode.isViewMode mode then
-        let
-          noEvents = ObjectView.noEvents
-        in
-          { noEvents |
-            onMouseDown =
-              Just <|
-                onWithOptions
-                  "mousedown"
-                  { stopPropagation = True, preventDefault = True }
-                  ( Decode.succeed <| ShowDetailForObject id )
-          }
+        viewModeEventOptions (Object.idOf object)
       else if Mode.isPrintMode mode then
         ObjectView.noEvents
       else
-        { onContextMenu =
-            if contextMenuDisabled then
-              Nothing
-            else
-              Just
-                ( ContextMenu.open ContextMenuMsg (ObjectContextMenu id)
-                    |> Attributes.map (BeforeContextMenuOnObject id)
-                )
-        , onMouseDown =
-            Just <|
-              onWithOptions
-                "mousedown"
-                { stopPropagation = True, preventDefault = True }
-                ( Decode.map4 MouseDownOnObject
-                    KeyOperation.decodeCtrlOrCommand
-                    KeyOperation.decodeShift
-                    (Decode.succeed id)
-                    Mouse.position
-                )
-        , onMouseUp = Just (MouseUpOnObject id)
-        , onClick = Just NoOp
-        , onStartEditingName = Nothing -- Just (StartEditObject id)
-        , onStartResize = Just (MouseDownOnResizeGrip id)
-        }
+        editModeEventOptions contextMenuDisabled (Object.idOf object)
 
     personMatched =
       Object.relatedPerson object /= Nothing
@@ -114,8 +109,8 @@ objectView { mode, scale, selected, isGhost, object, position, size, contextMenu
     if Object.isLabel object then
       ObjectView.viewLabel
         eventOptions
-        position
-        size
+        (positionOf object)
+        (sizeOf object)
         (backgroundColorOf object)
         (colorOf object)
         (nameOf object)
@@ -129,8 +124,8 @@ objectView { mode, scale, selected, isGhost, object, position, size, contextMenu
       ObjectView.viewDesk
         eventOptions
         (Mode.isEditMode mode)
-        position
-        size
+        (positionOf object)
+        (sizeOf object)
         (backgroundColorOf object)
         (nameOf object)
         (fontSizeOf object)
@@ -303,16 +298,13 @@ objectsView model floor =
           List.map
             (\object ->
               ( Object.idOf object ++ "ghost"
-              , lazy objectView
-                  { mode = model.mode
-                  , scale = model.scale
-                  , position = Object.positionOf object
-                  , size = Object.sizeOf object
-                  , selected = True
-                  , isGhost = True -- alpha
-                  , object = object
-                  , contextMenuDisabled = False --model.keys.ctrl
-                  }
+              , objectView
+                  model.mode
+                  True -- isGhost
+                  model.scale
+                  True -- selected
+                  False -- contextMenuDisabled
+                  object
               )
             )
             (List.filter isSelected objectList)
@@ -332,17 +324,13 @@ objectsView model floor =
           List.map
             (\object ->
               ( Object.idOf object
-              , lazy
-                objectView
-                  { mode = model.mode
-                  , scale = model.scale
-                  , position = adjustPosition object (Object.positionOf object)
-                  , size = Object.sizeOf object
-                  , selected = isSelected object
-                  , isGhost = False
-                  , object = object
-                  , contextMenuDisabled = model.ctrl
-                  }
+              , objectView
+                  model.mode
+                  False -- isGhost
+                  model.scale
+                  (isSelected object)
+                  model.ctrl -- contextMenuDisabled
+                  (Object.changePosition (adjustPosition object (Object.positionOf object)) object)
               )
             )
             objectList
@@ -364,16 +352,13 @@ objectsView model floor =
           List.map
             (\object ->
               ( Object.idOf object ++ "ghost"
-              , lazy objectView
-                { mode = model.mode
-                , scale = model.scale
-                , position = Object.positionOf object
-                , size = Object.sizeOf object
-                , selected = True
-                , isGhost = True
-                , object = object
-                , contextMenuDisabled = model.ctrl
-                }
+              , objectView
+                  model.mode
+                  True -- isGhost
+                  model.scale
+                  True -- selected
+                  model.ctrl -- contextMenuDisabled
+                  object
               )
             )
             (List.filter isResizing objectList)
@@ -389,16 +374,16 @@ objectsView model floor =
           List.map
             (\object ->
               ( Object.idOf object
-              , lazy objectView
-                { mode = model.mode
-                , scale = model.scale
-                , position = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.first -- TODO
-                , size = adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.second -- TODO
-                , selected = isResizing object --TODO seems not selected?
-                , isGhost = False
-                , object = object
-                , contextMenuDisabled = model.ctrl
-                }
+              , objectView
+                  model.mode
+                  False -- isGhost
+                  model.scale
+                  (isResizing object) --TODO seems not selected?
+                  model.ctrl -- contextMenuDisabled
+                  ( object
+                      |> Object.changePosition (adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.first) -- TODO
+                      |> Object.changeSize (adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.second) -- TODO
+                  )
               )
             )
             objectList
@@ -409,16 +394,13 @@ objectsView model floor =
       List.map
         (\object ->
           ( Object.idOf object
-          , lazy objectView
-            { mode = model.mode
-            , scale = model.scale
-            , position = Object.positionOf object
-            , size = Object.sizeOf object
-            , selected = Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects
-            , isGhost = False
-            , object = object
-            , contextMenuDisabled = model.ctrl
-            }
+          , objectView
+              model.mode
+              False -- isGhost
+              model.scale
+              (Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects)
+              model.ctrl -- contextMenuDisabled
+              object
           )
         )
         (Floor.objects floor)
