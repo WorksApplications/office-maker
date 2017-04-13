@@ -339,16 +339,19 @@ objectsView model floor =
         objectsViewWhileResizing model floor id from
 
       _ ->
-        List.map
-          (\object ->
+        Floor.objects floor
+          |> List.map (\object ->
+            (object, List.member (Object.idOf object) model.selectedObjects)
+          )
+          |> List.sortBy (Tuple.second >> (\selected -> if selected then 1 else 0))
+          |> List.map (\(object, selected) ->
             ( Object.idOf object
             , lazy3 nonGhostOjectView
                 model.scale
-                (Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects)
+                selected
                 object
             )
           )
-          (Floor.objects floor)
 
 
 objectsViewWhileMoving : Model -> Floor -> Position -> List (String, Html Msg)
