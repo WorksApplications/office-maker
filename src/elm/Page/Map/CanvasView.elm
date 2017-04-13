@@ -36,6 +36,19 @@ import Model.ClipboardData as ClipboardData
 import CoreType exposing (..)
 
 
+adjustImagePositionOfMovingObject : Int -> Scale -> Position -> Position -> Position -> Position
+adjustImagePositionOfMovingObject gridSize scale start end from =
+  let
+    shift =
+      Scale.screenToImageForPosition
+        scale
+        (Position (end.x - start.x) (end.y - start.y))
+  in
+    ObjectsOperation.fitPositionToGrid
+      gridSize
+      (Position (from.x + shift.x) (from.y + shift.y))
+
+
 viewModeEventOptions : ObjectId -> ObjectView.EventOptions Msg
 viewModeEventOptions id =
   let
@@ -323,10 +336,90 @@ objectsView model floor =
   else
     case model.draggingContext of
       MoveObject _ start ->
-        objectsViewWhileMoving model floor start
+        let
+          objectList =
+            Floor.objects floor
+
+          isSelected object =
+            List.member (Object.idOf object) model.selectedObjects
+
+          ghostsView =
+            List.map
+              (\object ->
+                ( Object.idOf object ++ "ghost"
+                , lazy2 ghostObjectView model.scale object
+                )
+              )
+              (List.filter isSelected objectList)
+
+          adjustPosition object leftTop =
+            if isSelected object then
+              adjustImagePositionOfMovingObject
+                model.gridSize
+                model.scale
+                start
+                model.mousePosition
+                leftTop
+            else
+              leftTop
+
+          normalView =
+            List.map
+              (\object ->
+                ( Object.idOf object
+                , lazy3 nonGhostOjectView
+                    model.scale
+                    (isSelected object)
+                    (Object.changePosition (adjustPosition object (Object.positionOf object)) object)
+                )
+              )
+              objectList
+        in
+          (ghostsView ++ normalView)
 
       ResizeFromScreenPos id from ->
-        objectsViewWhileResizing model floor id from
+        let
+          objectList =
+            Floor.objects floor
+
+          isSelected object =
+            List.member (Object.idOf object) model.selectedObjects
+
+          isResizing object =
+            Object.idOf object == id
+
+          ghostsView =
+            List.map
+              (\object ->
+                ( Object.idOf object ++ "ghost"
+                , lazy2 ghostObjectView model.scale object
+                )
+              )
+              (List.filter isResizing objectList)
+
+          adjustRect object pos size =
+            if isResizing object then
+              Model.temporaryResizeRect model from pos size
+                |> Maybe.withDefault (Position 0 0, Size 0 0)
+            else
+              (pos, size)
+
+          normalView =
+            List.map
+              (\object ->
+                ( Object.idOf object
+                , lazy3 nonGhostOjectView
+                    model.scale
+                    (isResizing object) --TODO seems not selected?
+                    ( object
+                        |> Object.changePosition (adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.first) -- TODO
+                        |> Object.changeSize (adjustRect object (Object.positionOf object) (Object.sizeOf object) |> Tuple.second) -- TODO
+                    )
+                )
+              )
+              objectList
+        in
+          normalView ++ ghostsView
 
       _ ->
         List.map
@@ -341,110 +434,8 @@ objectsView model floor =
           (Floor.objects floor)
 
 
-objectsViewWhileMoving : Model -> Floor -> Position -> List (String, Html Msg)
-objectsViewWhileMoving model floor start =
-  let
-    objectList =
-      Floor.objects floor
-
-    isSelected object =
-      List.member (Object.idOf object) model.selectedObjects
-
-    ghostsView =
-      List.map
-        (\object ->
-          ( Object.idOf object ++ "ghost"
-          , lazy2 ghostObjectView model.scale object
-          )
-        )
-        (List.filter isSelected objectList)
-
-    adjustPosition object =
-      if isSelected object then
-        let
-          newPosition =
-            adjustImagePositionOfMovingObject
-              model.gridSize
-              model.scale
-              start
-              model.mousePosition
-              (Object.positionOf object)
-        in
-          Object.changePosition newPosition object
-      else
-        object
-
-    normalView =
-      List.map
-        (\object ->
-          ( Object.idOf object
-          , lazy3 nonGhostOjectView
-              model.scale
-              (isSelected object)
-              (adjustPosition object)
-          )
-        )
-        objectList
-  in
-    (ghostsView ++ normalView)
-
-
-adjustImagePositionOfMovingObject : Int -> Scale -> Position -> Position -> Position -> Position
-adjustImagePositionOfMovingObject gridSize scale start end from =
-  let
-    shift =
-      Scale.screenToImageForPosition
-        scale
-        (Position (end.x - start.x) (end.y - start.y))
-  in
-    ObjectsOperation.fitPositionToGrid
-      gridSize
-      (Position (from.x + shift.x) (from.y + shift.y))
-
-
-objectsViewWhileResizing : Model -> Floor -> ObjectId -> Position -> List (String, Html Msg)
-objectsViewWhileResizing model floor id from =
-  let
-    objectList =
-      Floor.objects floor
-
-    isSelected object =
-      List.member (Object.idOf object) model.selectedObjects
-
-    isResizing object =
-      Object.idOf object == id
-
-    ghostsView =
-      List.map
-        (\object ->
-          ( Object.idOf object ++ "ghost"
-          , lazy2 ghostObjectView model.scale object
-          )
-        )
-        (List.filter isResizing objectList)
-
-    adjustRect object =
-      if isResizing object then
-        Model.temporaryResizeRect model from (Object.positionOf object) (Object.sizeOf object)
-          |> Maybe.map (\(pos, size) -> object |> Object.changePosition pos |> Object.changeSize size)
-          |> Maybe.withDefault object -- TODO don't allow 0 width/height objects
-      else
-        object
-
-    normalView =
-      List.map
-        (\object ->
-          ( Object.idOf object
-          , lazy3 nonGhostOjectView
-              model.scale
-              (isResizing object) --TODO seems not selected?
-              (adjustRect object)
-          )
-        )
-        objectList
-  in
-    normalView ++ ghostsView
-
+objectsViewWhileObjectsMoving :
+objectsViewWhileObjectsMoving
 
 
 canvasImage : Floor -> Html msg

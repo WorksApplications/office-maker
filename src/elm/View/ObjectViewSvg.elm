@@ -164,6 +164,7 @@ resizeGripViewHelp containerSize selected scale =
       , Html.Events.onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position
       , stroke "black"
       , fill "white"
+      , Attributes.cursor "nw-resize"
       ]
     []
 
