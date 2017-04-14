@@ -306,7 +306,9 @@ canvasView model floor =
             ]
             ( ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect)
             :: ("grid-layer", gridLayer)
-            :: objectsView model floor)
+            :: objectsView model floor
+            ++ children3
+            )
         )
       ]
 
