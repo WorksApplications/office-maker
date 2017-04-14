@@ -18,6 +18,8 @@ import ContextMenu
 
 import View.Styles as S
 import View.ObjectViewSvg as ObjectView
+import View.CommonStyles as CommonStyles
+import Util.StyleUtil exposing (px)
 import Util.HtmlUtil as HtmlUtil exposing (..)
 
 import Model.Mode as Mode exposing (Mode(..))
@@ -32,7 +34,7 @@ import Page.Map.ContextMenuContext exposing (ContextMenuContext(ObjectContextMen
 import Page.Map.Msg exposing (..)
 import Page.Map.ObjectNameInput as ObjectNameInput
 import Page.Map.ProfilePopup as ProfilePopup
-import Page.Map.GridLayer as GridLayer
+import Page.Map.GridLayerSvg as GridLayer
 import Page.Map.KeyOperation as KeyOperation
 
 import Model.ClipboardData as ClipboardData
@@ -263,21 +265,36 @@ canvasView model floor =
       Mode.isEditMode model.mode
 
     children1 =
-      Just ("canvas-image", Lazy.lazy canvasImage floor) ::
-      (if isEditMode then Just ("grid-layer", gridLayer) else Nothing) ::
-      (if isEditMode then Just ("paste-handler", pasteHandler) else Nothing) ::
-      (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) ::
-      (if isEditMode then Just ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect) else Nothing) :: []
+      Just ("canvas-image", Lazy.lazy2 canvasImage model floor) ::
+      (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) :: []
       |> List.filterMap identity
+
+    position =
+      Scale.screenToImageForPosition
+        model.scale
+        model.offset
+
+    size =
+      Scale.screenToImageForSize
+        model.scale
+        (Size (Floor.width floor) (Floor.height floor))
 
     children2 =
       [ ( "svg-canvas"
         , Svg.Keyed.node "svg"
-            [ style [("position", "absolute"), ("top", "0")]
-            , Svg.Attributes.width (toString <| Scale.imageToScreen model.scale 4800 )
-            , Svg.Attributes.height (toString <| Scale.imageToScreen model.scale 9600 )
-            , Svg.Attributes.viewBox "0 0 4800 9600"
-            ] (objectsView model floor)
+            [ style
+                [ ("position", "absolute")
+                , ("top", "0"), ("left", "0")
+                , ("width", px <| Floor.width floor)
+                , ("height", px <| Floor.height floor)
+                ]
+            , Svg.Attributes.width (toString <| Floor.width floor )
+            , Svg.Attributes.height (toString <| Floor.height floor )
+            , Svg.Attributes.viewBox (String.join " " <| List.map toString [ -model.offset.x, -model.offset.y, size.width, size.height ])
+            ]
+            ( ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect)
+            :: ("grid-layer", gridLayer)
+            :: objectsView model floor)
         )
       ]
 
@@ -289,27 +306,27 @@ canvasView model floor =
   in
     Keyed.node
       "div"
-      [ style (canvasViewStyles model floor) ]
+      [ style (canvasViewStyles model floor ++ pasteHandlerStyle)
+      , id "paste-handler"
+      , attribute "contenteditable" ""
+      , maxlength 0
+      -- , style pasteHandlerStyle
+      , onWithOptions "keydown" { preventDefault = True, stopPropagation = True } KeyOperation.decodeOperation
+      , onWithOptions "paste" { preventDefault = True, stopPropagation = True } (ClipboardData.decode PasteFromClipboard)
+      ]
       ( children1 ++ children2 ++ children3)
 
 
 canvasViewStyles : Model -> Floor -> List (String, String)
 canvasViewStyles model floor =
-  let
-    position =
-      Scale.imageToScreenForPosition
-        model.scale
-        model.offset
-
-    size =
-      Scale.imageToScreenForSize
-        model.scale
-        (Size (Floor.width floor) (Floor.height floor))
-  in
-    -- if (Mode.isPrintMode model.mode) then
-    --   S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
-    -- else
-      S.canvasView model.transition (Mode.isViewMode model.mode) position size
+  [ ("position", "absolute")
+  , ("width", "100%")
+  , ("height", "100%")
+  , ("font-family", "default")
+  , ("background-color", "black")
+  , ("transition", if model.transition then "top 0.3s ease, left 0.3s ease" else "")
+  ] ++ CommonStyles.noUserSelect ++
+    (if Mode.isViewMode model.mode then [("overflow", "hidden")] else [])
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)
@@ -459,13 +476,30 @@ objectsViewWhileResizing model floor id from =
     normalView ++ ghostsView
 
 
+canvasImage : Model -> Floor -> Html msg
+canvasImage model floor =
+  let
+    position =
+      Scale.imageToScreenForPosition
+        model.scale
+        model.offset
 
-canvasImage : Floor -> Html msg
-canvasImage floor =
-  img
-    [ style (S.canvasImage floor.flipImage)
-    , src (Maybe.withDefault "" (Floor.src floor))
-    ] []
+    size =
+      Scale.imageToScreenForSize
+        model.scale
+        (Size (Floor.width floor) (Floor.height floor))
+  in
+    img
+      [ style (S.canvasImage floor.flipImage ++
+        [ ("position", "absolute")
+        , ("top", px <| position.y)
+        , ("left", px <| position.x)
+        , ("width", px <| size.width)
+        , ("height", px <| size.height)
+        ]
+      )
+      , src (Maybe.withDefault "" (Floor.src floor))
+      ] []
 
 
 temporaryStampsView : Model -> List (String, Html msg)
@@ -521,19 +555,19 @@ selectorRectView : Mode -> Scale -> Maybe (Position, Size) -> Html msg
 selectorRectView mode scale selectorRect =
   case (Mode.isSelectMode mode, selectorRect) of
     (True, Just (pos, size)) ->
-      div
-        [ style
-            ( S.selectorRect
-                (Scale.imageToScreenForPosition scale pos)
-                (Scale.imageToScreenForSize scale size)
-            )
+      Svg.rect
+        [ Svg.Attributes.x (toString pos.x)
+        , Svg.Attributes.y (toString pos.y)
+        , Svg.Attributes.width (toString size.width)
+        , Svg.Attributes.height (toString size.height)
+        , Svg.Attributes.stroke (CommonStyles.selectColor)
+        , Svg.Attributes.strokeWidth "3"
+        , Svg.Attributes.fill "none"
         ]
         []
 
     _ ->
       text ""
-
---
 
 
 canvasContainerStyle : Mode -> Bool -> S.S

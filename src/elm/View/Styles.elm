@@ -314,10 +314,10 @@ nameLabel color scale fontSize =
   , ("position", "absolute")
   , ("cursor", "default")
   , ("font-size", px fontSize)
-  , ("width", percent 100)
+  , ("width", percent (100 / scale))
   , ("word-wrap", "break-word")
   , ("top", "50%")
-  , ("transform", "translateY(-50%)")
+  , ("transform", "translateY(-50%) scale(" ++ toString scale ++ ")")
   , ("transform-origin", "left")
   ] ++ noMargin
 

@@ -434,10 +434,6 @@ objectsView model floor =
           (Floor.objects floor)
 
 
-objectsViewWhileObjectsMoving :
-objectsViewWhileObjectsMoving
-
-
 canvasImage : Floor -> Html msg
 canvasImage floor =
   img
