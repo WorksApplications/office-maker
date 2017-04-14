@@ -2,6 +2,8 @@ module View.PrototypePreviewView exposing (view, singleView, emptyView)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Svg exposing (Svg)
+import Svg.Attributes
 
 import View.Styles as S
 import View.ObjectView as ObjectView
@@ -16,8 +18,11 @@ view : Size -> Int -> List Prototype -> Html msg
 view containerSize selectedIndex prototypes =
   let
     inner =
-      div
-        [ style (S.prototypePreviewViewInner containerSize selectedIndex) ]
+      Svg.svg
+        [ Svg.Attributes.width (toString <| containerSize.width * 4)
+        , Svg.Attributes.height (toString containerSize.height)
+        , style (S.prototypePreviewViewInner containerSize selectedIndex)
+        ]
         (List.indexedMap (eachView containerSize selectedIndex) prototypes)
   in
     div [ style (S.prototypePreviewView containerSize.width containerSize.height) ] [ inner ]

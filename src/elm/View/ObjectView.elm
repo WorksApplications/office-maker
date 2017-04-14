@@ -1,17 +1,21 @@
 module View.ObjectView exposing (EventOptions, noEvents, viewDesk, viewLabel)
 
 import Json.Decode as Decode
-import Html exposing (..)
-import Html.Attributes as Attributes exposing (..)
-import Html.Events exposing (..)
-import Html.Lazy as Lazy
+import Svg exposing (..)
+import Svg.Attributes as Attributes exposing (..)
+import Svg.Events exposing (..)
+import Svg.Lazy exposing (..)
+import Html
+import Html.Attributes
+import Html.Events
 import Mouse
 
-import View.Styles as S
+import View.CommonStyles as CommonStyles
 import View.Icons as Icons
 import Model.Scale as Scale exposing (Scale)
 import Page.Map.Emoji as Emoji
-
+import Util.StyleUtil exposing (px)
+import Util.HtmlUtil as HtmlUtil
 import CoreType exposing (..)
 
 
@@ -36,50 +40,58 @@ noEvents =
   }
 
 
-viewDesk : EventOptions msg -> Bool -> Position -> Size -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Html msg
-viewDesk eventOptions showPersonMatch pos size color name fontSize selected alpha scale personMatched =
+viewDesk : EventOptions msg -> Bool -> Position -> Size -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Svg msg
+viewDesk eventOptions showPersonMatch pos size color name fontSize selected isGhost scale personMatched =
   let
     personMatchIcon =
       if showPersonMatch then
-        Lazy.lazy3 personMatchingView scale name personMatched
+        lazy2 personMatchingView name personMatched
       else
         text ""
 
-    screenPos =
-      Scale.imageToScreenForPosition scale pos
+    rectStyles =
+      [ width (px size.width)
+      , height (px size.height)
+      , fill color
+      , stroke (if selected then CommonStyles.selectColor else "black")
+      , strokeWidth (if selected then "3" else "1.5")
+      ]
 
-    screenSize =
-      Scale.imageToScreenForSize scale size
-
-    styles =
-      [ style (S.deskObject screenPos screenSize color selected alpha) ]
+    gStyles =
+      [ transform ("translate(" ++ toString pos.x ++ "," ++ toString pos.y ++ ")")
+      , fillOpacity (if isGhost then "0.5" else "1")
+      ]
 
     nameView =
-      objectLabelView False "" fontSize scale screenPos screenSize name
+      objectLabelView size False "" fontSize pos size name
   in
-    viewInternal eventOptions selected styles nameView personMatchIcon
+    viewInternal eventOptions size selected scale gStyles rectStyles nameView personMatchIcon
 
 
-viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Html msg
+viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Svg msg
 viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale =
   let
-    screenPos =
-      Scale.imageToScreenForPosition scale pos
+    rectStyles =
+      [ width (px size.width)
+      , height (px size.height)
+      , fill backgroundColor
+      , stroke (if rectVisible then "black" else "none")
+      , strokeDasharray "5,5"
+      ]
 
-    screenSize =
-      Scale.imageToScreenForSize scale size
-
-    styles =
-      [ style (S.labelObject isEllipse screenPos screenSize backgroundColor fontColor selected isGhost rectVisible) ]
+    gStyles =
+      [ transform ("translate(" ++ toString pos.x ++ "," ++ toString pos.y ++ ")")
+      , fillOpacity (if isGhost then "0.5" else "1")
+      ]
 
     nameView =
-      objectLabelView True fontColor fontSize scale screenPos screenSize name
+      objectLabelView size True fontColor fontSize pos size name
   in
-    viewInternal eventOptions selected styles nameView (text "")
+    viewInternal eventOptions size selected scale gStyles rectStyles nameView (text "")
 
 
-viewInternal : EventOptions msg -> Bool -> List (Html.Attribute msg) -> Html msg -> Html msg -> Html msg
-viewInternal eventOptions selected styles nameView personMatchIcon =
+viewInternal : EventOptions msg -> Size -> Bool -> Scale -> List (Svg.Attribute msg) -> List (Svg.Attribute msg) -> Svg msg -> Svg msg -> Svg msg
+viewInternal eventOptions size selected scale gStyles rectStyles nameView personMatchIcon =
   let
     eventHandlers =
       ( case eventOptions.onContextMenu of
@@ -96,84 +108,172 @@ viewInternal eventOptions selected styles nameView personMatchIcon =
       ) ++
       ( case eventOptions.onMouseUp of
           Just msg ->
-            [ onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } Mouse.position |> Attributes.map msg
+            [ Html.Events.onWithOptions "mouseup" { stopPropagation = True, preventDefault = False } Mouse.position |> Html.Attributes.map msg
             ]
 
           Nothing -> []
       ) ++
       ( case eventOptions.onClick of
           Just msg ->
-            [ onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
+            [ Html.Events.onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed msg)
             ]
 
           Nothing -> []
       ) ++
       ( case eventOptions.onStartEditingName of
-          Just msg -> [ onDoubleClick msg ]
+          Just msg -> [ Html.Events.onDoubleClick msg ]
+
           Nothing -> []
       )
   in
-    div
-      ( styles ++ eventHandlers )
-      [ nameView
+    g
+      ( gStyles )
+      [ rect (rectStyles ++ eventHandlers) []
+      , nameView
       , personMatchIcon
-      , Lazy.lazy2 resizeGripView selected eventOptions.onStartResize
+      , resizeGripView size selected scale eventOptions.onStartResize
       ]
 
 
-resizeGripView : Bool -> Maybe (Position -> msg) -> Html msg
-resizeGripView selected onStartResize =
-  case onStartResize of
-    Just msg ->
-      (Lazy.lazy resizeGripViewHelp selected)
-        |> Html.map msg
+resizeGripView : Size -> Bool -> Scale -> Maybe (Position -> msg) -> Svg msg
+resizeGripView containerSize selected scale onStartResize =
+  case (selected, onStartResize) of
+    (True, Just msg) ->
+      (lazy3 resizeGripViewHelp containerSize selected scale)
+        |> Svg.map msg
 
-    Nothing ->
+    _ ->
       text ""
 
 
-resizeGripViewHelp : Bool -> Html Position
-resizeGripViewHelp selected =
-  div
-    [ style (S.deskResizeGrip selected)
-    , onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position
-    ]
+resizeGripViewHelp : Size -> Bool -> Scale -> Svg Position
+resizeGripViewHelp containerSize selected scale =
+  let
+    screenWidth =
+      round <| 8 / Scale.imageToScreenRatio scale
+
+    screenHeight =
+      screenWidth
+  in
+    rect
+      [ class "object-resize-grip"
+      , width (toString screenWidth)
+      , height (toString screenHeight)
+      , x (toString <| containerSize.width - screenWidth // 2)
+      , y (toString <| containerSize.height - screenHeight // 2)
+      , Html.Events.onWithOptions "mousedown" { stopPropagation = True, preventDefault = True } Mouse.position
+      , stroke "black"
+      , fill "white"
+      , Attributes.cursor "nw-resize"
+      ]
     []
 
 
-personMatchingView : Scale -> String -> Bool -> Html msg
-personMatchingView scale name personMatched =
-  let
-    ratio =
-      Scale.imageToScreenRatio scale
-  in
-    if name /= "" && personMatched then
-      div [ style (S.personMatched ratio) ] [ Lazy.lazy Icons.personMatched ratio ]
-    else if name /= "" && not personMatched then
-      div [ style (S.personNotMatched ratio) ] [ Lazy.lazy Icons.personNotMatched ratio ]
-    else
-      text ""
+personMatchingView : String -> Bool -> Svg msg
+personMatchingView name personMatched =
+  if name == "" then
+    text ""
+  else
+    g []
+      [ circle
+          [ pointerEvents "none"
+          , cx "10"
+          , cy "10"
+          , r "10"
+          , fill (if personMatched then "rgb(102, 170, 102)" else "rgb(204, 204, 204)")
+          ]
+          []
+      , lazy (if personMatched then Icons.personMatched else Icons.personNotMatched) 1
+      ]
 
 
-objectLabelView : Bool -> String -> Float -> Scale -> Position -> Size -> String -> Html msg
-objectLabelView canBeEmoji color fontSize scale screenPos screenSize name =
+objectLabelView : Size -> Bool -> String -> Float -> Position -> Size -> String -> Svg msg
+objectLabelView containerSize canBeEmoji color fontSize_ screenPos screenSize name =
   let
     trimed =
       String.trim name
 
-    ratio =
-      Scale.imageToScreenRatio scale
-
-    styles =
-      S.nameLabel
-        color
-        ratio
-        fontSize
+    -- inner s =
+    --   if canBeEmoji then
+    --     Emoji.view [] s
+    --   else
+    --     text s
   in
-    div
-      [ style styles ]
-      [ if canBeEmoji then
-          Emoji.view [] trimed
-        else
-          span [] [ text trimed ]
+    text_
+      [ y (toString <| toFloat containerSize.height / 2)
+      , fill color
+      , fontSize (toString fontSize_)
+      , alignmentBaseline "middle"
+      , dominantBaseline "middle"
+      , textAnchor "middle"
+      , pointerEvents "none"
       ]
+      ( breakWords containerSize.width fontSize_ trimed
+          |> coupleWithY 0.2
+          |> List.map (\(s, y_) ->
+            tspan [ dy y_, x (toString <| toFloat containerSize.width / 2) ] [ text s ]
+          )
+      )
+    -- div
+    --   [ style styles ]
+    --   [ if canBeEmoji then
+    --       Emoji.view [] trimed
+    --     else
+    --       span [] [ text trimed ]
+    --   ]
+
+
+coupleWithY : Float -> List String -> List (String, String)
+coupleWithY spaceHeight lines =
+  let
+    len = List.length lines
+    top = (toFloat len + spaceHeight * toFloat (len - 1)) * (-0.5) + 0.5
+  in
+    lines
+      |> List.indexedMap (\i s ->
+        if i == 0 then
+          (s, toString (top + (1 + spaceHeight) * toFloat i) ++ "em")
+        else
+          (s, toString (1 + spaceHeight) ++ "em")
+      )
+
+
+breakWords : Int -> Float -> String -> List String
+breakWords containerWidth fontSize s =
+  breakWordsHelp containerWidth fontSize s []
+
+
+breakWordsHelp : Int -> Float -> String -> List String -> List String
+breakWordsHelp containerWidth fontSize s result =
+  case cut containerWidth fontSize s of
+    (left, Just right) ->
+      breakWordsHelp containerWidth fontSize right (left :: result)
+
+    (left, Nothing) ->
+      left :: result
+        |> List.reverse
+
+
+cut : Int -> Float -> String -> (String, Maybe String)
+cut containerWidth fontSize s =
+  cutHelp containerWidth fontSize s 1
+
+
+cutHelp : Int -> Float -> String -> Int -> (String, Maybe String)
+cutHelp containerWidth fontSize s i =
+  if String.length s < i then
+    (s, Nothing)
+  else
+    let
+      left =
+        String.left i s
+
+      measuredWidth =
+        HtmlUtil.measureText "sans-self" fontSize left
+    in
+      if measuredWidth < toFloat containerWidth then
+        cutHelp containerWidth fontSize s (i + 1)
+      else
+        ( String.left (Basics.max 1 (i - 1)) s
+        , Just <| String.dropLeft (Basics.max 1 (i - 1)) s
+        )
