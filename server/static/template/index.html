@@ -94,6 +94,39 @@
 				document.getElementById('blink-style').innerHTML = '';
 			}, 1400);
 
+			var now = window.performance && (
+			    performance.now ||
+			    performance.mozNow ||
+			    performance.msNow ||
+			    performance.oNow ||
+			    performance.webkitNow );
+
+			var getTime = function() {
+				return (now && now.call( performance )) || (new Date().getTime());
+			}
+			var init = getTime();
+			var start = init;
+			var arr = [];
+			(function loop(){
+				var end = getTime();
+				// if(end-start > 10) {
+					arr.push(end - start);
+				// }
+
+				start = end;
+				if(end - init < 5000) {
+					requestAnimationFrame(loop);
+				} else {
+					arr.reverse();
+					var arr2 = [];
+					for (var i = 0; i < 20; i++) {
+						arr2[i] = arr[i]/4 + arr[i+1]/2 + arr[i+2]/4
+					}
+					var s = arr2.map(n => n.toString()).join('\n');
+					console.log(s);
+				}
+			})();
+
 		</script>
 		<style id="blink-style">
 			.popup-blink {
