@@ -66,6 +66,7 @@ type Msg
   | ClickOnCanvas
   | MouseDownOnCanvas Position
   | MouseUpOnCanvas Position
+  | FocusCanvas
   | MouseDownOnObject Bool Bool Id Position
   | MouseUpOnObject Id Position
   | MouseDownOnResizeGrip Id Position

@@ -264,13 +264,22 @@ canvasView model floor =
     isEditMode =
       Mode.isEditMode model.mode
 
-    children1 =
-      Just ("canvas-image", Lazy.lazy2 canvasImage model floor) ::
-      (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) :: []
-      |> List.filterMap identity
+    htmlChild =
+      ("canvas-image"
+      , div
+          [ style
+            [ ("position", "absolute")
+            , ("left", px <| position.x)
+            , ("top", px <| position.y)
+            ]
+          ]
+          [ Lazy.lazy2 canvasImage model floor
+          , if isEditMode then nameInput else text ""
+          ]
+      )
 
     position =
-      Scale.screenToImageForPosition
+      Scale.imageToScreenForPosition
         model.scale
         model.offset
 
@@ -280,17 +289,20 @@ canvasView model floor =
         (Size (Floor.width floor) (Floor.height floor))
 
     children2 =
-      [ ( "svg-canvas"
+      [ ( "paste-handler", pasteHandler )
+      , ( "svg-canvas"
         , Svg.Keyed.node "svg"
             [ style
                 [ ("position", "absolute")
-                , ("top", "0"), ("left", "0")
+                , ("top", "0")
+                , ("left", "0")
                 , ("width", px <| Floor.width floor)
                 , ("height", px <| Floor.height floor)
                 ]
             , Svg.Attributes.width (toString <| Floor.width floor )
             , Svg.Attributes.height (toString <| Floor.height floor )
             , Svg.Attributes.viewBox (String.join " " <| List.map toString [ -model.offset.x, -model.offset.y, size.width, size.height ])
+            , onMouseDown FocusCanvas
             ]
             ( ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect)
             :: ("grid-layer", gridLayer)
@@ -306,15 +318,9 @@ canvasView model floor =
   in
     Keyed.node
       "div"
-      [ style (canvasViewStyles model floor ++ pasteHandlerStyle)
-      , id "paste-handler"
-      , attribute "contenteditable" ""
-      , maxlength 0
-      -- , style pasteHandlerStyle
-      , onWithOptions "keydown" { preventDefault = True, stopPropagation = True } KeyOperation.decodeOperation
-      , onWithOptions "paste" { preventDefault = True, stopPropagation = True } (ClipboardData.decode PasteFromClipboard)
+      [ style (canvasViewStyles model floor)
       ]
-      ( children1 ++ children2 ++ children3)
+      ( htmlChild :: children2 ++ children3)
 
 
 canvasViewStyles : Model -> Floor -> List (String, String)
@@ -479,11 +485,6 @@ objectsViewWhileResizing model floor id from =
 canvasImage : Model -> Floor -> Html msg
 canvasImage model floor =
   let
-    position =
-      Scale.imageToScreenForPosition
-        model.scale
-        model.offset
-
     size =
       Scale.imageToScreenForSize
         model.scale
@@ -491,10 +492,7 @@ canvasImage model floor =
   in
     img
       [ style (S.canvasImage floor.flipImage ++
-        [ ("position", "absolute")
-        , ("top", px <| position.y)
-        , ("left", px <| position.x)
-        , ("width", px <| size.width)
+        [ ("width", px <| size.width)
         , ("height", px <| size.height)
         ]
       )
