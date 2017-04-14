@@ -109,10 +109,7 @@
 			var arr = [];
 			(function loop(){
 				var end = getTime();
-				// if(end-start > 10) {
-					arr.push(end - start);
-				// }
-
+				arr.push(end - start);
 				start = end;
 				if(end - init < 5000) {
 					requestAnimationFrame(loop);

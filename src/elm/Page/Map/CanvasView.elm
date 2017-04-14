@@ -261,19 +261,10 @@ canvasView model floor =
     isEditMode =
       Mode.isEditMode model.mode
 
-    htmlChild =
-      ("html-child"
-      , div
-          [ style
-            [ ("position", "absolute")
-            , ("left", px <| position.x)
-            , ("top", px <| position.y)
-            ]
-          ]
-          [ Lazy.lazy2 canvasImage model floor
-          , if isEditMode then nameInput else text ""
-          ]
-      )
+    children1 =
+      [ ("canvas-image", Lazy.lazy2 canvasImage model floor)
+      , ("name-input", if isEditMode then nameInput else text "")
+      ]
 
     position =
       Scale.imageToScreenForPosition
@@ -289,16 +280,19 @@ canvasView model floor =
       [ ( "paste-handler", pasteHandler )
       , ( "svg-canvas"
         , Svg.Keyed.node "svg"
-            [ style
+            [ id "svg-canvas"
+            , style
                 [ ("position", "absolute")
-                , ("top", "0")
+                , ("display", "block")
                 , ("left", "0")
-                , ("width", px <| Floor.width floor)
-                , ("height", px <| Floor.height floor)
+                , ("top", "0")
+                , ("width", "100%")
+                , ("height", "100%")
+                , ("overflow", "visible")
                 ]
             , Svg.Attributes.width (toString <| Floor.width floor )
             , Svg.Attributes.height (toString <| Floor.height floor )
-            , Svg.Attributes.viewBox (String.join " " <| List.map toString [ -model.offset.x, -model.offset.y, size.width, size.height ])
+            , Svg.Attributes.viewBox (String.join " " <| List.map toString [ 0, 0, Floor.width floor, Floor.height floor ])
             , onMouseDown FocusCanvas
             ]
             ( ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect)
@@ -319,19 +313,32 @@ canvasView model floor =
       "div"
       [ style (canvasViewStyles model floor)
       ]
-      ( htmlChild :: children2 ++ children3)
+      ( children1 ++ children2 ++ children3 )
 
 
 canvasViewStyles : Model -> Floor -> List (String, String)
 canvasViewStyles model floor =
-  [ ("position", "absolute")
-  , ("width", "100%")
-  , ("height", "100%")
-  , ("font-family", "default")
-  , ("background-color", "black")
-  , ("transition", if model.transition then "top 0.3s ease, left 0.3s ease" else "")
-  ] ++ CommonStyles.noUserSelect ++
-    (if Mode.isViewMode model.mode then [("overflow", "hidden")] else [])
+  let
+    position =
+      Scale.imageToScreenForPosition
+        model.scale
+        model.offset
+
+    size2 =
+      Scale.imageToScreenForSize
+        model.scale
+        (Size (Floor.width floor) (Floor.height floor))
+  in
+    [ ("position", "absolute")
+    , ("left", px position.x)
+    , ("top", px position.y)
+    , ("width", px <| size2.width)
+    , ("height", px <| size2.height)
+    , ("font-family", "default")
+    , ("background-color", "black")
+    , ("transition", if model.transition then "top 0.3s ease, left 0.3s ease" else "")
+    ] ++ CommonStyles.noUserSelect ++
+      (if Mode.isViewMode model.mode then [("overflow", "hidden")] else [])
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)
