@@ -1,5 +1,6 @@
 module View.ObjectView exposing (EventOptions, noEvents, viewDesk, viewLabel)
 
+import Char
 import Json.Decode as Decode
 import Svg exposing (..)
 import Svg.Attributes as Attributes exposing (..)
@@ -238,20 +239,84 @@ coupleWithY spaceHeight lines =
       )
 
 
+words : String -> List String
+words s =
+  String.words s
+    |> List.concatMap (\word ->
+      word
+        |> String.toList
+        |> List.foldr (\c (cs, result) ->
+          case cs of
+            [] ->
+              ([c], result)
+
+            prev :: rest ->
+              if (Char.toCode c < 128) == (Char.toCode prev < 128) then
+                (c :: cs, result)
+              else
+                ([c], String.fromList cs :: result)
+        ) ([], [])
+        |> (\(cs, result) ->
+          if cs == [] then
+            result
+          else
+            String.fromList cs :: result
+        )
+    )
+
+
 breakWords : Int -> Float -> String -> List String
 breakWords containerWidth fontSize s =
-  breakWordsHelp containerWidth fontSize s []
+  breakWordsHelp containerWidth fontSize (words s) []
+    |> List.reverse
 
 
-breakWordsHelp : Int -> Float -> String -> List String -> List String
-breakWordsHelp containerWidth fontSize s result =
+breakWordsHelp : Int -> Float -> List String -> List String -> List String
+breakWordsHelp containerWidth fontSize words result =
+  case words of
+    [] ->
+      result
+
+    s :: ss ->
+      let
+        measuredWidth =
+          HtmlUtil.measureText "sans-self" fontSize s
+      in
+        if measuredWidth < toFloat containerWidth then
+          case result of
+            [] ->
+              breakWordsHelp containerWidth fontSize ss (s :: result)
+
+            x :: xs ->
+              let
+                measuredWidth =
+                  HtmlUtil.measureText "sans-self" fontSize (x ++ " " ++ s)
+              in
+                if measuredWidth < toFloat containerWidth then
+                  breakWordsHelp containerWidth fontSize ss ((x ++ " " ++ s) :: xs)
+                else
+                  breakWordsHelp containerWidth fontSize ss (s :: result)
+        else
+          let
+            brokenWord =
+              breakWord containerWidth fontSize s
+          in
+            breakWordsHelp containerWidth fontSize ss (brokenWord ++ result)
+
+
+breakWord : Int -> Float -> String -> List String
+breakWord containerWidth fontSize s =
+  breakWordHelp containerWidth fontSize s []
+
+
+breakWordHelp : Int -> Float -> String -> List String -> List String
+breakWordHelp containerWidth fontSize s result =
   case cut containerWidth fontSize s of
     (left, Just right) ->
-      breakWordsHelp containerWidth fontSize right (left :: result)
+      breakWordHelp containerWidth fontSize right (left :: result)
 
     (left, Nothing) ->
       left :: result
-        |> List.reverse
 
 
 cut : Int -> Float -> String -> (String, Maybe String)
