@@ -9,6 +9,7 @@ import Svg.Lazy exposing (..)
 import Html
 import Html.Attributes
 import Html.Events
+import VirtualDom exposing (attributeNS)
 import Mouse
 
 import View.CommonStyles as CommonStyles
@@ -188,54 +189,71 @@ personMatchingView name personMatched =
       ]
 
 
+type LabelRow
+  = TextRow String
+  | ImageRow String String
+
+
 objectLabelView : Size -> Bool -> String -> Float -> Position -> Size -> String -> Svg msg
 objectLabelView containerSize canBeEmoji color fontSize_ screenPos screenSize name =
   let
-    trimed =
-      String.trim name
-
-    -- inner s =
-    --   if canBeEmoji then
-    --     Emoji.view [] s
-    --   else
-    --     text s
+    fragments =
+      if canBeEmoji then
+        Emoji.split name
+      else
+        [ Emoji.TextNode name ]
   in
-    text_
-      [ y (toString <| toFloat containerSize.height / 2)
-      , fill color
-      , fontSize (toString fontSize_)
-      , alignmentBaseline "middle"
-      , dominantBaseline "middle"
-      , textAnchor "middle"
-      , pointerEvents "none"
-      ]
-      ( breakWords containerSize.width fontSize_ trimed
-          |> coupleWithY 0.2
-          |> List.map (\(s, y_) ->
-            tspan [ dy y_, x (toString <| toFloat containerSize.width / 2) ] [ text s ]
-          )
-      )
-    -- div
-    --   [ style styles ]
-    --   [ if canBeEmoji then
-    --       Emoji.view [] trimed
-    --     else
-    --       span [] [ text trimed ]
-    --   ]
+    fragments
+      |> List.concatMap (\fragment ->
+        case fragment of
+          Emoji.TextNode s ->
+            String.trim s
+              |> breakWords containerSize.width fontSize_
+              |> List.map TextRow
+
+          Emoji.Image original url ->
+            [ ImageRow original url ]
+        )
+      |> viewLabelRow containerSize 0.2 fontSize_
+      |> g
+        [ transform ("translate(0," ++ (toString <| toFloat containerSize.height / 2) ++ ")")
+        , fill color
+        , fontSize (toString fontSize_)
+        , textAnchor "middle"
+        , pointerEvents "none"
+        ]
 
 
-coupleWithY : Float -> List String -> List (String, String)
-coupleWithY spaceHeight lines =
+viewLabelRow : Size -> Float -> Float -> List LabelRow -> List (Svg msg)
+viewLabelRow containerSize spaceHeight fontSize lines =
   let
     len = List.length lines
     top = (toFloat len + spaceHeight * toFloat (len - 1)) * (-0.5) + 0.5
+    center = toFloat containerSize.width / 2
   in
     lines
-      |> List.indexedMap (\i s ->
-        if i == 0 then
-          (s, toString (top + (1 + spaceHeight) * toFloat i) ++ "em")
-        else
-          (s, toString (1 + spaceHeight) ++ "em")
+      |> List.indexedMap (\i row ->
+        case row of
+          TextRow s ->
+            text_
+              [ y (toString (top + (1 + spaceHeight) * toFloat i) ++ "em")
+              , x (toString center)
+              , alignmentBaseline "middle"
+              , dominantBaseline "middle"
+              ]
+              [ text s ]
+
+          ImageRow original url ->
+            image
+              [ y (toString (top + (1 + spaceHeight) * toFloat i - fontSize / 2))
+              , x (toString (center - fontSize / 2))
+              , attributeNS "" "href" url
+              , alignmentBaseline "middle"
+              , dominantBaseline "middle"
+              , width (toString fontSize)
+              , height (toString fontSize)
+              ]
+              []
       )
 
 

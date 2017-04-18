@@ -12,6 +12,7 @@ import Html.Lazy as Lazy exposing (..)
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Keyed
+import VirtualDom
 import ContextMenu
 
 import View.ObjectView as ObjectView
@@ -281,6 +282,7 @@ canvasView model floor =
       , ( "svg-canvas"
         , Svg.Keyed.node "svg"
             [ id "svg-canvas"
+            , VirtualDom.attributeNS "xmlns" "xlink" "http://www.w3.org/1999/xlink"
             , style
                 [ ("position", "absolute")
                 , ("display", "block")
