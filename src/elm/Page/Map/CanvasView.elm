@@ -374,7 +374,7 @@ objectsView model floor =
           |> List.map (\object ->
             (object, List.member (Object.idOf object) model.selectedObjects)
           )
-          |> List.sortBy (Tuple.second >> (\selected -> if selected then 1 else 0))
+          |> List.sortBy compareZIndex
           |> List.map (\(object, selected) ->
             ( Object.idOf object
             , lazy3 nonGhostOjectView
@@ -383,6 +383,11 @@ objectsView model floor =
                 object
             )
           )
+
+
+compareZIndex : (Object, Bool) -> Int
+compareZIndex (object, selected) =
+  (if Object.isLabel object then 1 else 0) + (if selected then 2 else 0)
 
 
 objectsViewWhileMoving : Model -> Floor -> Position -> List (String, Html Msg)
@@ -419,16 +424,19 @@ objectsViewWhileMoving model floor start =
         object
 
     normalView =
-      List.map
-        (\object ->
-          ( Object.idOf object
-          , lazy3 nonGhostOjectView
-              model.scale
-              (isSelected object)
-              (adjustPosition object)
-          )
+      objectList
+        |> List.map (\object ->
+          (object, isSelected object)
         )
-        objectList
+        |> List.sortBy compareZIndex
+        |> List.map (\(object, selected) ->
+            ( Object.idOf object
+            , lazy3 nonGhostOjectView
+                model.scale
+                selected
+                (adjustPosition object)
+            )
+          )
   in
     (ghostsView ++ normalView)
 
@@ -476,8 +484,12 @@ objectsViewWhileResizing model floor id from =
         object
 
     normalView =
-      List.map
-        (\object ->
+      objectList
+        |> List.map (\object ->
+          (object, isSelected object)
+        )
+        |> List.sortBy compareZIndex
+        |> List.map (\(object, selected) ->
           ( Object.idOf object
           , lazy3 nonGhostOjectView
               model.scale
@@ -485,7 +497,6 @@ objectsViewWhileResizing model floor id from =
               (adjustRect object)
           )
         )
-        objectList
   in
     normalView ++ ghostsView
 
