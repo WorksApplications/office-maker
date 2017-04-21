@@ -9,10 +9,15 @@ import Html.Attributes as Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy exposing (..)
+import Svg exposing (Svg)
+import Svg.Attributes
+import Svg.Keyed
+import VirtualDom
 import ContextMenu
 
-import View.Styles as S
 import View.ObjectView as ObjectView
+import View.CommonStyles as CommonStyles
+import Util.StyleUtil exposing (px)
 import Util.HtmlUtil as HtmlUtil exposing (..)
 
 import Model.Mode as Mode exposing (Mode(..))
@@ -74,9 +79,6 @@ editModeEventOptions id =
   , onStartEditingName = Nothing -- Just (StartEditObject id)
   , onStartResize = Just (MouseDownOnResizeGrip id)
   }
-
-
-
 
 
 printModeObjectView : Scale -> Object -> Html Msg
@@ -261,15 +263,47 @@ canvasView model floor =
       Mode.isEditMode model.mode
 
     children1 =
-      Just ("canvas-image", Lazy.lazy canvasImage floor) ::
-      (if isEditMode then Just ("grid-layer", gridLayer) else Nothing) ::
-      (if isEditMode then Just ("paste-handler", pasteHandler) else Nothing) ::
-      (if isEditMode then Just ("canvas-name-input", nameInput) else Nothing) ::
-      (if isEditMode then Just ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect) else Nothing) :: []
-      |> List.filterMap identity
+      [ ("canvas-image", Lazy.lazy2 canvasImage model floor)
+      , ("name-input", if isEditMode then nameInput else text "")
+      ]
+
+    position =
+      Scale.imageToScreenForPosition
+        model.scale
+        model.offset
+
+    size =
+      Scale.screenToImageForSize
+        model.scale
+        (Size (Floor.width floor) (Floor.height floor))
 
     children2 =
-      objectsView model floor
+      [ ( "paste-handler", pasteHandler )
+      , ( "svg-canvas"
+        , Svg.Keyed.node "svg"
+            [ id "svg-canvas"
+            , VirtualDom.attributeNS "xmlns" "xlink" "http://www.w3.org/1999/xlink"
+            , style
+                [ ("position", "absolute")
+                , ("display", "block")
+                , ("left", "0")
+                , ("top", "0")
+                , ("width", "100%")
+                , ("height", "100%")
+                , ("overflow", "visible")
+                ]
+            , Svg.Attributes.width (toString <| Floor.width floor )
+            , Svg.Attributes.height (toString <| Floor.height floor )
+            , Svg.Attributes.viewBox (String.join " " <| List.map toString [ 0, 0, Floor.width floor, Floor.height floor ])
+            , onMouseDown FocusCanvas
+            ]
+            ( ("canvas-selector-rect", Lazy.lazy3 selectorRectView model.mode model.scale model.selectorRect)
+            :: ("grid-layer", gridLayer)
+            :: objectsView model floor
+            ++ children3
+            )
+        )
+      ]
 
     children3 =
       if isEditMode then
@@ -279,8 +313,9 @@ canvasView model floor =
   in
     Keyed.node
       "div"
-      [ style (canvasViewStyles model floor) ]
-      ( children1 ++ children2 ++ children3)
+      [ style (canvasViewStyles model floor)
+      ]
+      ( children1 ++ children2 ++ children3 )
 
 
 canvasViewStyles : Model -> Floor -> List (String, String)
@@ -291,15 +326,21 @@ canvasViewStyles model floor =
         model.scale
         model.offset
 
-    size =
+    size2 =
       Scale.imageToScreenForSize
         model.scale
         (Size (Floor.width floor) (Floor.height floor))
   in
-    -- if (Mode.isPrintMode model.mode) then
-    --   S.canvasViewForPrint (model.windowSize.width, model.windowSize.height) rect
-    -- else
-      S.canvasView model.transition (Mode.isViewMode model.mode) position size
+    [ ("position", "absolute")
+    , ("left", px position.x)
+    , ("top", px position.y)
+    , ("width", px <| size2.width)
+    , ("height", px <| size2.height)
+    , ("font-family", "default")
+    , ("background-color", "black")
+    , ("transition", if model.transition then "top 0.3s ease, left 0.3s ease" else "")
+    ] ++ CommonStyles.noUserSelect ++
+      (if Mode.isViewMode model.mode then [("overflow", "hidden")] else [])
 
 
 objectsView : Model -> Floor -> List (String, Html Msg)
@@ -329,16 +370,24 @@ objectsView model floor =
         objectsViewWhileResizing model floor id from
 
       _ ->
-        List.map
-          (\object ->
+        Floor.objects floor
+          |> List.map (\object ->
+            (object, List.member (Object.idOf object) model.selectedObjects)
+          )
+          |> List.sortBy compareZIndex
+          |> List.map (\(object, selected) ->
             ( Object.idOf object
             , lazy3 nonGhostOjectView
                 model.scale
-                (Mode.isEditMode model.mode && List.member (Object.idOf object) model.selectedObjects)
+                selected
                 object
             )
           )
-          (Floor.objects floor)
+
+
+compareZIndex : (Object, Bool) -> Int
+compareZIndex (object, selected) =
+  (if Object.isLabel object then 1 else 0) + (if selected then 2 else 0)
 
 
 objectsViewWhileMoving : Model -> Floor -> Position -> List (String, Html Msg)
@@ -375,16 +424,19 @@ objectsViewWhileMoving model floor start =
         object
 
     normalView =
-      List.map
-        (\object ->
-          ( Object.idOf object
-          , lazy3 nonGhostOjectView
-              model.scale
-              (isSelected object)
-              (adjustPosition object)
-          )
+      objectList
+        |> List.map (\object ->
+          (object, isSelected object)
         )
-        objectList
+        |> List.sortBy compareZIndex
+        |> List.map (\(object, selected) ->
+            ( Object.idOf object
+            , lazy3 nonGhostOjectView
+                model.scale
+                selected
+                (adjustPosition object)
+            )
+          )
   in
     (ghostsView ++ normalView)
 
@@ -432,8 +484,12 @@ objectsViewWhileResizing model floor id from =
         object
 
     normalView =
-      List.map
-        (\object ->
+      objectList
+        |> List.map (\object ->
+          (object, isSelected object)
+        )
+        |> List.sortBy compareZIndex
+        |> List.map (\(object, selected) ->
           ( Object.idOf object
           , lazy3 nonGhostOjectView
               model.scale
@@ -441,18 +497,35 @@ objectsViewWhileResizing model floor id from =
               (adjustRect object)
           )
         )
-        objectList
   in
     normalView ++ ghostsView
 
 
+canvasImage : Model -> Floor -> Html msg
+canvasImage model floor =
+  let
+    size =
+      Scale.imageToScreenForSize
+        model.scale
+        (Size (Floor.width floor) (Floor.height floor))
+  in
+    img
+      [ style (canvasImageStyle floor.flipImage size)
+      , src (Maybe.withDefault "" (Floor.src floor))
+      ] []
 
-canvasImage : Floor -> Html msg
-canvasImage floor =
-  img
-    [ style (S.canvasImage floor.flipImage)
-    , src (Maybe.withDefault "" (Floor.src floor))
-    ] []
+
+canvasImageStyle : Bool -> Size -> List (String, String)
+canvasImageStyle flipImage size =
+  [ ("position", "absolute")
+  , ("top", "0")
+  , ("left", "0")
+  , ("width", px <| size.width)
+  , ("height", px <| size.height)
+  , ("background-color", "#fff")
+  , ("pointer-events", "none")
+  , ("transform", if flipImage then "scale(-1,-1)" else "")
+  ]
 
 
 temporaryStampsView : Model -> List (String, Html msg)
@@ -508,22 +581,22 @@ selectorRectView : Mode -> Scale -> Maybe (Position, Size) -> Html msg
 selectorRectView mode scale selectorRect =
   case (Mode.isSelectMode mode, selectorRect) of
     (True, Just (pos, size)) ->
-      div
-        [ style
-            ( S.selectorRect
-                (Scale.imageToScreenForPosition scale pos)
-                (Scale.imageToScreenForSize scale size)
-            )
+      Svg.rect
+        [ Svg.Attributes.x (toString pos.x)
+        , Svg.Attributes.y (toString pos.y)
+        , Svg.Attributes.width (toString size.width)
+        , Svg.Attributes.height (toString size.height)
+        , Svg.Attributes.stroke (CommonStyles.selectColor)
+        , Svg.Attributes.strokeWidth "3"
+        , Svg.Attributes.fill "none"
         ]
         []
 
     _ ->
       text ""
 
---
 
-
-canvasContainerStyle : Mode -> Bool -> S.S
+canvasContainerStyle : Mode -> Bool -> List (String, String)
 canvasContainerStyle mode rangeSelectMode =
   let
     crosshair =

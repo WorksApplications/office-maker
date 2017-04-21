@@ -6,7 +6,7 @@ import Html.Attributes
 import Html.Events exposing (on, onWithOptions, targetValue, defaultOptions)
 import Json.Decode as Decode exposing (..)
 import Util.File exposing (..)
-
+import Native.HtmlUtil
 
 type Error =
   IdNotFound String | Unexpected String
@@ -177,3 +177,8 @@ maybePreventDefault msg preventDefault =
 invertedOr : Bool -> Bool -> Bool
 invertedOr x y =
     not (x || y)
+
+
+measureText : String -> Float -> String -> Float
+measureText =
+  Native.HtmlUtil.measureText

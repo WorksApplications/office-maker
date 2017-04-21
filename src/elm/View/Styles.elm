@@ -10,11 +10,7 @@ type alias S = List (String, String)
 
 
 zIndex :
-  { labelObject : String
-  , selectedDesk : String
-  , selectedLabelObject : String
-  , deskInput : String
-  , selectorRect : String
+  { deskInput : String
   , personDetailPopup : String
   , candidatesView : String
   , lastUpdate : String
@@ -26,11 +22,7 @@ zIndex :
   , userMenuView : String
   }
 zIndex =
-  { labelObject = "50"
-  , selectedDesk = "100"
-  , selectedLabelObject = "100"
-  , deskInput = "200"
-  , selectorRect = "300"
+  { deskInput = "200"
   , personDetailPopup = "550"
   , lastUpdate = "580"
   , subView = "600"
@@ -108,74 +100,6 @@ nameInputTextArea screenPos screenSize =
   deskInput screenPos screenSize
 
 
-deskObject : Position -> Size -> String -> Bool -> Bool -> S
-deskObject pos size backgroundColor selected isGhost =
-  (absoluteRect pos size) ++
-  [ ("opacity", if isGhost then "0.5" else "1.0")
-  , ("display", "table")
-  , ("background-color", backgroundColor)
-  , ("box-sizing", "border-box")
-  , ("z-index", if selected then zIndex.selectedDesk else "")
-  , ("border-style", "solid")
-  , ("border-width", if selected  then "2px" else "1px")
-  , ("border-top-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
-  , ("border-left-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
-  , ("border-bottom-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
-  , ("border-right-color", if selected  then selectColor else "rgba(100,100,100,0.7)")
-  ] ++ noUserSelect
-
-
-labelObject : Bool -> Position -> Size -> String -> String -> Bool -> Bool -> Bool -> S
-labelObject isEllipse pos size backgroundColor fontColor selected isGhost rectVisible =
-  absoluteRect pos size ++
-  [ ("opacity", if isGhost then "0.5" else "1.0")
-  , ("display", "table")
-  , ("background-color",
-      if backgroundColor == "" || backgroundColor == "transparent" then
-        if rectVisible then "rgba(255,255,255,0.2)" else "transparent"
-      else
-        backgroundColor
-    )
-  , ("box-sizing", "border-box")
-  , ("text-align", "center")
-  , ("z-index", if selected then zIndex.selectedLabelObject else zIndex.labelObject)
-  , ("border-style", if rectVisible then "dashed" else "none")
-  , ("border-width", if selected  then "2px" else "1px")
-  , ("border-color", if selected  then selectColor else "rgba(100,100,100,0.3)")
-  , ("border-radius", if isEllipse  then "50%" else "")
-  ] ++ noUserSelect
-
-
-deskResizeGrip : Bool -> S
-deskResizeGrip selected =
-  [ ("position", "absolute")
-  , ("width", "8px")
-  , ("height", "8px")
-  , ("bottom", "-2px")
-  , ("right", "-2px")
-  , ("cursor", "nw-resize")
-  ] ++
-  ( if selected then
-      [ ("border-bottom-style", "solid")
-      , ("border-right-style", "solid")
-      , ("border-width", "2px")
-      , ("border-color", selectColor)
-      ]
-    else
-      []
-  )
-
-
-selectorRect : Position -> Size -> S
-selectorRect pos size =
-  absoluteRect pos size ++
-    [ ("z-index", zIndex.selectorRect)
-    , ("border-style", "solid")
-    , ("border-width", "2px")
-    , ("border-color", selectColor)
-    ]
-
-
 colorProperties : S
 colorProperties =
   [("display", "flex")]
@@ -226,100 +150,6 @@ subView =
     , ("position", "absolute")
     , ("right", "0")
     ]
-
-
-canvasView : Bool -> Bool -> Position -> Size -> S
-canvasView transition isViewing pos size =
-  absoluteRect pos size ++
-    -- [ ("position", "absolute")
-    -- , ("width", px size.width)
-    -- , ("height", px size.height)
-    -- , ("transform", "translate(" ++ px pos.x ++ "," ++ px pos.y ++ ")")
-    -- ] ++
-    [ ("font-family", "default")
-    , ("background-color", "#fff")
-    , ("transition", if transition then "top 0.3s ease, left 0.3s ease" else "")
-    ] ++ noUserSelect ++ (if isViewing then [("overflow", "hidden")] else [])
-
-
-canvasViewForPrint : Size -> Size -> S
-canvasViewForPrint windowSize size =
-  let
-    scale =
-      toString
-        ( min
-            (toFloat windowSize.width / toFloat size.width)
-            (toFloat windowSize.height / toFloat size.height)
-        )
-  in
-    [ ("background-color", "#fff")
-    , ("font-family", "default")
-    , ("position", "absolute")
-    , ("width", px size.width)
-    , ("height", px size.height)
-    , ("transform", "scale(" ++ scale ++ ")")
-    , ("transform-origin", "top left")
-    , ("overflow", "hidden")
-    ]
-
-
-canvasImage : Bool -> S
-canvasImage flipImage =
-  [ ("position", "absolute")
-  , ("top", "0")
-  , ("left", "0")
-  , ("width", "100%")
-  , ("height", "100%")
-  , ("pointer-events", "none")
-  , ("transform", if flipImage then "scale(-1,-1)" else "")
-  ]
-
-
-gridLayer : S
-gridLayer =
-  [ ("position", "relative")
-  , ("top", "0")
-  , ("left", "0")
-  , ("width", "100%")
-  , ("height", "100%")
-  ]
-
-
-gridBorderValue : String
-gridBorderValue = "dotted 1px #ccc"
-
-
-gridLayerVirticalLine : Int -> S
-gridLayerVirticalLine left =
-  [ ("border-right", gridBorderValue)
-  , ("position", "absolute")
-  , ("left", px left)
-  , ("height", "100%")
-  ]
-
-
-gridLayerHorizontalLine : Int -> S
-gridLayerHorizontalLine top =
-  [ ("border-bottom", gridBorderValue)
-  , ("position", "absolute")
-  , ("top", px top)
-  , ("width", "100%")
-  ]
-
-
-nameLabel : String -> Float -> number -> S
-nameLabel color scale fontSize =
-  [ ("color", color)
-  , ("text-align", "center")
-  , ("position", "absolute")
-  , ("cursor", "default")
-  , ("font-size", px fontSize)
-  , ("width", percent (100 / scale))
-  , ("word-wrap", "break-word")
-  , ("top", "50%")
-  , ("transform", "translateY(-50%) scale(" ++ toString scale ++ ")")
-  , ("transform-origin", "left")
-  ] ++ noMargin
 
 
 shadow : S

@@ -449,6 +449,9 @@ update msg model =
             |> Task.perform (\_ -> Error NoError)
         ]
 
+    FocusCanvas ->
+      ( model, focusCanvas {} )
+
     MouseDownOnObject ctrl shift lastTouchedId mousePosition ->
       let
         model0 =

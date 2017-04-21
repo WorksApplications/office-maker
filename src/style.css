@@ -40,3 +40,23 @@ img.emoji {
   margin: 0 .05em 0 .1em;
   vertical-align: -0.1em;
 }
+
+/*https://gist.github.com/23maverick23/64b3b587c88697558fac*/
+svg text {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+svg text::selection {
+    background: none;
+}
+svg tspan {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+svg tspan::selection {
+    background: none;
+}

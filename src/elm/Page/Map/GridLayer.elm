@@ -1,54 +1,46 @@
 module Page.Map.GridLayer exposing (view)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Lazy as Lazy
+import Svg exposing (..)
+import Svg.Attributes exposing (..)
+import Svg.Lazy exposing (..)
 
 import Model.Scale as Scale exposing (Scale)
 import Model.Floor as Floor exposing (Floor)
-import View.Styles as Styles
 
 import Page.Map.Model as Model exposing (Model)
 
 
-view : Model -> Floor -> Html msg
+view : Model -> Floor -> Svg msg
 view model floor =
-  Lazy.lazy3 viewHelp model.scale model.gridSize floor
+  lazy3 viewHelp model.scale model.gridSize floor
 
 
-viewHelp : Scale -> Int -> Floor -> Html msg
+viewHelp : Scale -> Int -> Floor -> Svg msg
 viewHelp scale gridSize floor =
   let
-    -- 10m = 100 unit = 100 * 8px(gridSize) = 800px (on image)
     intervalPxOnScreen =
-      Scale.imageToScreen scale (50 * gridSize)
+      50 * gridSize
 
-    wh =
-      Scale.imageToScreenForPosition
-        scale
-        { x = Floor.width floor
-        , y = Floor.height floor
-        }
+    width = Floor.width floor
 
-    width = wh.x
-
-    height = wh.y
+    height = Floor.height floor
 
     lefts = List.map ((*) intervalPxOnScreen) (List.range 1 (width // intervalPxOnScreen))
 
     tops = List.map ((*) intervalPxOnScreen) (List.range 1 (height // intervalPxOnScreen))
 
-    vertical = List.map (Lazy.lazy verticalLine) lefts
+    vertical = List.map (lazy2 verticalLine height) lefts
 
-    horizontal = List.map (Lazy.lazy horizontalLine) tops
+    horizontal = List.map (lazy2 horizontalLine width) tops
   in
-    div [ style Styles.gridLayer ] ( vertical ++ horizontal )
-
-verticalLine : Int -> Html msg
-verticalLine left =
-  div [ style (Styles.gridLayerVirticalLine left) ] []
+    g [] ( vertical ++ horizontal )
 
 
-horizontalLine : Int -> Html msg
-horizontalLine top =
-  div [ style (Styles.gridLayerHorizontalLine top) ] []
+verticalLine : Int -> Int -> Svg msg
+verticalLine height left =
+  Svg.path [ strokeDasharray "5,5", stroke "black", d ("M" ++ toString left ++ ",0V" ++ toString height) ] []
+
+
+horizontalLine : Int -> Int -> Svg msg
+horizontalLine width top =
+  Svg.path [ strokeDasharray "5,5", stroke "black", d ("M0," ++ toString top ++ "H" ++ toString width) ] []

@@ -184,7 +184,7 @@ drawingView model editingMode =
   in
     [ Lazy.lazy modeSelectionView editingMode
     , if editingLabel then
-        Emoji.selector
+        Lazy.lazy Emoji.selector ()
       else
         case editingMode of
           Select ->
