@@ -138,7 +138,7 @@ floorNameInputView lang user model =
 
 nameInput : User -> String -> Html Msg
 nameInput user value =
-  if User.isAdmin user then
+  if User.isAdmin user then -- TODO creator can edit too
     input
     ([ style Styles.floorNameInput
     ] ++ (inputAttributes InputFloorName (always NoOp) value Nothing))

@@ -370,6 +370,16 @@ update msg model =
         { model
           | floorsInfo = floorsInfo
         } ! [ cmd ]
+        |> andThen (\model ->
+          model.floor
+            |> Maybe.andThen (\efloor ->
+              if floorIsSelected then
+                Just <| updateOnFloorLoaded (EditingFloor.present efloor |> Just) model
+              else
+                Nothing
+            )
+            |> Maybe.withDefault (model, Cmd.none)
+        )
 
     FloorLoaded floor ->
       updateOnFloorLoaded floor model
