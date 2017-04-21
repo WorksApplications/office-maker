@@ -35,7 +35,7 @@ updateFloorAndObjects f efloor =
         |> ObjectsChange.simplify
 
     changed =
-      propChanged /= [] || ObjectsChange.isEmpty objectsChange
+      propChanged /= [] || (not <| ObjectsChange.isEmpty objectsChange)
 
     newUndoList =
       if changed then
@@ -87,7 +87,7 @@ updateObjects f efloor =
     objectsChange =
       FloorDiff.diffObjects newFloor.objects floor.objects
         |> ObjectsChange.simplify
-
+        
     changed =
       not <| ObjectsChange.isEmpty objectsChange
 

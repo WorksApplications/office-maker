@@ -1907,6 +1907,7 @@ updateOnSelectCandidate objectId personId model =
           { model |
             floor = Just newFloor
           }
+          |> andThen (flip (,) (requestSaveObjectsCmd objectsChange))
 
     _ ->
       model ! []
