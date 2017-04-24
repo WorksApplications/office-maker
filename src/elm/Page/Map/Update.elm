@@ -48,7 +48,6 @@ import Component.FloorDeleter as FloorDeleter
 import Page.Map.Model as Model exposing (Model, DraggingContext(..))
 import Page.Map.Msg exposing (Msg(..))
 import Page.Map.URL as URL exposing (URL)
-import Page.Map.LinkCopy as LinkCopy
 import Page.Map.ObjectNameInput as ObjectNameInput
 import Page.Map.KeyOperation as KeyOperation
 
@@ -1685,9 +1684,6 @@ update msg model =
         [ ObjectNameInput.insertText ObjectNameInputMsg text model.objectNameInput
         ]
 
-    LinkCopyMsg msg ->
-      model ! [ LinkCopy.copy msg ]
-
     ChangeToObjectUrl objectId ->
       model ! [ Navigation.modifyUrl ("?object=" ++ objectId) ]
 
@@ -1695,7 +1691,7 @@ update msg model =
       { model | transition = transition } ! []
 
     Copy ->
-      model ! [ ClipboardData.copyObjects (Model.selectedObjects model) ]
+      model ! [  ]
 
     Cut ->
       model.floor
@@ -1710,7 +1706,7 @@ update msg model =
             { model
                 | floor = Just newFloor
                 , selectedObjects = []
-            } ! [ saveCmd, ClipboardData.copyObjects (Model.selectedObjects model) ]
+            } ! [ saveCmd {- , ClipboardData.copyObjects (Model.selectedObjects model) -} ]
         )
         |> Maybe.withDefault ( model, Cmd.none )
 

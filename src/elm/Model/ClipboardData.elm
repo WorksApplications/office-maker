@@ -1,4 +1,4 @@
-port module Model.ClipboardData exposing (..)
+module Model.ClipboardData exposing (..)
 
 import Dict exposing (Dict)
 import Json.Encode as Encode
@@ -55,14 +55,10 @@ decode f =
     |> Decode.map f
 
 
-port copy : String -> Cmd msg
-
-
-copyObjects : List Object -> Cmd msg
-copyObjects objects =
+fromObjects : List Object -> String
+fromObjects objects =
   Encode.list (List.map Serialization.encodeObject objects)
     |> Encode.encode 0
-    |> copy
 
 
 toObjects : String -> List Object

@@ -5,9 +5,18 @@ var _user$project$Native_ClipboardData = function(localRuntime) {
     function getText(clipboardData) {
       return clipboardData.getData('text');
     }
+    function execCopy(s) {
+      var textArea = document.createElement("textarea");
+      textArea.value = s;
+      document.body.appendChild(textArea);
+      textArea.select();
+      var result = document.execCommand("copy");
+      document.body.removeChild(textArea);
+    };
     return {
-        getHtml: getHtml,
-        getText: getText
+      execCopy: execCopy,
+      getHtml: getHtml,
+      getText: getText
     };
 }();
 

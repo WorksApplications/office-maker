@@ -37,6 +37,8 @@ import Page.Map.KeyOperation as KeyOperation
 
 import Model.ClipboardData as ClipboardData
 
+import Native.ClipboardData
+
 
 import CoreType exposing (..)
 
@@ -278,7 +280,19 @@ canvasView model floor =
         (Size (Floor.width floor) (Floor.height floor))
 
     children2 =
-      [ ( "paste-handler", pasteHandler )
+      [ ( "paste-handler"
+        , pasteHandler
+            |> Html.map (\msg ->
+              case msg of
+                Copy ->
+                  execCopy (Model.selectedObjects model |> ClipboardData.fromObjects ) Copy
+
+                Cut ->
+                  execCopy (Model.selectedObjects model |> ClipboardData.fromObjects ) Cut
+
+                x -> x
+            )
+      )
       , ( "svg-canvas"
         , Svg.Keyed.node "svg"
             [ id "svg-canvas"
@@ -316,6 +330,15 @@ canvasView model floor =
       [ style (canvasViewStyles model floor)
       ]
       ( children1 ++ children2 ++ children3 )
+
+
+
+execCopy : String -> msg -> msg
+execCopy s msg =
+  let
+    _ = Native.ClipboardData.execCopy s
+  in
+    msg
 
 
 canvasViewStyles : Model -> Floor -> List (String, String)

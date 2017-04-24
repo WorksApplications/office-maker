@@ -66,26 +66,11 @@
 					// console.log(a);
 				}
 			});
-			main.ports.copyLink.subscribe(function(inputId) {
-				var input = document.getElementById(inputId);
-				if(input) {
-					input.select();
-					document.execCommand('copy');
-				}
-			});
 			main.ports.focusCanvas.subscribe(function() {
 				var element = document.getElementById('paste-handler');
 				if(element) {
 					element.focus();
 				}
-			});
-			main.ports.copy.subscribe(function(s) {
-				var textArea = document.createElement("textarea");
-				textArea.value = s;
-				document.body.appendChild(textArea);
-				textArea.select();
-				var result = document.execCommand("copy");
-				document.body.removeChild(textArea);
 			});
 			main.ports.print.subscribe(function(s) {
 				window.print();

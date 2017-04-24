@@ -137,7 +137,6 @@ type Msg
   | FloorDeleterMsg FloorDeleter.Msg
   | FloorDeleted Floor
   | InsertEmoji String
-  | LinkCopyMsg LinkCopy.Msg
   | ChangeToObjectUrl ObjectId
   | SetTransition Bool
   | Copy
