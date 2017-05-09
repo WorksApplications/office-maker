@@ -19,7 +19,7 @@ var options = {
   levels: config.log
 };
 var debug = true;
-if(debug) {
+if (debug) {
   options.appenders.forEach(appender => {
     appender.type = 'console';
   });
@@ -30,5 +30,7 @@ log4js.configure(options);
 module.exports = {
   access: log4js.getLogger('access'),
   system: log4js.getLogger('system'),
-  express: log4js.connectLogger(log4js.getLogger('access'), { level: log4js.levels.INFO })
+  express: log4js.connectLogger(log4js.getLogger('access'), {
+    level: log4js.levels.INFO
+  })
 };

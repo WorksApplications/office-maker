@@ -5,7 +5,7 @@ var publicDir = __dirname + '/public';
 function save(path, image) {
   return new Promise((resolve, reject) => {
     fs.writeFile(publicDir + '/' + path, image, (e) => {
-      if(e) {
+      if (e) {
         reject(e);
       } else {
         resolve();
@@ -17,7 +17,7 @@ function save(path, image) {
 function empty(dir) {
   return new Promise((resolve, reject) => {
     fs.emptyDir(publicDir + '/' + dir, (e) => {
-      if(e) {
+      if (e) {
         reject(e);
       } else {
         resolve();

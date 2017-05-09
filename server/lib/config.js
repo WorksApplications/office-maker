@@ -6,7 +6,7 @@ var configJsonPath = path.resolve(__dirname, '../config.json');
 var defaultConfigJsonPath = path.resolve(__dirname, '../defaultConfig.json');
 var replaceSecret = config => {
   var secretFilePath = path.resolve(__dirname, '..', config.secret);
-  if(fs.existsSync(secretFilePath)) {
+  if (fs.existsSync(secretFilePath)) {
     config.secret = {
       token: fs.readFileSync(secretFilePath, 'utf8')
     };
@@ -18,7 +18,7 @@ var replaceSecret = config => {
 
 /* load */
 var config = null;
-if(fs.existsSync(configJsonPath)) {
+if (fs.existsSync(configJsonPath)) {
   config = JSON.parse(fs.readFileSync(configJsonPath, 'utf8'));
 } else {
   config = JSON.parse(fs.readFileSync(defaultConfigJsonPath, 'utf8'));

@@ -6,7 +6,7 @@ var _user$project$Native_Emoji = function(localRuntime) {
     var result = [];
     for (var i = 0; i < node.childNodes.length; i++) {
       var child = node.childNodes[i];
-      if(child.tagName === 'IMG') {
+      if (child.tagName === 'IMG') {
         result.push({
           type: 'image',
           original: child.getAttribute('alt'),

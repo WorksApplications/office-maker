@@ -16,7 +16,7 @@ function send(token, method, url, data) {
       if (e || response.statusCode >= 400) {
         log.system.error(response ? response.statusCode : e, 'profile service: failed ' + method + ' ' + url);
         body && body.message && log.system.error(body.message);
-        if(response.statusCode === 401) {
+        if (response.statusCode === 401) {
           reject(401);
         } else {
           reject(body ? body.message : e || response.statusCode);
@@ -47,11 +47,11 @@ function fixPerson(profile) {
     tenantId: profile.tenantId,
     name: profile.name,
     empNo: profile.employeeId,
-    post: profile.post || '',//TODO
+    post: profile.post || '', //TODO
     tel1: profile.extensionPhone,
     tel2: profile.cellPhone,
     mail: profile.mail,
-    image: profile.picture || ''//TODO or default.png
+    image: profile.picture || '' //TODO or default.png
   };
 }
 
@@ -59,7 +59,7 @@ function getPerson(root, token, personId) {
   return get(token, root + '/1/profiles/' + personId).then((person) => {
     return Promise.resolve(fixPerson(person));
   }).catch((e) => {
-    if(e === 404) {
+    if (e === 404) {
       return Promise.resolve(null);
     }
     return Promise.reject(e);
@@ -70,7 +70,7 @@ function getPeopleByIds(root, token, personIds) {
   return personIds.reduce((promise, personId) => {
     return promise.then(results => {
       return getPerson(root, token, personId).then(person => {
-        if(person) {
+        if (person) {
           results.push(person);
         }
         return Promise.resolve(results);
@@ -80,11 +80,11 @@ function getPeopleByIds(root, token, personIds) {
 }
 
 function getPeopleByPost(root, token, post, exclusiveStartKey) {
-  var url = root + '/1/profiles?q=' + encodeURIComponent(post)
-    + (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '')
+  var url = root + '/1/profiles?q=' + encodeURIComponent(post) +
+    (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '')
   return get(token, url).then((data) => {
     var people = data.profiles.map(fixPerson)
-    if(data.lastEvaluatedKey) {
+    if (data.lastEvaluatedKey) {
       return getPeopleByPost(root, token, post, data.lastEvaluatedKey).then((people2) => {
         return Promise.resolve(people.concat(people2));
       });
@@ -101,7 +101,7 @@ function savePerson(root, token, person) {
   person.cellPhone = person.tel || null;
   person.extensionPhone = person.tel || null;
   person.picture = person.image || null;
-  person.organization = person.organization || null;//TODO
+  person.organization = person.organization || null; //TODO
   person.post = person.post || null;
   person.rank = '' || null;
   person.workspace = '' || null;
@@ -113,7 +113,7 @@ function search(root, token, query, exclusiveStartKey) {
     (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '');
   return get(token, url).then((data) => {
     var people = data.profiles.map(fixPerson);
-    if(data.lastEvaluatedKey) {
+    if (data.lastEvaluatedKey) {
       return search(root, token, query, data.lastEvaluatedKey).then((people2) => {
         return Promise.resolve(people.concat(people2));
       });

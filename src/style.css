@@ -14,7 +14,7 @@
 }
 
 body {
-  margin : 0;
+  margin: 0;
   overflow-y: hidden;
   font-family: 'Roboto', sans-serif;
 }
@@ -22,7 +22,7 @@ body {
 ul {
   list-style-type: none;
   padding-left: 0;
-  margin : 0;
+  margin: 0;
 }
 
 a {
@@ -41,22 +41,27 @@ img.emoji {
   vertical-align: -0.1em;
 }
 
+
 /*https://gist.github.com/23maverick23/64b3b587c88697558fac*/
+
 svg text {
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
+
 svg text::selection {
-    background: none;
+  background: none;
 }
+
 svg tspan {
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
+
 svg tspan::selection {
-    background: none;
+  background: none;
 }

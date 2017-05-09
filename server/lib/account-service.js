@@ -16,7 +16,7 @@ function send(token, method, url, data) {
       if (e || response.statusCode >= 400) {
         log.system.error(response.statusCode, 'account service: failed ' + method + ' ' + url);
         body && log.system.error(body.message);
-        if(response.statusCode === 401) {
+        if (response.statusCode === 401) {
           reject(401);
         } else {
           reject(body ? body.message : e || response.statusCode);
@@ -54,8 +54,8 @@ function addUser(root, token, user) {
 }
 
 function getAllAdmins(root, token, exclusiveStartKey) {
-  var url = root + '/1/users'
-    + (exclusiveStartKey ? '?exclusiveStartKey=' + exclusiveStartKey : '')
+  var url = root + '/1/users' +
+    (exclusiveStartKey ? '?exclusiveStartKey=' + exclusiveStartKey : '')
   return get(token, url).then((data) => {
     var users = data.users.map(user => {
       toMapUser(user);
@@ -63,7 +63,7 @@ function getAllAdmins(root, token, exclusiveStartKey) {
     }).filter(user => {
       return user.role === 'admin';
     });
-    if(data.lastEvaluatedKey) {
+    if (data.lastEvaluatedKey) {
       return getAllAdmins(root, token, data.lastEvaluatedKey).then((users2) => {
         return Promise.resolve(users.concat(users2));
       });

@@ -13,19 +13,19 @@ function saveObjectsChange(conn, changes) {
   return changes.reduce((memo, change) => {
     return memo.then(changes => {
       change.object.floorVersion = -1;
-      if(change.flag == 'added') {
+      if (change.flag == 'added') {
         return addObject(conn, change.object, updateAt).then(object => {
           change.object = object;
           changes.push(change);
           return Promise.resolve(changes);
         });
-      } else if(change.flag == 'modified') {
+      } else if (change.flag == 'modified') {
         return updateObject(conn, change.object, updateAt).then(object => {
           change.object = object;
           changes.push(change);
           return Promise.resolve(changes);
         });
-      } else if(change.flag == 'deleted') {
+      } else if (change.flag == 'deleted') {
         return deleteObject(conn, change.object).then(object => {
           change.object = object;
           changes.push(change);
@@ -41,7 +41,7 @@ function saveObjectsChange(conn, changes) {
 function addObject(conn, object, updateAt) {
   var query = sql.insert('objects', schema.objectKeyValues(object, updateAt));
   return rdb.exec(conn, query).then((okPacket) => {
-    if(!okPacket.affectedRows) {
+    if (!okPacket.affectedRows) {
       console.log(`didn't update by ` + query);
       return Promise.reject(object);
     } else {
@@ -54,10 +54,13 @@ function addObject(conn, object, updateAt) {
 function updateObject(conn, object, updateAt) {
   var oldUpdateAt = object.updateAt;
   var query = sql.update('objects', schema.objectKeyValues(object, updateAt),
-    sql.whereList([['id', object.id], ['updateAt', oldUpdateAt]]) + ' AND floorVersion = -1'
+    sql.whereList([
+      ['id', object.id],
+      ['updateAt', oldUpdateAt]
+    ]) + ' AND floorVersion = -1'
   );
   return rdb.exec(conn, query).then((okPacket) => {
-    if(!okPacket.affectedRows) {
+    if (!okPacket.affectedRows) {
       console.log(`didn't update by ` + query);
       return Promise.reject(object);
     } else {
@@ -70,10 +73,13 @@ function updateObject(conn, object, updateAt) {
 function deleteObject(conn, object) {
   var oldUpdateAt = object.updateAt;
   var query = sql.delete('objects',
-    sql.whereList([['id', object.id], ['updateAt', oldUpdateAt]]) + ' AND floorVersion = -1'
+    sql.whereList([
+      ['id', object.id],
+      ['updateAt', oldUpdateAt]
+    ]) + ' AND floorVersion = -1'
   );
   return rdb.exec(conn, query).then((okPacket) => {
-    if(!okPacket.affectedRows) {
+    if (!okPacket.affectedRows) {
       console.log(`didn't update by ` + query);
       return Promise.reject(object);
     } else {
@@ -83,19 +89,24 @@ function deleteObject(conn, object) {
 }
 
 function fixBool(obj) {
-  if(obj) {
+  if (obj) {
     obj.bold = !!obj.bold;
   }
   return obj;
 }
 
 function getObjectByIdFromPublicFloor(conn, objectId) {
-  var q = sql.select('objects', sql.whereList([['id', objectId]]) + ' AND floorVersion >= 0 ORDER BY floorVersion DESC LIMIT 1');
+  var q = sql.select('objects', sql.whereList([
+    ['id', objectId]
+  ]) + ' AND floorVersion >= 0 ORDER BY floorVersion DESC LIMIT 1');
   return rdb.one(conn, q).then(obj => fixBool(obj));
 }
 
 function getObjects(conn, floorId, floorVersion) {
-  var q = sql.select('objects', sql.whereList([['floorId', floorId], ['floorVersion', floorVersion]]));
+  var q = sql.select('objects', sql.whereList([
+    ['floorId', floorId],
+    ['floorVersion', floorVersion]
+  ]));
   return rdb.exec(conn, q).then(objs => objs.map(fixBool));
 }
 
@@ -113,7 +124,7 @@ function getFloorOfVersionWithObjects(conn, tenantId, id, version) {
 
 function getFloorWithObjects(conn, getFloor) {
   return getFloor.then((floor) => {
-    if(!floor) {
+    if (!floor) {
       return Promise.resolve(null);
     }
     return getObjects(conn, floor.id, floor.version).then((objects) => {
@@ -125,13 +136,20 @@ function getFloorWithObjects(conn, getFloor) {
 
 
 function getFloorOfVersion(conn, tenantId, id, version) {
-  var q = sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId], ['version', version]]));
+  var q = sql.select('floors', sql.whereList([
+    ['id', id],
+    ['tenantId', tenantId],
+    ['version', version]
+  ]));
   return rdb.one(conn, q);
 }
 
 function getPublicFloor(conn, tenantId, id) {
   return rdb.exec(conn,
-    sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId]]) + ' AND version >= 0 ORDER BY version DESC LIMIT 1')
+    sql.select('floors', sql.whereList([
+      ['id', id],
+      ['tenantId', tenantId]
+    ]) + ' AND version >= 0 ORDER BY version DESC LIMIT 1')
   ).then((floors) => {
     return Promise.resolve(floors[0]);
   });
@@ -139,7 +157,11 @@ function getPublicFloor(conn, tenantId, id) {
 
 function getEditingFloor(conn, tenantId, id) {
   return rdb.exec(conn,
-    sql.select('floors', sql.whereList([['id', id], ['tenantId', tenantId], ['version', -1]]))
+    sql.select('floors', sql.whereList([
+      ['id', id],
+      ['tenantId', tenantId],
+      ['version', -1]
+    ]))
   ).then((floors) => {
     return Promise.resolve(floors[0]);
   });
@@ -147,11 +169,13 @@ function getEditingFloor(conn, tenantId, id) {
 
 function getPublicFloors(conn, tenantId) {
   return rdb.exec(conn,
-    sql.select('floors', sql.whereList([['tenantId', tenantId]]) + ' AND version >= 0')
+    sql.select('floors', sql.whereList([
+      ['tenantId', tenantId]
+    ]) + ' AND version >= 0')
   ).then((floors) => {
     var results = {};
     floors.forEach((floor) => {
-      if(!results[floor.id] || results[floor.id].version < floor.version) {
+      if (!results[floor.id] || results[floor.id].version < floor.version) {
         results[floor.id] = floor;
       }
     });
@@ -163,13 +187,20 @@ function getPublicFloors(conn, tenantId) {
 }
 
 function getEditingFloors(conn, tenantId, maybeUserId) {
-  if(maybeUserId) {
+  if (maybeUserId) {
     return rdb.exec(conn,
-      sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1]]) + " OR (temporary = 1 AND updateAt = '" + maybeUserId + "')")
+      sql.select('floors', sql.whereList([
+        ['tenantId', tenantId],
+        ['version', -1]
+      ]) + " OR (temporary = 1 AND updateAt = '" + maybeUserId + "')")
     );
   } else {
     return rdb.exec(conn,
-      sql.select('floors', sql.whereList([['tenantId', tenantId], ['version', -1], ['temporary', 0]]))
+      sql.select('floors', sql.whereList([
+        ['tenantId', tenantId],
+        ['version', -1],
+        ['temporary', 0]
+      ]))
     );
   }
 }
@@ -217,7 +248,7 @@ function saveOrCreateFloor(conn, tenantId, newFloor) {
   var oldUpdateAt = newFloor.updateAt;
   var updateAt = Date.now();
   return getEditingFloor(conn, tenantId, newFloor.id).then(floor => {
-    if(floor) {
+    if (floor) {
       return updateEditingFloor(conn, tenantId, newFloor, updateAt);
     } else {
       return createEditingFloor(conn, tenantId, newFloor, updateAt);
@@ -226,19 +257,19 @@ function saveOrCreateFloor(conn, tenantId, newFloor) {
 }
 
 function validateFloor(newFloor) {
-  if((typeof newFloor.id) !== 'string') {
+  if ((typeof newFloor.id) !== 'string') {
     throw "invalid!";
   }
-  if(newFloor.id.length !== 36) {
+  if (newFloor.id.length !== 36) {
     throw "invalid!";
   }
-  if((typeof newFloor.name) !== 'string') {
+  if ((typeof newFloor.name) !== 'string') {
     throw "invalid!";
   }
-  if(!newFloor.name.trim()) {
+  if (!newFloor.name.trim()) {
     throw "invalid!";
   }
-  if((typeof newFloor.ord) !== 'number') {
+  if ((typeof newFloor.ord) !== 'number') {
     throw "invalid!";
   }
 }
@@ -248,7 +279,11 @@ function updateEditingFloor(conn, tenantId, newFloor, updateAt) {
   return rdb.exec(
     conn,
     sql.update('floors', schema.floorKeyValues(tenantId, newFloor, updateAt),
-      sql.whereList([['id', newFloor.id], ['tenantId', tenantId], ['version', newFloor.version]])
+      sql.whereList([
+        ['id', newFloor.id],
+        ['tenantId', tenantId],
+        ['version', newFloor.version]
+      ])
     )
   ).then(() => {
     newFloor.updateAt = updateAt;
@@ -277,15 +312,15 @@ function saveFloor(conn, tenantId, newFloor, updateBy) {
 
 function publishFloor(conn, tenantId, floorId, updateBy) {
   return getEditingFloorWithObjects(conn, tenantId, floorId).then((editingFloor) => {
-    if(!editingFloor) {
+    if (!editingFloor) {
       return Promise.reject('Editing floor not found: ' + floorId);
     }
-    if(editingFloor.temporary) {
+    if (editingFloor.temporary) {
       return Promise.reject('Temporary floor cannot be published');
     }
     return getPublicFloor(conn, tenantId, floorId).then((lastPublicFloor) => {
       var updateAt = Date.now();
-      var newFloorVersion = lastPublicFloor ? lastPublicFloor.version + 1 : 0;// better to increment by DB
+      var newFloorVersion = lastPublicFloor ? lastPublicFloor.version + 1 : 0; // better to increment by DB
 
       var sqls = [];
       editingFloor.updateBy = updateBy;
@@ -308,7 +343,7 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
 
 function deleteUnrelatedObjects(conn) {
   return rdb.exec(conn,
-  `DELETE FROM objects
+    `DELETE FROM objects
       WHERE
           NOT EXISTS( SELECT
               1
@@ -322,22 +357,33 @@ function deleteUnrelatedObjects(conn) {
 
 function deleteFloor(conn, tenantId, floorId) {
   var sqls = [
-    sql.delete('floors', sql.whereList([['id', floorId], ['tenantId', tenantId]]))
+    sql.delete('floors', sql.whereList([
+      ['id', floorId],
+      ['tenantId', tenantId]
+    ]))
   ];
   return rdb.batch(conn, sqls);
 }
 
 function deleteFloorWithObjects(conn, tenantId, floorId) {
   var sqls = [
-    sql.delete('floors', sql.whereList([['id', floorId], ['tenantId', tenantId]])),
-    sql.delete('objects', sql.whereList([['floorId', floorId]])),
+    sql.delete('floors', sql.whereList([
+      ['id', floorId],
+      ['tenantId', tenantId]
+    ])),
+    sql.delete('objects', sql.whereList([
+      ['floorId', floorId]
+    ])),
   ];
   return rdb.batch(conn, sqls);
 }
 
 function deletePrototype(conn, tenantId, id) {
   var sqls = [
-    sql.delete('prototypes', sql.whereList([['id', id], ['tenantId', tenantId]]))
+    sql.delete('prototypes', sql.whereList([
+      ['id', id],
+      ['tenantId', tenantId]
+    ]))
   ];
   return rdb.batch(conn, sqls);
 }
@@ -352,8 +398,8 @@ function resetImage(conn, dir) {
 
 function matchToQuery(object, normalizedQuery) {
   var keys = searchOptimizer.getKeys(object);
-  for(var i = 0; i < keys.length; i++) {
-    if(keys[i].startsWith(normalizedQuery)) {
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i].startsWith(normalizedQuery)) {
       return true;
     }
   }
@@ -370,15 +416,15 @@ function search(conn, tenantId, query, all, people) {
     });
     floors.forEach(floor => {
       floor.objects.forEach(object => {
-        if(object.personId) {
-          if(results[object.personId]) {
+        if (object.personId) {
+          if (results[object.personId]) {
             results[object.personId].push(object);
           }
-        } else if(matchToQuery(object, normalizedQuery)) {
+        } else if (matchToQuery(object, normalizedQuery)) {
           // { Nothing, Just } -- objects that has no person
           arr.push({
-            personId : null,
-            objectAndFloorId : [object, object.floorId]
+            personId: null,
+            objectAndFloorId: [object, object.floorId]
           });
         }
       });
@@ -389,15 +435,15 @@ function search(conn, tenantId, query, all, people) {
       objects.forEach(object => {
         // { Just, Just } -- people who exist in map
         arr.push({
-          personId : personId,
-          objectAndFloorId : [object, object.floorId]
+          personId: personId,
+          objectAndFloorId: [object, object.floorId]
         });
       })
       // { Just, Nothing } -- missing people
-      if(!objects.length) {
+      if (!objects.length) {
         arr.push({
-          personId : personId,
-          objectAndFloorId : null
+          personId: personId,
+          objectAndFloorId: null
         });
       }
     });

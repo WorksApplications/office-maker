@@ -57,8 +57,8 @@ function normalizeFullWidth(src) {
 
 // https://github.com/jinjor/ja-en-separator/blob/master/package/content-script.js
 function separateJaEn(src) {
-   return src
-    .replace(/ ?([^\x01-\x7E]+) ?/g,' $1 ')
+  return src
+    .replace(/ ?([^\x01-\x7E]+) ?/g, ' $1 ')
     .replace(/^ /, '')
     .replace(/ $/, '');
 }

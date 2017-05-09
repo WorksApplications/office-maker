@@ -9,144 +9,154 @@ import Util.ListUtil as ListUtil
 import Page.Map.Msg exposing (..)
 
 
-type alias Json = Decode.Value
+type alias Json =
+    Decode.Value
 
 
 splitText : String -> List Json
 splitText =
-  Native.Emoji.splitText
+    Native.Emoji.splitText
 
 
 type TextFragment
-  = TextNode String
-  | Image String String
+    = TextNode String
+    | Image String String
 
 
 decodeFragment : Decoder TextFragment
 decodeFragment =
-  Decode.field "type" Decode.string
-    |> Decode.andThen (\tipe ->
-      case tipe of
-        "text" ->
-          Decode.field "value" Decode.string |> Decode.map TextNode
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\tipe ->
+                case tipe of
+                    "text" ->
+                        Decode.field "value" Decode.string |> Decode.map TextNode
 
-        "image" ->
-          Decode.map2 Image
-            (Decode.field "original" Decode.string)
-            (Decode.field "url" Decode.string)
-            
-        _ ->
-          Decode.fail ("unknown type" ++ tipe)
-    )
+                    "image" ->
+                        Decode.map2 Image
+                            (Decode.field "original" Decode.string)
+                            (Decode.field "url" Decode.string)
+
+                    _ ->
+                        Decode.fail ("unknown type" ++ tipe)
+            )
 
 
-split : String -> (List TextFragment)
+split : String -> List TextFragment
 split s =
-  splitText s
-    |> List.map (
-      Decode.decodeValue decodeFragment
-        >> (\result ->
-          case result of
-            Ok fragment -> fragment
-            Err message -> Debug.crash ("bug in Emoji.split: " ++ message)
-        )
-    )
+    splitText s
+        |> List.map
+            (Decode.decodeValue decodeFragment
+                >> (\result ->
+                        case result of
+                            Ok fragment ->
+                                fragment
+
+                            Err message ->
+                                Debug.crash ("bug in Emoji.split: " ++ message)
+                   )
+            )
 
 
 view : List (Attribute msg) -> String -> Html msg
 view attr s =
-  split s
-    |> List.map (\fragment ->
-      case fragment of
-        TextNode s ->
-          text ""
-        Image original url ->
-          img
-            [ draggable "false"
-            , class "emoji"
-            , alt original
-            , src url
-            ]
-            []
-    )
-  |> div []
+    split s
+        |> List.map
+            (\fragment ->
+                case fragment of
+                    TextNode s ->
+                        text ""
+
+                    Image original url ->
+                        img
+                            [ draggable "false"
+                            , class "emoji"
+                            , alt original
+                            , src url
+                            ]
+                            []
+            )
+        |> div []
 
 
 selector : () -> Html Msg
 selector _ =
-  all
-    |> ListUtil.sepBy 10
-    |> List.map (List.map selectorEach >> div [])
-    |> div []
+    all
+        |> ListUtil.sepBy 10
+        |> List.map (List.map selectorEach >> div [])
+        |> div []
 
 
 selectorEach : String -> Html Msg
 selectorEach s =
-  view [ onClick (InsertEmoji s) ] s
+    view [ onClick (InsertEmoji s) ] s
 
 
 all : List String
 all =
-  [ "🚹"
-  , "🚺"
-  , "🚻"
-  , "🚼"
-  , "🛀"
-  , "🌂"
-  , "🍔"
-  , "🍕"
-  , "🍖"
-  , "🍗"
-  ] ++
-  [ "🍘"
-  , "🍙"
-  , "🍚"
-  , "🍛"
-  , "🍜"
-  , "🍝"
-  , "🍞"
-  , "🍩"
-  , "🍪"
-  , "🍫"
-  , "🍬"
-  ] ++
-  [ "🍭"
-  , "🍮"
-  , "🍯"
-  , "🍰"
-  , "👦"
-  , "👧"
-  , "👨"
-  , "👩"
-  , "👰"
-  , "👱"
-  , "👲"
-  ] ++
-  [ "👳"
-  , "👴"
-  , "👵"
-  , "👶"
-  , "👷"
-  , "👸"
-  , "📞"
-  , "📖"
-  , "📔"
-  , "📕"
-  , "📗"
-  , "📘"
-  ] ++
-  [ "📙"
-  , "📚"
-  , "❓"
-  , "❔"
-  , "❕"
-  , "❗"
-  , "❤"
-  , "💙"
-  , "💚"
-  , "💛"
-  , "💜"
-  ]
+    [ "🚹"
+    , "🚺"
+    , "🚻"
+    , "🚼"
+    , "🛀"
+    , "🌂"
+    , "🍔"
+    , "🍕"
+    , "🍖"
+    , "🍗"
+    ]
+        ++ [ "🍘"
+           , "🍙"
+           , "🍚"
+           , "🍛"
+           , "🍜"
+           , "🍝"
+           , "🍞"
+           , "🍩"
+           , "🍪"
+           , "🍫"
+           , "🍬"
+           ]
+        ++ [ "🍭"
+           , "🍮"
+           , "🍯"
+           , "🍰"
+           , "👦"
+           , "👧"
+           , "👨"
+           , "👩"
+           , "👰"
+           , "👱"
+           , "👲"
+           ]
+        ++ [ "👳"
+           , "👴"
+           , "👵"
+           , "👶"
+           , "👷"
+           , "👸"
+           , "📞"
+           , "📖"
+           , "📔"
+           , "📕"
+           , "📗"
+           , "📘"
+           ]
+        ++ [ "📙"
+           , "📚"
+           , "❓"
+           , "❔"
+           , "❕"
+           , "❗"
+           , "❤"
+           , "💙"
+           , "💚"
+           , "💛"
+           , "💜"
+           ]
+
+
+
 --
 --
 -- others : List String

@@ -1,23 +1,25 @@
 var _user$project$Native_ClipboardData = function(localRuntime) {
-    function getHtml(clipboardData) {
-      return clipboardData.getData('text/html');
-    }
-    function getText(clipboardData) {
-      return clipboardData.getData('text');
-    }
-    function execCopy(s) {
-      var textArea = document.createElement("textarea");
-      textArea.value = s;
-      document.body.appendChild(textArea);
-      textArea.select();
-      var result = document.execCommand("copy");
-      document.body.removeChild(textArea);
-    };
-    return {
-      execCopy: execCopy,
-      getHtml: getHtml,
-      getText: getText
-    };
+  function getHtml(clipboardData) {
+    return clipboardData.getData('text/html');
+  }
+
+  function getText(clipboardData) {
+    return clipboardData.getData('text');
+  }
+
+  function execCopy(s) {
+    var textArea = document.createElement("textarea");
+    textArea.value = s;
+    document.body.appendChild(textArea);
+    textArea.select();
+    var result = document.execCommand("copy");
+    document.body.removeChild(textArea);
+  };
+  return {
+    execCopy: execCopy,
+    getHtml: getHtml,
+    getText: getText
+  };
 }();
 
 

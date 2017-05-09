@@ -16,6 +16,7 @@ function insert(table, keyValues) {
   var valuesStr = `VALUES(${ values.join(',') })`;
   return `INSERT INTO ${table} ${columnsStr} ${valuesStr}`;
 }
+
 function replace(table, keyValues) {
   var columns = [];
   var values = [];
@@ -27,6 +28,7 @@ function replace(table, keyValues) {
   var valuesStr = `VALUES(${ values.join(',') })`;
   return `REPLACE INTO ${table} ${columnsStr} ${valuesStr}`;
 }
+
 function update(table, keyValues, where) {
   var sets = keyValues.map((keyValue) => {
     return `${ keyValue[0] }=${ esc(keyValue[1]) }`;
@@ -34,14 +36,17 @@ function update(table, keyValues, where) {
   var str = `SET ${ sets.join(',') }`;
   return `UPDATE ${ table } ${ str } ${ where }`;
 }
+
 function where(key, value) {
   return `WHERE ${key}=${esc(value)}`;
 }
+
 function whereList(keyValues) {
   return `WHERE ` + keyValues.map((keyValue) => {
     return `${keyValue[0]}=${esc(keyValue[1])}`;
   }).join(' AND ');
 }
+
 function _delete(table, where) {
   return `DELETE FROM ${ table }` + (where ? ` ${where}` : '');
 }
