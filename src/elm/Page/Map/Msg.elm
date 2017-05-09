@@ -25,7 +25,6 @@ import Component.ImageLoader as ImageLoader
 import Component.FloorDeleter as FloorDeleter
 import Page.Map.URL exposing (URL)
 import Page.Map.ContextMenuContext exposing (ContextMenuContext)
-import Page.Map.LinkCopy as LinkCopy
 import Page.Map.ClipboardOptionsView as ClipboardOptionsView
 import CoreType exposing (..)
 

@@ -4,9 +4,7 @@ import Char
 import Json.Decode as Decode
 import Svg exposing (..)
 import Svg.Attributes as Attributes exposing (..)
-import Svg.Events exposing (..)
 import Svg.Lazy exposing (..)
-import Html
 import Html.Attributes
 import Html.Events
 import VirtualDom exposing (attributeNS)

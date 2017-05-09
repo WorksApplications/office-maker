@@ -443,10 +443,7 @@ langSelectView =
 langSelectViewItem : Bool -> S
 langSelectViewItem selected =
     [ ( "background-color"
-      , if selected then
-            selectColor
-        else
-            ""
+      , selected ? selectColor
       )
     , ( "text-align", "center" )
     , ( "flex-grow", "1" )
@@ -460,10 +457,7 @@ editingToggleContainer editing =
         ++ [ ( "width", "100px" )
            , ( "cursor", "pointer" )
            , ( "opacity"
-             , if editing then
-                "1"
-               else
-                ""
+             , editing ? "1"
              )
            ]
 
@@ -658,10 +652,7 @@ personDetailPopup transition size pos =
            , ( "top", px (ProfilePopupLogic.calcPopupTopFromObjectTop size.height pos.y) )
            , ( "z-index", zIndex.personDetailPopup )
            , ( "transition"
-             , if transition then
-                "top 0.3s ease, left 0.3s ease"
-               else
-                ""
+             , transition ? "top 0.3s ease, left 0.3s ease"
              )
            ]
 
@@ -715,10 +706,7 @@ personDetailPopupPointer transition width =
         ++ [ ( "bottom", "-10px" )
            , ( "left", px (width // 2 - 20 // 2) )
            , ( "transition"
-             , if transition then
-                "bottom 0.3s ease, left 0.3s ease"
-               else
-                ""
+             , transition ? "bottom 0.3s ease, left 0.3s ease"
              )
            ]
 
@@ -1047,22 +1035,13 @@ searchResultItemInner =
 searchResultItemInnerLabel : Bool -> Bool -> S
 searchResultItemInnerLabel selectable selected =
     [ ( "text-decoration"
-      , if selectable then
-            "underline"
-        else
-            ""
+      , selectable ? "underline"
       )
     , ( "cursor"
-      , if selectable then
-            "pointer"
-        else
-            ""
+      , selectable ? "pointer"
       )
     , ( "font-weight"
-      , if selected then
-            "bold"
-        else
-            ""
+      , selected ? "bold"
       )
     ]
 
@@ -1079,3 +1058,11 @@ nameInputContainer : S
 nameInputContainer =
     [ ( "position", "relative" )
     ]
+
+
+(?) : Bool -> String -> String
+(?) condition a =
+    if condition then
+        a
+    else
+        ""
