@@ -40,7 +40,7 @@ noEvents =
 
 
 viewDesk : EventOptions msg -> Bool -> Position -> Size -> String -> String -> Float -> Bool -> Bool -> Scale -> Bool -> Svg msg
-viewDesk eventOptions showPersonMatch pos size color name fontSize selected isGhost scale personMatched =
+viewDesk eventOptions showPersonMatch pos size backgroundColor name fontSize selected isGhost scale personMatched =
     let
         personMatchIcon =
             if showPersonMatch then
@@ -48,70 +48,69 @@ viewDesk eventOptions showPersonMatch pos size color name fontSize selected isGh
             else
                 text ""
 
-        rectStyles =
-            [ width (px size.width)
-            , height (px size.height)
-            , fill color
-            , stroke
-                (if selected then
-                    CommonStyles.selectColor
-                 else
-                    "black"
-                )
-            , strokeWidth
-                (if selected then
-                    "3"
-                 else
-                    "1.5"
-                )
-            ]
+        rectStyles_ =
+            rectStyles size True False backgroundColor selected
 
-        gStyles =
-            [ transform ("translate(" ++ toString pos.x ++ "," ++ toString pos.y ++ ")")
-            , fillOpacity
-                (if isGhost then
-                    "0.5"
-                 else
-                    "1"
-                )
-            ]
+        gStyles_ =
+            gStyles isGhost pos
 
         nameView =
             objectLabelView size False "" fontSize pos size name
     in
-        viewInternal eventOptions size selected scale gStyles rectStyles nameView personMatchIcon
+        viewInternal eventOptions size selected scale gStyles_ rectStyles_ nameView personMatchIcon
 
 
 viewLabel : EventOptions msg -> Position -> Size -> String -> String -> String -> Float -> Bool -> Bool -> Bool -> Bool -> Scale -> Svg msg
 viewLabel eventOptions pos size backgroundColor fontColor name fontSize isEllipse selected isGhost rectVisible scale =
     let
-        rectStyles =
-            [ width (px size.width)
-            , height (px size.height)
-            , fill backgroundColor
-            , stroke
-                (if rectVisible then
-                    "black"
-                 else
-                    "none"
-                )
-            , strokeDasharray "5,5"
-            ]
+        rectStyles_ =
+            rectStyles size rectVisible True backgroundColor selected
 
-        gStyles =
-            [ transform ("translate(" ++ toString pos.x ++ "," ++ toString pos.y ++ ")")
-            , fillOpacity
-                (if isGhost then
-                    "0.5"
-                 else
-                    "1"
-                )
-            ]
+        gStyles_ =
+            gStyles isGhost pos
 
         nameView =
             objectLabelView size True fontColor fontSize pos size name
     in
-        viewInternal eventOptions size selected scale gStyles rectStyles nameView (text "")
+        viewInternal eventOptions size selected scale gStyles_ rectStyles_ nameView (text "")
+
+
+rectStyles : Size -> Bool -> Bool -> String -> Bool -> List (Svg.Attribute msg)
+rectStyles size rectVisible dashed backgroundColor selected =
+    [ width (px size.width)
+    , height (px size.height)
+    , fill backgroundColor
+    , stroke
+        (if selected then
+            CommonStyles.selectColor
+         else if rectVisible then
+            "black"
+         else
+            "none"
+        )
+    , strokeWidth
+        (if selected then
+            "3"
+         else
+            "1.5"
+        )
+    ]
+        ++ if (dashed && not selected) then
+            [ strokeDasharray "5,5" ]
+           else
+            []
+
+
+gStyles : Bool -> Position -> List (Svg.Attribute msg)
+gStyles isGhost pos =
+    [ transform ("translate(" ++ toString pos.x ++ "," ++ toString pos.y ++ ")")
+    , fillOpacity
+        (if isGhost then
+            "0.5"
+         else
+            "1"
+        )
+    ]
 
 
 viewInternal : EventOptions msg -> Size -> Bool -> Scale -> List (Svg.Attribute msg) -> List (Svg.Attribute msg) -> Svg msg -> Svg msg -> Svg msg
