@@ -311,14 +311,14 @@ function saveFloor(conn, tenantId, newFloor, updateBy) {
 }
 
 function publishFloor(conn, tenantId, floorId, updateBy) {
-  return getEditingFloorWithObjects(conn, tenantId, floorId).then((editingFloor) => {
+  return getEditingFloorWithObjects(conn, tenantId, floorId).then(editingFloor => {
     if (!editingFloor) {
       return Promise.reject('Editing floor not found: ' + floorId);
     }
     if (editingFloor.temporary) {
       return Promise.reject('Temporary floor cannot be published');
     }
-    return getPublicFloor(conn, tenantId, floorId).then((lastPublicFloor) => {
+    return getPublicFloor(conn, tenantId, floorId).then(lastPublicFloor => {
       var updateAt = Date.now();
       var newFloorVersion = lastPublicFloor ? lastPublicFloor.version + 1 : 0; // better to increment by DB
 
@@ -327,9 +327,8 @@ function publishFloor(conn, tenantId, floorId, updateBy) {
       editingFloor.version = newFloorVersion;
       sqls.push(sql.insert('floors', schema.floorKeyValues(tenantId, editingFloor, updateAt)));
 
-      editingFloor.objects.forEach((object) => {
+      editingFloor.objects.forEach(object => {
         object.floorVersion = newFloorVersion;
-        object.updateAt = updateAt;
         sqls.push(sql.insert('objects', schema.objectKeyValues(object, updateAt)));
       });
 
