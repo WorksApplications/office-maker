@@ -194,7 +194,7 @@ function getEditingFloors(conn, tenantId, maybeUserId) {
       sql.select('floors', sql.whereList([
         ['tenantId', tenantId],
         ['version', -1]
-      ]) + " OR (temporary = 1 AND updateAt = '" + maybeUserId + "')")
+      ]) + " OR (temporary = 1 AND updateAt = " + rdb.escape(maybeUserId) + ")")
     );
   } else {
     return rdb.exec(conn,
@@ -407,63 +407,9 @@ function matchToQuery(object, normalizedQuery) {
   return false;
 }
 
-function search(conn, tenantId, query, all, people) {
-  var normalizedQuery = searchOptimizer.normalize(query);
-  var time1 = Date.now();
-  return getFloorsWithObjects(conn, tenantId, all).then(floors => {
-    var time2 = Date.now();
-    console.log(people.length);
-    console.log('internal time of query ' + query + ':', time2 - time1);
-    var results = {};
-    var arr = [];
-    people.forEach(person => {
-      results[person.id] = [];
-    });
-    floors.forEach(floor => {
-      floor.objects.forEach(object => {
-        if (object.personId) {
-          if (results[object.personId]) {
-            results[object.personId].push(object);
-          }
-        } else if (matchToQuery(object, normalizedQuery)) {
-          // { Nothing, Just } -- objects that has no person
-          arr.push({
-            personId: null,
-            objectAndFloorId: [object, object.floorId]
-          });
-        }
-      });
-    });
-
-    Object.keys(results).forEach((personId) => {
-      var objects = results[personId];
-      objects.forEach(object => {
-        // { Just, Just } -- people who exist in map
-        arr.push({
-          personId: personId,
-          objectAndFloorId: [object, object.floorId]
-        });
-      })
-      // { Just, Nothing } -- missing people
-      if (!objects.length) {
-        arr.push({
-          personId: personId,
-          objectAndFloorId: null
-        });
-      }
-    });
-    return Promise.resolve(arr);
-  });
-}
-
 function searchOpt(conn, tenantId, query, all, people) {
   var normalizedQuery = searchOptimizer.normalize(query);
-  var time1 = Date.now();
   return getFloorsWithObjectsOpt(conn, query, all).then(objectsOpt => {
-    var time2 = Date.now();
-    console.log(people.length);
-    console.log('internal time of query ' + query + ':', time2 - time1);
-
     var results = {};
     var arr = [];
     people.forEach(person => {
@@ -481,7 +427,6 @@ function searchOpt(conn, tenantId, query, all, people) {
           objectAndFloorId: [objectOpt, objectOpt.floorId]
         });
       }
-
     });
 
     Object.keys(results).forEach(personId => {
@@ -507,13 +452,13 @@ function searchOpt(conn, tenantId, query, all, people) {
 
 function getFloorsWithObjectsOpt(conn, query, withPrivate) {
   return rdb.exec(conn, sql.select('objects_opt', 'WHERE ' +
-    "name LIKE '%" + query + "%'" +
-    " OR personName LIKE '" + query + "%'" +
-    " OR personEmpNo = '" + query + "'" +
-    " OR personPost LIKE '%" + query + "%'" +
-    " OR personTel1 = '" + query + "'" +
-    " OR personTel2 = '" + query + "'" +
-    " OR personMail LIKE '" + query + "%'"
+    "name LIKE " + rdb.escape('%' + query + '%') +
+    " OR personName LIKE " + rdb.escape(query + '%') +
+    " OR personEmpNo = " + rdb.escape(query) +
+    " OR personPost LIKE " + rdb.escape('%' + query + '%') +
+    " OR personTel1 = " + rdb.escape(query) +
+    " OR personTel2 = " + rdb.escape(query) +
+    " OR personMail LIKE " + rdb.escape(query + '%')
   )).then(objectsOpt => {
     return Promise.resolve(objectsOpt.map(objectOpt => fixBool(objectOpt, ['bold', 'editing'])));
   });

@@ -150,10 +150,15 @@ function createEnv(host, user, pass, dbname) {
   };
 }
 
+function escape(s) {
+  return mysql.escape(s);
+}
+
 module.exports = {
   createEnv: createEnv,
   exec: exec,
   one: one,
   batch: batch,
-  forTransaction: forTransaction
+  forTransaction: forTransaction,
+  escape: escape
 };
