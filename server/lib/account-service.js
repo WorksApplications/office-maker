@@ -16,7 +16,7 @@ function send(token, method, url, data) {
       if (e || response.statusCode >= 400) {
         log.system.error(response.statusCode, 'account service: failed ' + method + ' ' + url);
         body && log.system.error(body.message);
-        if (response.statusCode === 401) {
+        if (response && response.statusCode === 401) {
           reject(401);
         } else {
           reject(body ? body.message : e || response.statusCode);

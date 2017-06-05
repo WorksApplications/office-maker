@@ -53,6 +53,36 @@ function objectKeyValues(object, updateAt) {
   ];
 }
 
+function objectOptKeyValues(object) {
+  return [
+    ["id", object.id],
+    ["name", object.name],
+    ["type", object.type],
+    ["x", object.x],
+    ["y", object.y],
+    ["width", object.width],
+    ["height", object.height],
+    ["backgroundColor", object.backgroundColor],
+    ["fontSize", object.fontSize],
+    ["color", object.color],
+    ["bold", object.bold ? 1 : 0],
+    ["url", object.url],
+    ["shape", object.shape],
+    ["personId", object.personId],
+    ["personName", object.personName || ''],
+    ["personEmpNo", object.personEmpNo || ''],
+    ["personPost", object.personPost || ''],
+    ["personTel1", object.personTel1 || ''],
+    ["personTel2", object.personTel2 || ''],
+    ["personMail", object.personMail || ''],
+    ["personImage", object.personImage || ''],
+    ["floorId", object.floorId],
+    ["editing", object.editing ? 1 : 0],
+    ["updateAt", object.updateAt]
+  ];
+}
+
+
 function colorKeyValues(tenantId, c) {
   return [
     ["id", c.id],
@@ -67,5 +97,6 @@ module.exports = {
   floorKeyValues: floorKeyValues,
   prototypeKeyValues: prototypeKeyValues,
   objectKeyValues: objectKeyValues,
+  objectOptKeyValues: objectOptKeyValues,
   colorKeyValues: colorKeyValues
 };

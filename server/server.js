@@ -25,11 +25,11 @@ app.use(bodyParser.urlencoded({
 
 function inTransaction(f) {
   return function(req, res) {
-    rdbEnv.forConnectionAndTransaction((conn) => {
+    rdbEnv.forConnectionAndTransaction(conn => {
       return f(conn, req, res);
-    }).then((data) => {
+    }).then(data => {
       res.send(data);
-    }).catch((e) => {
+    }).catch(e => {
       if (typeof e === 'number' && e >= 400) {
         res.status(e).send('');
       } else {
@@ -316,9 +316,13 @@ app.get('/api/1/search/*', inTransaction((conn, req, res) => {
   var query = req.params[0];
 
   return getSelf(conn, token).then(user => {
+    var time1 = Date.now();
     return profileService.search(config.profileServiceRoot, token, query).then(people => {
+      var time2 = Date.now();
       var tenantId = user ? user.tenantId : '';
       return db.search(conn, tenantId, query, options.all, people).then(result => {
+        var time3 = Date.now();
+        console.log('search time for query ' + query + ':', time2 - time1, time3 - time2);
         return Promise.resolve({
           result: result,
           people: people

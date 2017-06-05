@@ -1,18 +1,35 @@
 var db = require('./lib/db.js');
 var rdb = require('./lib/mysql.js');
 var mock = require('./lib/mock.js');
-var config =  require('./lib/config.js');
+var config = require('./lib/config.js');
+var accountService = require('./lib/account-service.js');
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 
+function login() {
+  return accountService.login(config.accountServiceRoot, config.operationUser, config.operationPass);
+}
+
+
 var commands = {};
+
+commands.createObjectOptTable = function() {
+  return login().then(token => {
+    rdbEnv.forConnectionAndTransaction(conn => {
+      console.log(`creating optimized object table ...`);
+      return db.createObjectOptTable(conn, config.profileServiceRoot, token, true).then(_ => {
+        return db.createObjectOptTable(conn, config.profileServiceRoot, token, false);
+      });
+    });
+  });
+}
 
 commands.createInitialData = function(tenantId) {
   tenantId = tenantId || '';
-  if(config.multiTenency && !tenantId) {
+  if (config.multiTenency && !tenantId) {
     return Promise.reject('tenantId is not defined.');
   }
-  return rdbEnv.forConnectionAndTransaction((conn) => {
+  return rdbEnv.forConnectionAndTransaction(conn => {
     console.log(`creating data for tenant ${tenantId} ...`);
     return db.savePrototypes(conn, tenantId, mock.prototypes).then(() => {
       return db.saveColors(conn, tenantId, mock.colors);
@@ -21,22 +38,22 @@ commands.createInitialData = function(tenantId) {
 };
 
 commands.deleteFloor = function(floorId) {
-  if(!floorId) {
+  if (!floorId) {
     return Promise.reject('floorId is not defined.');
   }
   var tenantId = '';
-  return rdbEnv.forConnectionAndTransaction((conn) => {
+  return rdbEnv.forConnectionAndTransaction(conn => {
     console.log('deleting floor ' + floorId + '...');
     return db.deleteFloorWithObjects(conn, tenantId, floorId);
   }).then(rdbEnv.end);
 };
 
 commands.deletePrototype = function(id) {
-  if(!id) {
+  if (!id) {
     return Promise.reject('id is not defined.');
   }
   var tenantId = '';
-  return rdbEnv.forConnectionAndTransaction((conn) => {
+  return rdbEnv.forConnectionAndTransaction(conn => {
     console.log('deleting prototype ' + id + '...');
     return db.deletePrototype(conn, tenantId, id);
   }).then(rdbEnv.end);
@@ -48,10 +65,15 @@ commands.resetImage = function() {
 };
 
 //------------------
+// usage:
+//
+//   node server/commands.js funcName
+//
+//
 
 var args = process.argv;
-args.shift();// node
-args.shift();// server/commands.js
+args.shift(); // node
+args.shift(); // server/commands.js
 var funcName = args.shift();
 
 try {
