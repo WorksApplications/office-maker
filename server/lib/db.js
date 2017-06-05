@@ -524,28 +524,30 @@ function getFloorsWithObjectsOpt(conn, query, withPrivate) {
 function createObjectOptTable(conn, profileServiceRoot, token, forEdit) {
   var tenantId = '';
   return getFloorsWithObjects(conn, tenantId, forEdit).then(floors => {
-    floors.forEach(floor => {
-      floor.objects.reduce((promise, object) => {
-        if (object.personId) {
-          return profileService.getPerson(profileServiceRoot, token, object.personId).then(person => {
-            object.personName = person.name;
-            object.personEmpNo = person.empNo;
-            object.personPost = person.post;
-            object.personTel1 = person.tel1;
-            object.personTel2 = person.tel2;
-            object.personMail = person.mail;
-            object.personImage = person.image;
-            object.editing = forEdit;
-            return rdb.exec(conn, sql.replace('objects_opt', schema.objectOptKeyValues(object)));
-          }).catch(_ => {
-            return Promise.resolve();
-          });
-        } else {
-          return promise;
-        }
-      }, Promise.resolve());
-    });
-    return Promise.resolve();
+    var deleteObjectsInFloor = rdb.batch(conn, ['SET SQL_SAFE_UPDATES=0', 'DELETE FROM map2.objects_opt']);
+    return floors.reduce((promise, floor) => {
+      return floor.objects.reduce((promise, object) => {
+        return promise.then(_ => {
+          if (object.personId) {
+            return profileService.getPerson(profileServiceRoot, token, object.personId).then(person => {
+              object.personName = person.name;
+              object.personEmpNo = person.empNo;
+              object.personPost = person.post;
+              object.personTel1 = person.tel1;
+              object.personTel2 = person.tel2;
+              object.personMail = person.mail;
+              object.personImage = person.image;
+              object.editing = forEdit;
+              return rdb.exec(conn, sql.insert('objects_opt', schema.objectOptKeyValues(object)));
+            }).catch(_ => {
+              return Promise.resolve();
+            });
+          } else {
+            return rdb.exec(conn, sql.insert('objects_opt', schema.objectOptKeyValues(object)));
+          }
+        });
+      }, promise);
+    }, deleteObjectsInFloor);
   });
 }
 
@@ -581,7 +583,7 @@ function saveColors(conn, tenantId, colors) {
 }
 
 module.exports = {
-  search: search,
+  search: searchOpt,
   createObjectOptTable: createObjectOptTable,
   getPrototypes: getPrototypes,
   savePrototype: savePrototype,

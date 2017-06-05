@@ -15,7 +15,7 @@ var commands = {};
 
 commands.createObjectOptTable = function() {
   return login().then(token => {
-    rdbEnv.forConnectionAndTransaction(conn => {
+    return rdbEnv.forConnectionAndTransaction(conn => {
       console.log(`creating optimized object table ...`);
       return db.createObjectOptTable(conn, config.profileServiceRoot, token, true).then(_ => {
         return db.createObjectOptTable(conn, config.profileServiceRoot, token, false);
@@ -75,15 +75,21 @@ var args = process.argv;
 args.shift(); // node
 args.shift(); // server/commands.js
 var funcName = args.shift();
-
-try {
-  commands[funcName].apply(null, args).then(() => {
-    console.log('done');
-  }).catch((e) => {
+if (funcName) {
+  try {
+    commands[funcName].apply(null, args).then(() => {
+      console.log('done');
+      process.exit(0);
+    }).catch((e) => {
+      console.log(e);
+      console.log(e.stack);
+      process.exit(1);
+    });
+  } catch (e) {
     console.log(e);
     console.log(e.stack);
-  });
-} catch (e) {
-  console.log(e);
-  console.log(e.stack);
+    process.exit(1);
+  }
 }
+
+module.exports = commands;

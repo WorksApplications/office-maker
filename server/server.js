@@ -11,6 +11,7 @@ var accountService = require('./lib/account-service');
 var profileService = require('./lib/profile-service');
 var log = require('./lib/log.js');
 var config = require('./lib/config.js');
+var commands = require('./commands.js');
 
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 
@@ -322,7 +323,7 @@ app.get('/api/1/search/*', inTransaction((conn, req, res) => {
       var tenantId = user ? user.tenantId : '';
       return db.search(conn, tenantId, query, options.all, people).then(result => {
         var time3 = Date.now();
-        console.log('search time for query ' + query + ':', time2 - time1, time3 - time2);
+        // console.log('search time for query ' + query + ':', time2 - time1, time3 - time2);
         return Promise.resolve({
           result: result,
           people: people
@@ -465,3 +466,16 @@ var port = 3000;
 app.listen(port, () => {
   log.system.info('server listening on port ' + port + '.');
 });
+
+// For now, execute batch process here.
+function doCreateObjectOptTable() {
+  commands.createObjectOptTable().then(() => {
+    log.system.info('done');
+  }).catch(e => {
+    log.system.error(e);
+  });
+}
+doCreateObjectOptTable();
+setInterval(function() {
+  doCreateObjectOptTable();
+}, 1000 * 60 * 1);
