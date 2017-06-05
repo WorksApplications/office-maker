@@ -7,9 +7,14 @@ var accountService = require('./lib/account-service.js');
 var rdbEnv = rdb.createEnv(config.mysql.host, config.mysql.user, config.mysql.pass, 'map2');
 
 function login() {
-  return accountService.login(config.accountServiceRoot, config.operationUser, config.operationPass);
+  if (!config.operationUser && !config.operationPass) {
+    // server don't need token.
+    return Promise.resolve(null);
+  } else {
+    // debugging user may need token.
+    return accountService.login(config.accountServiceRoot, config.operationUser, config.operationPass);
+  }
 }
-
 
 var commands = {};
 
