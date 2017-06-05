@@ -88,9 +88,11 @@ function deleteObject(conn, object) {
   });
 }
 
-function fixBool(obj) {
+function fixBool(obj, fields) {
   if (obj) {
-    obj.bold = !!obj.bold;
+    fields.forEach(field => {
+      obj[field] = !!obj[field];
+    });
   }
   return obj;
 }
@@ -99,7 +101,7 @@ function getObjectByIdFromPublicFloor(conn, objectId) {
   var q = sql.select('objects', sql.whereList([
     ['id', objectId]
   ]) + ' AND floorVersion >= 0 ORDER BY floorVersion DESC LIMIT 1');
-  return rdb.one(conn, q).then(obj => fixBool(obj));
+  return rdb.one(conn, q).then(obj => fixBool(obj, ['bold']));
 }
 
 function getObjects(conn, floorId, floorVersion) {
@@ -107,7 +109,7 @@ function getObjects(conn, floorId, floorVersion) {
     ['floorId', floorId],
     ['floorVersion', floorVersion]
   ]));
-  return rdb.exec(conn, q).then(objs => objs.map(fixBool));
+  return rdb.exec(conn, q).then(objs => objs.map(obj => fixBool(obj, ['bold'])));
 }
 
 function getPublicFloorWithObjects(conn, tenantId, id) {
@@ -453,6 +455,71 @@ function search(conn, tenantId, query, all, people) {
     return Promise.resolve(arr);
   });
 }
+
+function searchOpt(conn, tenantId, query, all, people) {
+  var normalizedQuery = searchOptimizer.normalize(query);
+  var time1 = Date.now();
+  return getFloorsWithObjectsOpt(conn, query, all).then(objectsOpt => {
+    var time2 = Date.now();
+    console.log(people.length);
+    console.log('internal time of query ' + query + ':', time2 - time1);
+
+    var results = {};
+    var arr = [];
+    people.forEach(person => {
+      results[person.id] = [];
+    });
+    objectsOpt.forEach(objectOpt => {
+      if (objectOpt.personId) {
+        if (results[objectOpt.personId]) {
+          results[objectOpt.personId].push(objectOpt);
+        }
+      } else if (matchToQuery(objectOpt, normalizedQuery)) {
+        // { Nothing, Just } -- objects that has no person
+        arr.push({
+          personId: null,
+          objectAndFloorId: [objectOpt, objectOpt.floorId]
+        });
+      }
+
+    });
+
+    Object.keys(results).forEach(personId => {
+      var objects = results[personId];
+      objects.forEach(object => {
+        // { Just, Just } -- people who exist in map
+        arr.push({
+          personId: personId,
+          objectAndFloorId: [object, object.floorId]
+        });
+      })
+      // { Just, Nothing } -- missing people
+      if (!objects.length) {
+        arr.push({
+          personId: personId,
+          objectAndFloorId: null
+        });
+      }
+    });
+    return Promise.resolve(arr);
+  });
+}
+
+function getFloorsWithObjectsOpt(conn, query, withPrivate) {
+  return rdb.exec(conn, sql.select('objects_opt', 'WHERE ' +
+    "name LIKE '%" + query + "%'" +
+    " OR personName LIKE '" + query + "%'" +
+    " OR personEmpNo = '" + query + "'" +
+    " OR personPost LIKE '%" + query + "%'" +
+    " OR personTel1 = '" + query + "'" +
+    " OR personTel2 = '" + query + "'" +
+    " OR personMail LIKE '" + query + "%'"
+  )).then(objectsOpt => {
+    return Promise.resolve(objectsOpt.map(objectOpt => fixBool(objectOpt, ['bold', 'editing'])));
+  });
+}
+
+
 
 function createObjectOptTable(conn, profileServiceRoot, token, forEdit) {
   var tenantId = '';
