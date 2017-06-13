@@ -72,6 +72,8 @@ API Server (server.js) does not provide static files. You'll need to set up a st
 
 ### Example Settings
 
+Note that file pathes depend on your environment.
+
 **Linux + nginx**
 
 ```
