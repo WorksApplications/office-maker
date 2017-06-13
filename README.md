@@ -67,20 +67,25 @@ Edit `config.json`. Bold properties are essential to work with various environme
 
 ## Static file Server Settings
 
-### Linux + nginx
+API Server (server.js) does not provide static files. You'll need to set up a static file server such as nginx or httpd. Once your browser recieved HTML and other assets, the app access to API server. So the reverse proxy setting is also needed.
+
+
+### Example Settings
+
+**Linux + nginx**
+
 ```
 location /map/ {
         alias /home/ubuntu/office-maker/server/static/public/;
         try_files $uri.html $uri $uri/ 404.html=404;
 }
 
-location /map/api/ {
-        include /etc/nginx/cors.conf
-        proxy_pass http://localhost:3000/api/
+location /api/ {
+        proxy_pass http://localhost:3000/api/;
 }
 ```
 
-### Windows + httpd
+**Windows + httpd**
 
 ```
 # office maker settings
