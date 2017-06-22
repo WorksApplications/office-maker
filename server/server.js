@@ -471,7 +471,7 @@ function doCreateObjectOptTable() {
     log.system.error(e);
   });
 }
-doCreateObjectOptTable();
+// doCreateObjectOptTable();
 setInterval(function() {
   doCreateObjectOptTable();
 }, 1000 * 60 * 20);

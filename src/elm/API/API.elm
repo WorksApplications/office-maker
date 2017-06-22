@@ -340,6 +340,6 @@ login : String -> String -> String -> Task Error String
 login accountServiceRoot id pass =
     postJson
         decodeAuthToken
-        (accountServiceRoot ++ "/1/authentication")
+        (accountServiceRoot ++ "/authentication")
         []
         (Http.jsonBody <| encodeLogin id pass)

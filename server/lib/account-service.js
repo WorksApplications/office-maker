@@ -38,7 +38,7 @@ function post(token, url, data) {
 }
 
 function login(root, userId, password) {
-  return post('', root + '/1/authentication', {
+  return post('', root + '/authentication', {
     userId: userId,
     password: password
   }).then(obj => {
@@ -50,11 +50,11 @@ function addUser(root, token, user) {
   user.userId = user.id;
   user.password = user.pass;
   user.role = user.role.toUpperCase();
-  return post(token, root + '/1/users', user);
+  return post(token, root + '/users', user);
 }
 
 function getAllAdmins(root, token, exclusiveStartKey) {
-  var url = root + '/1/users' +
+  var url = root + '/users' +
     (exclusiveStartKey ? '?exclusiveStartKey=' + exclusiveStartKey : '')
   return get(token, url).then((data) => {
     var users = data.users.map(user => {
@@ -64,7 +64,7 @@ function getAllAdmins(root, token, exclusiveStartKey) {
       return user.role === 'admin';
     });
     if (data.lastEvaluatedKey) {
-      return getAllAdmins(root, token, data.lastEvaluatedKey).then((users2) => {
+      return getAllAdmins(root, token, data.lastEvaluatedKey).then(users2 => {
         return Promise.resolve(users.concat(users2));
       });
     } else {
