@@ -56,7 +56,7 @@ function fixPerson(profile) {
 }
 
 function getPerson(root, token, personId) {
-  return get(token, root + '/1/profiles/' + personId).then((person) => {
+  return get(token, root + '/profiles/' + personId).then((person) => {
     return Promise.resolve(fixPerson(person));
   }).catch((e) => {
     if (e === 404) {
@@ -80,7 +80,7 @@ function getPeopleByIds(root, token, personIds) {
 }
 
 function getPeopleByPost(root, token, post, exclusiveStartKey) {
-  var url = root + '/1/profiles?q=' + encodeURIComponent(post) +
+  var url = root + '/profiles?q=' + encodeURIComponent(post) +
     (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '')
   return get(token, url).then((data) => {
     var people = data.profiles.map(fixPerson)
@@ -105,11 +105,11 @@ function savePerson(root, token, person) {
   person.post = person.post || null;
   person.rank = '' || null;
   person.workspace = '' || null;
-  return put(token, root + '/1/profiles/' + encodeURIComponent(person.userId), person);
+  return put(token, root + '/profiles/' + encodeURIComponent(person.userId), person);
 }
 
 function search(root, token, query, exclusiveStartKey) {
-  var url = root + '/1/profiles?q=' + encodeURIComponent(query) +
+  var url = root + '/profiles?q=' + encodeURIComponent(query) +
     (exclusiveStartKey ? '&exclusiveStartKey=' + exclusiveStartKey : '');
   return get(token, url).then((data) => {
     var people = data.profiles.map(fixPerson);
