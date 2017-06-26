@@ -9,7 +9,7 @@ function send(token, method, url, data) {
       headers: {
         'Authorization': token ? 'JWT ' + token : ''
       },
-      body: data,
+      body: data || undefined,
       json: true
     };
     request(options, function(e, response, body) {
