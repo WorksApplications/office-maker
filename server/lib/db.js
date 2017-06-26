@@ -409,7 +409,7 @@ function matchToQuery(object, normalizedQuery) {
 
 function searchOpt(conn, tenantId, query, all, people) {
   var normalizedQuery = searchOptimizer.normalize(query);
-  return getFloorsWithObjectsOpt(conn, query, all).then(objectsOpt => {
+  return getObjectsOpt(conn, query, all).then(objectsOpt => {
     var results = {};
     var arr = [];
     people.forEach(person => {
@@ -450,7 +450,7 @@ function searchOpt(conn, tenantId, query, all, people) {
   });
 }
 
-function getFloorsWithObjectsOpt(conn, query, withPrivate) {
+function getObjectsOpt(conn, query, withPrivate) {
   return rdb.exec(conn, sql.select('objects_opt', 'WHERE ' +
     "name LIKE " + rdb.escape('%' + query + '%') +
     " OR personName LIKE " + rdb.escape(query + '%') +
