@@ -46,18 +46,51 @@ function getAuthToken(req) {
   return req.headers['authorization'];
 }
 
+// function getSelf(conn, token) {
+//   if (!token) {
+//     if (config.multiTenency) {
+//       return Promise.reject(403);
+//     } else {
+//       return Promise.resolve(null);
+//     }
+//   }
+//   return new Promise((resolve, reject) => {
+//     jwt.verify(token, config.secret.token, {
+//       algorithms: ['RS256', 'RS384', 'RS512', 'HS256', 'HS256', 'HS512', 'ES256', 'ES384', 'ES512']
+//     }, (e, user) => {
+//       if (e) {
+//         reject(e);
+//       } else {
+//         accountService.toMapUser(user);
+//         resolve(user);
+//       }
+//     });
+//   }).catch(e => {
+//     if (token === 'mockmockmock') {
+//       return Promise.resolve({
+//         id: 'mock@example.com',
+//         name: 'mock-account',
+//         role: 'admin',
+//         tenantId: ''
+//       });
+//     }
+//     console.log(e);
+//     log.system.debug(e);
+//     // return Promise.reject(401);
+//     // if(e.name === 'JsonWebTokenError') {
+//     //   return Promise.reject(401);
+//     // } else {
+//     //   return Promise.reject(e);
+//     // }
+//   });
+// }
+
 function getSelf(conn, token) {
   if (!token) {
-    if (config.multiTenency) {
-      return Promise.reject(403);
-    } else {
-      return Promise.resolve(null);
-    }
+    return Promise.reject();
   }
   return new Promise((resolve, reject) => {
-    jwt.verify(token, config.secret.token, {
-      algorithms: ['RS256', 'RS384', 'RS512', 'HS256', 'HS256', 'HS512', 'ES256', 'ES384', 'ES512']
-    }, (e, user) => {
+    jwt.verify(token, 'mock-key', function(e, user) {
       if (e) {
         reject(e);
       } else {
@@ -66,22 +99,11 @@ function getSelf(conn, token) {
       }
     });
   }).catch(e => {
-    if (token === 'mockmockmock') {
-      return Promise.resolve({
-        id: 'mock@example.com',
-        name: 'mock-account',
-        role: 'admin',
-        tenantId: ''
-      });
+    if (e.name === 'JsonWebTokenError') {
+      return Promise.reject(401);
+    } else {
+      return Promise.reject(e);
     }
-    console.log(e);
-    log.system.debug(e);
-    // return Promise.reject(401);
-    // if(e.name === 'JsonWebTokenError') {
-    //   return Promise.reject(401);
-    // } else {
-    //   return Promise.reject(e);
-    // }
   });
 }
 

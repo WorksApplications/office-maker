@@ -1,0 +1,4 @@
+{
+  "name": "profiles_profiles_put",
+  "resource": "PUT/profiles/{userId}"
+}

@@ -1,0 +1,4 @@
+{
+  "name": "profiles_profiles_get",
+  "resource": "GET/profiles/{userId}"
+}

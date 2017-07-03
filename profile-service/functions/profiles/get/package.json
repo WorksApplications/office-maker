@@ -1,0 +1,16 @@
+{
+  "name": "get",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "preinstall": "npm install ../../../common",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsonwebtoken": "^7.4.1",
+    "common": "file:../../../common"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "name": "accounts_users_post",
+  "resource": "POST/users"
+}

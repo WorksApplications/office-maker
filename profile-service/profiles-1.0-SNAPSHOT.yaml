@@ -1,0 +1,247 @@
+swagger: '2.0'
+
+info:
+  version: "1.0-SNAPSHOT"
+  title: "Profiles"
+  description: |
+    個人に紐づけられた最新の情報を管理します。
+
+    プロフィールに対する閲覧アクセスは、テナントのドメインが特定可能である必要があります。
+    API サーバは、 IP アドレスもしくは認証によってドメインを特定します。
+
+  x-wap-package-name: profiles
+
+schemes:
+  - 'http'
+host: walter.internal.worksap.com
+basePath: "/walter/profiles/api/1"
+
+paths:
+  /profiles:
+    get:
+      description: |
+        個人情報の一覧を取得します。
+
+        クエリパラメータによって絞り込みを行うことができます。
+        `q` による検索は、スペース区切りで複数のキーワードを指定できます。
+      parameters:
+        - "$ref": "#/parameters/Authorization_opt"
+        - "$ref": "#/parameters/X-Forwarded-For"
+        - name: q
+          description: |
+            検索に利用するクエリ文字列です（1000文字以内）。
+
+            `userId`, `employeeId` と同時には使用できません。
+          in: query
+          type: string
+        - name: userId
+          description: |
+            ログインアカウントの User ID によって絞り込みます。
+            複数の場合は、 `,` で区切って指定します。
+
+            `q`, `employeeId` と同時には使用できません。
+          in: query
+          type: string
+        - name: employeeId
+          description: |
+            組織内で利用される社員番号などで絞り込みます。
+            複数の場合は、 `,` で区切って指定します。
+
+            `q`, `userId` と同時には使用できません。
+          in: query
+          type: string
+        - name: limit
+          description: |
+            検索結果の最大件数を指定します。
+            最大（＝デフォルト）値は 100 です。
+          in: query
+          type: integer
+        - name: exclusiveStartKey
+          description: |
+            前回の `lastEvaluatedKey` を付与し、ページネーションを行います。
+            このキーのデータ以降で、このキーを除くデータが返されます。
+          in: query
+          type: string
+        - name: order
+          description: |
+            検索結果の順序を指定します。
+            指定可能な項目は以下です。
+
+            * `employeeId`
+            * `name`
+
+            `-employeeId` のように `-` をつけると降順になります。
+            
+            指定しない場合は `order=employeeId` と同じです。
+          in: query
+          type: string
+      responses:
+        200:
+          description: プロフィールの検索結果を返します。
+          schema:
+            type: object
+            properties:
+              profiles:
+                type: array
+                items:
+                  $ref: "#/definitions/Profile"
+              lastEvaluatedKey:
+                type: string
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+  /profiles/{userId}:
+    get:
+      description: プロフィールを取得します。
+      parameters:
+        - name: userId
+          description: ""
+          in: path
+          type: string
+          required: true
+        - "$ref": "#/parameters/Authorization_opt"
+        - "$ref": "#/parameters/X-Forwarded-For"
+      responses:
+        200:
+          description: ""
+          schema:
+            $ref: "#/definitions/Profile"
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        404:
+          description: |
+            Not Found
+
+            たとえ他のドメインに存在していても、サーバは 404 によってその存在を隠す必要があります。
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      description: |
+        個人情報を登録・更新します。
+      parameters:
+        - "$ref": "#/parameters/Authorization"
+        - name: userId
+          description: ""
+          in: path
+          type: string
+          required: true
+        - name: body
+          in: body
+          schema:
+            $ref: "#/definitions/Profile"
+          required: true
+      responses:
+        200:
+          description: ""
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    patch:
+      description: |
+        個人情報を編集します。
+
+        PUT は指定していない項目が削除されますが、 PATCH 指定していない項目を変更しません。
+        明示的に削除するには、空文字を設定します。
+      parameters:
+        - "$ref": "#/parameters/Authorization"
+        - name: userId
+          description: ""
+          in: path
+          type: string
+          required: true
+        - name: body
+          in: body
+          schema:
+            $ref: "#/definitions/Profile"
+          required: true
+      responses:
+        200:
+          description: ""
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      description: プロフィールを削除します。
+      parameters:
+        - name: userId
+          description: ""
+          in: path
+          type: string
+          required: true
+        - name: Authorization
+          description: |
+            認証情報です。 Accounts サービスから取得したトークンを `Bearer {TOKEN}` の形式で送信します。
+          in: header
+          type: string
+          required: true
+      responses:
+        200:
+          description: ""
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        404:
+          description: |
+            Not Found
+
+            たとえ他のドメインに存在していても、サーバは 404 によってその存在を隠す必要があります。
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Profile:
+    type: object
+    properties:
+      userId:
+        type: string
+      employeeId:
+        type: string
+      picture:
+        type: string
+      name:
+        type: string
+      ruby:
+        type: string
+      orgnization:
+        type: string
+      post:
+        type: string
+      rank:
+        type: string
+      cellPhone:
+        type: string
+      extensionPhone:
+        type: string
+      mail:
+        type: string
+      workplace:
+        type: string
+  Error:
+    type: object
+    properties:
+      message:
+        type: string
+parameters:
+  Authorization:
+    name: Authorization
+    description: |
+      認証情報です。 Accounts サービスから取得したトークンを `Bearer {TOKEN}` の形式で送信します。
+    in: header
+    type: string
+  Authorization_opt:
+    name: Authorization
+    description: |
+      認証情報です。 Accounts サービスから取得したトークンを `Bearer {TOKEN}` の形式で送信します。
+    in: header
+    required: false
+    type: string
+  X-Forwarded-For:
+    name: X-Forwarded-For
+    description: この API は、 IP アドレスによる匿名によるアクセスが可能です。
+    in: header
+    type: string

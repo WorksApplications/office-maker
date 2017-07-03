@@ -56,9 +56,9 @@ function fixPerson(profile) {
 }
 
 function getPerson(root, token, personId) {
-  return get(token, root + '/profiles/' + personId).then((person) => {
+  return get(token, root + '/profiles/' + personId).then(person => {
     return Promise.resolve(fixPerson(person));
-  }).catch((e) => {
+  }).catch(e => {
     if (e === 404) {
       return Promise.resolve(null);
     }

@@ -1,0 +1,4 @@
+{
+  "name": "accounts_authentication_post",
+  "resource": "POST/authentication"
+}
