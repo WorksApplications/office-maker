@@ -1,0 +1,4 @@
+{
+  "name": "profiles_authorizer",
+  "resource": "GET/authorizer"
+}
