@@ -130,7 +130,10 @@ function makeZipFile(funcDir, funcName) {
 
 function upload(resource, funcName, zipFileName) {
   console.log('Uploading...');
-  return deleteFunction(funcName).then(_ => {
+  return updateFunctionCode(funcName, project.accountId, project.role, zipFileName).then(_ => {
+    console.log('done.');
+    return Promise.resolve();
+  }).catch(_ => {
     return createFunction(funcName, project.accountId, project.role, zipFileName).then(_ => {
       return addPermission(funcName, project.accountId, project.apiId, resource).then(_ => {
         console.log('done.');
@@ -138,7 +141,6 @@ function upload(resource, funcName, zipFileName) {
       });
     });
   });
-
 }
 
 function deleteFunction(funcName) {
@@ -180,13 +182,28 @@ function createFunction(funcName, accountId, role, zipFileName) {
   });
 }
 
+function updateFunctionCode(funcName, accountId, role, zipFileName) {
+  return new Promise((resolve, reject) => {
+    lambda.updateFunctionCode({
+      FunctionName: funcName,
+      ZipFile: fs.readFileSync(`${__dirname}/dest/${funcName}.zip`)
+    }, function(e, data) {
+      if (e) {
+        reject(e)
+      } else {
+        resolve(data);
+      }
+    });
+  });
+}
+
 function addPermission(funcName, accountId, apiId, resource) {
   return new Promise((resolve, reject) => {
     lambda.addPermission({
       Action: "lambda:InvokeFunction",
       FunctionName: funcName,
       Principal: "apigateway.amazonaws.com",
-      SourceArn: `arn:aws:execute-api:ap-northeast-1:${accountId}:${apiId}/*/${resource}`,
+      SourceArn: `arn:aws:execute-api:${project.region}:${accountId}:${apiId}/*/${resource}`,
       StatementId: "1"
     }, function(e, data) {
       if (e) {

@@ -3,7 +3,9 @@ var jwt = require('jsonwebtoken');
 var documentClient = new AWS.DynamoDB.DocumentClient();
 var common = require('common');
 
-exports.handler = common.authorized((event, context, user, callback) => {
+exports.handler = (event, context, callback) => {
+  console.log('event', event);
+  console.log('context', context);
   documentClient.get({
     TableName: "profiles",
     Key: {
@@ -34,4 +36,4 @@ exports.handler = common.authorized((event, context, user, callback) => {
     }
 
   });
-});
+};

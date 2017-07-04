@@ -30,7 +30,9 @@ exports.handler = (event, context, callback) => {
   };
   getSelf(token).then(user => {
     callback(null, {
+      principalId: user.userId,
       policyDocument: {
+        Version: '2012-10-17',
         Statement: [{
           Action: 'execute-api:Invoke',
           Effect: 'Allow',
@@ -39,5 +41,7 @@ exports.handler = (event, context, callback) => {
       },
       context: user
     });
+  }).catch(message => {
+    callback(message);
   });
 }
