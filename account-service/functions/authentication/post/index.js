@@ -3,6 +3,8 @@ var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
 var documentClient = new AWS.DynamoDB.DocumentClient();
 
+var privateKey = process.env.PRIVATE_KEY;
+
 exports.handler = (event, context, callback) => {
   var body = JSON.parse(event.body);
   var userId = body.userId;
@@ -29,7 +31,9 @@ exports.handler = (event, context, callback) => {
       return;
     }
     delete user.hashedPassword;
-    var accessToken = jwt.sign(user, 'mock-key');
+    var accessToken = jwt.sign(user, privateKey, {
+      algorithm: 'RS256'
+    });
     callback(null, {
       statusCode: 200,
       headers: {

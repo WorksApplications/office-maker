@@ -59,9 +59,11 @@ function doUpload() {
   rl.question('choose function\n' + list(), ans => {
     var def = funcDefs[+ans];
     if (def) {
-      npmInstall(def.path);
+      if (fs.existsSync(def.path + '/package.json')) {
+        npmInstall(def.path);
+      }
       return makeZipFile(def.path, def.name).then(zipFileName => {
-        return upload(def.resource, def.name, zipFileName).then(_ => {
+        return upload(def.path, def.resource, def.name, zipFileName).then(_ => {
           rl.close();
         });
       }).catch(e => {
@@ -128,9 +130,14 @@ function makeZipFile(funcDir, funcName) {
   });
 }
 
-function upload(resource, funcName, zipFileName) {
+function upload(path, resource, funcName, zipFileName) {
   console.log('Uploading...');
   return updateFunctionCode(funcName, project.accountId, project.role, zipFileName).then(_ => {
+    if (fs.existsSync(path + '/env.json')) {
+      return updateFunctionConfiguration(funcName, JSON.parse(fs.readFileSync(path + '/env.json', 'utf8')));
+    }
+    return Promise.resolve();
+  }).then(_ => {
     console.log('done.');
     return Promise.resolve();
   }).catch(_ => {
@@ -187,6 +194,23 @@ function updateFunctionCode(funcName, accountId, role, zipFileName) {
     lambda.updateFunctionCode({
       FunctionName: funcName,
       ZipFile: fs.readFileSync(`${__dirname}/dest/${funcName}.zip`)
+    }, function(e, data) {
+      if (e) {
+        reject(e)
+      } else {
+        resolve(data);
+      }
+    });
+  });
+}
+
+function updateFunctionConfiguration(funcName, env) {
+  return new Promise((resolve, reject) => {
+    lambda.updateFunctionConfiguration({
+      FunctionName: funcName,
+      Environment: {
+        Variables: env
+      },
     }, function(e, data) {
       if (e) {
         reject(e)

@@ -1,3 +1,4 @@
 dest/*.zip
 output.json
 project.json
+env.json

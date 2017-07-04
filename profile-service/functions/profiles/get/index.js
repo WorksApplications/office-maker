@@ -1,7 +1,5 @@
 var AWS = require('aws-sdk');
-var jwt = require('jsonwebtoken');
 var documentClient = new AWS.DynamoDB.DocumentClient();
-var common = require('common');
 
 exports.handler = (event, context, callback) => {
   console.log('event', event);
