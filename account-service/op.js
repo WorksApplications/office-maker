@@ -7,16 +7,37 @@ var AWS = require('aws-sdk');
 var archiver = require('archiver');
 
 var project = JSON.parse(fs.readFileSync(__dirname + '/project.json', 'utf8'));
-var funcDefs = find.fileSync('function.json', __dirname + '/functions').map(toFuncDef);
 
 var lambda = new AWS.Lambda({
   region: project.region
 });
+var apigateway = new AWS.APIGateway({
+  region: project.region,
+  apiVersion: '2015-07-09'
+});
 
-function toFuncDef(jsonPath) {
-  var def = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  def.path = Path.dirname(jsonPath);
-  return def;
+
+function getResources() {
+  return new Promise((resolve, reject) => {
+    apigateway.getResources({
+      restApiId: project.apiId
+    }, function(e, data) {
+      if (e) {
+        reject(e);
+      } else {
+        resolve(data.items);
+      }
+    });
+  });
+}
+
+
+var funcDefs;
+try {
+  funcDefs = find.fileSync('function.json', __dirname + '/functions').map(toFuncDef);
+} catch (e) {
+  console.log(e.message);
+  process.exit(1);
 }
 
 var rl = readline.createInterface({
@@ -28,7 +49,41 @@ var model = {
   mode: 'init'
 };
 
-recursiveAsyncReadLine();
+getResources().then(remoteResources => {
+  var functionsDict = {};
+  funcDefs.forEach(def => {
+    var key = def.resource.method + def.resource.path;
+    functionsDict[key] = def;
+  });
+
+  remoteResources.forEach(r => {
+    Object.keys(r.resourceMethods || {}).forEach(method => {
+      var key = method + r.path;
+      var funcDef = functionsDict[key];
+      if (funcDef) {
+        funcDef.resource.id = r.id;
+      }
+    });
+  });
+  recursiveAsyncReadLine();
+}).catch(e => {
+  console.error(e.message);
+  console.error(e.stack);
+  process.exit(1);
+});
+
+
+// ---------- functions ---------------
+
+function toFuncDef(jsonPath) {
+  try {
+    var def = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    def.path = Path.dirname(jsonPath);
+    return def;
+  } catch (e) {
+    throw new Error("mulformed JSON found: " + jsonPath + ": " + e.message);
+  }
+}
 
 function recursiveAsyncReadLine() {
   if (model.mode == 'init') {
@@ -82,8 +137,14 @@ function doTest() {
   rl.question('choose function\n' + list(), ans => {
     var def = funcDefs[+ans];
     if (def) {
+      console.log('Testing Lambda...');
       invoke(def.name, def.path).then(out => {
         console.log(out);
+        console.log('Testing API Gateway...');
+        return testInvokeMethod(def.name, def.path, def.resource).then(out => {
+          console.log(out);
+        });
+      }).then(_ => {
         rl.close();
       }).catch(e => {
         console.error(e);
@@ -94,6 +155,33 @@ function doTest() {
       console.log('bye!');
       rl.close();
     }
+  });
+}
+
+function testInvokeMethod(funcName, dir, resource) {
+  return new Promise((resolve, reject) => {
+    var inputJson = JSON.parse(fs.readFileSync(dir + '/input.json', 'utf8'));
+    var body;
+    try {
+      body = JSON.stringify(inputJson.body);
+    } catch (e) {
+      body = inputJson.body;
+    }
+    var params = {
+      httpMethod: resource.method,
+      resourceId: resource.id,
+      restApiId: project.apiId,
+      body: body || '',
+      headers: inputJson.headers,
+      pathWithQueryString: inputJson.pathWithQueryString || ''
+    };
+    apigateway.testInvokeMethod(params, function(e, data) {
+      if (e) {
+        reject(e);
+      } else {
+        resolve(data);
+      }
+    });
   });
 }
 
@@ -134,7 +222,8 @@ function upload(path, resource, funcName, zipFileName) {
   console.log('Uploading...');
   return updateFunctionCode(funcName, project.accountId, project.role, zipFileName).then(_ => {
     if (fs.existsSync(path + '/env.json')) {
-      return updateFunctionConfiguration(funcName, JSON.parse(fs.readFileSync(path + '/env.json', 'utf8')));
+      var envJson = JSON.parse(fs.readFileSync(path + '/env.json', 'utf8'));
+      return updateFunctionConfiguration(funcName, envJson);
     }
     return Promise.resolve();
   }).then(_ => {
@@ -227,7 +316,7 @@ function addPermission(funcName, accountId, apiId, resource) {
       Action: "lambda:InvokeFunction",
       FunctionName: funcName,
       Principal: "apigateway.amazonaws.com",
-      SourceArn: `arn:aws:execute-api:${project.region}:${accountId}:${apiId}/*/${resource}`,
+      SourceArn: `arn:aws:execute-api:${project.region}:${accountId}:${apiId}/*/${resource.method}${resource.path}`,
       StatementId: "1"
     }, function(e, data) {
       if (e) {
@@ -241,9 +330,13 @@ function addPermission(funcName, accountId, apiId, resource) {
 
 function invoke(funcName, dir) {
   return new Promise((resolve, reject) => {
+    var inputJson = JSON.parse(fs.readFileSync(dir + '/input.json', 'utf8'));
+    try {
+      inputJson.body = JSON.stringify(inputJson.body);
+    } catch (e) {}
     lambda.invoke({
       FunctionName: funcName,
-      Payload: fs.readFileSync(dir + '/input.json')
+      Payload: JSON.stringify(inputJson)
     }, function(e, data) {
       if (e) {
         reject(e)

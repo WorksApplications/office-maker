@@ -1,4 +1,7 @@
 {
   "name": "accounts_authentication_post",
-  "resource": "POST/authentication"
+  "resource": {
+    "method": "POST",
+    "path": "/authentication"
+  }
 }

@@ -1,4 +1,7 @@
 {
   "name": "profiles_authorizer",
-  "resource": "GET/authorizer"
+  "resource": {
+    "method": "POST",
+    "path": "/authorizer"
+  }
 }

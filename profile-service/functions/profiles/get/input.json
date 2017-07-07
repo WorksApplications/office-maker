@@ -4,5 +4,6 @@
   },
   "pathParameters": {
     "userId": "mock@example.com"
-  }
+  },
+  "pathWithQueryString": "/profiles/mock@example.com"
 }

@@ -1,4 +1,7 @@
 {
   "name": "profiles_profiles_put",
-  "resource": "PUT/profiles/{userId}"
+  "resource": {
+    "method": "PUT",
+    "path": "/profiles/{userId}"
+  }
 }
