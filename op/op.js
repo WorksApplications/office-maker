@@ -6,7 +6,7 @@ var Path = require('path');
 var AWS = require('aws-sdk');
 var archiver = require('archiver');
 
-var project = JSON.parse(fs.readFileSync(__dirname + '/project.json', 'utf8'));
+var project = JSON.parse(fs.readFileSync('./project.json', 'utf8'));
 
 var lambda = new AWS.Lambda({
   region: project.region
@@ -15,7 +15,6 @@ var apigateway = new AWS.APIGateway({
   region: project.region,
   apiVersion: '2015-07-09'
 });
-
 
 function getResources() {
   return new Promise((resolve, reject) => {
@@ -34,7 +33,7 @@ function getResources() {
 
 var funcDefs;
 try {
-  funcDefs = find.fileSync('function.json', __dirname + '/functions').map(toFuncDef);
+  funcDefs = find.fileSync('function.json', './functions').map(toFuncDef);
 } catch (e) {
   console.log(e.message);
   process.exit(1);
@@ -203,7 +202,7 @@ function npmInstall(cwd) {
 function makeZipFile(funcDir, funcName) {
   return new Promise((resolve, reject) => {
     console.log('Zipping ' + funcDir + '...');
-    var zipFileName = __dirname + '/dest/' + funcName + '.zip';
+    var zipFileName = './dest/' + funcName + '.zip';
     var output = fs.createWriteStream(zipFileName);
     var archive = archiver('zip');
     output.on('close', function() {
@@ -266,7 +265,7 @@ function createFunction(funcName, accountId, role, zipFileName) {
       Runtime: "nodejs6.10",
       Handler: "index.handler",
       Code: {
-        ZipFile: fs.readFileSync(`${__dirname}/dest/${funcName}.zip`)
+        ZipFile: fs.readFileSync(`./dest/${funcName}.zip`)
       }
     }, function(e, data) {
       if (e) {
@@ -282,7 +281,7 @@ function updateFunctionCode(funcName, accountId, role, zipFileName) {
   return new Promise((resolve, reject) => {
     lambda.updateFunctionCode({
       FunctionName: funcName,
-      ZipFile: fs.readFileSync(`${__dirname}/dest/${funcName}.zip`)
+      ZipFile: fs.readFileSync(`./dest/${funcName}.zip`)
     }, function(e, data) {
       if (e) {
         reject(e)
