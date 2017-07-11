@@ -2,8 +2,6 @@ var AWS = require('aws-sdk');
 var documentClient = new AWS.DynamoDB.DocumentClient();
 
 exports.handler = (event, context, callback) => {
-  console.log('event', event);
-  console.log('context', context);
   documentClient.get({
     TableName: "profiles",
     Key: {

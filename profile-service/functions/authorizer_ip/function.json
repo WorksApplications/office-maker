@@ -1,0 +1,7 @@
+{
+  "name": "profiles_authorizer_ip",
+  "resource": {
+    "method": "POST",
+    "path": "/authorizer_ip"
+  }
+}

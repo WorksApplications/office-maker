@@ -56,6 +56,7 @@ getResources().then(remoteResources => {
   });
 
   remoteResources.forEach(r => {
+    // console.log(r);
     Object.keys(r.resourceMethods || {}).forEach(method => {
       var key = method + r.path;
       var funcDef = functionsDict[key];
@@ -64,6 +65,7 @@ getResources().then(remoteResources => {
       }
     });
   });
+  // console.log(functionsDict);
   recursiveAsyncReadLine();
 }).catch(e => {
   console.error(e.message);
@@ -221,6 +223,7 @@ function upload(path, resource, funcName, zipFileName) {
   console.log('Uploading...');
   return updateFunctionCode(funcName, project.accountId, project.role, zipFileName).then(_ => {
     if (fs.existsSync(path + '/env.json')) {
+      console.log('found env.json');
       var envJson = JSON.parse(fs.readFileSync(path + '/env.json', 'utf8'));
       return updateFunctionConfiguration(funcName, envJson);
     }
