@@ -1,7 +1,0 @@
-{
-  "name": "profiles_profiles_delete",
-  "resource": {
-    "method": "DELETE",
-    "path": "/profiles/{userId}"
-  }
-}

@@ -1,7 +1,0 @@
-{
-  "name": "profiles_profiles_query",
-  "resource": {
-    "method": "GET",
-    "path": "/profiles"
-  }
-}

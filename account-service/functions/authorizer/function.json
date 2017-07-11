@@ -1,7 +1,0 @@
-{
-  "name": "accounts_authorizer",
-  "resource": {
-    "method": "POST",
-    "path": "/authorizer"
-  }
-}
