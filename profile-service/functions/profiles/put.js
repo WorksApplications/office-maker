@@ -1,21 +1,11 @@
-var AWS = require('aws-sdk');
-var documentClient = new AWS.DynamoDB.DocumentClient();
+var db = require('../common/db.js');
+var lambdaUtil = require('../common/lambda-util.js');
 
 exports.handler = (event, context, callback) => {
-  documentClient.put({
-    TableName: "profiles",
-    Item: JSON.parse(event.body)
-  }, function(e, data) {
-    if (e) {
-      callback(e);
-      return;
-    }
-    callback(null, {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: ''
-    });
+  var profile = JSON.parse(event.body);
+  db.putProfile(profile).then(_ => {
+    lambdaUtil.send(callback, 200);
+  }).catch(e => {
+    lambdaUtil.send(callback, 500, e);
   });
 };

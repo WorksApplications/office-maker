@@ -1,3 +1,0 @@
-{
-  "body": "{\r\n  \"userId\": \"mock@example.com\",\r\n  \"password\": \"pass\",\r\n\"role\": \"ADMIN\"\r\n}"
-}

@@ -1,23 +1,11 @@
-var AWS = require('aws-sdk');
-var documentClient = new AWS.DynamoDB.DocumentClient();
+var db = require('../common/db.js');
+var lambdaUtil = require('../common/lambda-util.js');
 
 exports.handler = (event, context, callback) => {
-  documentClient.delete({
-    TableName: "profiles",
-    Key: {
-      userId: event.pathParameters.userId
-    }
-  }, function(e, data) {
-    if (e) {
-      callback(e);
-      return;
-    }
-    callback(null, {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: ''
-    });
+  var userId = event.pathParameters.userId;
+  db.deleteProfile(userId).then(_ => {
+    lambdaUtil.send(callback, 200);
+  }).catch(e => {
+    lambdaUtil.send(callback, 500, e);
   });
 };

@@ -1,7 +1,0 @@
-{
-  "name": "accounts_users_post",
-  "resource": {
-    "method": "POST",
-    "path": "/users"
-  }
-}

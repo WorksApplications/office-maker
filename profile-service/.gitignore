@@ -1,5 +1,5 @@
 dest/*.zip
-output.json
 project.json
 env.json
 *.sh
+template_out.yml

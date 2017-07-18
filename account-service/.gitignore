@@ -2,3 +2,4 @@ dest/*.zip
 output.json
 project.json
 env.json
+template_out.yml

@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Profile Service
+Resources:
+  ProfilesProfilesQuery:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: profiles_profiles_query
+      Handler: functions/profiles/query.handler
+      Runtime: nodejs6.10
+      Policies: AmazonDynamoDBReadOnlyAccess
+      Events:
+        GetResource:
+          Type: Api
+          Properties:
+            Path: /profiles
+            Method: get
+  ProfilesProfilesGet:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: profiles_profiles_get
+      Handler: functions/profiles/get.handler
+      Runtime: nodejs6.10
+      Policies: AmazonDynamoDBReadOnlyAccess
+      Events:
+        GetResource:
+          Type: Api
+          Properties:
+            Path: /profiles/{userId}
+            Method: get
+
+  ProfilesProfilesPut:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: profiles_profiles_put
+      Handler: functions/profiles/put.handler
+      Runtime: nodejs6.10
+      Policies: AmazonDynamoDBFullAccess
+      Events:
+        PutResource:
+          Type: Api
+          Properties:
+            Path: /profiles/{userId}
+            Method: put
+
+  ProfilesProfilesDelete:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: profiles_profiles_delete
+      Handler: functions/profiles/delete.handler
+      Runtime: nodejs6.10
+      Policies: AmazonDynamoDBFullAccess
+      Events:
+        DeleteResource:
+          Type: Api
+          Properties:
+            Path: /profiles/{userId}
+            Method: delete
