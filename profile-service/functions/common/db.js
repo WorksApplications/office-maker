@@ -1,5 +1,10 @@
 var AWS = require('aws-sdk');
-var documentClient = new AWS.DynamoDB.DocumentClient();
+var options = process.argv.includes('--mock') ? {
+  region: 'ap-northeast-1',
+  endpoint: 'http://localhost:4569',
+  // port: 4569
+} : undefined;
+var documentClient = new AWS.DynamoDB.DocumentClient(options);
 var dynamoUtil = require('./dynamo-util.js');
 
 function getProfile(userId) {
@@ -29,11 +34,11 @@ function deleteProfile(userId) {
   });
 }
 
-function scan(limit, exclusiveStartKey) {
+function scanProfile(limit, exclusiveStartKey) {
   return dynamoUtil.scan(documentClient, {
     TableName: "profiles",
     Limit: limit,
-    ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined;
+    ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
   }).then(data => {
     return Promise.resolve({
       profiles: data.Items,

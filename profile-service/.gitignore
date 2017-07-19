@@ -3,3 +3,4 @@ project.json
 env.json
 *.sh
 template_out.yml
+dynamodb_local
