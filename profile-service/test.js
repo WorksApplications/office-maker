@@ -1,33 +1,45 @@
-var localDynamo = require('local-dynamo');
 var childProcess = require('child_process');
+var fs = require('fs');
+var AWS = require('aws-sdk');
+var dynamoUtil = require('./functions/common/dynamo-util.js');
+var options = require('./functions/common/db-options.js');
+var dynamodb = new AWS.DynamoDB(options);
+var yaml = require('js-yaml');
+var templateYml = yaml.safeLoad(fs.readFileSync('./template.yml', 'utf8'));
 var profilesGet = require('./functions/profiles/get.js');
 
-var assertion1 = handlerToPromise(profilesGet.handler)({
+var prepare = () => dynamoUtil.createTable(dynamodb, templateYml.Resources.ProfilesTable.Properties);
+
+var assertion1 = () => handlerToPromise(profilesGet.handler)({
   "pathParameters": {
     "userId": "mock@example.com"
   }
-}, {}).then(result => {
-  if (result.statusCode >= 500) {
-    throw "Internal Server Error: " + JSON.stringify(result);
-  }
-  return Promise.resolve();
-});
+}, {}).then(assertStatus(404));
 
 var all = reducePromises([
+  prepare,
   assertion1
 ]);
 
-duringRunningLocalDynamo(__dirname + '/dynamodb_local', 4569, all).then(result => {
-  console.log(result);
-  console.log('done');
+duringRunningLocalDynamo(__dirname + '/dynamodb_local', 4569, all).then(_ => {
+  console.log('done.');
 }).catch(e => {
-  console.log(e);
+  console.error(e);
   process.exit(1);
 });
 
+function assertStatus(expect) {
+  return result => {
+    if (result.statusCode !== expect) {
+      throw `Expected statusCode ${expect} but got ${result.statusCode}: JSON.stringify(result)`;
+    }
+    return Promise.resolve();
+  };
+}
+
 function reducePromises(promises) {
-  return promises.reduce((prev, curr) => {
-    return prev.then(_ => curr);
+  return promises.reduce((prev, toPromise) => {
+    return prev.then(toPromise);
   }, Promise.resolve());
 }
 
@@ -59,7 +71,7 @@ function duringRunningLocalDynamo(dynamodbLocalPath, port, promise) {
           resolve(result);
         }
       });
-      delay(500).then(_ => {
+      delay(200).then(_ => {
         return promise.then(result_ => {
           result = result_;
           p.kill();
@@ -84,7 +96,7 @@ function runLocalDynamo(dynamodbLocalPath, port) {
       `-Djava.library.path=.;./DynamoDBLocal_lib`,
       '-jar',
       'DynamoDBLocal.jar',
-      '-sharedDb',
+      '-inMemory',
       '-port',
       '' + port
     ], {

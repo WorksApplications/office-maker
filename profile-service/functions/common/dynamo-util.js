@@ -1,7 +1,7 @@
 function exec(method) {
-  return function(documentClient, params) {
+  return function(dynamoDbOrDocumentClient, params) {
     return new Promise((resolve, reject) => {
-      documentClient[method](params, function(e, data) {
+      dynamoDbOrDocumentClient[method](params, function(e, data) {
         if (e) {
           reject(e);
         } else {
@@ -16,5 +16,6 @@ module.exports = {
   get: exec('get'),
   put: exec('put'),
   delete: exec('delete'),
-  scan: exec('scan')
+  scan: exec('scan'),
+  createTable: exec('createTable')
 };

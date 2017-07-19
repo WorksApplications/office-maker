@@ -1,9 +1,5 @@
 var AWS = require('aws-sdk');
-var options = process.argv.includes('--mock') ? {
-  region: 'ap-northeast-1',
-  endpoint: 'http://localhost:4569',
-  // port: 4569
-} : undefined;
+var options = require('./db-options.js');
 var documentClient = new AWS.DynamoDB.DocumentClient(options);
 var dynamoUtil = require('./dynamo-util.js');
 
