@@ -19,14 +19,48 @@ var templateFile = './template.yml';
 var outputTemplateFile = './template_out.yml';
 var funcDir = './functions';
 
-cloudFormationPackage(templateFile, outputTemplateFile, project.s3Bucket).then(_ => {
-  return cloudFormationDeploy(outputTemplateFile, project.stackName);
+
+rmdir('./node_modules').then(_ => {
+  return npmInstall(true).then(_ => {
+    return cloudFormationPackage(templateFile, outputTemplateFile, project.s3Bucket).then(_ => {
+      return cloudFormationDeploy(outputTemplateFile, project.stackName);
+    });
+  }).then(_ => npmInstall(false));
 }).then(result => {
   console.log(result);
 }).catch(e => {
   console.log(e);
   process.exit(1);
 });
+
+
+function rmdir(path) {
+  return new Promise((resolve, reject) => {
+    childProcess.exec('rm -r ' + path, {
+      cwd: '.'
+    }, function(e) {
+      if (e) {
+        reject(e);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function npmInstall(prod) {
+  return new Promise((resolve, reject) => {
+    childProcess.exec('npm install' + (prod ? ' --production' : ''), {
+      cwd: '.'
+    }, function(e) {
+      if (e) {
+        reject(e);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
 
 function cloudFormationPackage(templateFile, outputTemplateFile, s3Bucket) {
   return spawnCommand('aws', [

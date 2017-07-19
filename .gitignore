@@ -9,3 +9,4 @@ npm-debug.log
 count.sh
 
 aws-config
+dynamodb_local

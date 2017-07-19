@@ -21,7 +21,7 @@ var all = reducePromises([
   assertion1
 ]);
 
-duringRunningLocalDynamo(__dirname + '/dynamodb_local', 4569, all).then(_ => {
+duringRunningLocalDynamo(__dirname + '/../dynamodb_local', 4569, all).then(_ => {
   console.log('done.');
 }).catch(e => {
   console.error(e);
