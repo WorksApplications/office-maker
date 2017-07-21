@@ -21,9 +21,11 @@ var funcDir = './functions';
 
 
 rmdir('./node_modules').then(_ => {
-  return npmInstall(true).then(_ => {
-    return cloudFormationPackage(templateFile, outputTemplateFile, project.s3Bucket).then(_ => {
-      return cloudFormationDeploy(outputTemplateFile, project.stackName);
+  return generateSwaggerYml(project.accountId, project.region).then(_ => {
+    return npmInstall(true).then(_ => {
+      return cloudFormationPackage(templateFile, outputTemplateFile, project.s3Bucket).then(_ => {
+        return cloudFormationDeploy(outputTemplateFile, project.stackName);
+      });
     });
   }).then(_ => npmInstall(false));
 }).then(result => {
@@ -33,6 +35,13 @@ rmdir('./node_modules').then(_ => {
   process.exit(1);
 });
 
+function generateSwaggerYml(accountId, region) {
+  if (fs.existsSync('./swagger-template.yml')) {
+    var replacedText = fs.readFileSync('./swagger-template.yml', 'utf8').replace(/__ACOUNT_ID__/g, accountId).replace(/__REGION__/g, region);
+    fs.writeFileSync('./swagger.yml', replacedText);
+  }
+  return Promise.resolve();
+}
 
 function rmdir(path) {
   return new Promise((resolve, reject) => {

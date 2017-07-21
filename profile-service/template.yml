@@ -17,57 +17,69 @@ Resources:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
         TableName: profiles
-  ProfilesProfilesQuery:
+
+  ProfilesQuery:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: profiles_profiles_query
       Handler: functions/profiles/query.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBReadOnlyAccess
-      Events:
-        GetResource:
-          Type: Api
-          Properties:
-            Path: /profiles
-            Method: get
-  ProfilesProfilesGet:
+      # Events:
+      #   GetResource:
+      #     Type: Api
+      #     Properties:
+      #       Path: /profiles
+      #       Method: get
+  ProfilesGet:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: profiles_profiles_get
       Handler: functions/profiles/get.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBReadOnlyAccess
-      Events:
-        GetResource:
-          Type: Api
-          Properties:
-            Path: /profiles/{userId}
-            Method: get
+      # Events:
+      #   GetResource:
+      #     Type: Api
+      #     Properties:
+      #       Path: /profiles/{userId}
+      #       Method: get
 
-  ProfilesProfilesPut:
+  ProfilesPut:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: profiles_profiles_put
       Handler: functions/profiles/put.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
-      Events:
-        PutResource:
-          Type: Api
-          Properties:
-            Path: /profiles/{userId}
-            Method: put
+      # Events:
+      #   PutResource:
+      #     Type: Api
+      #     Properties:
+      #       Path: /profiles/{userId}
+      #       Method: put
 
-  ProfilesProfilesDelete:
+  ProfilesDelete:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: profiles_profiles_delete
       Handler: functions/profiles/delete.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
-      Events:
-        DeleteResource:
-          Type: Api
-          Properties:
-            Path: /profiles/{userId}
-            Method: delete
+      # Events:
+      #   DeleteResource:
+      #     Type: Api
+      #     Properties:
+      #       Path: /profiles/{userId}
+      #       Method: delete
+
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: api
+      DefinitionUri: swagger.yml
+      Variables:
+        ProfilesGetName: !Ref ProfilesGet
+        ProfilesPutName: !Ref ProfilesPutName
+        ProfilesDeleteName: !Ref ProfilesDeleteName
+        ProfilesQueryName: !Ref ProfilesQueryName

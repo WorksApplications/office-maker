@@ -6,6 +6,7 @@ var AWS = require('aws-sdk');
 var dynamoUtil = require('./functions/common/dynamo-util.js');
 var options = require('./functions/common/db-options.js');
 var dynamodb = new AWS.DynamoDB(options);
+var documentClient = new AWS.DynamoDB.DocumentClient(options);
 var yaml = require('js-yaml');
 var templateYml = yaml.safeLoad(fs.readFileSync('./template.yml', 'utf8'));
 var assert = require('assert');
@@ -20,12 +21,20 @@ var port = 4569;
 
 describe('Profile Service', () => {
   var dbProcess = null;
-  before(function() {
+  before(() => {
     return runLocalDynamo(dynamodbLocalPath, port).then(p => {
       dbProcess = p;
       return delay(700).then(_ => {
         return dynamoUtil.createTable(dynamodb, templateYml.Resources.ProfilesTable.Properties);
       });
+    });
+  });
+  beforeEach(() => {
+    return dynamoUtil.delete(documentClient, {
+      TableName: "profiles",
+      Key: {
+        userId: 'mock@example.com'
+      }
     });
   });
   describe('GET /profiles/profiles/{userId}', () => {
@@ -37,16 +46,45 @@ describe('Profile Service', () => {
       }, {}).then(assertStatus(404));
     });
   });
+  describe('PUT /profiles/profiles/{userId}', () => {
+    it('returns 400 if data is invalid', () => {
+      return handlerToPromise(profilesPut.handler)({
+        "pathParameters": {
+          "userId": "mock@example.com"
+        }
+      }, {}).then(assertStatus(400));
+    });
+  });
+  describe('PUT /profiles/profiles/{userId}', () => {
+    it('returns 400 if data is invalid', () => {
+      return handlerToPromise(profilesPut.handler)({
+        "pathParameters": {
+          "userId": "mock@example.com"
+        },
+        "body": "{}"
+      }, {}).then(assertStatus(400));
+    });
+  });
 });
 
 function assertStatus(expect) {
   return result => {
     if (result.statusCode !== expect) {
-      throw `Expected statusCode ${expect} but got ${result.statusCode}: JSON.stringify(result)`;
+      throw `Expected statusCode ${expect} but got ${result.statusCode}: ${JSON.stringify(result)}`;
     }
     return Promise.resolve();
   };
 }
+
+// function assertRoughStatus(expect) {
+//   var actual = result.statusCode - result.statusCode % 100;
+//   return result => {
+//     if (actual !== expect) {
+//       throw `Expected statusCode ${expect} but got ${result.statusCode}: ${JSON.stringify(result)}`;
+//     }
+//     return Promise.resolve();
+//   };
+// }
 
 function reducePromises(promises) {
   return promises.reduce((prev, toPromise) => {
