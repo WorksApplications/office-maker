@@ -1,0 +1,185 @@
+swagger: '2.0'
+
+info:
+  version: '1.2-SNAPSHOT'
+  title: 'Accounts'
+  description: |
+    ユーザと Role を管理し、 RFC 7235 の Authorization ヘッダと RFC 5741 の [JSON Web Token](https://jwt.io/)
+    によって署名されたクライアントサイドセッションを利用した認証機構を提供します。
+    Authorization ヘッダの `auth-scheme` の値としては `Bearer` を利用します
+    （旧実装の `JWT` は 2.0 で削除されます）。
+    トークンは、サーバ側で管理する鍵で署名することによって生成されます。
+    API 呼出の際、サーバではユーザ ID や Role を復元し、署名を確認することで有効性を確認します。
+
+    Role は以下の値が有効です。
+
+    - ADMIN
+    - GENERAL
+
+    Accounts で管理する Role は、独自の権限管理機構を持たないサービスのデフォルトの設定として動作します。
+
+    また、本サービスは OAuth2 (RFC 6749) の Implicit Flow による認可機構を提供します提供します。
+    `clients` リソースは、システム全体の連携可能なサービスです。
+    `authorize` に追加されたサービスは、リフレッシュトークンによって認可状態を継続することができます。
+
+schemes:
+  - 'http'
+
+paths:
+  /authentication:
+    post:
+      description: |
+        認証を行います。
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - userId
+              - password
+            properties:
+              userId:
+                type: string
+              password:
+                type: string
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              accessToken:
+                type: string
+        400:
+          "$ref": "#/responses/BadRequest"
+        401:
+          "$ref": "#/responses/Unauthorized"
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        responses:
+          default:
+            statusCode: "200"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.AuthenticationName}/invocations"
+        type: "aws"
+
+  /users:
+    post:
+      description: |
+        ユーザを追加します。
+
+        このユーザは、作成者と同じドメインに属します。
+      parameters:
+        - "$ref": "#/parameters/Authorization"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - userId
+              - password
+              - role
+            properties:
+              userId:
+                type: string
+              password:
+                type: string
+              role:
+                $ref: '#/definitions/Role'
+      responses:
+        200:
+          description: Successful response
+        400:
+          "$ref": "#/responses/BadRequest"
+        401:
+          "$ref": "#/responses/Unauthorized"
+        403:
+          description: |
+            `ADMIN` のみ追加できます。
+            また、事前に登録されたドメインとは異なるユーザ ID の場合もエラーとなります。
+          schema:
+            $ref: '#/definitions/Error'
+        409:
+          description: テナント内にすでにユーザIDが存在します。
+          schema:
+            $ref: '#/definitions/Error'
+      x-amazon-apigateway-integration:
+        httpMethod: POST
+        responses:
+          default:
+            statusCode: "200"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.UserPostName}/invocations"
+        type: "aws"
+
+definitions:
+  Role:
+    type: string
+    pattern: '(GENERAL)|(ADMIN)'
+  User:
+    type: object
+    properties:
+      userId:
+        type: string
+      role:
+        $ref: '#/definitions/Role'
+      mailVerified:
+        type: boolean
+      lastAuthenticated:
+        description: |
+          前回認証した時刻。もしユーザの意図しない時刻が得られた場合、不正ログインが疑われます。
+        type: string
+        format: date-time
+  Client:
+    type: object
+    properties:
+      clientId:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      redirectUrl:
+        type: string
+  Error:
+    type: object
+    properties:
+      message:
+        type: string
+parameters:
+  Authorization:
+    name: Authorization
+    description: |
+      認証情報です。 Accounts サービスから取得したトークンを `Bearer {TOKEN}` の形式で送信します。
+    in: header
+    required: true
+    type: string
+  Authorization_opt:
+    name: Authorization
+    description: |
+      認証情報です。 Accounts サービスから取得したトークンを `Bearer {TOKEN}` の形式で送信します。
+    in: header
+    required: false
+    type: string
+  X-Forwarded-For:
+    name: X-Forwarded-For
+    description: この API は、 IP アドレスによる匿名によるアクセスが可能です。
+    in: header
+    required: false
+    type: string
+responses:
+  BadRequest:
+    description: |
+      Bad Request
+
+      与えられたリクエストが不正な場合に発生します。
+    schema:
+      "$ref": "#/definitions/Error"
+  Unauthorized:
+    description: |
+      Unauthorized
+
+      アクセスしたユーザの特定に失敗した場合に発生します。
+    schema:
+      "$ref": "#/definitions/Error"

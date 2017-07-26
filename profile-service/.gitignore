@@ -3,4 +3,5 @@ project.json
 env.json
 *.sh
 template_out.yml
+swagger.yml
 dynamodb_local

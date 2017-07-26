@@ -2,44 +2,43 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Account Service
 Resources:
-  AccountsAuthorizer:
+  Authorizer:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authorizer
       Handler: functions/authorizer/index.handler
       Runtime: nodejs6.10
 
-  AccountsAuthorizerIp:
+  AuthorizerIp:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authorizer_ip
       Handler: functions/authorizer/ip.handler
       Runtime: nodejs6.10
 
-  AccountsAuthentication:
+  Authentication:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authentication_post
       Handler: functions/authentication/index.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
-      Events:
-        PutResource:
-          Type: Api
-          Properties:
-            Path: /accounts/authentication
-            Method: post
 
-  AccountsUsersPost:
+  UsersPost:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_users_post
       Handler: functions/users/post.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
-      Events:
-        DeleteResource:
-          Type: Api
-          Properties:
-            Path: /accounts/users
-            Method: post
+
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      DefinitionUri: swagger.yml
+      Variables:
+        AuthorizerName: !Ref Authorizer
+        AuthorizerIpName: !Ref AuthorizerIp
+        AuthenticationName: !Ref Authentication
+        UsersPostName: !Ref UsersPost

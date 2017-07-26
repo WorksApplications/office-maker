@@ -9,12 +9,8 @@ info:
     プロフィールに対する閲覧アクセスは、テナントのドメインが特定可能である必要があります。
     API サーバは、 IP アドレスもしくは認証によってドメインを特定します。
 
-  x-wap-package-name: profiles
-
 schemes:
   - 'http'
-host: walter.internal.worksap.com
-basePath: "/walter/profiles/api/1"
 x-amazon-apigateway-request-validators:
   all:
     validateRequestBody: true
@@ -24,17 +20,103 @@ x-amazon-apigateway-request-validators:
     validateRequestParameters: true
 
 securityDefinitions:
- CustomAuthorizer:
-   type: apiKey
-   name: Authorization
-   in: header
-   x-amazon-apigateway-authtype: custom
-   x-amazon-apigateway-authorizer:
-     authorizerResultTtlInSeconds: 300
-     authorizerUri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACOUNT_ID__:function:accountsAuthorizer/invocations"
-     type: token
+  CustomAuthorizer:
+    type: apiKey
+    name: Authorization
+    in: header
+    x-amazon-apigateway-authtype: oauth2
+    x-amazon-apigateway-authorizer:
+      authorizerResultTtlInSeconds: 300
+      authorizerUri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_authorizer/invocations"
+      authorizerCredentials: arn:aws:iam::__ACCOUNT_ID__:role
+      type: token
 
 paths:
+  /profiles:
+    get:
+      description: |
+        個人情報の一覧を取得します。
+
+        クエリパラメータによって絞り込みを行うことができます。
+        `q` による検索は、スペース区切りで複数のキーワードを指定できます。
+      parameters:
+        - "$ref": "#/parameters/Authorization_opt"
+        - "$ref": "#/parameters/X-Forwarded-For"
+        - name: q
+          description: |
+            検索に利用するクエリ文字列です（1000文字以内）。
+
+            `userId`, `employeeId` と同時には使用できません。
+          in: query
+          type: string
+        - name: userId
+          description: |
+            ログインアカウントの User ID によって絞り込みます。
+            複数の場合は、 `,` で区切って指定します。
+
+            `q`, `employeeId` と同時には使用できません。
+          in: query
+          type: string
+        - name: employeeId
+          description: |
+            組織内で利用される社員番号などで絞り込みます。
+            複数の場合は、 `,` で区切って指定します。
+
+            `q`, `userId` と同時には使用できません。
+          in: query
+          type: string
+        - name: limit
+          description: |
+            検索結果の最大件数を指定します。
+            最大（＝デフォルト）値は 100 です。
+          in: query
+          type: integer
+        - name: exclusiveStartKey
+          description: |
+            前回の `lastEvaluatedKey` を付与し、ページネーションを行います。
+            このキーのデータ以降で、このキーを除くデータが返されます。
+          in: query
+          type: string
+        - name: order
+          description: |
+            検索結果の順序を指定します。
+            指定可能な項目は以下です。
+
+            * `employeeId`
+            * `name`
+
+            `-employeeId` のように `-` をつけると降順になります。
+
+            指定しない場合は `order=employeeId` と同じです。
+          in: query
+          type: string
+      responses:
+        200:
+          description: プロフィールの検索結果を返します。
+          schema:
+            type: object
+            properties:
+              profiles:
+                type: array
+                items:
+                  $ref: "#/definitions/Profile"
+              lastEvaluatedKey:
+                type: string
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+      security:
+        - CustomAuthorizer: []
+      x-amazon-apigateway-request-validator: params-only
+      x-amazon-apigateway-integration:
+        httpMethod: GET
+        responses:
+          default:
+            statusCode: "200"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesQueryName}/invocations"
+        type: "aws"
+
   /profiles/{userId}:
     get:
       description: プロフィールを取得します。
@@ -66,16 +148,16 @@ paths:
         - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
+        httpMethod: GET
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions//﻿arn:aws:lambda:__REGION__:__ACOUNT_ID__:function:${stageVariables.ProfilesGetName}/invocations"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesGetName}/invocations"
         type: "aws"
 
     put:
       description: |
         個人情報を登録・更新します。
-      x-amazon-apigateway-request-validator: params-only
       parameters:
         - "$ref": "#/parameters/Authorization"
         - name: userId
@@ -95,6 +177,17 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+      security:
+        - CustomAuthorizer: []
+      x-amazon-apigateway-request-validator: params-only
+      x-amazon-apigateway-integration:
+        httpMethod: PUT
+        responses:
+          default:
+            statusCode: "200"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesPutName}/invocations"
+        type: "aws"
+
     patch:
       description: |
         個人情報を編集します。
@@ -120,9 +213,18 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+      security:
+        - CustomAuthorizer: []
+      x-amazon-apigateway-request-validator: params-only
+      x-amazon-apigateway-integration:
+        httpMethod: PATCH
+        responses:
+          default:
+            statusCode: "200"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesPatchName}/invocations"
+        type: "aws"
     delete:
       description: プロフィールを削除します。
-      x-amazon-apigateway-request-validator: params-only
       parameters:
         - name: userId
           description: ""
@@ -149,6 +251,16 @@ paths:
             たとえ他のドメインに存在していても、サーバは 404 によってその存在を隠す必要があります。
           schema:
             $ref: '#/definitions/Error'
+      security:
+        - CustomAuthorizer: []
+      x-amazon-apigateway-request-validator: params-only
+      x-amazon-apigateway-integration:
+        httpMethod: DELETE
+        responses:
+          default:
+            statusCode: "200"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesDeleteName}/invocations"
+        type: "aws"
 definitions:
   Profile:
     type: object

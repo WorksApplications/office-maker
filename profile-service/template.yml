@@ -25,12 +25,7 @@ Resources:
       Handler: functions/profiles/query.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBReadOnlyAccess
-      # Events:
-      #   GetResource:
-      #     Type: Api
-      #     Properties:
-      #       Path: /profiles
-      #       Method: get
+
   ProfilesGet:
     Type: AWS::Serverless::Function
     Properties:
@@ -38,12 +33,6 @@ Resources:
       Handler: functions/profiles/get.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBReadOnlyAccess
-      # Events:
-      #   GetResource:
-      #     Type: Api
-      #     Properties:
-      #       Path: /profiles/{userId}
-      #       Method: get
 
   ProfilesPut:
     Type: AWS::Serverless::Function
@@ -52,12 +41,6 @@ Resources:
       Handler: functions/profiles/put.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
-      # Events:
-      #   PutResource:
-      #     Type: Api
-      #     Properties:
-      #       Path: /profiles/{userId}
-      #       Method: put
 
   ProfilesDelete:
     Type: AWS::Serverless::Function
@@ -66,20 +49,14 @@ Resources:
       Handler: functions/profiles/delete.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
-      # Events:
-      #   DeleteResource:
-      #     Type: Api
-      #     Properties:
-      #       Path: /profiles/{userId}
-      #       Method: delete
 
   Api:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: api
+      StageName: dev
       DefinitionUri: swagger.yml
       Variables:
         ProfilesGetName: !Ref ProfilesGet
-        ProfilesPutName: !Ref ProfilesPutName
-        ProfilesDeleteName: !Ref ProfilesDeleteName
-        ProfilesQueryName: !Ref ProfilesQueryName
+        ProfilesPutName: !Ref ProfilesPut
+        ProfilesDeleteName: !Ref ProfilesDelete
+        ProfilesQueryName: !Ref ProfilesQuery

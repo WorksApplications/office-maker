@@ -3,3 +3,6 @@ output.json
 project.json
 env.json
 template_out.yml
+
+swagger-original.yml
+swagger.yml

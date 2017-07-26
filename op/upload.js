@@ -37,7 +37,9 @@ rmdir('./node_modules').then(_ => {
 
 function generateSwaggerYml(accountId, region) {
   if (fs.existsSync('./swagger-template.yml')) {
-    var replacedText = fs.readFileSync('./swagger-template.yml', 'utf8').replace(/__ACOUNT_ID__/g, accountId).replace(/__REGION__/g, region);
+    var replacedText = fs.readFileSync('./swagger-template.yml', 'utf8')
+      .replace(/__ACCOUNT_ID__/g, accountId)
+      .replace(/__REGION__/g, region);
     fs.writeFileSync('./swagger.yml', replacedText);
   }
   return Promise.resolve();
