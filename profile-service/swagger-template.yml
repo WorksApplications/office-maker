@@ -200,9 +200,9 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
-      security:
-        - CustomAuthorizer: []
-      x-amazon-apigateway-request-validator: params-only
+      # security:
+      #   - CustomAuthorizer: []
+      x-amazon-apigateway-request-validator: all
       x-amazon-apigateway-integration:
         httpMethod: POST
         responses:
@@ -236,9 +236,9 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
-      security:
-        - CustomAuthorizer: []
-      x-amazon-apigateway-request-validator: params-only
+      # security:
+      #   - CustomAuthorizer: []
+      x-amazon-apigateway-request-validator: all
       x-amazon-apigateway-integration:
         httpMethod: POST
         responses:
@@ -274,8 +274,8 @@ paths:
             たとえ他のドメインに存在していても、サーバは 404 によってその存在を隠す必要があります。
           schema:
             $ref: '#/definitions/Error'
-      security:
-        - CustomAuthorizer: []
+      # security:
+      #   - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
         httpMethod: POST
@@ -287,6 +287,9 @@ paths:
 definitions:
   Profile:
     type: object
+    required:
+      - userId
+      - name
     properties:
       userId:
         type: string

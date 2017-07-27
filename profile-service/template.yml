@@ -55,3 +55,39 @@ Resources:
     Properties:
       StageName: dev
       DefinitionUri: swagger.yml
+
+  # https://github.com/awslabs/serverless-application-model/issues/59
+  ProfilesQueryPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ProfilesQuery
+      Principal: apigateway.amazonaws.com
+
+  ProfilesGetPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ProfilesGet
+      Principal: apigateway.amazonaws.com
+
+  ProfilesPutPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ProfilesPut
+      Principal: apigateway.amazonaws.com
+
+  ProfilesPatchPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ProfilesPatch
+      Principal: apigateway.amazonaws.com
+
+  ProfilesDeletePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ProfilesDelete
+      Principal: apigateway.amazonaws.com
