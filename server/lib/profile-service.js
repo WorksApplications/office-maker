@@ -7,7 +7,7 @@ function send(token, method, url, data) {
       method: method,
       url: url,
       headers: {
-        'Authorization': token ? 'JWT ' + token : ''
+        'Authorization': token ? 'Bearer ' + token : ''
       },
       body: data || undefined,
       json: true

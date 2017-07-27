@@ -1,6 +1,6 @@
 {
   "accounts_authorizer": {
-    "authorizationToken": "JWT eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOiJtb2NrQGV4YW1wbGUuY29tIiwiaWF0IjoxNDk5MTQ0NDAyfQ.jtup1Y25x5pHEVP6FedbxVwaL9JpZknjj4QKyi3xAyf991Vu-b-3CjQe3mkQrFkGxMk9FGkibNoiqpyXz0-rB7MeS8k4nq39B8WcjgL9iLHQHODWj4E4LRJ2j5kYZFD0cu_W5SspPfISomB5V5IbhZuvEXrJE5mdtnfzQC7pPu5XF66PDsKAlRYF6QmwZI-8EqtUgd7ZB2DCIYEScsfxOex9iXEcRGB1YqJIfBRthEPXnnbZwl0LMwtzEJXwISK3zpDNINUjxgb8QSnRfh37cTMC1uw38nzFa9VRhNmuS6Nh0GSYCCx8prnibbSCsm1pV1XfBfUVvJAD1bs9bwSUIQ",
+    "authorizationToken": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOiJtb2NrQGV4YW1wbGUuY29tIiwiaWF0IjoxNDk5MTQ0NDAyfQ.jtup1Y25x5pHEVP6FedbxVwaL9JpZknjj4QKyi3xAyf991Vu-b-3CjQe3mkQrFkGxMk9FGkibNoiqpyXz0-rB7MeS8k4nq39B8WcjgL9iLHQHODWj4E4LRJ2j5kYZFD0cu_W5SspPfISomB5V5IbhZuvEXrJE5mdtnfzQC7pPu5XF66PDsKAlRYF6QmwZI-8EqtUgd7ZB2DCIYEScsfxOex9iXEcRGB1YqJIfBRthEPXnnbZwl0LMwtzEJXwISK3zpDNINUjxgb8QSnRfh37cTMC1uw38nzFa9VRhNmuS6Nh0GSYCCx8prnibbSCsm1pV1XfBfUVvJAD1bs9bwSUIQ",
     "methodArn": "hoge"
   },
   "accounts_authorizer_ip": {
@@ -8,7 +8,7 @@
     "methodArn": "hoge"
   },
   "accounts_users_post": {
-    "authorizationToken": "JWT eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOiJtb2NrQGV4YW1wbGUuY29tIiwiaWF0IjoxNDk5MTQ0NDAyfQ.jtup1Y25x5pHEVP6FedbxVwaL9JpZknjj4QKyi3xAyf991Vu-b-3CjQe3mkQrFkGxMk9FGkibNoiqpyXz0-rB7MeS8k4nq39B8WcjgL9iLHQHODWj4E4LRJ2j5kYZFD0cu_W5SspPfISomB5V5IbhZuvEXrJE5mdtnfzQC7pPu5XF66PDsKAlRYF6QmwZI-8EqtUgd7ZB2DCIYEScsfxOex9iXEcRGB1YqJIfBRthEPXnnbZwl0LMwtzEJXwISK3zpDNINUjxgb8QSnRfh37cTMC1uw38nzFa9VRhNmuS6Nh0GSYCCx8prnibbSCsm1pV1XfBfUVvJAD1bs9bwSUIQ",
+    "authorizationToken": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOiJtb2NrQGV4YW1wbGUuY29tIiwiaWF0IjoxNDk5MTQ0NDAyfQ.jtup1Y25x5pHEVP6FedbxVwaL9JpZknjj4QKyi3xAyf991Vu-b-3CjQe3mkQrFkGxMk9FGkibNoiqpyXz0-rB7MeS8k4nq39B8WcjgL9iLHQHODWj4E4LRJ2j5kYZFD0cu_W5SspPfISomB5V5IbhZuvEXrJE5mdtnfzQC7pPu5XF66PDsKAlRYF6QmwZI-8EqtUgd7ZB2DCIYEScsfxOex9iXEcRGB1YqJIfBRthEPXnnbZwl0LMwtzEJXwISK3zpDNINUjxgb8QSnRfh37cTMC1uw38nzFa9VRhNmuS6Nh0GSYCCx8prnibbSCsm1pV1XfBfUVvJAD1bs9bwSUIQ",
     "body": "{\r\n  \"userId\": \"mock@example.com\",\r\n  \"password\": \"pass\"\r\n,\r\n  \"role\": \"ADMIN\"\r\n}"
   },
   "accounts_authorization_post": {

@@ -25,7 +25,7 @@ function getSelf(token) {
 
 exports.handler = (event, context, callback) => {
   event.headers = event.headers || {};
-  var token = (event.authorizationToken || '').split('JWT ')[1];
+  var token = (event.authorizationToken || '').split('Bearer ')[1];
   if (!token) {
     callback('Unauthorized');
     return;
