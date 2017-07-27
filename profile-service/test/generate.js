@@ -10,7 +10,7 @@ var documentClient = new AWS.DynamoDB.DocumentClient({
   region: project.region
 });
 
-fs.readFileSync(__dirname + '/mock.csv', 'utf8').replace(/\r/g, '').split('\n').map((line, index) => {
+var profiles = fs.readFileSync(__dirname + '/mock.csv', 'utf8').replace(/\r/g, '').split('\n').map((line, index) => {
   var name = line.split(',')[0];
   var ruby = line.split(',')[1];
   if (!name || !ruby) {
@@ -30,13 +30,29 @@ fs.readFileSync(__dirname + '/mock.csv', 'utf8').replace(/\r/g, '').split('\n').
     mail: zeroPadding(index, 4) + '@example.com',
     workplace: null
   }
-}).filter(profile => !!profile).reduce((promise, profile) => {
+}).filter(profile => !!profile);
+
+profiles.push({
+  userId: 'arai_s@worksap.co.jp',
+  employeeId: 'XXXX',
+  picture: null,
+  name: '新井 テスト',
+  ruby: 'あらい てすと',
+  orgnization: 'Example Co., Ltd.',
+  post: 'Example 0',
+  rank: 'Manager',
+  cellPhone: '080-XXX-XXXX',
+  extensionPhone: 'XXXXX',
+  mail: 'arai_s@worksap.co.jp',
+  workplace: null
+});
+
+profiles.reduce((promise, profile) => {
   return promise.then(_ => putProfile(profile));
 }, Promise.resolve()).catch(e => {
   console.error(e);
   process.exit(1);
 });
-
 
 function putProfile(profile) {
   return dynamoUtil.put(documentClient, {

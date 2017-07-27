@@ -133,7 +133,7 @@ paths:
       #   - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
-        httpMethod: GET
+        httpMethod: POST
         responses:
           default:
             statusCode: "200"
@@ -171,7 +171,7 @@ paths:
       #   - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
-        httpMethod: GET
+        httpMethod: POST
         responses:
           default:
             statusCode: "200"
@@ -204,7 +204,7 @@ paths:
         - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
-        httpMethod: PUT
+        httpMethod: POST
         responses:
           default:
             statusCode: "200"
@@ -240,7 +240,7 @@ paths:
         - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
-        httpMethod: PATCH
+        httpMethod: POST
         responses:
           default:
             statusCode: "200"
@@ -278,7 +278,7 @@ paths:
         - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
-        httpMethod: DELETE
+        httpMethod: POST
         responses:
           default:
             statusCode: "200"
