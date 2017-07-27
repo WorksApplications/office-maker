@@ -129,8 +129,8 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
-      security:
-        - CustomAuthorizer: []
+      # security:
+      #   - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
         httpMethod: GET
@@ -167,8 +167,8 @@ paths:
             たとえ他のドメインに存在していても、サーバは 404 によってその存在を隠す必要があります。
           schema:
             $ref: '#/definitions/Error'
-      security:
-        - CustomAuthorizer: []
+      # security:
+      #   - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
         httpMethod: GET

@@ -28,7 +28,7 @@ fs.readFileSync(__dirname + '/mock.csv', 'utf8').replace(/\r/g, '').split('\n').
     cellPhone: '080-XXX-' + zeroPadding(index, 4),
     extensionPhone: 'XXXXX',
     mail: zeroPadding(index, 4) + '@example.com',
-    workplace: ''
+    workplace: null
   }
 }).filter(profile => !!profile).reduce((promise, profile) => {
   return promise.then(_ => putProfile(profile));
