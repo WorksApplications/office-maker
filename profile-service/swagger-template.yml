@@ -10,7 +10,7 @@ info:
     API サーバは、 IP アドレスもしくは認証によってドメインを特定します。
 
 schemes:
-  - 'http'
+  - 'https'
 x-amazon-apigateway-request-validators:
   all:
     validateRequestBody: true
@@ -26,12 +26,35 @@ securityDefinitions:
     in: header
     x-amazon-apigateway-authtype: oauth2
     x-amazon-apigateway-authorizer:
-      authorizerResultTtlInSeconds: 300
-      authorizerUri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_authorizer/invocations"
+      authorizerResultTtlInSeconds: 0
+      authorizerUri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_authorizer/invocations"
       authorizerCredentials: arn:aws:iam::__ACCOUNT_ID__:role
       type: token
 
 paths:
+  # "/{proxy+}":
+  #   x-amazon-apigateway-any-method:
+  #     produces:
+  #     - application/json
+  #     parameters:
+  #     - name: proxy
+  #       in: path
+  #       required: true
+  #       type: string
+  #     responses: {}
+  #     x-amazon-apigateway-integration:
+  #       responses:
+  #         default:
+  #           statusCode: '200'
+  #       requestParameters:
+  #         integration.request.path.proxy: method.request.path.proxy
+  #       uri: http://petstore-demo-endpoint.execute-api.com/petstore/{proxy}
+  #       passthroughBehavior: when_no_match
+  #       httpMethod: ANY
+  #       cacheNamespace: rbftud
+  #       cacheKeyParameters:
+  #       - method.request.path.proxy
+  #       type: http_proxy
   /profiles:
     get:
       description: |
@@ -114,8 +137,8 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesQueryName}/invocations"
-        type: "aws"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:profiles_profiles_query/invocations"
+        type: aws_proxy
 
   /profiles/{userId}:
     get:
@@ -152,8 +175,8 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesGetName}/invocations"
-        type: "aws"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:profiles_profiles_get/invocations"
+        type: aws_proxy
 
     put:
       description: |
@@ -185,8 +208,8 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesPutName}/invocations"
-        type: "aws"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:profiles_profiles_put/invocations"
+        type: aws_proxy
 
     patch:
       description: |
@@ -221,8 +244,8 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesPatchName}/invocations"
-        type: "aws"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:profiles_profiles_patch/invocations"
+        type: aws_proxy
     delete:
       description: プロフィールを削除します。
       parameters:
@@ -259,8 +282,8 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.ProfilesDeleteName}/invocations"
-        type: "aws"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:profiles_profiles_delete/invocations"
+        type: aws_proxy
 definitions:
   Profile:
     type: object

@@ -23,7 +23,7 @@ info:
     `authorize` に追加されたサービスは、リフレッシュトークンによって認可状態を継続することができます。
 
 schemes:
-  - 'http'
+  - 'https'
 
 paths:
   /authentication:
@@ -61,8 +61,8 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.AuthenticationName}/invocations"
-        type: "aws"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_authentication_post/invocations"
+        type: aws_proxy
 
   /users:
     post:
@@ -110,8 +110,8 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/﻿functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:${stageVariables.UserPostName}/invocations"
-        type: "aws"
+        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_users_post/invocations"
+        type: aws_proxy
 
 definitions:
   Role:

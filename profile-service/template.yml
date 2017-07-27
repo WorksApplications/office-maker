@@ -55,8 +55,3 @@ Resources:
     Properties:
       StageName: dev
       DefinitionUri: swagger.yml
-      Variables:
-        ProfilesGetName: !Ref ProfilesGet
-        ProfilesPutName: !Ref ProfilesPut
-        ProfilesDeleteName: !Ref ProfilesDelete
-        ProfilesQueryName: !Ref ProfilesQuery

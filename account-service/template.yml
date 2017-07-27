@@ -2,14 +2,26 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Account Service
 Resources:
-  Authorizer:
+  AuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authorizer
       Handler: functions/authorizer/index.handler
       Runtime: nodejs6.10
+      Environment:
+        Variables:
+          PUBLIC_KEY: hogehoge
 
-  AuthorizerIp:
+  LambdaInvokePermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref AuthorizerFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+      SourceAccount:
+        Ref: "AWS::AccountId"
+
+  AuthorizerIpFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authorizer_ip
@@ -38,7 +50,7 @@ Resources:
       StageName: dev
       DefinitionUri: swagger.yml
       Variables:
-        AuthorizerName: !Ref Authorizer
-        AuthorizerIpName: !Ref AuthorizerIp
+        AuthorizerName: !Ref AuthorizerFunction
+        AuthorizerIpName: !Ref AuthorizerIpFunction
         AuthenticationName: !Ref Authentication
         UsersPostName: !Ref UsersPost
