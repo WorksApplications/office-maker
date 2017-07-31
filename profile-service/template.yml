@@ -7,9 +7,11 @@ Resources:
      Properties:
         TableName: profiles
         AttributeDefinitions:
+          -
             AttributeName: userId
             AttributeType: S
         KeySchema:
+          -
             AttributeName: userId
             KeyType: HASH
         ProvisionedThroughput:
