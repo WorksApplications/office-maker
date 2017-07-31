@@ -42,6 +42,14 @@ Resources:
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
 
+  ProfilesPatch:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: profiles_profiles_patch
+      Handler: functions/profiles/patch.handler
+      Runtime: nodejs6.10
+      Policies: AmazonDynamoDBFullAccess
+
   ProfilesDelete:
     Type: AWS::Serverless::Function
     Properties:
@@ -55,6 +63,8 @@ Resources:
     Properties:
       StageName: dev
       DefinitionUri: swagger.yml
+      Variables:
+        LambdaAlias: DEV
 
   # https://github.com/awslabs/serverless-application-model/issues/59
   ProfilesQueryPermission:

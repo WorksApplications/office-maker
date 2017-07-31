@@ -20,6 +20,40 @@ describe('Profile Service', () => {
   beforeEach(() => {
     return Promise.resolve();
   });
+  describe('GET /profiles', () => {
+    it('returns 400 if q or userId does not exist', () => {
+      var url = serviceRoot + '/profiles?limit=100';
+      return send(mockAuth, 'GET', url).then(assertStatus(400));
+    });
+    it('returns 400 if order is invalid', () => {
+      var url = serviceRoot + '/profiles?order=foo';
+      return send(mockAuth, 'GET', url).then(assertStatus(400));
+    });
+    it('returns [] if no one matched by q', () => {
+      var url = serviceRoot + '/profiles?q=hogehogehogehoge';
+      return send(mockAuth, 'GET', url).then(res => {
+        if (res.statusCode !== 200) {
+          return Promise.reject('Unexpected statusCode: ' + res.statusCode);
+        }
+        if (res.body.profiles.length !== 0) {
+          return Promise.reject('Unexpected profile count: ' + res.body.profiles.length);
+        }
+        return Promise.resolve();
+      });
+    });
+    it('returns [] if no one matched by userId', () => {
+      var url = serviceRoot + '/profiles?userId=notexist';
+      return send(mockAuth, 'GET', url).then(res => {
+        if (res.statusCode !== 200) {
+          return Promise.reject('Unexpected statusCode: ' + res.statusCode);
+        }
+        if (res.body.profiles.length !== 0) {
+          return Promise.reject('Unexpected profile count: ' + res.body.profiles.length);
+        }
+        return Promise.resolve();
+      });
+    });
+  });
   describe('GET /profiles/{userId}', () => {
     it('returns 404 if profile does not exist', () => {
       var url = serviceRoot + '/profiles/notexist@example.com';
@@ -90,6 +124,12 @@ function send(authorization, method, url, data) {
 function assertStatus(expect) {
   return res => {
     if (res.statusCode !== expect) {
+      var bodyStr = JSON.stringify(res.body);
+      if (bodyStr.length > 500) {
+        bodyStr = bodyStr.substring(0, 500);
+        bodyStr = bodyStr + '...';
+      }
+      res.body = bodyStr;
       return Promise.reject(`Expected statusCode ${expect} but got ${res.statusCode}: ${JSON.stringify(res)}`);
     }
     return Promise.resolve();

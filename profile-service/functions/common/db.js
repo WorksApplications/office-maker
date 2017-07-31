@@ -43,9 +43,33 @@ function scanProfile(limit, exclusiveStartKey) {
   });
 };
 
+function findProfileByUserIds(userIds, limit, exclusiveStartKey) {
+  return dynamoUtil.batchGet(documentClient, {
+    RequestItems: {
+      'profiles': {
+        Keys: userIds.map(userId => {
+          return {
+            userId: userId
+          };
+        })
+      }
+    },
+    Limit: limit,
+    ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
+  }).then(data => {
+    return Promise.resolve({
+      profiles: data.Responses['profiles'].map(response => {
+        return response.Item;
+      }),
+      lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
+    });
+  });
+}
+
 module.exports = {
   getProfile: getProfile,
   putProfile: putProfile,
   deleteProfile: deleteProfile,
-  scanProfile: scanProfile
+  scanProfile: scanProfile,
+  findProfileByUserIds: findProfileByUserIds
 };

@@ -3,29 +3,31 @@ process.env.EXEC_MODE = 'test';
 var childProcess = require('child_process');
 var fs = require('fs');
 var AWS = require('aws-sdk');
-var dynamoUtil = require('./functions/common/dynamo-util.js');
-var options = require('./functions/common/db-options.js');
+var dynamoUtil = require('../functions/common/dynamo-util.js');
+var options = require('../functions/common/db-options.js');
 var dynamodb = new AWS.DynamoDB(options);
 var documentClient = new AWS.DynamoDB.DocumentClient(options);
 var yaml = require('js-yaml');
-var templateYml = yaml.safeLoad(fs.readFileSync('./template.yml', 'utf8'));
+var templateOutYml = yaml.safeLoad(fs.readFileSync('./template_out.yml', 'utf8'));
 var assert = require('assert');
 
-var profilesGet = require('./functions/profiles/get.js');
-var profilesPut = require('./functions/profiles/put.js');
-var profilesDelete = require('./functions/profiles/delete.js');
-var profilesQuery = require('./functions/profiles/query.js');
+var profilesGet = require('../functions/profiles/get.js');
+var profilesPut = require('../functions/profiles/put.js');
+var profilesDelete = require('../functions/profiles/delete.js');
+var profilesQuery = require('../functions/profiles/query.js');
 
-var dynamodbLocalPath = __dirname + '/../dynamodb_local';
+var dynamodbLocalPath = __dirname + '/../../dynamodb_local';
 var port = 4569;
 
-describe('Profile Service', () => {
+describe('Profile Lambda', () => {
   var dbProcess = null;
-  before(() => {
+
+  before(function() {
+    this.timeout(5000);
     return runLocalDynamo(dynamodbLocalPath, port).then(p => {
       dbProcess = p;
       return delay(700).then(_ => {
-        return dynamoUtil.createTable(dynamodb, templateYml.Resources.ProfilesTable.Properties);
+        return dynamoUtil.createTable(dynamodb, templateOutYml.Resources.ProfilesTable.Properties);
       });
     });
   });
@@ -37,7 +39,16 @@ describe('Profile Service', () => {
       }
     });
   });
-  describe('GET /profiles/profiles/{userId}', () => {
+  describe('GET /profiles', () => {
+    it('works', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "userId": "mock@example.com"
+        }
+      }, {}).then(assertStatus(200));
+    });
+  });
+  describe('GET /profiles/{userId}', () => {
     it('returns 404 if profile does not exist', () => {
       return handlerToPromise(profilesGet.handler)({
         "pathParameters": {
@@ -46,7 +57,7 @@ describe('Profile Service', () => {
       }, {}).then(assertStatus(404));
     });
   });
-  describe('PUT /profiles/profiles/{userId}', () => {
+  describe('PUT /profiles/{userId}', () => {
     it('returns 400 if data is invalid', () => {
       return handlerToPromise(profilesPut.handler)({
         "pathParameters": {
@@ -55,7 +66,7 @@ describe('Profile Service', () => {
       }, {}).then(assertStatus(400));
     });
   });
-  describe('PUT /profiles/profiles/{userId}', () => {
+  describe('PUT /profiles/{userId}', () => {
     it('returns 400 if data is invalid', () => {
       return handlerToPromise(profilesPut.handler)({
         "pathParameters": {

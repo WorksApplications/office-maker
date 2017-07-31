@@ -94,6 +94,9 @@ paths:
             最大（＝デフォルト）値は 100 です。
           in: query
           type: integer
+          default: 100
+          minimum: 1
+          maximum: 100
         - name: exclusiveStartKey
           description: |
             前回の `lastEvaluatedKey` を付与し、ページネーションを行います。
@@ -113,6 +116,12 @@ paths:
             指定しない場合は `order=employeeId` と同じです。
           in: query
           type: string
+          enum:
+            - "employeeId"
+            - "name"
+            - "-employeeId"
+            - "-name"
+          default: employeeId
       responses:
         200:
           description: プロフィールの検索結果を返します。
