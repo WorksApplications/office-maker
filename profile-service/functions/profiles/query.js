@@ -19,10 +19,12 @@ exports.handler = (event, context, callback) => {
       });
     });
   } else if (q) {
-    db.scanProfile(limit, exclusiveStartKey).then(result => {
+    db.findProfileByQuery(q, limit, exclusiveStartKey).then(result => {
       lambdaUtil.send(callback, 200, result);
     }).catch(e => {
-      lambdaUtil.send(callback, 500, e);
+      lambdaUtil.send(callback, 500, {
+        message: e.message
+      });
     });
   } else {
     lambdaUtil.send(callback, 400);

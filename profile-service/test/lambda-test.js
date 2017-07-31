@@ -27,25 +27,101 @@ describe('Profile Lambda', () => {
     return runLocalDynamo(dynamodbLocalPath, port).then(p => {
       dbProcess = p;
       return delay(700).then(_ => {
+        // console.log(templateOutYml.Resources.ProfilesTable.Properties);
         return dynamoUtil.createTable(dynamodb, templateOutYml.Resources.ProfilesTable.Properties);
       });
     });
   });
   beforeEach(() => {
-    return dynamoUtil.delete(documentClient, {
+    return dynamoUtil.put(documentClient, {
       TableName: "profiles",
-      Key: {
-        userId: 'mock@example.com'
+      Item: {
+        tenantId: 'worksap.co.jp',
+        userId: 'yamada@example.com',
+        picture: null,
+        name: '山田 太郎',
+        ruby: 'やまだ たろう',
+        employeeId: '1234',
+        orgnization: 'Example Co., Ltd.',
+        post: 'Tech',
+        rank: 'Manager',
+        cellPhone: '080-XXX-4567',
+        extensionPhone: 'XXXXX',
+        mail: 'yamada@example.com',
+        workplace: null
       }
     });
   });
   describe('GET /profiles', () => {
-    it('works', () => {
+    it('should search profiles by userId', () => {
       return handlerToPromise(profilesQuery.handler)({
         "queryStringParameters": {
-          "userId": "mock@example.com"
+          "userId": "not_exist@example.com"
         }
-      }, {}).then(assertStatus(200));
+      }, {}).then(assertProfileLength(0));
+    });
+    it('should search profiles by userId', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "userId": "yamada@example.com"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "not_exist"
+        }
+      }, {}).then(assertProfileLength(0));
+    });
+    it('should search profiles by q (match to name)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "山"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q (match to name)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "太"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q (match to ruby)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "やま"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q (match to ruby)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "たろ"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q (match to mail)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "yama"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q (match to employeeId)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "1234"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q (match to employeeId)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "123"
+        }
+      }, {}).then(assertProfileLength(0));
     });
   });
   describe('GET /profiles/{userId}', () => {
@@ -77,6 +153,20 @@ describe('Profile Lambda', () => {
     });
   });
 });
+
+function assertProfileLength(expect) {
+  return result => {
+    if (result.statusCode !== 200) {
+      throw `Expected statusCode 200 but got ${result.statusCode}: ${JSON.stringify(result)}`;
+    }
+    var profiles = JSON.parse(result.body).profiles;
+    if (profiles.length !== expect) {
+      throw `Expected profile length ${expect} but got ${profiles.length}`;
+    }
+    return Promise.resolve();
+  };
+}
+
 
 function assertStatus(expect) {
   return result => {

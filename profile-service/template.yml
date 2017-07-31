@@ -5,19 +5,16 @@ Resources:
   ProfilesTable:
      Type: AWS::DynamoDB::Table
      Properties:
+        TableName: profiles
         AttributeDefinitions:
-          -
             AttributeName: userId
             AttributeType: S
         KeySchema:
-          -
             AttributeName: userId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
-        TableName: profiles
-
   ProfilesQuery:
     Type: AWS::Serverless::Function
     Properties:

@@ -10,6 +10,8 @@ exports.handler = (event, context, callback) => {
       lambdaUtil.send(callback, 404);
     }
   }).catch(e => {
-    lambdaUtil.send(callback, 500, e);
+    lambdaUtil.send(callback, 500, {
+      message: e.message
+    });
   });
 };

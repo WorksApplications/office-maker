@@ -37,6 +37,8 @@ exports.handler = (event, context, callback) => {
   db.putProfile(profile).then(_ => {
     lambdaUtil.send(callback, 200);
   }).catch(e => {
-    lambdaUtil.send(callback, 500, e);
+    lambdaUtil.send(callback, 500, {
+      message: e.message
+    });
   });
 };

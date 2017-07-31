@@ -66,10 +66,49 @@ function findProfileByUserIds(userIds, limit, exclusiveStartKey) {
   });
 }
 
+function varyCase(s) {
+  var dict = {};
+  dict[s] = true;
+  dict[s.toUpperCase()] = true;
+  dict[s.toLowerCase()] = true;
+  return Object.keys(dict);
+}
+
+function findProfileByQuery(q, limit, exclusiveStartKey) {
+  return dynamoUtil.scan(documentClient, {
+    TableName: 'profiles',
+    FilterExpression: 'begins_with(#name, :name)' +
+      ' or contains(#name, :nameWithSpace)' +
+      ' or begins_with(ruby, :ruby)' +
+      ' or contains(ruby, :rubyWithSpace)' +
+      ' or begins_with(mail, :mail)' +
+      ' or employeeId = :employeeId',
+    ExpressionAttributeNames: {
+      "#name": 'name' // because `name` is a reserved keyword
+    },
+    ExpressionAttributeValues: {
+      ":mail": q,
+      ":name": q,
+      ":nameWithSpace": ' ' + q,
+      ":ruby": q,
+      ":rubyWithSpace": ' ' + q,
+      ":employeeId": q
+    },
+    Limit: limit,
+    ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
+  }).then(data => {
+    return Promise.resolve({
+      profiles: data.Items,
+      lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
+    });
+  });
+}
+
 module.exports = {
   getProfile: getProfile,
   putProfile: putProfile,
   deleteProfile: deleteProfile,
   scanProfile: scanProfile,
-  findProfileByUserIds: findProfileByUserIds
+  findProfileByUserIds: findProfileByUserIds,
+  findProfileByQuery: findProfileByQuery
 };
