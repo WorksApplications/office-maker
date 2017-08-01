@@ -201,6 +201,14 @@ describe('Profile Lambda', () => {
         }
       }, {}).then(assertStatus(400));
     });
+    it('returns 400 if data is invalid', () => {
+      return handlerToPromise(profilesPut.handler)({
+        "pathParameters": {
+          "userId": "mock@example.com"
+        },
+        "body": "{}"
+      }, {}).then(assertStatus(400));
+    });
     it('returns 200 if data is valid', () => {
       return handlerToPromise(profilesPut.handler)({
         "pathParameters": {
@@ -210,7 +218,7 @@ describe('Profile Lambda', () => {
           "userId": "test@example.com",
           "name": "テスト"
         })
-      }, {}).then(assertStatus(200));
+      }, {}).then(assertStatus(200)).then(assertProfileLengthInDB(3));;
     });
     it('still returns 200 if data contains empty string', () => {
       return handlerToPromise(profilesPut.handler)({
@@ -223,17 +231,16 @@ describe('Profile Lambda', () => {
           "picture": "",
           "extensionPhone": ""
         })
-      }, {}).then(assertStatus(200));
+      }, {}).then(assertStatus(200)).then(assertProfileLengthInDB(3));
     });
   });
-  describe('PUT /profiles/{userId}', () => {
-    it('returns 400 if data is invalid', () => {
-      return handlerToPromise(profilesPut.handler)({
+  describe('DELETE /profiles/{userId}', () => {
+    it('delete profile correctly', () => {
+      return handlerToPromise(profilesDelete.handler)({
         "pathParameters": {
           "userId": "mock@example.com"
-        },
-        "body": "{}"
-      }, {}).then(assertStatus(400));
+        }
+      }, {}).then(assertStatus(200)).then(assertProfileLengthInDB(1));
     });
   });
 });
@@ -248,6 +255,19 @@ function assertProfileLength(expect) {
       throw `Expected profile length ${expect} but got ${profiles.length}`;
     }
     return Promise.resolve(result);
+  };
+}
+
+function assertProfileLengthInDB(expect) {
+  return result => {
+    return dynamoUtil.scan(documentClient, {
+      TableName: "profiles"
+    }).then(data => {
+      if (data.Items.length !== expect) {
+        `Expected profile length ${expect} but got ${data.Items.length}`;
+      }
+      return Promise.resolve(result);
+    });
   };
 }
 
