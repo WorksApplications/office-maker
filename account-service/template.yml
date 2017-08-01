@@ -2,7 +2,23 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Account Service
 Resources:
-  AuthorizerFunction:
+  AccountsTable:
+     Type: AWS::DynamoDB::Table
+     Properties:
+        TableName: accounts
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
+  Authorizer:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authorizer
@@ -12,27 +28,18 @@ Resources:
         Variables:
           PUBLIC_KEY: hogehoge
 
-  LambdaInvokePermission:
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      FunctionName: !Ref AuthorizerFunction
-      Action: "lambda:InvokeFunction"
-      Principal: "apigateway.amazonaws.com"
-      SourceAccount:
-        Ref: "AWS::AccountId"
-
-  AuthorizerIpFunction:
+  AuthorizerIp:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authorizer_ip
       Handler: functions/authorizer/ip.handler
       Runtime: nodejs6.10
 
-  Authentication:
+  AuthenticationPost:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: accounts_authentication_post
-      Handler: functions/authentication/index.handler
+      Handler: functions/authentication/post.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
 
@@ -50,7 +57,12 @@ Resources:
       StageName: dev
       DefinitionUri: swagger.yml
       Variables:
-        AuthorizerName: !Ref AuthorizerFunction
-        AuthorizerIpName: !Ref AuthorizerIpFunction
-        AuthenticationName: !Ref Authentication
-        UsersPostName: !Ref UsersPost
+        LambdaAlias: DEV
+
+  # https://github.com/awslabs/serverless-application-model/issues/59
+  AuthenticationPostPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AuthenticationPost
+      Principal: apigateway.amazonaws.com

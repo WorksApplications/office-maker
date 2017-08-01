@@ -1,25 +1,25 @@
 var AWS = require('aws-sdk');
+var lambdaUtil = require('../common/lambda-util.js');
+var db = require('../common/db.js');
 var crypto = require('crypto');
-var documentClient = new AWS.DynamoDB.DocumentClient();
+
+var privateKey = process.env.PRIVATE_KEY;
 
 exports.handler = (event, context, callback) => {
   var body = JSON.parse(event.body);
   var userId = body.userId;
+  var password = body.password;
+  var role = body.role;
   var salt = crypto.createHash('sha512').update(userId).digest('hex');
-  var hash = crypto.createHash('sha512').update(body.password + salt).digest('hex');
+  var hash = crypto.createHash('sha512').update(password + salt).digest('hex');
 
-  documentClient.put({
-    TableName: "accounts",
-    Item: {
-      userId: userId,
-      hashedPassword: hash,
-      role: body.role
-    }
-  }, function(e, data) {
-    if (e) {
-      callback(e);
-      return;
-    }
+  var account = {
+    userId: userId,
+    hashedPassword: hash,
+    role: role
+  };
+  db.putAccount(account).then(account => {
+    // lambdaUtil.send(callback, 200, user);
     callback(null, {
       statusCode: 200,
       headers: {
@@ -29,4 +29,5 @@ exports.handler = (event, context, callback) => {
       body: ''
     });
   });
+
 };

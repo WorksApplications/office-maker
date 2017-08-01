@@ -4,11 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "jsonwebtoken": "^7.4.1"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.86.0",
+    "js-yaml": "^3.9.0",
+    "mocha": "^3.4.2",
+    "request": "^2.81.0"
   }
 }

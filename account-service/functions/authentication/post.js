@@ -1,7 +1,8 @@
 var AWS = require('aws-sdk');
 var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
-var documentClient = new AWS.DynamoDB.DocumentClient();
+var lambdaUtil = require('../common/lambda-util.js');
+var db = require('../common/db.js');
 
 var privateKey = process.env.PRIVATE_KEY;
 
@@ -11,23 +12,9 @@ exports.handler = (event, context, callback) => {
   var salt = crypto.createHash('sha512').update(userId).digest('hex');
   var hash = crypto.createHash('sha512').update(body.password + salt).digest('hex');
 
-  documentClient.get({
-    TableName: "accounts",
-    Key: {
-      userId: userId
-    }
-  }, function(e, data) {
-    if (e) {
-      callback(e);
-      return;
-    }
-    var user = data.Item;
-    if (!user || user.hashedPassword != hash) {
-      callback(null, {
-        statusCode: 401,
-        headers: {},
-        body: ''
-      });
+  db.getAccount(userId).then(user => {
+    if (!user || user.hashedPassword !== hash) {
+      lambdaUtil.send(callback, 401);
       return;
     }
     delete user.hashedPassword;
@@ -43,6 +30,10 @@ exports.handler = (event, context, callback) => {
       body: JSON.stringify({
         accessToken: accessToken
       })
+    });
+  }).catch(e => {
+    lambdaUtil.send(callback, 500, {
+      message: e.message
     });
   });
 };

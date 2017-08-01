@@ -242,6 +242,13 @@ describe('Profile Lambda', () => {
         }
       }, {}).then(assertStatus(200)).then(assertProfileLengthInDB(1));
     });
+    it('does not matter if user is not there', () => {
+      return handlerToPromise(profilesDelete.handler)({
+        "pathParameters": {
+          "userId": "not_exist@example.com"
+        }
+      }, {}).then(assertStatus(200));
+    });
   });
 });
 
