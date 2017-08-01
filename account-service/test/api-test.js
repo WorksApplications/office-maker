@@ -21,6 +21,18 @@ describe('Accounts Service', () => {
     return Promise.resolve();
   });
   describe('POST /authentication', () => {
+    it('returns 400 if either userId or password does not exist', () => {
+      var url = serviceRoot + '/authentication';
+      return send(null, 'POST', url, {
+        userId: 'foo'
+      }).then(assertStatus(400));
+    });
+    it('returns 400 if either userId or password does not exist', () => {
+      var url = serviceRoot + '/authentication';
+      return send(null, 'POST', url, {
+        password: 'bar'
+      }).then(assertStatus(400));
+    });
     it('returns 401 if authentication fails', () => {
       var url = serviceRoot + '/authentication';
       return send(null, 'POST', url, {

@@ -1,28 +1,25 @@
 var AWS = require('aws-sdk');
-var documentClient = new AWS.DynamoDB.DocumentClient();
+var lambdaUtil = require('../common/lambda-util.js');
+var db = require('../common/db.js');
 
 exports.handler = (event, context, callback) => {
   var ip = (event.authorizationToken || '').split(',')[0].trim();
   if (!ip) {
-    callback('Unauthorized');
+    callback(null, {
+      // principalId: 'mock-tenant',
+      policyDocument: {
+        Version: '2012-10-17',
+        Statement: [{
+          Action: 'execute-api:Invoke',
+          Effect: 'Deny',
+          Resource: event.methodArn
+        }]
+      }
+    });
     return;
   }
-  documentClient.get({
-    TableName: "profiles_tenant_ip",
-    Key: {
-      ipAddress: ip
-    }
-  }, function(e, data) {
-    if (e) {
-      callback(e);
-      return;
-    }
-    var guestUser = data.Item;
-    if (!guestUser) {
-      callback('Unauthorized');
-      return;
-    }
-
+  db.getTenant(ip).then(tenantId => {
+    var guestUser = {};
     callback(null, {
       principalId: 'mock-tenant',
       policyDocument: {
@@ -35,6 +32,17 @@ exports.handler = (event, context, callback) => {
       },
       context: guestUser
     });
+  }).catch(e => {
+    callback(null, {
+      // principalId: 'mock-tenant',
+      policyDocument: {
+        Version: '2012-10-17',
+        Statement: [{
+          Action: 'execute-api:Invoke',
+          Effect: 'Deny',
+          Resource: event.methodArn
+        }]
+      }
+    });
   });
-
 }

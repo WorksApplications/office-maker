@@ -22,8 +22,19 @@ function putAccount(account) {
   });
 }
 
+function getTenant(ipAddress) {
+  return dynamoUtil.get({
+    TableName: "accounts_tenant_ip",
+    Key: {
+      ipAddress: ipAddress
+    }
+  }).then(data => {
+    return Promise.resolve(data.Item ? data.Item.tenantId : null);
+  });
+}
 
 module.exports = {
   getAccount: getAccount,
-  putAccount: putAccount
+  putAccount: putAccount,
+  getTenant: getTenant
 };

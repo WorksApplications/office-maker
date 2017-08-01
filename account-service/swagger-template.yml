@@ -24,6 +24,14 @@ info:
 
 schemes:
   - 'https'
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  params-only:
+    validateRequestBody: false
+    validateRequestParameters: true
+
 
 paths:
   /authentication:
@@ -56,6 +64,7 @@ paths:
           "$ref": "#/responses/BadRequest"
         401:
           "$ref": "#/responses/Unauthorized"
+      x-amazon-apigateway-request-validator: all
       x-amazon-apigateway-integration:
         httpMethod: POST
         responses:
@@ -105,6 +114,7 @@ paths:
           description: テナント内にすでにユーザIDが存在します。
           schema:
             $ref: '#/definitions/Error'
+      x-amazon-apigateway-request-validator: all
       x-amazon-apigateway-integration:
         httpMethod: POST
         responses:

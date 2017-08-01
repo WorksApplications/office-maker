@@ -18,6 +18,22 @@ Resources:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
 
+  AccountsTenantIpTable:
+     Type: AWS::DynamoDB::Table
+     Properties:
+        TableName: accounts_tenant_ip
+        AttributeDefinitions:
+          -
+            AttributeName: ipAddress
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: ipAddress
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
   Authorizer:
     Type: AWS::Serverless::Function
     Properties:
@@ -65,4 +81,11 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AuthenticationPost
+      Principal: apigateway.amazonaws.com
+
+  UsersPostPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref UsersPost
       Principal: apigateway.amazonaws.com
