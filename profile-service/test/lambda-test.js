@@ -152,6 +152,30 @@ describe('Profile Lambda', () => {
         }
       }, {}).then(assertProfileLength(2));
     });
+    it('should work with limit and exclusiveStartKey', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "Tech",
+          "limit": 1
+        }
+      }, {}).then(assertProfileLength(1)).then(res => {
+        return handlerToPromise(profilesQuery.handler)({
+          "queryStringParameters": {
+            "q": "Tech",
+            "limit": 1,
+            "exclusiveStartKey": JSON.parse(res.body).lastEvaluatedKey
+          }
+        }, {}).then(assertProfileLength(1)).then(res => {
+          return handlerToPromise(profilesQuery.handler)({
+            "queryStringParameters": {
+              "q": "Tech",
+              "limit": 1,
+              "exclusiveStartKey": JSON.parse(res.body).lastEvaluatedKey
+            }
+          }, {}).then(assertProfileLength(0));
+        });
+      });
+    });
   });
   describe('GET /profiles/{userId}', () => {
     it('returns 200 if profile exists', () => {
@@ -223,7 +247,7 @@ function assertProfileLength(expect) {
     if (profiles.length !== expect) {
       throw `Expected profile length ${expect} but got ${profiles.length}`;
     }
-    return Promise.resolve();
+    return Promise.resolve(result);
   };
 }
 
@@ -233,7 +257,7 @@ function assertStatus(expect) {
     if (result.statusCode !== expect) {
       throw `Expected statusCode ${expect} but got ${result.statusCode}: ${JSON.stringify(result)}`;
     }
-    return Promise.resolve();
+    return Promise.resolve(result);
   };
 }
 
