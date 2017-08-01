@@ -15,6 +15,7 @@ function getProfile(userId) {
 }
 
 function putProfile(profile) {
+  profile = dynamoUtil.emptyToNull(profile);
   return dynamoUtil.put(documentClient, {
     TableName: "profiles",
     Item: profile
@@ -82,7 +83,8 @@ function findProfileByQuery(q, limit, exclusiveStartKey) {
       ' or begins_with(ruby, :ruby)' +
       ' or contains(ruby, :rubyWithSpace)' +
       ' or begins_with(mail, :mail)' +
-      ' or employeeId = :employeeId',
+      ' or employeeId = :employeeId' +
+      ' or contains(post, :post)',
     ExpressionAttributeNames: {
       "#name": 'name' // because `name` is a reserved keyword
     },
@@ -92,7 +94,8 @@ function findProfileByQuery(q, limit, exclusiveStartKey) {
       ":nameWithSpace": ' ' + q,
       ":ruby": q,
       ":rubyWithSpace": ' ' + q,
-      ":employeeId": q
+      ":employeeId": q,
+      ":post": q
     },
     Limit: limit,
     ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined

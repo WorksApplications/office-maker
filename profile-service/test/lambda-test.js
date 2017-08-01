@@ -36,13 +36,12 @@ describe('Profile Lambda', () => {
     return dynamoUtil.put(documentClient, {
       TableName: "profiles",
       Item: {
-        tenantId: 'worksap.co.jp',
         userId: 'yamada@example.com',
         picture: null,
         name: '山田 太郎',
         ruby: 'やまだ たろう',
         employeeId: '1234',
-        orgnization: 'Example Co., Ltd.',
+        organization: 'Example Co., Ltd.',
         post: 'Tech',
         rank: 'Manager',
         cellPhone: '080-XXX-4567',
@@ -50,7 +49,23 @@ describe('Profile Lambda', () => {
         mail: 'yamada@example.com',
         workplace: null
       }
-    });
+    }).then(_ => dynamoUtil.put(documentClient, {
+      TableName: "profiles",
+      Item: {
+        userId: 'tanaka@example.com',
+        picture: null, // be sure to allow empty string
+        name: '山岡 三郎',
+        ruby: 'やまおか さぶろう',
+        employeeId: '1235',
+        organization: 'Example Co., Ltd.',
+        post: 'Sales and Tech',
+        rank: 'Assistant',
+        cellPhone: '080-XXX-5678',
+        extensionPhone: 'XXXXX',
+        mail: 'yamaoka@example.com',
+        workplace: null // be sure to allow empty string
+      }
+    }));
   });
   describe('GET /profiles', () => {
     it('should search profiles by userId', () => {
@@ -79,7 +94,7 @@ describe('Profile Lambda', () => {
         "queryStringParameters": {
           "q": "山"
         }
-      }, {}).then(assertProfileLength(1));
+      }, {}).then(assertProfileLength(2));
     });
     it('should search profiles by q (match to name)', () => {
       return handlerToPromise(profilesQuery.handler)({
@@ -93,7 +108,7 @@ describe('Profile Lambda', () => {
         "queryStringParameters": {
           "q": "やま"
         }
-      }, {}).then(assertProfileLength(1));
+      }, {}).then(assertProfileLength(2));
     });
     it('should search profiles by q (match to ruby)', () => {
       return handlerToPromise(profilesQuery.handler)({
@@ -107,7 +122,7 @@ describe('Profile Lambda', () => {
         "queryStringParameters": {
           "q": "yama"
         }
-      }, {}).then(assertProfileLength(1));
+      }, {}).then(assertProfileLength(2));
     });
     it('should search profiles by q (match to employeeId)', () => {
       return handlerToPromise(profilesQuery.handler)({
@@ -123,12 +138,33 @@ describe('Profile Lambda', () => {
         }
       }, {}).then(assertProfileLength(0));
     });
+    it('should NOT search profiles by q (match to organization)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "Example"
+        }
+      }, {}).then(assertProfileLength(0));
+    });
+    it('should search profiles by q (match to post)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "Tech"
+        }
+      }, {}).then(assertProfileLength(2));
+    });
   });
   describe('GET /profiles/{userId}', () => {
+    it('returns 200 if profile exists', () => {
+      return handlerToPromise(profilesGet.handler)({
+        "pathParameters": {
+          "userId": "yamada@example.com"
+        }
+      }, {}).then(assertStatus(200));
+    });
     it('returns 404 if profile does not exist', () => {
       return handlerToPromise(profilesGet.handler)({
         "pathParameters": {
-          "userId": "mock@example.com"
+          "userId": "not_exist@example.com"
         }
       }, {}).then(assertStatus(404));
     });
@@ -137,9 +173,33 @@ describe('Profile Lambda', () => {
     it('returns 400 if data is invalid', () => {
       return handlerToPromise(profilesPut.handler)({
         "pathParameters": {
-          "userId": "mock@example.com"
+          "userId": "test@example.com"
         }
       }, {}).then(assertStatus(400));
+    });
+    it('returns 200 if data is valid', () => {
+      return handlerToPromise(profilesPut.handler)({
+        "pathParameters": {
+          "userId": "test@example.com"
+        },
+        "body": JSON.stringify({
+          "userId": "test@example.com",
+          "name": "テスト"
+        })
+      }, {}).then(assertStatus(200));
+    });
+    it('still returns 200 if data contains empty string', () => {
+      return handlerToPromise(profilesPut.handler)({
+        "pathParameters": {
+          "userId": "test@example.com"
+        },
+        "body": JSON.stringify({
+          "userId": "test@example.com",
+          "name": "テスト",
+          "picture": "",
+          "extensionPhone": ""
+        })
+      }, {}).then(assertStatus(200));
     });
   });
   describe('PUT /profiles/{userId}', () => {

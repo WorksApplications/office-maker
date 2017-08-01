@@ -12,7 +12,18 @@ function exec(method) {
   };
 }
 
+function emptyToNull(object) {
+  object = Object.assign({}, object);
+  Object.keys(object).forEach(key => {
+    if (object[key] === "") {
+      object[key] = null;
+    }
+  });
+  return object;
+}
+
 module.exports = {
+  emptyToNull: emptyToNull,
   get: exec('get'),
   put: exec('put'),
   delete: exec('delete'),
