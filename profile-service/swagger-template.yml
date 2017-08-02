@@ -28,7 +28,7 @@ securityDefinitions:
     x-amazon-apigateway-authorizer:
       authorizerResultTtlInSeconds: 60
       authorizerUri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_authorizer/invocations"
-      authorizerCredentials: arn:aws:iam::__ACCOUNT_ID__:role
+      # authorizerCredentials: arn:aws:iam::__ACCOUNT_ID__:role
       type: token
 
 paths:
@@ -165,10 +165,10 @@ paths:
           description: ""
           schema:
             $ref: "#/definitions/Profile"
-        401:
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error'
+        # 401:
+        #   description: Unauthorized
+        #   schema:
+        #     $ref: '#/definitions/Error'
         404:
           description: |
             Not Found
@@ -247,8 +247,8 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
-      # security:
-      #   - CustomAuthorizer: []
+      security:
+        - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: all
       x-amazon-apigateway-integration:
         httpMethod: POST
@@ -283,8 +283,8 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
-      # security:
-      #   - CustomAuthorizer: []
+      security:
+        - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: all
       x-amazon-apigateway-integration:
         httpMethod: POST
@@ -321,8 +321,8 @@ paths:
             たとえ他のドメインに存在していても、サーバは 404 によってその存在を隠す必要があります。
           schema:
             $ref: '#/definitions/Error'
-      # security:
-      #   - CustomAuthorizer: []
+      security:
+        - CustomAuthorizer: []
       x-amazon-apigateway-request-validator: params-only
       x-amazon-apigateway-integration:
         httpMethod: POST

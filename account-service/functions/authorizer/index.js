@@ -1,13 +1,15 @@
 var jwt = require('jsonwebtoken');
 
-var publicKey = process.env.PUBLIC_KEY;
+var publicKey = process.env.PUBLIC_KEY.replace('_', '\n');
 
 function getSelf(token) {
   if (!token) {
     return Promise.reject();
   }
   return new Promise((resolve, reject) => {
-    jwt.verify(token, publicKey, function(e, user) {
+    jwt.verify(token, publicKey, {
+      algorithms: ['RS256', 'RS384', 'RS512', 'HS256', 'HS256', 'HS512', 'ES256', 'ES384', 'ES512']
+    }, function(e, user) {
       if (e) {
         reject(e);
       } else {

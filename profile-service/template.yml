@@ -100,3 +100,10 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref ProfilesDelete
       Principal: apigateway.amazonaws.com
+
+  AuthorizerPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: accounts_authorizer
+      Principal: apigateway.amazonaws.com

@@ -12,6 +12,7 @@ var documentClient = new AWS.DynamoDB.DocumentClient(options);
 var yaml = require('js-yaml');
 var templateOutYml = yaml.safeLoad(fs.readFileSync('./template_out.yml', 'utf8'));
 var assert = require('assert');
+var jwt = require('jsonwebtoken');
 
 var authenticationPost = require('../functions/authentication/post.js');
 var authorizerIndex = require('../functions/authorizer/index.js');
@@ -21,6 +22,8 @@ var usersPost = require('../functions/users/post.js');
 
 var dynamodbLocalPath = __dirname + '/../../dynamodb_local';
 var port = 4569;
+
+var mockToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNTAxNjg1MTk4fQ.GJRbktuj39KZ7QQeKZ--RW4zMUEKxK_5MDcNwVzf0nkNkRNGlRfkcXUBcmJIiUl7DzAEYE50mZa6ILiWmftDsP2MbqV-g5VOjXD3tlYt2Xo_5eklro_ZqoUkJb5gVNppQNS1-C_YSye3cWvyiA3_hqjxcIk17gGeMNQRfhIp92HVJVC40U_-qBb1d821FMvvDjiHszIQ_8yIwvimhbg5jmI7WMhsBIdMgEt_aPQXgNnqk_tS-N4NKT5Lzi6ZyD-lQBTzSl8Q3fjOpLKYW7AANggzfztCuMPNhj5t6qG5wQKUTdJvjMLlNF0WKnsUU5w6A-FKQlv8zPOSjdnxqsIELA";
 
 describe('Accounts Lambda', () => {
   var dbProcess = null;
@@ -51,17 +54,50 @@ describe('Accounts Lambda', () => {
     //   }
     // });
   });
+
+  describe('JWT', () => {
+    it('works', () => {
+      return new Promise((resolve, reject) => {
+        var user = {
+          "userId": "test@example.com"
+        };
+        var token = jwt.sign(user, process.env.PRIVATE_KEY, {
+          algorithm: 'RS256'
+        });
+        // console.log(token);
+        jwt.verify(token, process.env.PUBLIC_KEY, {
+          algorithms: ['RS256', 'RS384', 'RS512', 'HS256', 'HS256', 'HS512', 'ES256', 'ES384', 'ES512']
+        }, function(e, user2) {
+          if (e) {
+            reject(e);
+          } else {
+            if (user.userId !== user2.userId) {
+              reject(e);
+            } else {
+              resolve();
+            }
+          }
+        });
+      });
+    });
+  });
   describe('authorizer', () => {
     it('returns Deny if unauthorized', () => {
       return handlerToPromise(authorizerIndex.handler)({
         "authorizationToken": ""
       }, {}).then(assertAuth('Deny'));
     });
-    // it('returns Allow if unauthorized', () => {
-    //   return handlerToPromise(authorizerIndex.handler)({
-    //     "authorizationToken": ""
-    //   }, {}).then(assertAuth('Allow'));
-    // });
+    it('returns Allow if unauthorized', () => {
+      return handlerToPromise(authorizerIndex.handler)({
+        "authorizationToken": "Bearer " + mockToken
+      }, {}).then(assertAuth('Allow')).then(res => {
+        var expect = 'test@example.com';
+        if (res.context.userId !== expect) {
+          throw 'expected ' + expect + ' but got: ' + res.context.userId;
+        }
+        return Promise.resolve(res);
+      });
+    });
   });
   describe('POST /authentication', () => {
     it('returns 401 if unauthenticated', () => {

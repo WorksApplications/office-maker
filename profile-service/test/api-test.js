@@ -21,6 +21,14 @@ describe('Profile Service', () => {
     return Promise.resolve();
   });
   describe('GET /profiles', () => {
+    it('returns 401 if unauthorized', () => {
+      var url = serviceRoot + '/profiles-test/not_exist@example.com';
+      return send(null, 'GET', url).then(assertStatus(401));
+    });
+    it('returns 401 if unauthorized', () => {
+      var url = serviceRoot + '/profiles-test/not_exist@example.com';
+      return send('Bearer hogehoge', 'GET', url).then(assertStatus(401));
+    });
     it('returns 400 if q or userId does not exist', () => {
       var url = serviceRoot + '/profiles?limit=100';
       return send(mockAuth, 'GET', url).then(assertStatus(400));
@@ -73,6 +81,14 @@ describe('Profile Service', () => {
     });
   });
   describe('PUT /profiles/{userId}', () => {
+    it('returns 401 if unauthorized', () => {
+      var url = serviceRoot + '/profiles/not_exist@example.com';
+      var data = {
+        "userId": "dummy@example.com",
+        "name": "Test"
+      };
+      return send('Bearer hogehoge', 'PUT', url, data).then(assertStatus(401));
+    });
     it('returns 400 if body is invalid (userId required)', () => {
       var url = serviceRoot + '/profiles/0001@example.com';
       var data = {
@@ -94,6 +110,16 @@ describe('Profile Service', () => {
         "name": "Test"
       };
       return send(mockAuth, 'PUT', url, data).then(assertStatus(200));
+    });
+  });
+  describe('DELETE /profiles/{userId}', () => {
+    it('returns 401 if unauthorized', () => {
+      var url = serviceRoot + '/profiles/not_exist@example.com';
+      return send('Bearer hogehoge', 'DELETE', url).then(assertStatus(401));
+    });
+    it('returns 200 if used does not exist', () => {
+      var url = serviceRoot + '/profiles/not_exist@example.com';
+      return send(mockAuth, 'DELETE', url).then(assertStatus(200));
     });
   });
 });
@@ -125,7 +151,7 @@ function assertStatus(expect) {
   return res => {
     if (res.statusCode !== expect) {
       var bodyStr = JSON.stringify(res.body);
-      if (bodyStr.length > 500) {
+      if (bodyStr && bodyStr.length > 500) {
         bodyStr = bodyStr.substring(0, 500);
         bodyStr = bodyStr + '...';
       }
