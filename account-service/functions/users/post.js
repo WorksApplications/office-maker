@@ -3,8 +3,6 @@ var lambdaUtil = require('../common/lambda-util.js');
 var db = require('../common/db.js');
 var crypto = require('crypto');
 
-var privateKey = process.env.PRIVATE_KEY;
-
 exports.handler = (event, context, callback) => {
   var body = JSON.parse(event.body);
   var userId = body.userId;

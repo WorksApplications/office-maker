@@ -42,7 +42,7 @@ Resources:
       Runtime: nodejs6.10
       Environment:
         Variables:
-          PUBLIC_KEY: hogehoge
+          PUBLIC_KEY: __PUBLIC_KEY__
 
   AuthorizerIp:
     Type: AWS::Serverless::Function
@@ -50,6 +50,7 @@ Resources:
       FunctionName: accounts_authorizer_ip
       Handler: functions/authorizer/ip.handler
       Runtime: nodejs6.10
+      Policies: AmazonDynamoDBReadOnlyAccess
 
   AuthenticationPost:
     Type: AWS::Serverless::Function
@@ -58,6 +59,9 @@ Resources:
       Handler: functions/authentication/post.handler
       Runtime: nodejs6.10
       Policies: AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          PRIVATE_KEY: __PRIVATE_KEY__
 
   UsersPost:
     Type: AWS::Serverless::Function
@@ -76,6 +80,20 @@ Resources:
         LambdaAlias: DEV
 
   # https://github.com/awslabs/serverless-application-model/issues/59
+  AuthorizerPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Authorizer
+      Principal: apigateway.amazonaws.com
+
+  AuthorizerIpPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AuthorizerIp
+      Principal: apigateway.amazonaws.com
+
   AuthenticationPostPermission:
     Type: "AWS::Lambda::Permission"
     Properties:

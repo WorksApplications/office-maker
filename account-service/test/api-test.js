@@ -10,7 +10,6 @@ var region = project.region;
 var restApiId = project.restApiId;
 var stageName = 'dev';
 var serviceRoot = `https://${restApiId}.execute-api.${region}.amazonaws.com/${stageName}`;
-var mockAuth = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOiJtb2NrQGV4YW1wbGUuY29tIiwiaWF0IjoxNDk4NzI2NzAwfQ.H03xsyZJSAdKFsBf6CMCZhnmaUOh9HK0Dn8ty2rimmU';
 
 describe('Accounts Service', () => {
   var dbProcess = null;

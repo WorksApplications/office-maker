@@ -26,11 +26,7 @@ function getSelf(token) {
 exports.handler = (event, context, callback) => {
   event.headers = event.headers || {};
   var token = (event.authorizationToken || '').split('Bearer ')[1];
-  if (!token) {
-    callback('Unauthorized');
-    return;
-  };
-  getSelf(token).then(user => {
+  (token ? getSelf(token) : Promise.reject()).then(user => {
     callback(null, {
       principalId: user.userId,
       policyDocument: {
@@ -43,7 +39,18 @@ exports.handler = (event, context, callback) => {
       },
       context: user
     });
-  }).catch(message => {
-    callback(message);
+  }).catch(_ => {
+    callback(null, {
+      // principalId: 'mock-tenant',
+      policyDocument: {
+        Version: '2012-10-17',
+        Statement: [{
+          Action: 'execute-api:Invoke',
+          Effect: 'Deny',
+          Resource: event.methodArn
+        }]
+      }
+    });
+    // callback(message);
   });
 }

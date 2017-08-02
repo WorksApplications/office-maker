@@ -1,8 +1,9 @@
+var fs = require('fs');
 process.env.EXEC_MODE = 'test';
-process.env.PRIVATE_KEY = 'TODO';
+process.env.PRIVATE_KEY = fs.readFileSync(__dirname + '/private.key', 'utf8');
+process.env.PUBLIC_KEY = fs.readFileSync(__dirname + '/public.key', 'utf8');
 
 var childProcess = require('child_process');
-var fs = require('fs');
 var AWS = require('aws-sdk');
 var dynamoUtil = require('../functions/common/dynamo-util.js');
 var options = require('../functions/common/db-options.js');
@@ -33,15 +34,72 @@ describe('Accounts Lambda', () => {
       });
     });
   });
-  beforeEach(() => {});
+  beforeEach(() => {
+    return handlerToPromise(usersPost.handler)({
+      "pathParameters": {
+        "userId": "test@example.com"
+      },
+      "body": JSON.stringify({
+        "userId": "test@example.com",
+        "password": "pass"
+      })
+    }, {});
+    // return dynamoUtil.put(documentClient, {
+    //   TableName: "accounts",
+    //   Item: {
+    //     userId: 'mock@example.com',
+    //   }
+    // });
+  });
+  describe('authorizer', () => {
+    it('returns Deny if unauthorized', () => {
+      return handlerToPromise(authorizerIndex.handler)({
+        "authorizationToken": ""
+      }, {}).then(assertAuth('Deny'));
+    });
+    // it('returns Allow if unauthorized', () => {
+    //   return handlerToPromise(authorizerIndex.handler)({
+    //     "authorizationToken": ""
+    //   }, {}).then(assertAuth('Allow'));
+    // });
+  });
   describe('POST /authentication', () => {
-    it('returns 401 if unauthorized', () => {
+    it('returns 401 if unauthenticated', () => {
       return handlerToPromise(authenticationPost.handler)({
         "body": JSON.stringify({
           "userId": "test@example.com",
           "password": "not_correct"
         })
       }, {}).then(assertStatus(401));
+    });
+    it('returns 401 if unauthenticated', () => {
+      return handlerToPromise(authenticationPost.handler)({
+        "body": JSON.stringify({
+          "userId": "foo@example.com",
+          "password": "pass"
+        })
+      }, {}).then(assertStatus(401));
+    });
+    it('returns 200 if authenticated and pass authorization with returned token', () => {
+      return handlerToPromise(authenticationPost.handler)({
+        "body": JSON.stringify({
+          "userId": "test@example.com",
+          "password": "pass"
+        })
+      }, {}).then(assertStatus(200)).then(res => {
+        var accessToken = JSON.parse(res.body).accessToken;
+        if (!accessToken) {
+          throw 'accessToken not found';
+        }
+        return handlerToPromise(authorizerIndex.handler)({
+          "authorizationToken": 'Bearer ' + accessToken
+        }, {}).then(assertAuth('Allow')).then(res => {
+          if (res.context.pass || res.context.password || res.context.hashedPassword) {
+            throw 'password must not be included';
+          }
+          return Promise.resolve(res);
+        });
+      });
     });
   });
 
@@ -86,6 +144,16 @@ function assertAccountsLengthInDB(expect) {
       }
       return Promise.resolve(result);
     });
+  };
+}
+
+function assertAuth(expect) {
+  return result => {
+    var effect = result.policyDocument.Statement[0].Effect
+    if (effect !== expect) {
+      throw `Expected statusCode ${expect} but got ${effect}: ${JSON.stringify(result)}`;
+    }
+    return Promise.resolve(result);
   };
 }
 

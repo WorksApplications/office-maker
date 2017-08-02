@@ -5,8 +5,17 @@ var childProcess = require('child_process');
 var Path = require('path');
 var AWS = require('aws-sdk');
 var archiver = require('archiver');
+var yaml = require('js-yaml');
 
-var project = JSON.parse(fs.readFileSync('./project.json', 'utf8'));
+var project;
+if (fs.existsSync('./project.json')) {
+  project = JSON.parse(fs.readFileSync('./project.json', 'utf8'));
+} else if (fs.existsSync('./project.yml')) {
+  project = yaml.safeLoad(fs.readFileSync('./project.yml', 'utf8'));
+} else {
+  project = yaml.safeLoad(fs.readFileSync('./project.yaml', 'utf8'));
+}
+var env = project.env || {};
 
 var cloudformation = new AWS.CloudFormation({
   region: project.region
@@ -24,6 +33,14 @@ rmdir('./node_modules').then(_ => {
   return generateSwaggerYml(project.accountId, project.region).then(_ => {
     return npmInstall(true).then(_ => {
       return cloudFormationPackage(templateFile, outputTemplateFile, project.s3Bucket).then(_ => {
+
+        var s = fs.readFileSync(outputTemplateFile, 'utf8');
+        Object.keys(env).forEach(key => {
+          var value = env[key];
+          s = s.replace('__' + key + '__', value);
+        });
+        fs.writeFileSync(outputTemplateFile, s);
+
         return cloudFormationDeploy(outputTemplateFile, project.stackName);
       });
     });
