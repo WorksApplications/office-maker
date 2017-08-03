@@ -40,9 +40,9 @@ Resources:
       FunctionName: accounts_authorizer
       Handler: functions/authorizer/index.handler
       Runtime: nodejs6.10
-      Environment:
-        Variables:
-          PUBLIC_KEY: "__PUBLIC_KEY__"
+      # Environment:
+      #   Variables:
+      #     PUBLIC_KEY: "__PUBLIC_KEY__"
 
   AuthorizerIp:
     Type: AWS::Serverless::Function

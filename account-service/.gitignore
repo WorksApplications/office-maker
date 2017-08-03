@@ -8,3 +8,5 @@ swagger-original.yml
 swagger.yml
 
 test.sh
+
+*.pem

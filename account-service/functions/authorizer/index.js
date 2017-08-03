@@ -1,6 +1,7 @@
 var jwt = require('jsonwebtoken');
 
-var publicKey = process.env.PUBLIC_KEY.replace('_', '\n');
+var fs = require('fs');
+var publicKey = process.env.PUBLIC_KEY || fs.readFileSync(__dirname + '/pubkey.pem', 'utf8');
 
 function getSelf(token) {
   if (!token) {
