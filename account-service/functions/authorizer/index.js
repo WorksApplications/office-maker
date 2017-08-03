@@ -1,7 +1,7 @@
 var jwt = require('jsonwebtoken');
-
 var fs = require('fs');
 var publicKey = process.env.PUBLIC_KEY || fs.readFileSync(__dirname + '/pubkey.pem', 'utf8');
+var sourceIp = require('./sourceIp.js');
 
 function getSelf(token) {
   if (!token) {
@@ -37,6 +37,11 @@ exports.handler = (event, context, callback) => {
         Statement: [{
           Action: 'execute-api:Invoke',
           Effect: 'Allow',
+          Condition: {
+            IpAddress: {
+              'aws:SourceIp': sourceIp
+            }
+          },
           Resource: event.methodArn
         }]
       },
@@ -44,7 +49,7 @@ exports.handler = (event, context, callback) => {
     });
   }).catch(_ => {
     callback(null, {
-      // principalId: 'mock-tenant',
+      principalId: 'invalid-user',
       policyDocument: {
         Version: '2012-10-17',
         Statement: [{
@@ -54,6 +59,5 @@ exports.handler = (event, context, callback) => {
         }]
       }
     });
-    // callback(message);
   });
 }

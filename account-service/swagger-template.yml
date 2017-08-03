@@ -39,8 +39,19 @@ securityDefinitions:
     in: header
     x-amazon-apigateway-authtype: oauth2
     x-amazon-apigateway-authorizer:
-      authorizerResultTtlInSeconds: 60
+      authorizerResultTtlInSeconds: 0
       authorizerUri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_authorizer/invocations"
+      # authorizerCredentials: arn:aws:iam::__ACCOUNT_ID__:role
+      type: token
+
+  CustomAuthorizerIp:
+    type: apiKey
+    name: Authorization
+    in: header
+    x-amazon-apigateway-authtype: oauth2
+    x-amazon-apigateway-authorizer:
+      authorizerResultTtlInSeconds: 0
+      authorizerUri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:accounts_authorizer_ip/invocations"
       # authorizerCredentials: arn:aws:iam::__ACCOUNT_ID__:role
       type: token
 
@@ -48,21 +59,11 @@ paths:
   /auth-debug:
     get:
       description: デバッグ
-      # parameters:
-      #   - "$ref": "#/parameters/Authorization_opt"
-      #   - "$ref": "#/parameters/X-Forwarded-For"
       responses:
         200:
           description: ""
-          # schema:
-          #   $ref: "#/definitions/Profile"
-        # 401:
-        #   description: Unauthorized
-        #   schema:
-        #     $ref: '#/definitions/Error'
       security:
-        - CustomAuthorizer: []
-      # x-amazon-apigateway-request-validator: params-only
+        - CustomAuthorizerIp: []
       x-amazon-apigateway-integration:
         httpMethod: POST
         responses:

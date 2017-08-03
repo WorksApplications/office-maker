@@ -40,9 +40,6 @@ Resources:
       FunctionName: accounts_authorizer
       Handler: functions/authorizer/index.handler
       Runtime: nodejs6.10
-      # Environment:
-      #   Variables:
-      #     PUBLIC_KEY: "__PUBLIC_KEY__"
 
   AuthorizerIp:
     Type: AWS::Serverless::Function
@@ -50,7 +47,6 @@ Resources:
       FunctionName: accounts_authorizer_ip
       Handler: functions/authorizer/ip.handler
       Runtime: nodejs6.10
-      Policies: AmazonDynamoDBReadOnlyAccess
 
   AuthDebug:
     Type: AWS::Serverless::Function
