@@ -37,11 +37,11 @@ exports.handler = (event, context, callback) => {
         Statement: [{
           Action: 'execute-api:Invoke',
           Effect: 'Allow',
-          Condition: {
-            IpAddress: {
-              'aws:SourceIp': sourceIp
-            }
-          },
+          // Condition: {
+          //   IpAddress: {
+          //     'aws:SourceIp': sourceIp
+          //   }
+          // },
           Resource: event.methodArn
         }]
       },

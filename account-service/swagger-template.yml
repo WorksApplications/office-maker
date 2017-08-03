@@ -63,7 +63,7 @@ paths:
         200:
           description: ""
       security:
-        - CustomAuthorizerIp: []
+        - CustomAuthorizer: []
       x-amazon-apigateway-integration:
         httpMethod: POST
         responses:

@@ -4,13 +4,14 @@ var childProcess = require('child_process');
 var fs = require('fs');
 var assert = require('assert');
 var request = require('request');
+var mockAuth = require('./mockAuth.js');
 
 var project = JSON.parse(fs.readFileSync('./project.json', 'utf8'));
 var region = project.region;
 var restApiId = project.restApiId;
 var stageName = 'dev';
 var serviceRoot = `https://${restApiId}.execute-api.${region}.amazonaws.com/${stageName}`;
-var mockAuth = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiQURNSU4iLCJ1c2VySWQiOiJtb2NrQGV4YW1wbGUuY29tIiwiaWF0IjoxNDk4NzI2NzAwfQ.H03xsyZJSAdKFsBf6CMCZhnmaUOh9HK0Dn8ty2rimmU';
+
 
 describe('Profile Service', () => {
   var dbProcess = null;
@@ -21,13 +22,13 @@ describe('Profile Service', () => {
     return Promise.resolve();
   });
   describe('GET /profiles', () => {
-    it('returns 401 if unauthorized', () => {
+    it('auth by IP', () => {
       var url = serviceRoot + '/profiles-test/not_exist@example.com';
-      return send(null, 'GET', url).then(assertStatus(401));
+      return send(null, 'GET', url).then(assertStatus(404));
     });
-    it('returns 401 if unauthorized', () => {
+    it('auth by IP', () => {
       var url = serviceRoot + '/profiles-test/not_exist@example.com';
-      return send('Bearer hogehoge', 'GET', url).then(assertStatus(401));
+      return send('Bearer hoge', 'GET', url).then(assertStatus(404));
     });
     it('returns 400 if q or userId does not exist', () => {
       var url = serviceRoot + '/profiles?limit=100';

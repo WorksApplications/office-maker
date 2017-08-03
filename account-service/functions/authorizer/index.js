@@ -27,9 +27,11 @@ function getSelf(token) {
 }
 
 exports.handler = (event, context, callback) => {
+  console.log(event, context);
   event.headers = event.headers || {};
   var token = (event.authorizationToken || '').split('Bearer ')[1];
   (token ? getSelf(token) : Promise.reject()).then(user => {
+    console.log(user);
     callback(null, {
       principalId: user.userId,
       policyDocument: {
@@ -37,11 +39,11 @@ exports.handler = (event, context, callback) => {
         Statement: [{
           Action: 'execute-api:Invoke',
           Effect: 'Allow',
-          Condition: {
-            IpAddress: {
-              'aws:SourceIp': sourceIp
-            }
-          },
+          // Condition: {
+          //   IpAddress: {
+          //     'aws:SourceIp': sourceIp
+          //   }
+          // },
           Resource: event.methodArn
         }]
       },

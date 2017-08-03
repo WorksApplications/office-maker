@@ -107,3 +107,10 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: accounts_authorizer
       Principal: apigateway.amazonaws.com
+
+  AuthorizerIpPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: accounts_authorizer_ip
+      Principal: apigateway.amazonaws.com

@@ -5,3 +5,5 @@ env.json
 template_out.yml
 swagger.yml
 dynamodb_local
+
+mockAuth.js
