@@ -47,12 +47,16 @@ profiles.push({
   workplace: null
 });
 
-profiles.reduce((promise, profile) => {
-  return promise.then(_ => putProfile(profile));
-}, Promise.resolve()).catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+console.log('generating mock data...');
+// profiles.reduce((promise, profile) => {
+//   return promise.then(_ => putProfile(profile));
+// }, Promise.resolve()).then(_ => {
+//   console.log('done');
+//   process.exit(0);
+// }).catch(e => {
+//   console.error(e);
+//   process.exit(1);
+// });
 
 function putProfile(profile) {
   return dynamoUtil.put(documentClient, {

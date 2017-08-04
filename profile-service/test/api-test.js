@@ -23,11 +23,11 @@ describe('Profile Service', () => {
   });
   describe('GET /profiles', () => {
     it('returns 401 if not authenticated', () => {
-      var url = serviceRoot + '/profiles-test/not_exist@example.com';
+      var url = serviceRoot + '/profiles?q=hoge';
       return send(null, 'GET', url).then(assertStatus(401));
     });
     it('returns 401 if not authenticated', () => {
-      var url = serviceRoot + '/profiles-test/not_exist@example.com';
+      var url = serviceRoot + '/profiles?q=hoge';
       return send('Bearer hoge', 'GET', url).then(assertStatus(401));
     });
     it('returns 400 if q or userId does not exist', () => {
@@ -64,6 +64,14 @@ describe('Profile Service', () => {
     });
   });
   describe('GET /profiles/{userId}', () => {
+    it('returns 401 if not authenticated', () => {
+      var url = serviceRoot + '/profiles/not_exist@example.com';
+      return send(null, 'GET', url).then(assertStatus(401));
+    });
+    it('returns 401 if not authenticated', () => {
+      var url = serviceRoot + '/profiles/not_exist@example.com';
+      return send('Bearer hoge', 'GET', url).then(assertStatus(401));
+    });
     it('returns 404 if profile does not exist', () => {
       var url = serviceRoot + '/profiles/notexist@example.com';
       return send(mockAuth.officeMaker, 'GET', url).then(assertStatus(404));

@@ -10,3 +10,5 @@ count.sh
 
 aws-config
 dynamodb_local
+
+people-register-service
