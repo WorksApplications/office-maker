@@ -16,8 +16,16 @@ var serviceRoot = `https://${restApiId}.execute-api.${region}.amazonaws.com/${st
 describe('Profile Service', () => {
   var dbProcess = null;
   before(() => {
-    return Promise.resolve();
+    var url = serviceRoot + '/profiles/test@example.com';
+    return send(mockAuth.admin, 'PUT', url, {
+      "userId": "test@example.com",
+      "name": "Test"
+    });
   });
+  after(() => {
+    var url = serviceRoot + '/profiles/test@example.com';
+    return send(mockAuth.admin, 'DELETE', url);
+  })
   beforeEach(() => {
     return Promise.resolve();
   });
@@ -77,7 +85,7 @@ describe('Profile Service', () => {
       return send(mockAuth.officeMaker, 'GET', url).then(assertStatus(404));
     });
     it('returns 200 if profile exists', () => {
-      var url = serviceRoot + '/profiles/0001@example.com';
+      var url = serviceRoot + '/profiles/test@example.com';
       return send(mockAuth.officeMaker, 'GET', url).then(res => {
         if (res.statusCode !== 200) {
           return Promise.reject('Unexpected statusCode: ' + res.statusCode);
@@ -107,23 +115,23 @@ describe('Profile Service', () => {
       return send(mockAuth.officeMaker, 'PUT', url, data).then(assertStatus(403));
     });
     it('returns 400 if body is invalid (userId required)', () => {
-      var url = serviceRoot + '/profiles/0001@example.com';
+      var url = serviceRoot + '/profiles/test@example.com';
       var data = {
         name: 'Test'
       };
       return send(mockAuth.admin, 'PUT', url, data).then(assertStatus(400));
     });
     it('returns 400 if body is invalid (name required)', () => {
-      var url = serviceRoot + '/profiles/0001@example.com';
+      var url = serviceRoot + '/profiles/test@example.com';
       var data = {
-        userId: '0001@example.com'
+        userId: 'test@example.com'
       };
       return send(mockAuth.admin, 'PUT', url, data).then(assertStatus(400));
     });
     it('returns 200 if everything is ok', () => {
-      var url = serviceRoot + '/profiles/0001@example.com';
+      var url = serviceRoot + '/profiles/test@example.com';
       var data = {
-        "userId": "0001@example.com",
+        "userId": "test@example.com",
         "name": "Test"
       };
       return send(mockAuth.admin, 'PUT', url, data).then(assertStatus(200));
