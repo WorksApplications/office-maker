@@ -8,6 +8,9 @@
   },
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "jsonwebtoken": "^7.4.1"
+  },
   "devDependencies": {
     "aws-sdk": "^2.86.0",
     "js-yaml": "^3.9.0",

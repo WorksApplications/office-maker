@@ -22,25 +22,25 @@ describe('Profile Service', () => {
     return Promise.resolve();
   });
   describe('GET /profiles', () => {
-    it('auth by IP', () => {
+    it('returns 401 if not authenticated', () => {
       var url = serviceRoot + '/profiles-test/not_exist@example.com';
-      return send(null, 'GET', url).then(assertStatus(404));
+      return send(null, 'GET', url).then(assertStatus(401));
     });
-    it('auth by IP', () => {
+    it('returns 401 if not authenticated', () => {
       var url = serviceRoot + '/profiles-test/not_exist@example.com';
-      return send('Bearer hoge', 'GET', url).then(assertStatus(404));
+      return send('Bearer hoge', 'GET', url).then(assertStatus(401));
     });
     it('returns 400 if q or userId does not exist', () => {
       var url = serviceRoot + '/profiles?limit=100';
-      return send(mockAuth, 'GET', url).then(assertStatus(400));
+      return send(mockAuth.officeMaker, 'GET', url).then(assertStatus(400));
     });
     it('returns 400 if order is invalid', () => {
       var url = serviceRoot + '/profiles?order=foo';
-      return send(mockAuth, 'GET', url).then(assertStatus(400));
+      return send(mockAuth.officeMaker, 'GET', url).then(assertStatus(400));
     });
     it('returns [] if no one matched by q', () => {
       var url = serviceRoot + '/profiles?q=hogehogehogehoge';
-      return send(mockAuth, 'GET', url).then(res => {
+      return send(mockAuth.officeMaker, 'GET', url).then(res => {
         if (res.statusCode !== 200) {
           return Promise.reject('Unexpected statusCode: ' + res.statusCode);
         }
@@ -52,7 +52,7 @@ describe('Profile Service', () => {
     });
     it('returns [] if no one matched by userId', () => {
       var url = serviceRoot + '/profiles?userId=notexist';
-      return send(mockAuth, 'GET', url).then(res => {
+      return send(mockAuth.officeMaker, 'GET', url).then(res => {
         if (res.statusCode !== 200) {
           return Promise.reject('Unexpected statusCode: ' + res.statusCode);
         }
@@ -66,11 +66,11 @@ describe('Profile Service', () => {
   describe('GET /profiles/{userId}', () => {
     it('returns 404 if profile does not exist', () => {
       var url = serviceRoot + '/profiles/notexist@example.com';
-      return send(mockAuth, 'GET', url).then(assertStatus(404));
+      return send(mockAuth.officeMaker, 'GET', url).then(assertStatus(404));
     });
     it('returns 200 if profile exists', () => {
       var url = serviceRoot + '/profiles/0001@example.com';
-      return send(mockAuth, 'GET', url).then(res => {
+      return send(mockAuth.officeMaker, 'GET', url).then(res => {
         if (res.statusCode !== 200) {
           return Promise.reject('Unexpected statusCode: ' + res.statusCode);
         }
@@ -90,19 +90,27 @@ describe('Profile Service', () => {
       };
       return send('Bearer hogehoge', 'PUT', url, data).then(assertStatus(401));
     });
+    it('returns 403 if unauthorized', () => {
+      var url = serviceRoot + '/profiles/not_exist@example.com';
+      var data = {
+        "userId": "dummy@example.com",
+        "name": "Test"
+      };
+      return send(mockAuth.officeMaker, 'PUT', url, data).then(assertStatus(403));
+    });
     it('returns 400 if body is invalid (userId required)', () => {
       var url = serviceRoot + '/profiles/0001@example.com';
       var data = {
         name: 'Test'
       };
-      return send(mockAuth, 'PUT', url, data).then(assertStatus(400));
+      return send(mockAuth.admin, 'PUT', url, data).then(assertStatus(400));
     });
     it('returns 400 if body is invalid (name required)', () => {
       var url = serviceRoot + '/profiles/0001@example.com';
       var data = {
         userId: '0001@example.com'
       };
-      return send(mockAuth, 'PUT', url, data).then(assertStatus(400));
+      return send(mockAuth.admin, 'PUT', url, data).then(assertStatus(400));
     });
     it('returns 200 if everything is ok', () => {
       var url = serviceRoot + '/profiles/0001@example.com';
@@ -110,7 +118,7 @@ describe('Profile Service', () => {
         "userId": "0001@example.com",
         "name": "Test"
       };
-      return send(mockAuth, 'PUT', url, data).then(assertStatus(200));
+      return send(mockAuth.admin, 'PUT', url, data).then(assertStatus(200));
     });
   });
   describe('DELETE /profiles/{userId}', () => {
@@ -118,9 +126,13 @@ describe('Profile Service', () => {
       var url = serviceRoot + '/profiles/not_exist@example.com';
       return send('Bearer hogehoge', 'DELETE', url).then(assertStatus(401));
     });
+    it('returns 403 if role is GENERAL', () => {
+      var url = serviceRoot + '/profiles/not_exist@example.com';
+      return send(mockAuth.officeMaker, 'DELETE', url).then(assertStatus(403));
+    });
     it('returns 200 if used does not exist', () => {
       var url = serviceRoot + '/profiles/not_exist@example.com';
-      return send(mockAuth, 'DELETE', url).then(assertStatus(200));
+      return send(mockAuth.admin, 'DELETE', url).then(assertStatus(200));
     });
   });
 });

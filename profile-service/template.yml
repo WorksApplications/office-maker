@@ -17,6 +17,14 @@ Resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
+
+  Authorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: profiles_authorizer
+      Handler: functions/authorizer/index.handler
+      Runtime: nodejs6.10
+
   ProfilesQuery:
     Type: AWS::Serverless::Function
     Properties:
@@ -105,12 +113,5 @@ Resources:
     Type: "AWS::Lambda::Permission"
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: accounts_authorizer
-      Principal: apigateway.amazonaws.com
-
-  AuthorizerIpPermission:
-    Type: "AWS::Lambda::Permission"
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: accounts_authorizer_ip
+      FunctionName: !Ref Authorizer
       Principal: apigateway.amazonaws.com
