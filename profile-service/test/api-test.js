@@ -70,6 +70,30 @@ describe('Profile Service', () => {
         return Promise.resolve();
       });
     });
+    it('returns [User] if someone matched by q', () => {
+      var url = serviceRoot + '/profiles?q=Tes';
+      return send(mockAuth.officeMaker, 'GET', url).then(res => {
+        if (res.statusCode !== 200) {
+          return Promise.reject('Unexpected statusCode: ' + res.statusCode);
+        }
+        if (res.body.profiles.length !== 1) {
+          return Promise.reject('Unexpected profile count: ' + res.body.profiles.length);
+        }
+        return Promise.resolve();
+      });
+    });
+    it('returns [User] if someone matched by userId', () => {
+      var url = serviceRoot + '/profiles?userId=test@example.com';
+      return send(mockAuth.officeMaker, 'GET', url).then(res => {
+        if (res.statusCode !== 200) {
+          return Promise.reject('Unexpected statusCode: ' + res.statusCode);
+        }
+        if (res.body.profiles.length !== 1) {
+          return Promise.reject('Unexpected profile count: ' + res.body.profiles.length);
+        }
+        return Promise.resolve();
+      });
+    });
   });
   describe('GET /profiles/{userId}', () => {
     it('returns 401 if not authenticated', () => {

@@ -54,7 +54,7 @@ describe('Profile Lambda', () => {
       Item: {
         userId: 'tanaka@example.com',
         picture: null, // be sure to allow empty string
-        name: '山岡 三郎',
+        name: '山岡 Saburo',
         ruby: 'やまおか さぶろう',
         employeeId: '1235',
         organization: 'Example Co., Ltd.',
@@ -103,6 +103,13 @@ describe('Profile Lambda', () => {
         }
       }, {}).then(assertProfileLength(1));
     });
+    it('should search profiles by q (match to name, case sensitive)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "saburo"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
     it('should search profiles by q (match to ruby)', () => {
       return handlerToPromise(profilesQuery.handler)({
         "queryStringParameters": {
@@ -123,6 +130,13 @@ describe('Profile Lambda', () => {
           "q": "yama"
         }
       }, {}).then(assertProfileLength(2));
+    });
+    it('should NOT search profiles by q (match to mail, upper case)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "YAMA"
+        }
+      }, {}).then(assertProfileLength(0));
     });
     it('should search profiles by q (match to employeeId)', () => {
       return handlerToPromise(profilesQuery.handler)({
@@ -151,6 +165,13 @@ describe('Profile Lambda', () => {
           "q": "Tech"
         }
       }, {}).then(assertProfileLength(2));
+    });
+    it('should search profiles by q (match to post, case sensitive)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "sales"
+        }
+      }, {}).then(assertProfileLength(1));
     });
     it('should work with limit and exclusiveStartKey', () => {
       return handlerToPromise(profilesQuery.handler)({
