@@ -3,6 +3,7 @@ process.env.EXEC_MODE = 'test';
 var childProcess = require('child_process');
 var fs = require('fs');
 var AWS = require('aws-sdk');
+var db = require('../functions/common/db.js');
 var dynamoUtil = require('../functions/common/dynamo-util.js');
 var options = require('../functions/common/db-options.js');
 var dynamodb = new AWS.DynamoDB(options);
@@ -33,38 +34,32 @@ describe('Profile Lambda', () => {
     });
   });
   beforeEach(() => {
-    return dynamoUtil.put(documentClient, {
-      TableName: "profiles",
-      Item: {
-        userId: 'yamada@example.com',
-        picture: null,
-        name: '山田 太郎',
-        ruby: 'やまだ たろう',
-        employeeId: '1234',
-        organization: 'Example Co., Ltd.',
-        post: 'Tech',
-        rank: 'Manager',
-        cellPhone: '080-XXX-4567',
-        extensionPhone: 'XXXXX',
-        mail: 'yamada@example.com',
-        workplace: null
-      }
-    }).then(_ => dynamoUtil.put(documentClient, {
-      TableName: "profiles",
-      Item: {
-        userId: 'tanaka@example.com',
-        picture: null, // be sure to allow empty string
-        name: '山岡 Saburo',
-        ruby: 'やまおか さぶろう',
-        employeeId: '1235',
-        organization: 'Example Co., Ltd.',
-        post: 'Sales and Tech',
-        rank: 'Assistant',
-        cellPhone: '080-XXX-5678',
-        extensionPhone: 'XXXXX',
-        mail: 'yamaoka@example.com',
-        workplace: null // be sure to allow empty string
-      }
+    return db.putProfile({
+      userId: 'yamada@example.com',
+      picture: null,
+      name: '山田 太郎',
+      ruby: 'やまだ たろう',
+      employeeId: '1234',
+      organization: 'Example Co., Ltd.',
+      post: 'Tech',
+      rank: 'Manager',
+      cellPhone: '080-XXX-4567',
+      extensionPhone: 'XXXXX',
+      mail: 'yamada@example.com',
+      workplace: null
+    }).then(_ => db.putProfile({
+      userId: 'tanaka@example.com',
+      picture: null, // be sure to allow empty string
+      name: '山岡 Saburo',
+      ruby: 'やまおか さぶろう',
+      employeeId: '1235',
+      organization: 'Example Co., Ltd.',
+      post: 'Sales and Tech',
+      rank: 'Assistant',
+      cellPhone: '080-XXX-5678',
+      extensionPhone: 'XXXXX',
+      mail: 'yamaoka@example.com',
+      workplace: null // be sure to allow empty string
     }));
   });
   describe('GET /profiles', () => {
@@ -80,7 +75,18 @@ describe('Profile Lambda', () => {
         "queryStringParameters": {
           "userId": "yamada@example.com"
         }
-      }, {}).then(assertProfileLength(1));
+      }, {}).then(assertProfileLength(1)).then(res => {
+        var profile = JSON.parse(res.body).profiles[0];
+        if (!profile) {
+          return Promise.reject("unexpected empty user");
+        }
+        Object.keys(profile).forEach(key => {
+          if (key.indexOf('normalized') === 0) {
+            throw new Error('normalized field found: ' + key);
+          }
+        });
+        return Promise.resolve();
+      });
     });
     it('should search profiles by q', () => {
       return handlerToPromise(profilesQuery.handler)({
@@ -204,7 +210,15 @@ describe('Profile Lambda', () => {
         "pathParameters": {
           "userId": "yamada@example.com"
         }
-      }, {}).then(assertStatus(200));
+      }, {}).then(assertStatus(200)).then(res => {
+        var profile = JSON.parse(res.body);
+        Object.keys(profile).forEach(key => {
+          if (key.indexOf('normalized') === 0) {
+            throw new Error('normalized field found: ' + key);
+          }
+        });
+        return Promise.resolve();
+      });
     });
     it('returns 404 if profile does not exist', () => {
       return handlerToPromise(profilesGet.handler)({

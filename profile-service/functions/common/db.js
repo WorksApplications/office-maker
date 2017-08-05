@@ -2,6 +2,7 @@ var AWS = require('aws-sdk');
 var options = require('./db-options.js');
 var documentClient = new AWS.DynamoDB.DocumentClient(options);
 var dynamoUtil = require('./dynamo-util.js');
+var searchHelper = require('./search-helper.js');
 
 function getProfile(userId) {
   return dynamoUtil.get(documentClient, {
@@ -10,11 +11,16 @@ function getProfile(userId) {
       userId: userId
     }
   }).then(data => {
-    return Promise.resolve(data.Item);
+    return Promise.resolve(deleteNormalizedFields(data.Item));
   });
 }
 
 function putProfile(profile) {
+  profile = Object.assign({}, profile);
+  profile.normalizedName = searchHelper.normalize(profile.name);
+  profile.normalizedRuby = searchHelper.normalize(profile.ruby);
+  profile.normalizedPost = searchHelper.normalize(profile.post);
+  profile.normalizedOrganization = searchHelper.normalize(profile.organization);
   profile = dynamoUtil.emptyToNull(profile);
   return dynamoUtil.put(documentClient, {
     TableName: "profiles",
@@ -59,49 +65,50 @@ function findProfileByUserIds(userIds, limit, exclusiveStartKey) {
     ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
   }).then(data => {
     return Promise.resolve({
-      profiles: data.Responses['profiles'].map(response => {
-        return response.Item;
-      }),
+      profiles: data.Responses['profiles'].map(deleteNormalizedFields),
       lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
     });
   });
 }
 
-function varyCase(s) {
-  var dict = {};
-  dict[s] = true;
-  dict[s.toUpperCase()] = true;
-  dict[s.toLowerCase()] = true;
-  return Object.keys(dict);
+function deleteNormalizedFields(profile) {
+  if (!profile) {
+    return null;
+  }
+  profile = Object.assign({}, profile);
+  Object.keys(profile).forEach(key => {
+    if (key.indexOf('normalized') === 0) {
+      delete profile[key];
+    }
+  });
+  return profile;
 }
 
 function findProfileByQuery(q, limit, exclusiveStartKey) {
+  var normalizedQ = searchHelper.normalize(q);
   return dynamoUtil.scan(documentClient, {
     TableName: 'profiles',
-    FilterExpression: 'begins_with(#name, :name)' +
-      ' or contains(#name, :nameWithSpace)' +
-      ' or begins_with(ruby, :ruby)' +
-      ' or contains(ruby, :rubyWithSpace)' +
+    FilterExpression: 'begins_with(normalizedName, :normalizedName)' +
+      ' or contains(normalizedName, :normalizedNameWithSpace)' +
+      ' or begins_with(normalizedRuby, :normalizedRuby)' +
+      ' or contains(normalizedRuby, :normalizedRubyWithSpace)' +
       ' or begins_with(mail, :mail)' +
       ' or employeeId = :employeeId' +
-      ' or contains(post, :post)',
-    ExpressionAttributeNames: {
-      "#name": 'name' // because `name` is a reserved keyword
-    },
+      ' or contains(normalizedPost, :normalizedPost)',
     ExpressionAttributeValues: {
       ":mail": q,
-      ":name": q,
-      ":nameWithSpace": ' ' + q,
-      ":ruby": q,
-      ":rubyWithSpace": ' ' + q,
+      ":normalizedName": normalizedQ,
+      ":normalizedNameWithSpace": ' ' + normalizedQ,
+      ":normalizedRuby": normalizedQ,
+      ":normalizedRubyWithSpace": ' ' + normalizedQ,
       ":employeeId": q,
-      ":post": q
+      ":normalizedPost": normalizedQ
     },
     Limit: limit,
     ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
   }).then(data => {
     return Promise.resolve({
-      profiles: data.Items,
+      profiles: data.Items.map(deleteNormalizedFields),
       lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
     });
   });

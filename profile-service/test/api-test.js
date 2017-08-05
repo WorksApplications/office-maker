@@ -24,8 +24,9 @@ describe('Profile Service', () => {
   });
   after(() => {
     var url = serviceRoot + '/profiles/test@example.com';
-    return send(mockAuth.admin, 'DELETE', url);
-  })
+    // return send(mockAuth.admin, 'DELETE', url);
+    return Promise.resolve();
+  });
   beforeEach(() => {
     return Promise.resolve();
   });
