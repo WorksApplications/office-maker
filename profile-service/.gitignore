@@ -7,3 +7,5 @@ swagger.yml
 dynamodb_local
 
 mockAuth.js
+*.pem
+sourceIp.js
