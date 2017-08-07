@@ -193,6 +193,7 @@ describe('Profile Lambda', () => {
           "limit": 1
         }
       }, {}).then(assertProfileLength(1)).then(res => {
+        // console.log(JSON.parse(res.body).lastEvaluatedKey);
         return handlerToPromise(profilesQuery.handler)({
           "queryStringParameters": {
             "q": "Tech",
@@ -200,13 +201,19 @@ describe('Profile Lambda', () => {
             "exclusiveStartKey": JSON.parse(res.body).lastEvaluatedKey
           }
         }, {}).then(assertProfileLength(1)).then(res => {
+          console.log(JSON.parse(res.body).lastEvaluatedKey);
           return handlerToPromise(profilesQuery.handler)({
             "queryStringParameters": {
               "q": "Tech",
               "limit": 1,
               "exclusiveStartKey": JSON.parse(res.body).lastEvaluatedKey
             }
-          }, {}).then(assertProfileLength(0));
+          }, {}).then(assertProfileLength(0)).then(res => {
+            if (JSON.parse(res.body).lastEvaluatedKey) {
+              return Promise.reject('lastEvaluatedKey found: ' + JSON.parse(res.body).lastEvaluatedKey);
+            }
+            return Promise.resolve();
+          });
         });
       });
     });
@@ -223,6 +230,69 @@ describe('Profile Lambda', () => {
           "q": "\"やまだ やまもと\""
         }
       }, {}).then(assertProfileLength(0));
+    });
+  });
+  describe('GET /profiles (large)', () => {
+    before(function() {
+      this.timeout(30 * 1000);
+      return Array.from(Array(3000).keys()).reduce((p, i) => {
+        return p.then(_ => {
+          var mail = `user${i}@example.com`;
+          return db.putProfile({
+            userId: mail,
+            picture: null,
+            name: '竹中 洋子',
+            ruby: 'たけなか ようこ',
+            employeeId: '1234',
+            organization: 'Example Co., Ltd.',
+            post: 'Tech',
+            rank: 'Manager',
+            cellPhone: '080-XXX-4567',
+            extensionPhone: 'XXXXX',
+            mail: mail,
+            workplace: null
+          });
+        });
+      }, Promise.resolve());
+    });
+    it('should search', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "竹中"
+        }
+      }, {}).then(assertStatus(200)).then(res => {
+        var profiles = JSON.parse(res.body).profiles;
+        // console.log('found', profiles.length);
+        return Promise.resolve();
+      });
+    });
+    it('should work with limit', function() {
+      this.timeout(30 * 1000);
+
+      function recursivelyGetAll(previous, exclusiveStartKey) {
+        previous = previous || [];
+        return handlerToPromise(profilesQuery.handler)({
+          "queryStringParameters": {
+            "q": "竹中",
+            "limit": 100,
+            "exclusiveStartKey": exclusiveStartKey
+          }
+        }, {}).then(res => {
+          var profiles = JSON.parse(res.body).profiles;
+          var lastEvaluatedKey = JSON.parse(res.body).lastEvaluatedKey;
+          if (lastEvaluatedKey) {
+            return recursivelyGetAll(previous.concat(profiles), lastEvaluatedKey);
+          } else {
+            return Promise.resolve(previous.concat(profiles));
+          }
+        });
+      }
+      return recursivelyGetAll().then(profiles => {
+        if (profiles.length !== 3000) {
+          return Promise.reject('Unexpected profiles count: ' + profiles.length);
+        }
+        return Promise.resolve();
+      });
     });
   });
   describe('GET /profiles/{userId}', () => {

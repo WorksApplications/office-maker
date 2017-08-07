@@ -110,12 +110,43 @@ function findProfileByQuery(q, limit, exclusiveStartKey) {
     Limit: limit,
     ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
   });
-
+  var start = Date.now();
   return search.then(data => {
+    var profiles = data.Items.map(deleteNormalizedFields);
+    console.log('got ' + profiles.length, 'took ' + (Date.now() - start) + 'ms');
     return Promise.resolve({
-      profiles: data.Items.map(deleteNormalizedFields),
+      profiles: profiles,
       lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
     });
+  });
+}
+
+function findProfileByQueryOpt(q, limit, exclusiveStartKey, previousProfiles) {
+  previousProfiles = previousProfiles || [];
+  return findProfileByQuery(q, null, exclusiveStartKey).then(res => {
+    var profiles = previousProfiles.concat(res.profiles);
+    if (limit && profiles.length >= limit) {
+      profiles.length = limit;
+      var lastProfile = profiles[limit - 1];
+      if (lastProfile) {
+        return Promise.resolve({
+          profiles: profiles,
+          lastEvaluatedKey: JSON.stringify({
+            userId: lastProfile.userId
+          })
+        });
+      } else {
+        return Promise.resolve({
+          profiles: profiles
+        });
+      }
+    } else if (res.lastEvaluatedKey) {
+      return findProfileByQueryOpt(q, limit, res.lastEvaluatedKey, profiles);
+    } else {
+      return Promise.resolve({
+        profiles: profiles
+      });
+    }
   });
 }
 
@@ -125,5 +156,5 @@ module.exports = {
   deleteProfile: deleteProfile,
   scanProfile: scanProfile,
   findProfileByUserIds: findProfileByUserIds,
-  findProfileByQuery: findProfileByQuery
+  findProfileByQuery: findProfileByQueryOpt
 };
