@@ -77,7 +77,7 @@ describe('Profile Service', () => {
         if (res.statusCode !== 200) {
           return Promise.reject('Unexpected statusCode: ' + res.statusCode);
         }
-        if (res.body.profiles.length !== 1) {
+        if (res.body.profiles.length <= 0) {
           return Promise.reject('Unexpected profile count: ' + res.body.profiles.length);
         }
         return Promise.resolve();

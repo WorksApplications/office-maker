@@ -48,7 +48,7 @@ describe('Profile Lambda', () => {
       mail: 'yamada@example.com',
       workplace: null
     }).then(_ => db.putProfile({
-      userId: 'tanaka@example.com',
+      userId: 'yamaoka@example.com',
       picture: null, // be sure to allow empty string
       name: '山岡 Saburo',
       ruby: 'やまおか さぶろう',
@@ -87,6 +87,13 @@ describe('Profile Lambda', () => {
         });
         return Promise.resolve();
       });
+    });
+    it('should search multiple profiles by userId', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "userId": "yamada@example.com,yamaoka@example.com"
+        }
+      }, {}).then(assertProfileLength(2));
     });
     it('should search profiles by q', () => {
       return handlerToPromise(profilesQuery.handler)({
@@ -202,6 +209,20 @@ describe('Profile Lambda', () => {
           }, {}).then(assertProfileLength(0));
         });
       });
+    });
+    it('should support multiple queries at once', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "やまだ やまもと"
+        }
+      }, {}).then(assertProfileLength(2));
+    });
+    it('should support double-quotation', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "\"やまだ やまもと\""
+        }
+      }, {}).then(assertProfileLength(0));
     });
   });
   describe('GET /profiles/{userId}', () => {

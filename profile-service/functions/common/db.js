@@ -85,8 +85,11 @@ function deleteNormalizedFields(profile) {
 }
 
 function findProfileByQuery(q, limit, exclusiveStartKey) {
+  if (q[0] === '"' && q[q.length - 1] === '"') {
+    q = q.substring(1, q.length - 1);
+  }
   var normalizedQ = searchHelper.normalize(q);
-  return dynamoUtil.scan(documentClient, {
+  var search = dynamoUtil.scan(documentClient, {
     TableName: 'profiles',
     FilterExpression: 'begins_with(normalizedName, :normalizedName)' +
       ' or contains(normalizedName, :normalizedNameWithSpace)' +
@@ -106,7 +109,9 @@ function findProfileByQuery(q, limit, exclusiveStartKey) {
     },
     Limit: limit,
     ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
-  }).then(data => {
+  });
+
+  return search.then(data => {
     return Promise.resolve({
       profiles: data.Items.map(deleteNormalizedFields),
       lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
