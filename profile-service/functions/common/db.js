@@ -113,7 +113,7 @@ function findProfileByQuery(q, limit, exclusiveStartKey) {
   var start = Date.now();
   return search.then(data => {
     var profiles = data.Items.map(deleteNormalizedFields);
-    console.log('got ' + profiles.length, 'took ' + (Date.now() - start) + 'ms');
+    // console.log('got ' + profiles.length, 'took ' + (Date.now() - start) + 'ms');
     return Promise.resolve({
       profiles: profiles,
       lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)

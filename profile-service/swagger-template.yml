@@ -149,44 +149,6 @@ paths:
         uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:profiles_profiles_query/invocations"
         type: aws_proxy
 
-  /profiles-test/{userId}:
-    get:
-      description: プロフィールを取得します。
-      parameters:
-        - name: userId
-          description: ""
-          in: path
-          type: string
-          required: true
-        - "$ref": "#/parameters/Authorization_opt"
-        - "$ref": "#/parameters/X-Forwarded-For"
-      responses:
-        200:
-          description: ""
-          schema:
-            $ref: "#/definitions/Profile"
-        # 401:
-        #   description: Unauthorized
-        #   schema:
-        #     $ref: '#/definitions/Error'
-        404:
-          description: |
-            Not Found
-
-            たとえ他のドメインに存在していても、サーバは 404 によってその存在を隠す必要があります。
-          schema:
-            $ref: '#/definitions/Error'
-      security:
-        - CustomAuthorizer: []
-      x-amazon-apigateway-request-validator: params-only
-      x-amazon-apigateway-integration:
-        httpMethod: POST
-        responses:
-          default:
-            statusCode: "200"
-        uri: "arn:aws:apigateway:__REGION__:lambda:path/2015-03-31/functions/arn:aws:lambda:__REGION__:__ACCOUNT_ID__:function:profiles_profiles_get/invocations"
-        type: aws_proxy
-
   /profiles/{userId}:
     get:
       description: プロフィールを取得します。
@@ -348,7 +310,7 @@ definitions:
         type: string
       ruby:
         type: string
-      orgnization:
+      organization:
         type: string
       post:
         type: string

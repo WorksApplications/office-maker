@@ -201,7 +201,6 @@ describe('Profile Lambda', () => {
             "exclusiveStartKey": JSON.parse(res.body).lastEvaluatedKey
           }
         }, {}).then(assertProfileLength(1)).then(res => {
-          console.log(JSON.parse(res.body).lastEvaluatedKey);
           return handlerToPromise(profilesQuery.handler)({
             "queryStringParameters": {
               "q": "Tech",
