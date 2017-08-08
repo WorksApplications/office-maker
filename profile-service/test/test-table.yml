@@ -1,0 +1,77 @@
+Properties:
+  AttributeDefinitions:
+  - AttributeName: userId
+    AttributeType: S
+  - AttributeName: employeeId
+    AttributeType: S
+  - AttributeName: normalizedName1
+    AttributeType: S
+  - AttributeName: normalizedName2
+    AttributeType: S
+  - AttributeName: normalizedRuby1
+    AttributeType: S
+  - AttributeName: normalizedRuby2
+    AttributeType: S
+  KeySchema:
+  - AttributeName: userId
+    KeyType: HASH
+  ProvisionedThroughput:
+    ReadCapacityUnits: 5
+    WriteCapacityUnits: 5
+  TableName: profiles
+  GlobalSecondaryIndexes:
+    -
+      IndexName: profilesName1Index
+      KeySchema:
+        -
+          AttributeName: normalizedName1
+          KeyType: HASH
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    -
+      IndexName: profilesName2Index
+      KeySchema:
+        -
+          AttributeName: normalizedName2
+          KeyType: HASH
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    -
+      IndexName: profilesRuby1Index
+      KeySchema:
+        -
+          AttributeName: normalizedRuby1
+          KeyType: HASH
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    -
+      IndexName: profilesRuby2Index
+      KeySchema:
+        -
+          AttributeName: normalizedRuby2
+          KeyType: HASH
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    -
+      IndexName: profilesEmployeeIdIndex
+      KeySchema:
+        -
+          AttributeName: employeeId
+          KeyType: HASH
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
