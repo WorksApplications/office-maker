@@ -8,7 +8,7 @@ exports.handler = (event, context, callback) => {
   var order = event.queryStringParameters.order;
   var limit = event.queryStringParameters.limit;
   var exclusiveStartKey = event.queryStringParameters.exclusiveStartKey;
-  // console.log('Query:', q, exclusiveStartKey);
+  console.log('Query:', q);
 
   if (userId) {
     var userIds = userId.split(',');

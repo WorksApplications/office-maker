@@ -1,0 +1,61 @@
+Properties:
+  TableName: profilesSearchHelp
+  AttributeDefinitions:
+    - AttributeName: userId
+      AttributeType: S
+    - AttributeName: post
+      AttributeType: S
+    - AttributeName: mail
+      AttributeType: S
+    - AttributeName: normalizedMailBeforeAt
+      AttributeType: S
+  KeySchema:
+    -
+      AttributeName: userId
+      KeyType: HASH
+  ProvisionedThroughput:
+    ReadCapacityUnits: 5
+    WriteCapacityUnits: 5
+  GlobalSecondaryIndexes:
+    -
+      IndexName: profilesPostIndex
+      KeySchema:
+        -
+          AttributeName: post
+          KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    -
+      IndexName: profilesMailIndex
+      KeySchema:
+        -
+          AttributeName: mail
+          KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    -
+      IndexName: profilesMailBeforeAtIndex
+      KeySchema:
+        -
+          AttributeName: normalizedMailBeforeAt
+          KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
+      Projection:
+        ProjectionType: ALL
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5

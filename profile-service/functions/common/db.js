@@ -21,22 +21,29 @@ function putProfile(profile) {
   var normalizedName = searchHelper.normalize(profile.name);
   var normalizedNameArray = normalizedName.split(' ');
   profile.normalizedName = normalizedName;
-  profile.normalizedName1 = normalizedNameArray[0] || '???'
-  profile.normalizedName2 = normalizedNameArray[normalizedNameArray.length - 1] || '???'
+  profile.normalizedName1 = normalizedNameArray[0] || '???';
+  profile.normalizedName2 = normalizedNameArray[normalizedNameArray.length - 1] || '???';
 
   var normalizedRuby = searchHelper.normalize(profile.ruby);
   var normalizedRubyArray = normalizedRuby.split(' ');
   profile.normalizedRuby = normalizedRuby;
-  profile.normalizedRuby1 = normalizedRubyArray[0] || '???'
-  profile.normalizedRuby2 = normalizedRubyArray[normalizedRubyArray.length - 1] || '???'
+  profile.normalizedRuby1 = normalizedRubyArray[0] || '???';
+  profile.normalizedRuby2 = normalizedRubyArray[normalizedRubyArray.length - 1] || '???';
 
+  profile.normalizedMailBeforeAt = (profile.mail || '').split('@')[0] || '???';
   profile.normalizedPost = searchHelper.normalize(profile.post);
   profile.normalizedOrganization = searchHelper.normalize(profile.organization);
+
   profile = dynamoUtil.emptyToNull(profile);
 
   return dynamoUtil.put(documentClient, {
     TableName: "profiles",
     Item: profile
+  }).then(_ => {
+    return dynamoUtil.put(documentClient, {
+      TableName: "profilesSearchHelp",
+      Item: profile
+    });
   });
 }
 
@@ -46,6 +53,13 @@ function deleteProfile(userId) {
     Key: {
       userId: userId
     }
+  }).then(_ => {
+    return dynamoUtil.delete(documentClient, {
+      TableName: "profilesSearchHelp",
+      Key: {
+        userId: userId
+      }
+    });
   });
 }
 
@@ -144,8 +158,12 @@ function findProfileByQuery2(q, limit, exclusiveStartKey) {
     queryHelpName2(normalizedQ),
     queryHelpRuby1(normalizedQ),
     queryHelpRuby2(normalizedQ),
-    queryHelpEmployeeId(normalizedQ)
-  ];
+    queryHelpPost(q),
+  ].concat(normalizedQ === q ? [ // lower case string
+    queryHelpEmployeeId(q),
+    queryHelpMail(q),
+    queryHelpMailBeforeAt(q)
+  ] : []);
   return Promise.all(searches).then(profilesList => {
     var dict = {};
     profilesList.forEach(profiles => {
@@ -218,6 +236,45 @@ function queryHelpEmployeeId(q) {
     KeyConditionExpression: 'employeeId = :employeeId',
     ExpressionAttributeValues: {
       ":employeeId": q
+    }
+  }).then(data => {
+    return Promise.resolve(data.Items.map(deleteNormalizedFields));
+  });
+}
+
+function queryHelpMail(q) {
+  return dynamoUtil.query(documentClient, {
+    TableName: 'profilesSearchHelp',
+    IndexName: "profilesMailIndex",
+    KeyConditionExpression: 'mail = :mail',
+    ExpressionAttributeValues: {
+      ":mail": q
+    }
+  }).then(data => {
+    return Promise.resolve(data.Items.map(deleteNormalizedFields));
+  });
+}
+
+function queryHelpMailBeforeAt(q) {
+  return dynamoUtil.query(documentClient, {
+    TableName: 'profilesSearchHelp',
+    IndexName: "profilesMailBeforeAtIndex",
+    KeyConditionExpression: 'normalizedMailBeforeAt = :normalizedMailBeforeAt',
+    ExpressionAttributeValues: {
+      ":normalizedMailBeforeAt": q
+    }
+  }).then(data => {
+    return Promise.resolve(data.Items.map(deleteNormalizedFields));
+  });
+}
+
+function queryHelpPost(q) {
+  return dynamoUtil.query(documentClient, {
+    TableName: 'profilesSearchHelp',
+    IndexName: "profilesPostIndex",
+    KeyConditionExpression: 'post = :post',
+    ExpressionAttributeValues: {
+      ":post": q
     }
   }).then(data => {
     return Promise.resolve(data.Items.map(deleteNormalizedFields));

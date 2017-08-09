@@ -23,6 +23,7 @@ var port = 4569;
 
 // temporary
 var tableDefYaml = fs.readFileSync(__dirname + '/test-table.yml', 'utf8');
+var table2DefYaml = fs.readFileSync(__dirname + '/test-table2.yml', 'utf8');
 
 
 describe('Profile Lambda', () => {
@@ -35,6 +36,10 @@ describe('Profile Lambda', () => {
       return delay(700).then(_ => {
         // var tableDef = templateOutYml.Resources.ProfilesTable.Properties;
         var tableDef = yaml.safeLoad(tableDefYaml).Properties;
+        return dynamoUtil.createTable(dynamodb, tableDef);
+      }).then(_ => {
+        // var tableDef = templateOutYml.Resources.ProfilesSearchHelpTable.Properties;
+        var tableDef = yaml.safeLoad(table2DefYaml).Properties;
         return dynamoUtil.createTable(dynamodb, tableDef);
       });
     });
@@ -171,45 +176,38 @@ describe('Profile Lambda', () => {
         }
       }, {}).then(assertProfileLength(0));
     });
-    // it('should NOT search profiles by q (match to organization)', () => {
-    //   return handlerToPromise(profilesQuery.handler)({
-    //     "queryStringParameters": {
-    //       "q": "Example"
-    //     }
-    //   }, {}).then(assertProfileLength(0));
-    // });
-    // it('should search profiles by q (match to post)', () => {
-    //   return handlerToPromise(profilesQuery.handler)({
-    //     "queryStringParameters": {
-    //       "q": "Tech"
-    //     }
-    //   }, {}).then(assertProfileLength(2));
-    // });
-    // it('should search profiles by q (match to post, case sensitive)', () => {
-    //   return handlerToPromise(profilesQuery.handler)({
-    //     "queryStringParameters": {
-    //       "q": "sales"
-    //     }
-    //   }, {}).then(assertProfileLength(1));
-    // });
+    it('should search profiles by q (match to post)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "Tech"
+        }
+      }, {}).then(assertProfileLength(1));
+    });
+    it('should search profiles by q (match to quoted post)', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "\"Sales and Tech\""
+        }
+      }, {}).then(assertProfileLength(1));
+    });
     // it('should work with limit and exclusiveStartKey', () => {
     //   return handlerToPromise(profilesQuery.handler)({
     //     "queryStringParameters": {
-    //       "q": "Tech",
+    //       "q": "やまだ",
     //       "limit": 1
     //     }
     //   }, {}).then(assertProfileLength(1)).then(res => {
     //     // console.log(JSON.parse(res.body).lastEvaluatedKey);
     //     return handlerToPromise(profilesQuery.handler)({
     //       "queryStringParameters": {
-    //         "q": "Tech",
+    //         "q": "やまだ",
     //         "limit": 1,
     //         "exclusiveStartKey": JSON.parse(res.body).lastEvaluatedKey
     //       }
     //     }, {}).then(assertProfileLength(1)).then(res => {
     //       return handlerToPromise(profilesQuery.handler)({
     //         "queryStringParameters": {
-    //           "q": "Tech",
+    //           "q": "やまだ",
     //           "limit": 1,
     //           "exclusiveStartKey": JSON.parse(res.body).lastEvaluatedKey
     //         }
@@ -229,13 +227,13 @@ describe('Profile Lambda', () => {
     //     }
     //   }, {}).then(assertProfileLength(2));
     // });
-    // it('should support double-quotation', () => {
-    //   return handlerToPromise(profilesQuery.handler)({
-    //     "queryStringParameters": {
-    //       "q": "\"やまだ やまもと\""
-    //     }
-    //   }, {}).then(assertProfileLength(0));
-    // });
+    it('should support double-quotation', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "\"やまだ やまもと\""
+        }
+      }, {}).then(assertProfileLength(0));
+    });
   });
   describe('GET /profiles (large)', () => {
     // var count = 3000;
