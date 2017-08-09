@@ -26,6 +26,9 @@ Properties:
         -
           AttributeName: normalizedName1
           KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
       Projection:
         ProjectionType: ALL
       ProvisionedThroughput:
@@ -37,6 +40,9 @@ Properties:
         -
           AttributeName: normalizedName2
           KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
       Projection:
         ProjectionType: ALL
       ProvisionedThroughput:
@@ -48,6 +54,9 @@ Properties:
         -
           AttributeName: normalizedRuby1
           KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
       Projection:
         ProjectionType: ALL
       ProvisionedThroughput:
@@ -59,6 +68,9 @@ Properties:
         -
           AttributeName: normalizedRuby2
           KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
       Projection:
         ProjectionType: ALL
       ProvisionedThroughput:
@@ -70,6 +82,9 @@ Properties:
         -
           AttributeName: employeeId
           KeyType: HASH
+        -
+          AttributeName: userId
+          KeyType: RANGE
       Projection:
         ProjectionType: ALL
       ProvisionedThroughput:

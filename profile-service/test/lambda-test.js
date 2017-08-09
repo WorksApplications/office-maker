@@ -54,17 +54,17 @@ describe('Profile Lambda', () => {
       mail: 'yamada@example.com',
       workplace: null
     }).then(_ => db.putProfile({
-      userId: 'yamaoka@example.com',
+      userId: 'yamada_s@example.com',
       picture: null, // be sure to allow empty string
-      name: '山岡 Saburo',
-      ruby: 'やまおか さぶろう',
+      name: '山田 Saburo',
+      ruby: 'やまだ さぶろう',
       employeeId: '1235',
       organization: 'Example Co., Ltd.',
       post: 'Sales and Tech',
       rank: 'Assistant',
       cellPhone: '080-XXX-5678',
       extensionPhone: 'XXXXX',
-      mail: 'yamaoka@example.com',
+      mail: 'yamada_s@example.com',
       workplace: null // be sure to allow empty string
     }));
   });
@@ -97,7 +97,7 @@ describe('Profile Lambda', () => {
     it('should search multiple profiles by userId', () => {
       return handlerToPromise(profilesQuery.handler)({
         "queryStringParameters": {
-          "userId": "yamada@example.com,yamaoka@example.com"
+          "userId": "yamada@example.com,yamada_s@example.com"
         }
       }, {}).then(assertProfileLength(2));
     });
@@ -113,7 +113,7 @@ describe('Profile Lambda', () => {
         "queryStringParameters": {
           "q": "山田"
         }
-      }, {}).then(assertProfileLength(1));
+      }, {}).then(assertProfileLength(2));
     });
     it('should search profiles by q (match to name)', () => {
       return handlerToPromise(profilesQuery.handler)({
@@ -134,7 +134,7 @@ describe('Profile Lambda', () => {
         "queryStringParameters": {
           "q": "やまだ"
         }
-      }, {}).then(assertProfileLength(1));
+      }, {}).then(assertProfileLength(2));
     });
     it('should search profiles by q (match to ruby)', () => {
       return handlerToPromise(profilesQuery.handler)({
