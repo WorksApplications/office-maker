@@ -30,9 +30,11 @@ function putProfile(profile) {
   profile.normalizedRuby1 = normalizedRubyArray[0] || '???';
   profile.normalizedRuby2 = normalizedRubyArray[normalizedRubyArray.length - 1] || '???';
 
+  profile.employeeId = profile.employeeId || '???';
+  profile.mail = profile.mail || '???';
   profile.normalizedMailBeforeAt = (profile.mail || '').split('@')[0] || '???';
-  profile.normalizedPost = searchHelper.normalize(profile.post);
-  profile.normalizedOrganization = searchHelper.normalize(profile.organization);
+  profile.normalizedPost = searchHelper.normalize(profile.post) || '???';
+  profile.normalizedOrganization = searchHelper.normalize(profile.organization) || '???';
 
   profile = dynamoUtil.emptyToNull(profile);
 
@@ -159,11 +161,12 @@ function findProfileByQuery2(q, limit, exclusiveStartKey) {
     queryHelpRuby1(normalizedQ),
     queryHelpRuby2(normalizedQ),
     queryHelpPost(q),
-  ].concat(normalizedQ === q ? [ // lower case string
     queryHelpEmployeeId(q),
+  ].concat(normalizedQ === q ? [ // lower case string
     queryHelpMail(q),
     queryHelpMailBeforeAt(q)
   ] : []);
+  var start = Date.now();
   return Promise.all(searches).then(profilesList => {
     var dict = {};
     profilesList.forEach(profiles => {
@@ -171,6 +174,7 @@ function findProfileByQuery2(q, limit, exclusiveStartKey) {
         dict[profile.userId] = profile;
       });
     });
+    console.log('got ' + Object.keys(dict).length, 'took ' + (Date.now() - start) + 'ms');
     return Promise.resolve({
       profiles: Object.keys(dict).map(key => dict[key])
     });
