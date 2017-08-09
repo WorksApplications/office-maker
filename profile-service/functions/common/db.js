@@ -65,19 +65,6 @@ function deleteProfile(userId) {
   });
 }
 
-// function scanProfile(limit, exclusiveStartKey) {
-//   return dynamoUtil.scan(documentClient, {
-//     TableName: "profiles",
-//     Limit: limit,
-//     ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
-//   }).then(data => {
-//     return Promise.resolve({
-//       profiles: data.Items,
-//       lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
-//     });
-//   });
-// };
-
 function findProfileByUserIds(userIds, limit, exclusiveStartKey) {
   return dynamoUtil.batchGet(documentClient, {
     RequestItems: {
@@ -112,44 +99,7 @@ function deleteNormalizedFields(profile) {
   return profile;
 }
 
-// function findProfileByQuery(q, limit, exclusiveStartKey) {
-//   if (q[0] === '"' && q[q.length - 1] === '"') {
-//     q = q.substring(1, q.length - 1);
-//   }
-//   var normalizedQ = searchHelper.normalize(q);
-//   var search = dynamoUtil.scan(documentClient, {
-//     TableName: 'profiles',
-//     FilterExpression: 'begins_with(normalizedName, :normalizedName)' +
-//       ' or contains(normalizedName, :normalizedNameWithSpace)' +
-//       ' or begins_with(normalizedRuby, :normalizedRuby)' +
-//       ' or contains(normalizedRuby, :normalizedRubyWithSpace)' +
-//       ' or begins_with(mail, :mail)' +
-//       // ' or employeeId = :employeeId' +
-//       ' or contains(normalizedPost, :normalizedPost)',
-//     ExpressionAttributeValues: {
-//       ":mail": q,
-//       ":normalizedName": normalizedQ,
-//       ":normalizedNameWithSpace": ' ' + normalizedQ,
-//       ":normalizedRuby": normalizedQ,
-//       ":normalizedRubyWithSpace": ' ' + normalizedQ,
-//       // ":employeeId": q,
-//       ":normalizedPost": normalizedQ
-//     },
-//     Limit: limit,
-//     ExclusiveStartKey: exclusiveStartKey ? JSON.parse(exclusiveStartKey) : undefined
-//   });
-//   var start = Date.now();
-//   return search.then(data => {
-//     var profiles = data.Items.map(deleteNormalizedFields);
-//     // console.log('got ' + profiles.length, 'took ' + (Date.now() - start) + 'ms');
-//     return Promise.resolve({
-//       profiles: profiles,
-//       lastEvaluatedKey: JSON.stringify(data.LastEvaluatedKey)
-//     });
-//   });
-// }
-
-function findProfileByQuery2(q, limit, exclusiveStartKey) {
+function findProfileByQuery(q, limit, exclusiveStartKey) {
   if (q[0] === '"' && q[q.length - 1] === '"') {
     q = q.substring(1, q.length - 1);
   }
@@ -285,40 +235,10 @@ function queryHelpPost(q) {
   });
 }
 
-// function findProfileByQueryOpt(q, limit, exclusiveStartKey, previousProfiles) {
-//   previousProfiles = previousProfiles || [];
-//   return findProfileByQuery(q, null, exclusiveStartKey).then(res => {
-//     var profiles = previousProfiles.concat(res.profiles);
-//     if (limit && profiles.length >= limit) {
-//       profiles.length = limit;
-//       var lastProfile = profiles[limit - 1];
-//       if (lastProfile) {
-//         return Promise.resolve({
-//           profiles: profiles,
-//           lastEvaluatedKey: JSON.stringify({
-//             userId: lastProfile.userId
-//           })
-//         });
-//       } else {
-//         return Promise.resolve({
-//           profiles: profiles
-//         });
-//       }
-//     } else if (res.lastEvaluatedKey) {
-//       return findProfileByQueryOpt(q, limit, res.lastEvaluatedKey, profiles);
-//     } else {
-//       return Promise.resolve({
-//         profiles: profiles
-//       });
-//     }
-//   });
-// }
-
 module.exports = {
   getProfile: getProfile,
   putProfile: putProfile,
   deleteProfile: deleteProfile,
-  // scanProfile: scanProfile,
   findProfileByUserIds: findProfileByUserIds,
-  findProfileByQuery: findProfileByQuery2
+  findProfileByQuery: findProfileByQuery
 };
