@@ -15,7 +15,7 @@ function getProfile(userId) {
   });
 }
 
-function putProfile(profile) {
+function convertProfileBeforeSave(profile) {
   profile = Object.assign({}, profile);
 
   var normalizedName = searchHelper.normalize(profile.name);
@@ -35,7 +35,11 @@ function putProfile(profile) {
   profile.normalizedMailBeforeAt = (profile.mail || '').split('@')[0] || '???';
   profile.normalizedPost = searchHelper.normalize(profile.post) || '???';
   profile.normalizedOrganization = searchHelper.normalize(profile.organization) || '???';
+  return profile;
+}
 
+function putProfile(profile) {
+  profile = convertProfileBeforeSave(profile);
   profile = dynamoUtil.emptyToNull(profile);
 
   return dynamoUtil.put(documentClient, {
@@ -48,6 +52,7 @@ function putProfile(profile) {
     });
   });
 }
+var patchProfile = putProfile;
 
 function deleteProfile(userId) {
   return dynamoUtil.delete(documentClient, {
@@ -238,6 +243,7 @@ function queryHelpPost(q) {
 module.exports = {
   getProfile: getProfile,
   putProfile: putProfile,
+  patchProfile: patchProfile,
   deleteProfile: deleteProfile,
   findProfileByUserIds: findProfileByUserIds,
   findProfileByQuery: findProfileByQuery

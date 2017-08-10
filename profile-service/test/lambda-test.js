@@ -220,13 +220,13 @@ describe('Profile Lambda', () => {
     //     });
     //   });
     // });
-    // it('should support multiple queries at once', () => {
-    //   return handlerToPromise(profilesQuery.handler)({
-    //     "queryStringParameters": {
-    //       "q": "やまだ やまもと"
-    //     }
-    //   }, {}).then(assertProfileLength(2));
-    // });
+    it('should support multiple queries at once', () => {
+      return handlerToPromise(profilesQuery.handler)({
+        "queryStringParameters": {
+          "q": "やまだ やまもと"
+        }
+      }, {}).then(assertProfileLength(2));
+    });
     it('should support double-quotation', () => {
       return handlerToPromise(profilesQuery.handler)({
         "queryStringParameters": {
