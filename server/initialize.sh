@@ -15,4 +15,10 @@ cat defaultConfig.json \
 mysql --user=$user --password=$pass -e "drop database map2;"
 mysql --user=$user --password=$pass < sql/1-create-schema.sql
 mysql --user=$user --password=$pass < sql/2-create-tables.sql
-node commands.js createDataForDebug
+mysql --user=$user --password=$pass < sql/3-update-at.sql
+mysql --user=$user --password=$pass < sql/4-utf8mb4.sql
+mysql --user=$user --password=$pass < sql/5-add-object-field.sql
+mysql --user=$user --password=$pass < sql/6-temporary-floor.sql
+mysql --user=$user --password=$pass < sql/7-flip-image-field.sql
+mysql --user=$user --password=$pass < sql/8-objects_opt.sql
+node commands.js createInitialData
